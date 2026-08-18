@@ -1,0 +1,38 @@
+/* Path in your project: resources/css/app.css */
+
+@import 'tailwindcss';
+
+@theme {
+  --color-navy: #0F1B3D;
+  --color-teal: #21C3A6;
+  --color-teal-dark: #18A98E;
+  --color-teal-light: #D4F5EE;
+  --color-gray-bg: #F3F5F7;
+  --color-gray-border: #E2E6EA;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-serif: 'DM Serif Display', serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  font-family: var(--font-sans);
+  background: #ffffff;
+  color: #0F1B3D;
+}
+
+/* Hide scrollbar but allow scrolling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD0DA;
+  border-radius: 3px;
+}
