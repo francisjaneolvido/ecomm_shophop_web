@@ -6,91 +6,156 @@
 
 @section('content')
 
+
 {{-- =========================================================
     HERO SECTION
 ========================================================= --}}
 <section class="relative overflow-hidden bg-gray-bg">
 
     {{-- Decorative background circles --}}
-    <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-teal/10"></div>
-    <div class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-teal/5"></div>
+    <div class="absolute -top-28 -right-28 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-teal/10"></div>
+    <div class="absolute -bottom-36 -left-36 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-teal/5"></div>
 
-    <div class="relative max-w-310 mx-auto px-6 py-20 lg:py-24">
 
-        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 lg:py-24">
 
-            {{-- LEFT CONTENT --}}
+        <div class="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+
+
+            {{-- =================================================
+                LEFT CONTENT
+            ================================================== --}}
             <div class="max-w-xl">
 
+
                 {{-- Small badge --}}
-                <div class="inline-flex items-center gap-2 bg-teal-light text-teal-dark px-4 py-2 rounded-full text-sm font-medium mb-6">
+                <div
+                    class="inline-flex items-center gap-2
+                           bg-teal-light text-teal-dark
+                           px-3.5 sm:px-4 py-2
+                           rounded-full
+                           text-xs sm:text-sm font-medium
+                           mb-5 sm:mb-6"
+                >
                     <span class="w-2 h-2 rounded-full bg-teal"></span>
+
                     New arrivals every day
                 </div>
 
-                <h1 class="text-navy mb-6">
+
+                {{-- Heading --}}
+                <h1 class="text-navy mb-5 sm:mb-6">
+
                     Everything You Love,
+
                     <span class="block text-teal">
                         Just a Hop Away.
                     </span>
+
                 </h1>
 
-                <p class="text-navy/65 text-base lg:text-lg leading-relaxed max-w-lg mb-8">
-                    Discover everyday essentials, trending finds, and products
-                    you'll love — all in one place.
+
+                {{-- Description --}}
+                <p
+                    class="text-navy/65
+                           text-sm sm:text-base lg:text-lg
+                           leading-relaxed
+                           max-w-lg
+                           mb-7 sm:mb-8"
+                >
+                    Discover everyday essentials, trending finds,
+                    and products you'll love — all in one place.
                 </p>
 
-                <div class="flex flex-wrap gap-4">
+
+                {{-- CTA Buttons --}}
+                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
 
                     <a
                         href="#trending"
-                        class="inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white font-semibold px-7 py-3.5 rounded-full transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20"
+                        class="inline-flex items-center justify-center gap-2
+                               bg-teal hover:bg-teal-dark
+                               text-white
+                               text-sm font-semibold
+                               px-6 sm:px-7
+                               py-3 sm:py-3.5
+                               rounded-full
+                               transition-all duration-300
+                               hover:-translate-y-0.5
+                               shadow-lg shadow-teal/20"
                     >
+
                         Shop Now
+
                         <x-lucide-arrow-right class="w-4 h-4" />
+
                     </a>
+
 
                     <a
                         href="#categories"
-                        class="inline-flex items-center justify-center border-2 border-navy text-navy hover:bg-navy hover:text-white font-semibold px-7 py-3 rounded-full transition-all duration-300"
+                        class="inline-flex items-center justify-center
+                               border-2 border-navy
+                               text-navy
+                               hover:bg-navy hover:text-white
+                               text-sm font-semibold
+                               px-6 sm:px-7 py-3
+                               rounded-full
+                               transition-all duration-300"
                     >
                         Explore Categories
                     </a>
 
                 </div>
 
-                {{-- STATS --}}
-                <div class="flex flex-wrap gap-8 mt-12 pt-8 border-t border-navy/10">
+
+                {{-- =================================================
+                    STATS
+                ================================================== --}}
+                <div
+                    class="grid grid-cols-3
+                           gap-3 sm:gap-6
+                           mt-10 sm:mt-12
+                           pt-7 sm:pt-8
+                           border-t border-navy/10"
+                >
 
                     <div>
-                        <div class="text-2xl font-bold text-navy">
+
+                        <div class="text-xl sm:text-2xl font-bold text-navy">
                             50K+
                         </div>
-                        <div class="text-xs text-navy/55">
+
+                        <div class="text-[10px] sm:text-xs text-navy/55 mt-1">
                             Products
                         </div>
+
                     </div>
 
-                    <div class="w-px bg-navy/10"></div>
 
-                    <div>
-                        <div class="text-2xl font-bold text-navy">
+                    <div class="border-l border-navy/10 pl-3 sm:pl-6">
+
+                        <div class="text-xl sm:text-2xl font-bold text-navy">
                             2M+
                         </div>
-                        <div class="text-xs text-navy/55">
+
+                        <div class="text-[10px] sm:text-xs text-navy/55 mt-1">
                             Happy Shoppers
                         </div>
+
                     </div>
 
-                    <div class="w-px bg-navy/10"></div>
 
-                    <div>
-                        <div class="text-2xl font-bold text-navy">
+                    <div class="border-l border-navy/10 pl-3 sm:pl-6">
+
+                        <div class="text-xl sm:text-2xl font-bold text-navy">
                             4.9
                         </div>
-                        <div class="text-xs text-navy/55">
+
+                        <div class="text-[10px] sm:text-xs text-navy/55 mt-1">
                             App Rating
                         </div>
+
                     </div>
 
                 </div>
@@ -98,111 +163,165 @@
             </div>
 
 
-            {{-- RIGHT HERO PRODUCTS --}}
-            <div class="relative min-h-105 lg:min-h-120">
+
+            {{-- =================================================
+                RIGHT HERO PRODUCTS
+            ================================================== --}}
+            <div class="relative min-h-90 sm:min-h-107.5 lg:min-h-120">
+
 
                 {{-- Main product --}}
                 <div
-                    class="absolute z-20 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
-                           w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80
-                           rounded-3xl bg-white shadow-2xl
-                           border border-white overflow-hidden
+                    class="absolute z-20
+                           left-1/2 top-1/2
+                           -translate-x-1/2 -translate-y-1/2
+                           w-52 h-52
+                           min-[400px]:w-60 min-[400px]:h-60
+                           sm:w-72 sm:h-72
+                           lg:w-80 lg:h-80
+                           rounded-3xl
+                           bg-white
+                           shadow-2xl
+                           border border-white
+                           overflow-hidden
                            hero-main-product"
                 >
+
                     <img
                         src="{{ asset('images/hero/sneaker.jpg') }}"
                         alt="Featured ShopHop product"
                         class="w-full h-full object-cover"
                     >
+
                 </div>
 
 
                 {{-- Earbuds card --}}
                 <div
-                    class="absolute z-30 left-2 top-5 sm:left-8 lg:left-4
-                           w-32 sm:w-36
-                           bg-white rounded-2xl overflow-hidden
-                           shadow-xl border border-white
+                    class="absolute z-30
+                           left-0 top-3
+                           sm:left-8 sm:top-5
+                           lg:left-4
+                           w-28 sm:w-36
+                           bg-white
+                           rounded-2xl
+                           overflow-hidden
+                           shadow-xl
+                           border border-white
                            hero-floating-card"
                 >
+
                     <img
                         src="{{ asset('images/hero/earbuds.jpg') }}"
                         alt="Earbuds"
-                        class="w-full h-28 object-cover"
+                        class="w-full h-20 sm:h-28 object-cover"
                     >
 
-                    <div class="px-3 py-2">
-                        <p class="text-[11px] font-semibold text-navy">
+                    <div class="px-2.5 sm:px-3 py-2">
+
+                        <p class="text-[10px] sm:text-[11px] font-semibold text-navy truncate">
                             Earbuds Pro
                         </p>
-                        <p class="text-xs font-bold text-teal-dark">
+
+                        <p class="text-[11px] sm:text-xs font-bold text-teal-dark">
                             ₱1,299
                         </p>
+
                     </div>
+
                 </div>
 
 
                 {{-- Watch card --}}
                 <div
-                    class="absolute z-30 right-2 bottom-8 sm:right-8 lg:right-0
-                           w-32 sm:w-36
-                           bg-white rounded-2xl overflow-hidden
-                           shadow-xl border border-white
-                           hero-floating-card hero-delay"
+                    class="absolute z-30
+                           right-0 bottom-5
+                           sm:right-8 sm:bottom-8
+                           lg:right-0
+                           w-28 sm:w-36
+                           bg-white
+                           rounded-2xl
+                           overflow-hidden
+                           shadow-xl
+                           border border-white
+                           hero-floating-card
+                           hero-delay"
                 >
+
                     <img
                         src="{{ asset('images/hero/watch.jpg') }}"
                         alt="Fitness Watch"
-                        class="w-full h-28 object-cover"
+                        class="w-full h-20 sm:h-28 object-cover"
                     >
 
-                    <div class="px-3 py-2">
-                        <p class="text-[11px] font-semibold text-navy">
+                    <div class="px-2.5 sm:px-3 py-2">
+
+                        <p class="text-[10px] sm:text-[11px] font-semibold text-navy truncate">
                             Fitness Watch
                         </p>
-                        <p class="text-xs font-bold text-teal-dark">
+
+                        <p class="text-[11px] sm:text-xs font-bold text-teal-dark">
                             ₱1,799
                         </p>
+
                     </div>
+
                 </div>
 
 
                 {{-- Discount badge --}}
                 <div
-                    class="absolute z-40 right-0 top-5 sm:right-5 lg:right-8
-                           w-16 h-16 rounded-full
+                    class="absolute z-40
+                           right-0 top-5
+                           sm:right-5
+                           lg:right-8
+                           w-14 h-14
+                           sm:w-16 sm:h-16
+                           rounded-full
                            bg-navy text-white
-                           flex flex-col items-center justify-center
+                           flex flex-col
+                           items-center justify-center
                            shadow-lg
                            animate-pulse"
                 >
-                    <span class="text-[9px] font-bold">
+
+                    <span class="text-[8px] sm:text-[9px] font-bold">
                         UP TO
                     </span>
 
-                    <span class="text-sm font-extrabold text-teal">
+                    <span class="text-xs sm:text-sm font-extrabold text-teal">
                         50%
                     </span>
 
-                    <span class="text-[8px] font-bold">
+                    <span class="text-[7px] sm:text-[8px] font-bold">
                         OFF
                     </span>
+
                 </div>
 
 
                 {{-- Rating --}}
                 <div
-                    class="absolute z-40 left-4 bottom-4 sm:left-10 lg:left-0
-                           bg-white px-4 py-2.5 rounded-xl
-                           shadow-lg flex items-center gap-2"
+                    class="absolute z-40
+                           left-1 bottom-2
+                           sm:left-10 sm:bottom-4
+                           lg:left-0
+                           bg-white
+                           px-3 sm:px-4
+                           py-2 sm:py-2.5
+                           rounded-xl
+                           shadow-lg
+                           flex items-center gap-2"
                 >
-                    <div class="flex text-amber-400 text-sm">
+
+                    <div class="flex text-amber-400 text-xs sm:text-sm">
                         ★★★★★
                     </div>
 
-                    <span class="text-xs font-semibold text-navy">
+                    <span class="text-[11px] sm:text-xs font-semibold text-navy">
                         4.9
                     </span>
+
                 </div>
 
             </div>
@@ -210,7 +329,9 @@
         </div>
 
     </div>
+
 </section>
+
 
 
 {{-- =========================================================
@@ -238,36 +359,67 @@
 
 <section
     id="categories"
-    class="py-20 bg-white"
+    class="py-12 sm:py-16 lg:py-20 bg-white"
 >
-    <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-10">
+        {{-- Section Header --}}
+        <div class="mb-6 sm:mb-8">
+            <p class="text-teal-dark text-xs sm:text-sm font-semibold mb-2 tracking-wide">
+                EXPLORE
+            </p>
 
-            <div>
-                <p class="text-teal-dark text-sm font-semibold mb-2">
-                    EXPLORE
-                </p>
+            <h2 class="text-navy">
+                Shop by Category
+            </h2>
 
-                <h2 class="text-navy">
-                    Shop by Category
-                </h2>
-
-                <p class="text-navy/55 mt-2">
-                    Find what you need, faster.
-                </p>
-            </div>
-
-            <a
-                href="#"
-                class="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-semibold text-teal-dark hover:text-navy transition"
-            >
-                View all
-                <x-lucide-arrow-right class="w-4 h-4" />
-            </a>
-
+            <p class="text-sm sm:text-base text-navy/55 mt-2">
+                Find what you need, faster.
+            </p>
         </div>
 
+        {{-- =====================================================
+            CATEGORY SLIDER
+
+            Mobile: 2 visible
+            Small:  3 visible
+            Medium: 4 visible
+            Desktop: 7 visible
+        ====================================================== --}}
+        <div
+            class="relative"
+            data-category-slider
+        >
+            {{-- Previous Button --}}
+            <button
+                type="button"
+                data-category-prev
+                aria-label="Previous categories"
+                class="hidden absolute left-0 top-1/2
+                       -translate-x-1/2 -translate-y-1/2
+                       z-20 w-10 h-10 sm:w-11 sm:h-11
+                       rounded-full bg-white border border-gray-border
+                       shadow-lg items-center justify-center
+                       text-navy hover:text-teal-dark hover:scale-110
+                       transition-all duration-200"
+            >
+                <x-lucide-chevron-left class="w-5 h-5" />
+            </button>
+
+            {{-- Slider Track --}}
+            <div
+                data-category-track
+                class="grid grid-flow-col gap-4
+                       overflow-x-auto scroll-smooth
+                       snap-x snap-mandatory
+                       scrollbar-none
+                       [&::-webkit-scrollbar]:hidden
+                       auto-cols-[calc((100%-1rem)/2)]
+                       sm:auto-cols-[calc((100%-2rem)/3)]
+                       md:auto-cols-[calc((100%-3rem)/4)]
+                       lg:auto-cols-[calc((100%-6rem)/7)]"
+            >
+                @foreach ($categories as $category)
 
         <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
 
@@ -318,15 +470,137 @@
                     <span class="relative z-10 text-sm font-semibold text-navy">
                         {{ $category['name'] }}
                     </span>
+                    <a
+                        href="#"
+                        class="group min-h-46 sm:min-h-48
+                               rounded-2xl bg-gray-bg
+                               px-4 py-5 text-center
+                               flex flex-col items-center justify-center
+                               border border-transparent
+                               hover:bg-teal-light
+                               hover:border-teal/30
+                               hover:-translate-y-1
+                               hover:shadow-lg
+                               snap-start
+                               transition-all duration-300"
+                    >
+                        {{-- Category Icon --}}
+                        <div
+                            class="w-16 h-16
+                                   rounded-2xl bg-white
+                                   flex items-center justify-center
+                                   text-teal-dark shadow-sm
+                                   group-hover:bg-teal
+                                   group-hover:text-white
+                                   group-hover:scale-105
+                                   transition-all duration-300"
+                        >
+                            <x-dynamic-component
+                                :component="'lucide-' . $category['icon']"
+                                class="w-7 h-7"
+                            />
+                        </div>
 
-                </a>
+                        {{-- Category Name --}}
+                        <span
+                            class="block mt-4
+                                   text-xs sm:text-sm
+                                   font-semibold text-navy
+                                   leading-snug"
+                        >
+                            {{ $category['name'] }}
+                        </span>
+                    </a>
 
-            @endforeach
+                @endforeach
+            </div>
 
+            {{-- Next Button --}}
+            <button
+                type="button"
+                data-category-next
+                aria-label="Next categories"
+                class="absolute right-0 top-1/2
+                       translate-x-1/2 -translate-y-1/2
+                       z-20 w-10 h-10 sm:w-11 sm:h-11
+                       rounded-full bg-white border border-gray-border
+                       shadow-lg flex items-center justify-center
+                       text-navy hover:text-teal-dark hover:scale-110
+                       transition-all duration-200"
+            >
+                <x-lucide-chevron-right class="w-5 h-5" />
+            </button>
         </div>
 
     </div>
 </section>
+
+
+{{-- =========================================================
+    CATEGORY SLIDER SCRIPT
+========================================================= --}}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-category-slider]').forEach(function (slider) {
+            const track = slider.querySelector('[data-category-track]');
+            const prevButton = slider.querySelector('[data-category-prev]');
+            const nextButton = slider.querySelector('[data-category-next]');
+
+            if (!track || !prevButton || !nextButton) {
+                return;
+            }
+
+            function updateButtons() {
+                const maxScrollLeft = track.scrollWidth - track.clientWidth;
+                const atStart = track.scrollLeft <= 5;
+                const atEnd = track.scrollLeft >= maxScrollLeft - 5;
+
+                if (atStart) {
+                    prevButton.classList.add('hidden');
+                    prevButton.classList.remove('flex');
+                } else {
+                    prevButton.classList.remove('hidden');
+                    prevButton.classList.add('flex');
+                }
+
+                if (atEnd || maxScrollLeft <= 5) {
+                    nextButton.classList.add('hidden');
+                    nextButton.classList.remove('flex');
+                } else {
+                    nextButton.classList.remove('hidden');
+                    nextButton.classList.add('flex');
+                }
+            }
+
+            function scrollAmount() {
+                /*
+                 * Scroll roughly one full visible set.
+                 * On desktop this moves close to 7 cards.
+                 */
+                return track.clientWidth * 0.95;
+            }
+
+            nextButton.addEventListener('click', function () {
+                track.scrollBy({
+                    left: scrollAmount(),
+                    behavior: 'smooth'
+                });
+            });
+
+            prevButton.addEventListener('click', function () {
+                track.scrollBy({
+                    left: -scrollAmount(),
+                    behavior: 'smooth'
+                });
+            });
+
+            track.addEventListener('scroll', updateButtons, { passive: true });
+            window.addEventListener('resize', updateButtons);
+
+            updateButtons();
+        });
+    });
+</script>
 
 
 {{-- =========================================================
@@ -334,87 +608,311 @@
 ========================================================= --}}
 <section
     id="deals"
-    class="py-20 bg-gray-bg"
+    class="py-12 sm:py-16 lg:py-20 bg-gray-bg"
 >
-    <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="relative overflow-hidden rounded-3xl bg-navy px-8 py-12 lg:px-14">
+        <div
+            class="relative overflow-hidden
+                   rounded-2xl sm:rounded-3xl
+                   bg-navy
+                   px-6 sm:px-8 lg:px-14
+                   py-9 sm:py-11 lg:py-14
+                   shadow-xl shadow-navy/10"
+        >
 
-            {{-- Decorative circles --}}
-            <div class="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-teal/10"></div>
-            <div class="absolute right-32 -bottom-24 w-48 h-48 rounded-full bg-teal/5"></div>
+            {{-- Decorative glow --}}
+            <div
+                class="pointer-events-none absolute
+                       -right-24 -top-24
+                       w-64 h-64
+                       rounded-full
+                       bg-teal/10
+                       blur-sm"
+            ></div>
 
-            <div class="relative grid lg:grid-cols-2 gap-10 items-center">
+            <div
+                class="pointer-events-none absolute
+                       right-24 -bottom-28
+                       w-52 h-52
+                       rounded-full
+                       bg-teal/5"
+            ></div>
 
-                <div>
+            {{-- Small accent --}}
+            <div
+                class="pointer-events-none absolute
+                       left-[45%] top-8
+                       w-24 h-24
+                       rounded-full
+                       bg-white/5
+                       blur-2xl"
+            ></div>
 
-                    <span class="inline-block bg-teal/15 text-teal px-4 py-2 rounded-full text-xs font-semibold mb-5">
+
+            <div
+                class="relative
+                       grid lg:grid-cols-[1.2fr_0.8fr]
+                       gap-10 lg:gap-14
+                       items-center"
+            >
+
+                {{-- =================================================
+                    LEFT CONTENT
+                ================================================== --}}
+                <div class="max-w-xl">
+
+                    <span
+                        class="inline-flex items-center gap-2
+                               bg-teal/15
+                               border border-teal/20
+                               text-teal
+                               px-3.5 sm:px-4
+                               py-2
+                               rounded-full
+                               text-[11px] sm:text-xs
+                               font-semibold
+                               tracking-wide
+                               mb-5"
+                    >
+                        <x-lucide-badge-percent class="w-4 h-4" />
+
                         SHOPHOP DEALS
                     </span>
 
-                    <h2 class="text-white">
+
+                    <h2
+                        class="text-white
+                               text-3xl sm:text-4xl lg:text-[42px]
+                               font-bold
+                               leading-tight"
+                    >
                         Great Finds.
-                        <span class="text-teal">
+                        <span class="block text-teal">
                             Better Prices.
                         </span>
                     </h2>
 
-                    <p class="text-white/65 mt-4 max-w-lg">
-                        Save more on selected products and discover limited-time
-                        deals made just for you.
+
+                    <p
+                        class="text-sm sm:text-base
+                               text-white/65
+                               mt-5
+                               max-w-lg
+                               leading-relaxed"
+                    >
+                        Discover limited-time offers, discounted favorites,
+                        and great-value finds across ShopHop.
                     </p>
+
+
+                    {{-- Deal highlights --}}
+                    <div
+                        class="flex flex-wrap
+                               gap-x-5 gap-y-3
+                               mt-6"
+                    >
+
+                        <div class="flex items-center gap-2 text-white/75 text-xs sm:text-sm">
+
+                            <span
+                                class="w-5 h-5
+                                       rounded-full
+                                       bg-teal/15
+                                       flex items-center justify-center"
+                            >
+                                <x-lucide-check class="w-3 h-3 text-teal" />
+                            </span>
+
+                            Limited-time deals
+
+                        </div>
+
+
+                        <div class="flex items-center gap-2 text-white/75 text-xs sm:text-sm">
+
+                            <span
+                                class="w-5 h-5
+                                       rounded-full
+                                       bg-teal/15
+                                       flex items-center justify-center"
+                            >
+                                <x-lucide-check class="w-3 h-3 text-teal" />
+                            </span>
+
+                            Selected discounts
+
+                        </div>
+
+                    </div>
+
 
                     <a
                         href="#trending"
-                        class="inline-flex items-center gap-2 mt-7 bg-teal hover:bg-teal-dark text-white font-semibold px-6 py-3 rounded-full transition"
+                        class="inline-flex
+                               items-center justify-center gap-2
+                               mt-7 sm:mt-8
+                               bg-teal
+                               hover:bg-teal-dark
+                               text-white
+                               text-sm font-semibold
+                               px-6
+                               py-3.5
+                               rounded-full
+                               shadow-lg shadow-teal/20
+                               hover:-translate-y-0.5
+                               transition-all duration-300"
                     >
                         Explore Deals
+
                         <x-lucide-arrow-right class="w-4 h-4" />
                     </a>
 
                 </div>
 
 
-                <div class="grid grid-cols-2 gap-4 max-w-sm lg:ml-auto">
 
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
-                        <x-lucide-tag class="w-6 h-6 text-teal mb-4" />
-                        <p class="text-white text-2xl font-bold">
-                            50%
+                {{-- =================================================
+                    RIGHT BENEFIT CARDS
+                ================================================== --}}
+                <div
+                    class="grid grid-cols-2
+                           gap-3 sm:gap-4
+                           w-full
+                           max-w-md
+                           lg:max-w-none
+                           lg:ml-auto"
+                >
+
+                    {{-- Discount --}}
+                    <div
+                        class="group
+                               bg-white/10
+                               hover:bg-white/15
+                               backdrop-blur
+                               rounded-2xl
+                               p-4 sm:p-5
+                               border border-white/10
+                               transition-all duration-300"
+                    >
+
+                        <div
+                            class="w-10 h-10
+                                   rounded-xl
+                                   bg-teal/15
+                                   flex items-center justify-center
+                                   mb-4"
+                        >
+                            <x-lucide-tag class="w-5 h-5 text-teal" />
+                        </div>
+
+                        <p class="text-white text-xl sm:text-2xl font-bold">
+                            Up to 50%
                         </p>
-                        <p class="text-white/55 text-xs mt-1">
-                            Selected items
+
+                        <p class="text-white/50 text-[10px] sm:text-xs mt-1.5 leading-relaxed">
+                            Off selected items
                         </p>
+
                     </div>
 
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
-                        <x-lucide-truck class="w-6 h-6 text-teal mb-4" />
-                        <p class="text-white text-2xl font-bold">
+
+                    {{-- Delivery --}}
+                    <div
+                        class="group
+                               bg-white/10
+                               hover:bg-white/15
+                               backdrop-blur
+                               rounded-2xl
+                               p-4 sm:p-5
+                               border border-white/10
+                               transition-all duration-300"
+                    >
+
+                        <div
+                            class="w-10 h-10
+                                   rounded-xl
+                                   bg-teal/15
+                                   flex items-center justify-center
+                                   mb-4"
+                        >
+                            <x-lucide-truck class="w-5 h-5 text-teal" />
+                        </div>
+
+                        <p class="text-white text-xl sm:text-2xl font-bold">
                             Fast
                         </p>
-                        <p class="text-white/55 text-xs mt-1">
+
+                        <p class="text-white/50 text-[10px] sm:text-xs mt-1.5 leading-relaxed">
                             Delivery options
                         </p>
+
                     </div>
 
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
-                        <x-lucide-shield-check class="w-6 h-6 text-teal mb-4" />
-                        <p class="text-white text-2xl font-bold">
+
+                    {{-- Secure --}}
+                    <div
+                        class="group
+                               bg-white/10
+                               hover:bg-white/15
+                               backdrop-blur
+                               rounded-2xl
+                               p-4 sm:p-5
+                               border border-white/10
+                               transition-all duration-300"
+                    >
+
+                        <div
+                            class="w-10 h-10
+                                   rounded-xl
+                                   bg-teal/15
+                                   flex items-center justify-center
+                                   mb-4"
+                        >
+                            <x-lucide-shield-check class="w-5 h-5 text-teal" />
+                        </div>
+
+                        <p class="text-white text-xl sm:text-2xl font-bold">
                             Secure
                         </p>
-                        <p class="text-white/55 text-xs mt-1">
-                            Shopping experience
+
+                        <p class="text-white/50 text-[10px] sm:text-xs mt-1.5 leading-relaxed">
+                            Safe shopping experience
                         </p>
+
                     </div>
 
-                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
-                        <x-lucide-headphones class="w-6 h-6 text-teal mb-4" />
-                        <p class="text-white text-2xl font-bold">
+
+                    {{-- Support --}}
+                    <div
+                        class="group
+                               bg-white/10
+                               hover:bg-white/15
+                               backdrop-blur
+                               rounded-2xl
+                               p-4 sm:p-5
+                               border border-white/10
+                               transition-all duration-300"
+                    >
+
+                        <div
+                            class="w-10 h-10
+                                   rounded-xl
+                                   bg-teal/15
+                                   flex items-center justify-center
+                                   mb-4"
+                        >
+                            <x-lucide-headphones class="w-5 h-5 text-teal" />
+                        </div>
+
+                        <p class="text-white text-xl sm:text-2xl font-bold">
                             24/7
                         </p>
-                        <p class="text-white/55 text-xs mt-1">
+
+                        <p class="text-white/50 text-[10px] sm:text-xs mt-1.5 leading-relaxed">
                             Customer support
                         </p>
+
                     </div>
 
                 </div>
@@ -427,54 +925,97 @@
 </section>
 
 
+
 {{-- =========================================================
     TRENDING PRODUCTS
 ========================================================= --}}
 <section
     id="trending"
-    class="py-20 bg-white"
+    class="py-12 sm:py-16 lg:py-20 bg-white"
 >
 
-    <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-10">
+
+        {{-- Section header --}}
+        <div
+            class="flex flex-col
+                   md:flex-row
+                   md:items-end
+                   md:justify-between
+                   gap-4
+                   mb-8 sm:mb-10"
+        >
 
             <div>
 
-                <p class="text-teal-dark text-sm font-semibold mb-2">
+                <p
+                    class="text-teal-dark
+                           text-xs sm:text-sm
+                           font-semibold
+                           mb-2
+                           tracking-wide"
+                >
                     POPULAR PICKS
                 </p>
+
 
                 <h2 class="text-navy">
                     Trending Now
                 </h2>
 
-                <p class="text-navy/55 mt-2">
+
+                <p class="text-sm sm:text-base text-navy/55 mt-2">
                     Products shoppers are loving right now.
                 </p>
 
             </div>
 
+
             <a
                 href="#"
-                class="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-semibold text-teal-dark hover:text-navy transition"
+                class="inline-flex items-center gap-2
+                       text-sm font-semibold
+                       text-teal-dark
+                       hover:text-navy
+                       transition"
             >
+
                 View all products
+
                 <x-lucide-arrow-right class="w-4 h-4" />
+
             </a>
 
         </div>
 
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+
+        {{-- Product Grid --}}
+        <div
+            class="grid
+                   grid-cols-1
+                   min-[420px]:grid-cols-2
+                   md:grid-cols-3
+                   lg:grid-cols-4
+                   gap-4 sm:gap-5"
+        >
 
             @foreach ($trendingProducts as $product)
 
                 <article
-                    class="group bg-white rounded-2xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-xl transition-all duration-300"
+                    class="group
+                           bg-white
+                           rounded-2xl
+                           overflow-hidden
+                           border border-gray-border
+                           hover:border-teal/30
+                           hover:shadow-xl
+                           transition-all duration-300"
                 >
 
-                    {{-- PRODUCT IMAGE --}}
+
+                    {{-- Product Image --}}
                     <div class="relative aspect-square bg-gray-bg overflow-hidden">
 
                         <img
@@ -482,52 +1023,84 @@
                                 ? $product['image']
                                 : asset('images/' . $product['image']) }}"
                             alt="{{ $product['name'] }}"
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            class="w-full h-full
+                                   object-cover
+                                   group-hover:scale-105
+                                   transition-transform duration-500"
                         >
 
 
-                        {{-- SALE --}}
+                        {{-- Sale --}}
                         @if ($product['original_price'])
 
-                            <span class="absolute top-3 left-3 bg-teal text-white text-[10px] font-bold px-3 py-1.5 rounded-full">
+                            <span
+                                class="absolute
+                                       top-3 left-3
+                                       bg-teal
+                                       text-white
+                                       text-[10px] font-bold
+                                       px-3 py-1.5
+                                       rounded-full"
+                            >
                                 SALE
                             </span>
 
                         @endif
 
 
-                        {{-- WISHLIST --}}
+                        {{-- Wishlist --}}
                         <button
                             type="button"
-                            class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-navy hover:text-teal-dark hover:scale-105 transition"
+                            class="absolute
+                                   top-3 right-3
+                                   w-9 h-9
+                                   rounded-full
+                                   bg-white/95
+                                   backdrop-blur
+                                   flex items-center justify-center
+                                   text-navy
+                                   hover:text-teal-dark
+                                   hover:scale-105
+                                   transition"
                             title="Add to wishlist"
+                            aria-label="Add {{ $product['name'] }} to wishlist"
                         >
+
                             <x-lucide-heart class="w-4 h-4" />
+
                         </button>
 
                     </div>
 
 
-                    {{-- PRODUCT INFORMATION --}}
-                    <div class="p-5">
 
-                        <span class="text-xs text-navy/45">
+                    {{-- Product Info --}}
+                    <div class="p-4 sm:p-5">
+
+
+                        <span class="text-[11px] sm:text-xs text-navy/45">
                             {{ $product['category'] }}
                         </span>
 
-                        <h3 class="text-navy mt-1 mb-2 line-clamp-1">
+
+                        <h3
+                            class="text-base sm:text-lg
+                                   text-navy
+                                   mt-1 mb-2
+                                   line-clamp-1"
+                        >
                             {{ $product['name'] }}
                         </h3>
 
 
-                        {{-- RATING --}}
-                        <div class="flex items-center gap-2 mb-3">
+                        {{-- Rating --}}
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
 
-                            <div class="flex text-amber-400 text-xs">
+                            <div class="flex text-amber-400 text-[10px] sm:text-xs">
                                 ★★★★★
                             </div>
 
-                            <span class="text-xs text-navy/45">
+                            <span class="text-[10px] sm:text-xs text-navy/45">
                                 {{ $product['rating'] }}
                                 ({{ $product['reviews'] }})
                             </span>
@@ -535,16 +1108,22 @@
                         </div>
 
 
-                        {{-- PRICE --}}
-                        <div class="flex items-center gap-2 mb-4">
 
-                            <span class="font-bold text-lg text-navy">
+                        {{-- Price --}}
+                        <div class="flex flex-wrap items-center gap-2 mb-4">
+
+                            <span class="font-bold text-base sm:text-lg text-navy">
                                 ₱{{ number_format($product['price']) }}
                             </span>
 
+
                             @if ($product['original_price'])
 
-                                <span class="line-through text-xs text-navy/35">
+                                <span
+                                    class="line-through
+                                           text-[11px] sm:text-xs
+                                           text-navy/35"
+                                >
                                     ₱{{ number_format($product['original_price']) }}
                                 </span>
 
@@ -553,13 +1132,26 @@
                         </div>
 
 
-                        {{-- ADD TO CART --}}
+
+                        {{-- Add to cart --}}
                         <button
                             type="button"
-                            class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-xl transition"
+                            class="w-full
+                                   flex items-center justify-center gap-2
+                                   bg-teal
+                                   hover:bg-teal-dark
+                                   text-white
+                                   text-xs sm:text-sm
+                                   font-semibold
+                                   py-2.5 sm:py-3
+                                   rounded-xl
+                                   transition"
                         >
+
                             <x-lucide-shopping-cart class="w-4 h-4" />
+
                             Add to Cart
+
                         </button>
 
                     </div>
@@ -575,82 +1167,150 @@
 </section>
 
 
+
 {{-- =========================================================
     NEW ARRIVALS
 ========================================================= --}}
 <section
     id="new-arrivals"
-    class="py-20 bg-gray-bg"
+    class="py-12 sm:py-16 lg:py-20 bg-gray-bg"
 >
 
-    <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="text-center max-w-xl mx-auto mb-10">
 
-            <p class="text-teal-dark text-sm font-semibold mb-2">
+        {{-- Header --}}
+        <div class="text-center max-w-xl mx-auto mb-8 sm:mb-10">
+
+            <p
+                class="text-teal-dark
+                       text-xs sm:text-sm
+                       font-semibold
+                       mb-2
+                       tracking-wide"
+            >
                 JUST IN
             </p>
+
 
             <h2 class="text-navy">
                 New Arrivals
             </h2>
 
-            <p class="text-navy/55 mt-2">
+
+            <p class="text-sm sm:text-base text-navy/55 mt-2">
                 Fresh products and exciting finds added to ShopHop.
             </p>
 
         </div>
 
 
-        <div class="bg-white rounded-3xl border border-gray-border p-8 lg:p-12">
 
-            <div class="grid lg:grid-cols-2 gap-10 items-center">
+        {{-- Main card --}}
+        <div
+            class="bg-white
+                   rounded-2xl sm:rounded-3xl
+                   border border-gray-border
+                   p-5 sm:p-8 lg:p-12"
+        >
 
+            <div class="grid lg:grid-cols-2 gap-8 sm:gap-10 items-center">
+
+
+                {{-- Content --}}
                 <div>
 
-                    <span class="inline-block bg-teal-light text-teal-dark text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
+                    <span
+                        class="inline-block
+                               bg-teal-light
+                               text-teal-dark
+                               text-xs font-semibold
+                               px-3 py-1.5
+                               rounded-full
+                               mb-4 sm:mb-5"
+                    >
                         NEW THIS WEEK
                     </span>
 
+
                     <h2 class="text-navy">
+
                         Find something
+
                         <span class="text-teal">
                             you'll love.
                         </span>
+
                     </h2>
 
-                    <p class="text-navy/55 mt-4 leading-relaxed">
+
+                    <p
+                        class="text-sm sm:text-base
+                               text-navy/55
+                               mt-4
+                               leading-relaxed
+                               max-w-lg"
+                    >
                         From everyday essentials to the latest trends,
                         there's always something new waiting for you.
                     </p>
 
+
                     <a
-                        href="#"
-                        class="inline-flex items-center gap-2 mt-6 text-sm font-semibold text-teal-dark hover:text-navy transition"
+                        href="#trending"
+                        class="inline-flex items-center gap-2
+                               mt-5 sm:mt-6
+                               text-sm font-semibold
+                               text-teal-dark
+                               hover:text-navy
+                               transition"
                     >
+
                         Discover new arrivals
+
                         <x-lucide-arrow-right class="w-4 h-4" />
+
                     </a>
 
                 </div>
 
 
-                <div class="grid grid-cols-2 gap-4">
+
+                {{-- Images --}}
+                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+
 
                     <div class="aspect-square rounded-2xl overflow-hidden bg-gray-bg">
+
                         <img
                             src="{{ asset('images/hero/earbuds.jpg') }}"
                             alt="New earbuds"
-                            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            class="w-full h-full
+                                   object-cover
+                                   hover:scale-105
+                                   transition-transform duration-500"
                         >
+
                     </div>
 
-                    <div class="aspect-square rounded-2xl overflow-hidden bg-gray-bg mt-8">
+
+                    <div
+                        class="aspect-square
+                               rounded-2xl
+                               overflow-hidden
+                               bg-gray-bg
+                               mt-5 sm:mt-8"
+                    >
+
                         <img
                             src="{{ asset('images/hero/watch.jpg') }}"
                             alt="New fitness watch"
-                            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                            class="w-full h-full
+                                   object-cover
+                                   hover:scale-105
+                                   transition-transform duration-500"
                         >
+
                     </div>
 
                 </div>
@@ -664,38 +1324,89 @@
 </section>
 
 
+
 {{-- =========================================================
     FINAL CTA
 ========================================================= --}}
-<section class="py-20 bg-white">
+<section class="py-12 sm:py-16 lg:py-20 bg-white">
 
-    <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="relative overflow-hidden rounded-3xl bg-[#E9F8F4] px-8 py-14 lg:px-16 text-center">
+        <div
+            class="relative
+                   overflow-hidden
+                   rounded-2xl sm:rounded-3xl
+                   bg-[#E9F8F4]
+                   px-5 sm:px-8 lg:px-16
+                   py-10 sm:py-12 lg:py-14
+                   text-center"
+        >
 
-            <div class="absolute -left-20 -top-20 w-48 h-48 rounded-full bg-teal/10"></div>
-            <div class="absolute -right-20 -bottom-20 w-48 h-48 rounded-full bg-teal/10"></div>
+
+            {{-- Decorations --}}
+            <div
+                class="absolute
+                       -left-20 -top-20
+                       w-40 sm:w-48
+                       h-40 sm:h-48
+                       rounded-full
+                       bg-teal/10"
+            ></div>
+
+            <div
+                class="absolute
+                       -right-20 -bottom-20
+                       w-40 sm:w-48
+                       h-40 sm:h-48
+                       rounded-full
+                       bg-teal/10"
+            ></div>
+
+
 
             <div class="relative max-w-2xl mx-auto">
 
-                <p class="text-teal-dark text-sm font-semibold mb-3">
+                <p
+                    class="text-teal-dark
+                           text-xs sm:text-sm
+                           font-semibold
+                           mb-3
+                           tracking-wide"
+                >
                     SHOPHOP
                 </p>
+
 
                 <h2 class="text-navy">
                     Ready to Hop In?
                 </h2>
 
-                <p class="text-navy/55 mt-3 mb-7">
+
+                <p class="text-sm sm:text-base text-navy/55 mt-3 mb-6 sm:mb-7">
                     Discover your next favorite product today.
                 </p>
 
+
                 <a
                     href="#trending"
-                    class="inline-flex items-center gap-2 bg-teal hover:bg-teal-dark text-white font-semibold px-7 py-3.5 rounded-full transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20"
+                    class="inline-flex
+                           items-center justify-center gap-2
+                           bg-teal
+                           hover:bg-teal-dark
+                           text-white
+                           text-sm font-semibold
+                           px-6 sm:px-7
+                           py-3 sm:py-3.5
+                           rounded-full
+                           transition-all duration-300
+                           hover:-translate-y-0.5
+                           shadow-lg shadow-teal/20"
                 >
+
                     Start Shopping
+
                     <x-lucide-arrow-right class="w-4 h-4" />
+
                 </a>
 
             </div>
@@ -705,6 +1416,10 @@
     </div>
 
 </section>
+
+
+@endsection
+
 
 
 {{-- =========================================================
@@ -718,7 +1433,7 @@
 
         0%,
         100% {
-            transform: translateY(0px);
+            transform: translateY(0);
         }
 
         50% {
@@ -749,9 +1464,11 @@
         animation: shopHopFloat 5s ease-in-out infinite;
     }
 
+
     .hero-floating-card {
         animation: shopHopFloat 4s ease-in-out infinite;
     }
+
 
     .hero-delay {
         animation-delay: 1.5s;
@@ -761,6 +1478,23 @@
 
 </style>
 
-@endpush
+    /*
+    ========================================
+    ACCESSIBILITY
+    Disable animations when user prefers
+    reduced motion.
+    ========================================
+    */
 
-@endsection
+    @media (prefers-reduced-motion: reduce) {
+
+        .hero-main-product,
+        .hero-floating-card {
+            animation: none;
+        }
+
+    }
+
+</style>
+
+@endpush

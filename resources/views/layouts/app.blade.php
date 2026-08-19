@@ -1,9 +1,10 @@
 <!DOCTYPE html>
-{{-- Path in your project: resources/views/layouts/app.blade.php --}}
+{{-- Path: resources/views/layouts/app.blade.php --}}
 
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
 
     <meta
@@ -18,8 +19,9 @@
 
     {{-- ========================================
         GOOGLE FONTS
-        ShopHop uses Poppins throughout the website
+        ShopHop uses Poppins throughout
     ========================================= --}}
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
 
     <link
@@ -37,30 +39,33 @@
     {{-- ========================================
         VITE
     ========================================= --}}
+
     @vite([
         'resources/css/app.css',
         'resources/js/app.js'
     ])
 
 
-    {{-- Additional page-specific styles --}}
+    {{-- Page-specific styles --}}
     @stack('styles')
 
 </head>
 
 
-<body class="font-sans text-navy bg-white">
+<body class="text-navy bg-white">
 
 
     {{-- ========================================
         NAVBAR
     ========================================= --}}
+
     @include('partials.navbar')
 
 
     {{-- ========================================
         MAIN CONTENT
     ========================================= --}}
+
     <main>
         @yield('content')
     </main>
@@ -69,12 +74,14 @@
     {{-- ========================================
         FOOTER
     ========================================= --}}
+
     @include('partials.footer')
 
 
     {{-- ========================================
         PAGE-SPECIFIC SCRIPTS
     ========================================= --}}
+
     @stack('scripts')
 
 
