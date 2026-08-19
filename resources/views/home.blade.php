@@ -1,4 +1,4 @@
-{{-- Path: resources/views/home.blade.php --}}
+{{-- resources/views/home.blade.php --}}
 
 @extends('layouts.app')
 
@@ -6,240 +6,367 @@
 
 @section('content')
 
-    {{-- =========================================================
-        HERO SECTION
-    ========================================================== --}}
-    <section class="bg-gray-bg overflow-hidden">
-        <div class="max-w-310 mx-auto px-6 py-16 lg:py-20">
+{{-- =========================================================
+    HERO SECTION
+========================================================= --}}
+<section class="relative overflow-hidden bg-gray-bg">
 
-            <div class="grid lg:grid-cols-2 gap-10 items-center">
+    {{-- Decorative background circles --}}
+    <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-teal/10"></div>
+    <div class="absolute -bottom-40 -left-40 w-96 h-96 rounded-full bg-teal/5"></div>
 
-                {{-- =========================
-                    HERO LEFT CONTENT
-                ========================== --}}
-                <div>
+    <div class="relative max-w-310 mx-auto px-6 py-20 lg:py-24">
 
-                    {{-- Small badge --}}
-                    <div class="inline-flex items-center gap-2 bg-teal/10 text-teal-dark px-4 py-2 rounded-full text-xs font-medium mb-6">
-                        <span class="text-teal">✦</span>
-                        New arrivals every day
+        <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+            {{-- LEFT CONTENT --}}
+            <div class="max-w-xl">
+
+                {{-- Small badge --}}
+                <div class="inline-flex items-center gap-2 bg-teal-light text-teal-dark px-4 py-2 rounded-full text-sm font-medium mb-6">
+                    <span class="w-2 h-2 rounded-full bg-teal"></span>
+                    New arrivals every day
+                </div>
+
+                <h1 class="text-navy mb-6">
+                    Everything You Love,
+                    <span class="block text-teal">
+                        Just a Hop Away.
+                    </span>
+                </h1>
+
+                <p class="text-navy/65 text-base lg:text-lg leading-relaxed max-w-lg mb-8">
+                    Discover everyday essentials, trending finds, and products
+                    you'll love — all in one place.
+                </p>
+
+                <div class="flex flex-wrap gap-4">
+
+                    <a
+                        href="#trending"
+                        class="inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white font-semibold px-7 py-3.5 rounded-full transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20"
+                    >
+                        Shop Now
+                        <x-lucide-arrow-right class="w-4 h-4" />
+                    </a>
+
+                    <a
+                        href="#categories"
+                        class="inline-flex items-center justify-center border-2 border-navy text-navy hover:bg-navy hover:text-white font-semibold px-7 py-3 rounded-full transition-all duration-300"
+                    >
+                        Explore Categories
+                    </a>
+
+                </div>
+
+                {{-- STATS --}}
+                <div class="flex flex-wrap gap-8 mt-12 pt-8 border-t border-navy/10">
+
+                    <div>
+                        <div class="text-2xl font-bold text-navy">
+                            50K+
+                        </div>
+                        <div class="text-xs text-navy/55">
+                            Products
+                        </div>
                     </div>
 
-                    {{-- Main heading --}}
-                    <h1 class="font-serif text-5xl lg:text-[58px] leading-[1.05] text-navy">
-                        Everything You Love,
-                        <span class="block text-teal">
-                            Just a Hop Away.
-                        </span>
-                    </h1>
+                    <div class="w-px bg-navy/10"></div>
 
-                    {{-- Description --}}
-                    <p class="text-navy/65 text-base leading-7 max-w-120 mt-6">
-                        Discover everyday essentials, trending finds,
-                        and products you'll love — all in one place.
-                    </p>
-
-                    {{-- Buttons --}}
-                    <div class="flex flex-wrap gap-3 mt-7">
-
-                        <a
-                            href="#products"
-                            class="bg-teal hover:bg-teal-dark text-white font-semibold text-sm px-7 py-3.5 rounded-full shadow-md transition"
-                        >
-                            Shop Now
-                        </a>
-
-                        <a
-                            href="#categories"
-                            class="border border-navy text-navy font-semibold text-sm px-7 py-3.5 rounded-full hover:bg-navy hover:text-white transition"
-                        >
-                            Explore Categories
-                        </a>
-
+                    <div>
+                        <div class="text-2xl font-bold text-navy">
+                            2M+
+                        </div>
+                        <div class="text-xs text-navy/55">
+                            Happy Shoppers
+                        </div>
                     </div>
 
-                    {{-- Statistics --}}
-                    <div class="flex items-center gap-6 mt-8">
+                    <div class="w-px bg-navy/10"></div>
 
-                        <div>
-                            <strong class="block text-xl font-bold text-navy">
-                                50K+
-                            </strong>
-
-                            <span class="text-xs text-navy/50">
-                                Products
-                            </span>
+                    <div>
+                        <div class="text-2xl font-bold text-navy">
+                            4.9
                         </div>
-
-                        <div class="w-px h-8 bg-navy/10"></div>
-
-                        <div>
-                            <strong class="block text-xl font-bold text-navy">
-                                2M+
-                            </strong>
-
-                            <span class="text-xs text-navy/50">
-                                Happy Shoppers
-                            </span>
+                        <div class="text-xs text-navy/55">
+                            App Rating
                         </div>
-
-                        <div class="w-px h-8 bg-navy/10"></div>
-
-                        <div>
-                            <strong class="block text-xl font-bold text-navy">
-                                4.9★
-                            </strong>
-
-                            <span class="text-xs text-navy/50">
-                                App Rating
-                            </span>
-                        </div>
-
                     </div>
 
                 </div>
 
-
-                {{-- =========================
-                    HERO RIGHT VISUAL
-                ========================== --}}
-                <div class="relative min-h-105 w-full">
-
-                    {{-- Decorative glow --}}
-                    <div class="absolute w-72 h-72 bg-teal/10 rounded-full blur-3xl right-10 top-16"></div>
+            </div>
 
 
-                    {{-- =========================
-                        DISCOUNT BADGE
-                    ========================== --}}
-                    <div
-                        class="absolute right-1 top-0 z-30
-                               w-14 h-14 rounded-full
-                               bg-navy text-white
-                               flex flex-col items-center justify-center
-                               text-[8px] leading-2.5
-                               font-bold text-center
-                               shadow-lg"
+            {{-- RIGHT HERO PRODUCTS --}}
+            <div class="relative min-h-105 lg:min-h-120">
+
+                {{-- Main product --}}
+                <div
+                    class="absolute z-20 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                           w-64 h-64 sm:w-72 sm:h-72 lg:w-80 lg:h-80
+                           rounded-3xl bg-white shadow-2xl
+                           border border-white overflow-hidden
+                           hero-main-product"
+                >
+                    <img
+                        src="{{ asset('images/hero/sneaker.jpg') }}"
+                        alt="Featured ShopHop product"
+                        class="w-full h-full object-cover"
                     >
-                        <span>UP TO</span>
-                        <span class="text-teal text-[10px]">50%</span>
-                        <span>OFF</span>
+                </div>
+
+
+                {{-- Earbuds card --}}
+                <div
+                    class="absolute z-30 left-2 top-5 sm:left-8 lg:left-4
+                           w-32 sm:w-36
+                           bg-white rounded-2xl overflow-hidden
+                           shadow-xl border border-white
+                           hero-floating-card"
+                >
+                    <img
+                        src="{{ asset('images/hero/earbuds.jpg') }}"
+                        alt="Earbuds"
+                        class="w-full h-28 object-cover"
+                    >
+
+                    <div class="px-3 py-2">
+                        <p class="text-[11px] font-semibold text-navy">
+                            Earbuds Pro
+                        </p>
+                        <p class="text-xs font-bold text-teal-dark">
+                            ₱1,299
+                        </p>
+                    </div>
+                </div>
+
+
+                {{-- Watch card --}}
+                <div
+                    class="absolute z-30 right-2 bottom-8 sm:right-8 lg:right-0
+                           w-32 sm:w-36
+                           bg-white rounded-2xl overflow-hidden
+                           shadow-xl border border-white
+                           hero-floating-card hero-delay"
+                >
+                    <img
+                        src="{{ asset('images/hero/watch.jpg') }}"
+                        alt="Fitness Watch"
+                        class="w-full h-28 object-cover"
+                    >
+
+                    <div class="px-3 py-2">
+                        <p class="text-[11px] font-semibold text-navy">
+                            Fitness Watch
+                        </p>
+                        <p class="text-xs font-bold text-teal-dark">
+                            ₱1,799
+                        </p>
+                    </div>
+                </div>
+
+
+                {{-- Discount badge --}}
+                <div
+                    class="absolute z-40 right-0 top-5 sm:right-5 lg:right-8
+                           w-16 h-16 rounded-full
+                           bg-navy text-white
+                           flex flex-col items-center justify-center
+                           shadow-lg
+                           animate-pulse"
+                >
+                    <span class="text-[9px] font-bold">
+                        UP TO
+                    </span>
+
+                    <span class="text-sm font-extrabold text-teal">
+                        50%
+                    </span>
+
+                    <span class="text-[8px] font-bold">
+                        OFF
+                    </span>
+                </div>
+
+
+                {{-- Rating --}}
+                <div
+                    class="absolute z-40 left-4 bottom-4 sm:left-10 lg:left-0
+                           bg-white px-4 py-2.5 rounded-xl
+                           shadow-lg flex items-center gap-2"
+                >
+                    <div class="flex text-amber-400 text-sm">
+                        ★★★★★
                     </div>
 
+                    <span class="text-xs font-semibold text-navy">
+                        4.9
+                    </span>
+                </div>
 
-                    {{-- =========================
-                        EARBUDS PRODUCT CARD
-                    ========================== --}}
+            </div>
+
+        </div>
+
+    </div>
+</section>
+
+
+{{-- =========================================================
+    CATEGORIES
+========================================================= --}}
+<section
+    id="categories"
+    class="py-20 bg-white"
+>
+    <div class="max-w-310 mx-auto px-6">
+
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-10">
+
+            <div>
+                <p class="text-teal-dark text-sm font-semibold mb-2">
+                    EXPLORE
+                </p>
+
+                <h2 class="text-navy">
+                    Shop by Category
+                </h2>
+
+                <p class="text-navy/55 mt-2">
+                    Find what you need, faster.
+                </p>
+            </div>
+
+            <a
+                href="#"
+                class="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-semibold text-teal-dark hover:text-navy transition"
+            >
+                View all
+                <x-lucide-arrow-right class="w-4 h-4" />
+            </a>
+
+        </div>
+
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+
+            @foreach ($categories as $category)
+
+                <a
+                    href="#"
+                    class="group bg-gray-bg rounded-2xl p-6 text-center border border-transparent hover:border-teal/30 hover:bg-teal-light transition-all duration-300 hover:-translate-y-1"
+                >
+
                     <div
-                        class="absolute left-[4%] top-5 z-20
-                               w-32 bg-white rounded-xl overflow-hidden
-                               shadow-lg border border-white"
+                        class="mx-auto w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-teal-dark shadow-sm group-hover:bg-teal group-hover:text-white transition-all duration-300"
                     >
-
-                        <div class="h-24 bg-gray-100 overflow-hidden">
-
-                            <img
-                                src="{{ asset('images/hero/earbuds.jpg') }}"
-                                alt="Earbuds Pro"
-                                class="w-full h-full object-cover"
-                                onerror="this.style.display='none'"
-                            >
-
-                        </div>
-
-                        <div class="px-2.5 py-2">
-
-                            <p class="text-[10px] font-semibold text-navy">
-                                Earbuds Pro
-                            </p>
-
-                            <p class="text-[10px] font-bold text-teal">
-                                ₱1,299
-                            </p>
-
-                        </div>
-
+                        <x-dynamic-component
+                            :component="'lucide-' . $category['icon']"
+                            class="w-6 h-6"
+                        />
                     </div>
 
+                    <span class="block mt-4 text-sm font-semibold text-navy">
+                        {{ $category['name'] }}
+                    </span>
 
-                    {{-- =========================
-                        MAIN SNEAKER
-                    ========================== --}}
-                    <div
-                        class="absolute left-[26%] top-16 z-10
-                               w-61.25-[245px]
-                               bg-[#111111]
-                               rounded-2xl
-                               border-4 border-white
-                               shadow-2xl
-                               overflow-hidden"
-                    >
+                </a>
 
-                        <img
-                            src="{{ asset('images/hero/sneaker.jpg') }}"
-                            alt="Sneakers"
-                            class="w-full h-full object-cover"
-                            onerror="this.style.display='none'"
-                        >
+            @endforeach
 
-                    </div>
+        </div>
+
+    </div>
+</section>
 
 
-                    {{-- =========================
-                        RATING BADGE
-                    ========================== --}}
-                    <div
-                        class="absolute left-[18%] bottom-8 z-30
-                               bg-white rounded-full
-                               px-4 py-2.5
-                               shadow-lg
-                               text-xs
-                               border border-gray-100"
-                    >
+{{-- =========================================================
+    DEALS / PROMOTION
+========================================================= --}}
+<section
+    id="deals"
+    class="py-20 bg-gray-bg"
+>
+    <div class="max-w-310 mx-auto px-6">
 
-                        <span class="text-orange-400 tracking-tight">
-                            ★★★★★
+        <div class="relative overflow-hidden rounded-3xl bg-navy px-8 py-12 lg:px-14">
+
+            {{-- Decorative circles --}}
+            <div class="absolute -right-20 -top-20 w-64 h-64 rounded-full bg-teal/10"></div>
+            <div class="absolute right-32 -bottom-24 w-48 h-48 rounded-full bg-teal/5"></div>
+
+            <div class="relative grid lg:grid-cols-2 gap-10 items-center">
+
+                <div>
+
+                    <span class="inline-block bg-teal/15 text-teal px-4 py-2 rounded-full text-xs font-semibold mb-5">
+                        SHOPHOP DEALS
+                    </span>
+
+                    <h2 class="text-white">
+                        Great Finds.
+                        <span class="text-teal">
+                            Better Prices.
                         </span>
+                    </h2>
 
-                        <strong class="text-navy ml-1">
-                            4.9
-                        </strong>
+                    <p class="text-white/65 mt-4 max-w-lg">
+                        Save more on selected products and discover limited-time
+                        deals made just for you.
+                    </p>
 
+                    <a
+                        href="#trending"
+                        class="inline-flex items-center gap-2 mt-7 bg-teal hover:bg-teal-dark text-white font-semibold px-6 py-3 rounded-full transition"
+                    >
+                        Explore Deals
+                        <x-lucide-arrow-right class="w-4 h-4" />
+                    </a>
+
+                </div>
+
+
+                <div class="grid grid-cols-2 gap-4 max-w-sm lg:ml-auto">
+
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                        <x-lucide-tag class="w-6 h-6 text-teal mb-4" />
+                        <p class="text-white text-2xl font-bold">
+                            50%
+                        </p>
+                        <p class="text-white/55 text-xs mt-1">
+                            Selected items
+                        </p>
                     </div>
 
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                        <x-lucide-truck class="w-6 h-6 text-teal mb-4" />
+                        <p class="text-white text-2xl font-bold">
+                            Fast
+                        </p>
+                        <p class="text-white/55 text-xs mt-1">
+                            Delivery options
+                        </p>
+                    </div>
 
-                    {{-- =========================
-                        FITNESS WATCH CARD
-                    ========================== --}}
-                    <div
-                        class="absolute right-[1%] bottom-2 z-20
-                               w-32 bg-white rounded-xl overflow-hidden
-                               shadow-lg border border-white"
-                    >
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                        <x-lucide-shield-check class="w-6 h-6 text-teal mb-4" />
+                        <p class="text-white text-2xl font-bold">
+                            Secure
+                        </p>
+                        <p class="text-white/55 text-xs mt-1">
+                            Shopping experience
+                        </p>
+                    </div>
 
-                        <div class="h-24 bg-gray-100 overflow-hidden">
-
-                            <img
-                                src="{{ asset('images/hero/watch.jpg') }}"
-                                alt="Fitness Watch"
-                                class="w-full h-full object-cover"
-                                onerror="this.style.display='none'"
-                            >
-
-                        </div>
-
-                        <div class="px-2.5 py-2">
-
-                            <p class="text-[10px] font-semibold text-navy">
-                                Fitness Watch
-                            </p>
-
-                            <p class="text-[10px] font-bold text-teal">
-                                ₱1,799
-                            </p>
-
-                        </div>
-
+                    <div class="bg-white/10 backdrop-blur rounded-2xl p-5 border border-white/10">
+                        <x-lucide-headphones class="w-6 h-6 text-teal mb-4" />
+                        <p class="text-white text-2xl font-bold">
+                            24/7
+                        </p>
+                        <p class="text-white/55 text-xs mt-1">
+                            Customer support
+                        </p>
                     </div>
 
                 </div>
@@ -247,162 +374,130 @@
             </div>
 
         </div>
-    </section>
+
+    </div>
+</section>
 
 
-    {{-- =========================================================
-        CATEGORIES
-    ========================================================== --}}
-    <section
-        id="categories"
-        class="py-16 bg-white"
-    >
+{{-- =========================================================
+    TRENDING PRODUCTS
+========================================================= --}}
+<section
+    id="trending"
+    class="py-20 bg-white"
+>
 
-        <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-6">
 
-            <div class="mb-8">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between mb-10">
 
-                <h2 class="font-serif text-3xl text-navy mb-1">
-                    Shop by Category
+            <div>
+
+                <p class="text-teal-dark text-sm font-semibold mb-2">
+                    POPULAR PICKS
+                </p>
+
+                <h2 class="text-navy">
+                    Trending Now
                 </h2>
 
-                <p class="text-navy/60">
-                    Find what you need, faster.
+                <p class="text-navy/55 mt-2">
+                    Products shoppers are loving right now.
                 </p>
 
             </div>
 
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
-
-                @foreach ($categories as $category)
-
-                    <a
-                        href="#"
-                        class="group bg-white border border-gray-border rounded-2xl p-6 text-center font-medium hover:-translate-y-1 hover:shadow-lg transition-all duration-300"
-                    >
-
-                        <span
-                            class="inline-flex items-center justify-center
-                                   w-12 h-12 rounded-full
-                                   bg-teal/10 text-teal-dark
-                                   mb-3
-                                   group-hover:bg-teal group-hover:text-white
-                                   transition"
-                        >
-
-                            <x-dynamic-component
-                                :component="'lucide-' . $category['icon']"
-                                class="w-5 h-5"
-                            />
-
-                        </span>
-
-                        <span class="block text-sm text-navy">
-                            {{ $category['name'] }}
-                        </span>
-
-                    </a>
-
-                @endforeach
-
-            </div>
+            <a
+                href="#"
+                class="mt-4 md:mt-0 inline-flex items-center gap-2 text-sm font-semibold text-teal-dark hover:text-navy transition"
+            >
+                View all products
+                <x-lucide-arrow-right class="w-4 h-4" />
+            </a>
 
         </div>
 
-    </section>
 
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
 
-    {{-- =========================================================
-        TRENDING PRODUCTS
-    ========================================================== --}}
-    <section
-        id="products"
-        class="py-16 bg-gray-bg"
-    >
+            @foreach ($trendingProducts as $product)
 
-        <div class="max-w-310 mx-auto px-6">
-
-            <div class="flex items-end justify-between mb-8">
-
-                <div>
-
-                    <h2 class="font-serif text-3xl text-navy mb-1">
-                        Trending Now
-                    </h2>
-
-                    <p class="text-navy/60">
-                        Popular picks that shoppers are loving.
-                    </p>
-
-                </div>
-
-                <a
-                    href="#"
-                    class="hidden sm:flex items-center gap-1 text-sm font-semibold text-teal-dark hover:text-teal transition"
+                <article
+                    class="group bg-white rounded-2xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-xl transition-all duration-300"
                 >
-                    View All
-                    <span>→</span>
-                </a>
 
-            </div>
+                    {{-- PRODUCT IMAGE --}}
+                    <div class="relative aspect-square bg-gray-bg overflow-hidden">
 
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-
-                @foreach ($trendingProducts as $product)
-
-                    <div
-                        class="group bg-white rounded-2xl overflow-hidden
-                               border border-gray-border
-                               hover:-translate-y-1
-                               hover:shadow-xl
-                               transition-all duration-300"
-                    >
-
-                        {{-- Product Image --}}
-                        <div class="relative aspect-square bg-gray-100 overflow-hidden">
-
-                            <img
-                                src="{{ str_starts_with($product['image'], 'http')
-                                    ? $product['image']
-                                    : asset('images/' . $product['image']) }}"
-                                alt="{{ $product['name'] }}"
-                                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            >
+                        <img
+                            src="{{ str_starts_with($product['image'], 'http')
+                                ? $product['image']
+                                : asset('images/' . $product['image']) }}"
+                            alt="{{ $product['name'] }}"
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        >
 
 
-                            {{-- Wishlist --}}
-                            <button
-                                class="absolute top-3 right-3
-                                       w-9 h-9 rounded-full
-                                       bg-white/95
-                                       flex items-center justify-center
-                                       text-navy
-                                       hover:text-teal-dark
-                                       shadow-sm
-                                       transition"
-                                title="Add to wishlist"
-                            >
+                        {{-- SALE --}}
+                        @if ($product['original_price'])
 
-                                <x-lucide-heart class="w-4 h-4" />
+                            <span class="absolute top-3 left-3 bg-teal text-white text-[10px] font-bold px-3 py-1.5 rounded-full">
+                                SALE
+                            </span>
 
-                            </button>
+                        @endif
 
 
-                            {{-- Sale --}}
+                        {{-- WISHLIST --}}
+                        <button
+                            type="button"
+                            class="absolute top-3 right-3 w-9 h-9 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-navy hover:text-teal-dark hover:scale-105 transition"
+                            title="Add to wishlist"
+                        >
+                            <x-lucide-heart class="w-4 h-4" />
+                        </button>
+
+                    </div>
+
+
+                    {{-- PRODUCT INFORMATION --}}
+                    <div class="p-5">
+
+                        <span class="text-xs text-navy/45">
+                            {{ $product['category'] }}
+                        </span>
+
+                        <h3 class="text-navy mt-1 mb-2 line-clamp-1">
+                            {{ $product['name'] }}
+                        </h3>
+
+
+                        {{-- RATING --}}
+                        <div class="flex items-center gap-2 mb-3">
+
+                            <div class="flex text-amber-400 text-xs">
+                                ★★★★★
+                            </div>
+
+                            <span class="text-xs text-navy/45">
+                                {{ $product['rating'] }}
+                                ({{ $product['reviews'] }})
+                            </span>
+
+                        </div>
+
+
+                        {{-- PRICE --}}
+                        <div class="flex items-center gap-2 mb-4">
+
+                            <span class="font-bold text-lg text-navy">
+                                ₱{{ number_format($product['price']) }}
+                            </span>
+
                             @if ($product['original_price'])
 
-                                <span
-                                    class="absolute top-3 left-3
-                                           bg-teal
-                                           text-white
-                                           text-[10px]
-                                           font-bold
-                                           px-2.5 py-1
-                                           rounded-full"
-                                >
-                                    SALE
+                                <span class="line-through text-xs text-navy/35">
+                                    ₱{{ number_format($product['original_price']) }}
                                 </span>
 
                             @endif
@@ -410,381 +505,149 @@
                         </div>
 
 
-                        {{-- Product Information --}}
-                        <div class="p-4">
-
-                            <span class="text-xs text-navy/50">
-                                {{ $product['category'] }}
-                            </span>
-
-                            <h3 class="text-sm font-semibold text-navy mt-1 mb-2 line-clamp-1">
-                                {{ $product['name'] }}
-                            </h3>
-
-
-                            {{-- Rating --}}
-                            <div class="text-xs text-navy/60 mb-2">
-
-                                <span class="text-orange-400">
-                                    ★
-                                </span>
-
-                                {{ $product['rating'] }}
-
-                                <span class="text-navy/40">
-                                    ({{ $product['reviews'] }})
-                                </span>
-
-                            </div>
-
-
-                            {{-- Price --}}
-                            <div class="font-bold text-navy mb-3">
-
-                                ₱{{ number_format($product['price']) }}
-
-                                @if ($product['original_price'])
-
-                                    <span
-                                        class="line-through
-                                               text-navy/40
-                                               font-normal
-                                               text-xs
-                                               ml-2"
-                                    >
-                                        ₱{{ number_format($product['original_price']) }}
-                                    </span>
-
-                                @endif
-
-                            </div>
-
-
-                            {{-- Add to Cart --}}
-                            <button
-                                class="w-full
-                                       bg-teal
-                                       hover:bg-teal-dark
-                                       text-white
-                                       text-sm
-                                       font-semibold
-                                       py-2.5
-                                       rounded-full
-                                       transition"
-                            >
-                                Add to Cart
-                            </button>
-
-                        </div>
+                        {{-- ADD TO CART --}}
+                        <button
+                            type="button"
+                            class="w-full flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-xl transition"
+                        >
+                            <x-lucide-shopping-cart class="w-4 h-4" />
+                            Add to Cart
+                        </button>
 
                     </div>
 
-                @endforeach
+                </article>
 
-            </div>
+            @endforeach
 
         </div>
 
-    </section>
+    </div>
+
+</section>
 
 
-    {{-- =========================================================
-        DEALS BANNER
-    ========================================================== --}}
-    <section
-        id="deals"
-        class="py-12 bg-white"
-    >
+{{-- =========================================================
+    NEW ARRIVALS
+========================================================= --}}
+<section
+    id="new-arrivals"
+    class="py-20 bg-gray-bg"
+>
 
-        <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-6">
 
-            <div
-                class="relative overflow-hidden
-                       bg-navy rounded-3xl
-                       px-8 py-12 md:px-14
-                       flex flex-col md:flex-row
-                       items-center justify-between
-                       gap-8"
-            >
+        <div class="text-center max-w-xl mx-auto mb-10">
 
-                {{-- Decorative circles --}}
-                <div
-                    class="absolute -right-20 -top-20
-                           w-64 h-64
-                           rounded-full
-                           bg-teal/10"
-                ></div>
+            <p class="text-teal-dark text-sm font-semibold mb-2">
+                JUST IN
+            </p>
 
-                <div
-                    class="absolute right-32 -bottom-24
-                           w-48 h-48
-                           rounded-full
-                           bg-teal/10"
-                ></div>
+            <h2 class="text-navy">
+                New Arrivals
+            </h2>
+
+            <p class="text-navy/55 mt-2">
+                Fresh products and exciting finds added to ShopHop.
+            </p>
+
+        </div>
 
 
-                <div class="relative z-10">
+        <div class="bg-white rounded-3xl border border-gray-border p-8 lg:p-12">
 
-                    <span class="text-teal text-xs font-semibold uppercase tracking-wider">
-                        Limited-time offers
+            <div class="grid lg:grid-cols-2 gap-10 items-center">
+
+                <div>
+
+                    <span class="inline-block bg-teal-light text-teal-dark text-xs font-semibold px-3 py-1.5 rounded-full mb-5">
+                        NEW THIS WEEK
                     </span>
 
-                    <h2 class="font-serif text-4xl text-white mt-2 mb-3">
-                        Hop Into Great Deals.
+                    <h2 class="text-navy">
+                        Find something
+                        <span class="text-teal">
+                            you'll love.
+                        </span>
                     </h2>
 
-                    <p class="text-white/70 max-w-md">
-                        Save more on your everyday favorites.
-                        Discover exclusive deals available on ShopHop.
+                    <p class="text-navy/55 mt-4 leading-relaxed">
+                        From everyday essentials to the latest trends,
+                        there's always something new waiting for you.
                     </p>
+
+                    <a
+                        href="#"
+                        class="inline-flex items-center gap-2 mt-6 text-sm font-semibold text-teal-dark hover:text-navy transition"
+                    >
+                        Discover new arrivals
+                        <x-lucide-arrow-right class="w-4 h-4" />
+                    </a>
 
                 </div>
 
 
-                <a
-                    href="#"
-                    class="relative z-10 shrink-0
-                           bg-teal
-                           hover:bg-teal-dark
-                           text-white
-                           font-semibold
-                           text-sm
-                           px-7 py-3.5
-                           rounded-full
-                           transition"
-                >
-                    View Deals
-                </a>
+                <div class="grid grid-cols-2 gap-4">
+
+                    <div class="aspect-square rounded-2xl overflow-hidden bg-gray-bg">
+                        <img
+                            src="{{ asset('images/hero/earbuds.jpg') }}"
+                            alt="New earbuds"
+                            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                        >
+                    </div>
+
+                    <div class="aspect-square rounded-2xl overflow-hidden bg-gray-bg mt-8">
+                        <img
+                            src="{{ asset('images/hero/watch.jpg') }}"
+                            alt="New fitness watch"
+                            class="w-full h-full object-cover hover:scale-105 transition-transform duration-500"
+                        >
+                    </div>
+
+                </div>
 
             </div>
 
         </div>
 
-    </section>
+    </div>
+
+</section>
 
 
-    {{-- =========================================================
-        WHY SHOPHOP
-    ========================================================== --}}
-    <section class="py-16 bg-white">
+{{-- =========================================================
+    FINAL CTA
+========================================================= --}}
+<section class="py-20 bg-white">
 
-        <div class="max-w-310 mx-auto px-6">
+    <div class="max-w-310 mx-auto px-6">
 
-            <div class="text-center mb-10">
+        <div class="relative overflow-hidden rounded-3xl bg-[#E9F8F4] px-8 py-14 lg:px-16 text-center">
 
-                <h2 class="font-serif text-3xl text-navy mb-2">
-                    Why ShopHop?
-                </h2>
+            <div class="absolute -left-20 -top-20 w-48 h-48 rounded-full bg-teal/10"></div>
+            <div class="absolute -right-20 -bottom-20 w-48 h-48 rounded-full bg-teal/10"></div>
 
-                <p class="text-navy/60">
-                    Shopping made simple, secure, and enjoyable.
+            <div class="relative max-w-2xl mx-auto">
+
+                <p class="text-teal-dark text-sm font-semibold mb-3">
+                    SHOPHOP
                 </p>
 
-            </div>
-
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
-                {{-- Fast --}}
-                <div class="text-center p-6">
-
-                    <div
-                        class="mx-auto w-14 h-14
-                               rounded-full
-                               bg-teal/10
-                               text-teal-dark
-                               flex items-center justify-center
-                               mb-4"
-                    >
-                        <x-lucide-truck class="w-6 h-6" />
-                    </div>
-
-                    <h3 class="font-semibold text-navy mb-2">
-                        Fast & Reliable
-                    </h3>
-
-                    <p class="text-sm text-navy/60 leading-6">
-                        Get your orders delivered with ease.
-                    </p>
-
-                </div>
-
-
-                {{-- Secure --}}
-                <div class="text-center p-6">
-
-                    <div
-                        class="mx-auto w-14 h-14
-                               rounded-full
-                               bg-teal/10
-                               text-teal-dark
-                               flex items-center justify-center
-                               mb-4"
-                    >
-                        <x-lucide-shield-check class="w-6 h-6" />
-                    </div>
-
-                    <h3 class="font-semibold text-navy mb-2">
-                        Secure Shopping
-                    </h3>
-
-                    <p class="text-sm text-navy/60 leading-6">
-                        Shop confidently with secure transactions.
-                    </p>
-
-                </div>
-
-
-                {{-- Deals --}}
-                <div class="text-center p-6">
-
-                    <div
-                        class="mx-auto w-14 h-14
-                               rounded-full
-                               bg-teal/10
-                               text-teal-dark
-                               flex items-center justify-center
-                               mb-4"
-                    >
-                        <x-lucide-tag class="w-6 h-6" />
-                    </div>
-
-                    <h3 class="font-semibold text-navy mb-2">
-                        Everyday Deals
-                    </h3>
-
-                    <p class="text-sm text-navy/60 leading-6">
-                        Discover great prices on products you love.
-                    </p>
-
-                </div>
-
-
-                {{-- Variety --}}
-                <div class="text-center p-6">
-
-                    <div
-                        class="mx-auto w-14 h-14
-                               rounded-full
-                               bg-teal/10
-                               text-teal-dark
-                               flex items-center justify-center
-                               mb-4"
-                    >
-                        <x-lucide-shopping-bag class="w-6 h-6" />
-                    </div>
-
-                    <h3 class="font-semibold text-navy mb-2">
-                        Everything in One Place
-                    </h3>
-
-                    <p class="text-sm text-navy/60 leading-6">
-                        From essentials to trending finds.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    {{-- =========================================================
-    FINAL CTA
-========================================================== --}}
-<section class="bg-gray-bg py-16 px-6">
-
-    <div class="max-w-250 mx-auto">
-
-        <div
-            class="relative overflow-hidden
-                   bg-white
-                   border border-[#E4E8EC]
-                   rounded-3xl
-                   px-8 py-12 md:px-14
-                   text-center
-                   shadow-sm"
-        >
-
-            {{-- Decorative teal circle --}}
-            <div
-                class="absolute -top-20 -right-20
-                       w-52 h-52
-                       rounded-full
-                       bg-teal/10"
-            ></div>
-
-            {{-- Decorative small circle --}}
-            <div
-                class="absolute -bottom-12 -left-12
-                       w-32 h-32
-                       rounded-full
-                       bg-teal/5"
-            ></div>
-
-
-            {{-- Content --}}
-            <div class="relative z-10">
-
-                <span
-                    class="inline-flex items-center gap-2
-                           bg-teal/10
-                           text-teal-dark
-                           text-xs
-                           font-semibold
-                           px-4 py-2
-                           rounded-full
-                           mb-5"
-                >
-                    <span>✦</span>
-                    Your next favorite find is waiting
-                </span>
-
-
-                <h2
-                    class="font-serif
-                           text-4xl md:text-5xl
-                           text-navy
-                           mb-3"
-                >
+                <h2 class="text-navy">
                     Ready to Hop In?
                 </h2>
 
-
-                <p
-                    class="text-navy/60
-                           max-w-md
-                           mx-auto
-                           mb-7
-                           text-sm md:text-base
-                           leading-6"
-                >
-                    Discover amazing products, great deals,
-                    and everyday essentials — all just a hop away.
+                <p class="text-navy/55 mt-3 mb-7">
+                    Discover your next favorite product today.
                 </p>
 
-
                 <a
-                    href="#products"
-                    class="inline-flex items-center gap-2
-                           bg-teal
-                           hover:bg-teal-dark
-                           text-white
-                           font-semibold
-                           text-sm
-                           px-8 py-3.5
-                           rounded-full
-                           shadow-md
-                           hover:shadow-lg
-                           transition-all"
+                    href="#trending"
+                    class="inline-flex items-center gap-2 bg-teal hover:bg-teal-dark text-white font-semibold px-7 py-3.5 rounded-full transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20"
                 >
                     Start Shopping
-
-                    <span class="text-base">
-                        →
-                    </span>
+                    <x-lucide-arrow-right class="w-4 h-4" />
                 </a>
 
             </div>
@@ -796,5 +659,40 @@
 </section>
 
 
-@endsection
+{{-- =========================================================
+    HERO ANIMATION
+========================================================= --}}
+@push('styles')
 
+<style>
+
+    @keyframes shopHopFloat {
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-10px);
+        }
+
+    }
+
+    .hero-main-product {
+        animation: shopHopFloat 5s ease-in-out infinite;
+    }
+
+    .hero-floating-card {
+        animation: shopHopFloat 4s ease-in-out infinite;
+    }
+
+    .hero-delay {
+        animation-delay: 1.5s;
+    }
+
+</style>
+
+@endpush
+
+@endsection
