@@ -12,6 +12,36 @@ class HomeController extends Controller
      */
     public function index()
     {
+        // Later: pull these from the database (Category model)
+        $allCategories = [
+            ['name' => 'Women\'s Apparel',                 'icon' => 'shirt'],
+            ['name' => 'Men\'s Apparel',                   'icon' => 'shirt'],
+            ['name' => 'Electronics and Gadgets',          'icon' => 'cpu'],
+            ['name' => 'Health and Beauty',                'icon' => 'sparkles'],
+            ['name' => 'Home and Garden',                  'icon' => 'home'],
+            ['name' => 'Sports and Outdoors',               'icon' => 'dumbbell'],
+            ['name' => 'Food and Gourmet',                 'icon' => 'utensils'],
+            ['name' => 'Pet Supplies',                     'icon' => 'dog'],
+            ['name' => 'Kids and Baby',                    'icon' => 'baby'],
+            ['name' => 'Makeup & Cosmetics',                'icon' => 'brush'],
+            ['name' => 'Books and Media',                  'icon' => 'book'],
+            ['name' => 'Automotive & Motorcycle',           'icon' => 'car'],
+            ['name' => 'Furniture and Office Equipment',    'icon' => 'armchair'],
+            ['name' => 'Jewelry and Watches',              'icon' => 'gem'],
+            ['name' => 'Office and School Supplies',        'icon' => 'pencil'],
+        ];
+
+        // 7 lang ang lalabas kung hindi naka-login (guest), buo (15) kung naka-login na
+        $categories = auth()->check()
+            ? $allCategories
+            : array_slice($allCategories, 0, 7);
+
+        // TEMPORARY placeholder images (via placehold.co) so the layout looks
+        // complete while you don't have real product photos yet.
+        // Once you export real images from Figma, drop them into
+        // public/images/products/ and change 'image' back to a filename like
+        // 'products/sneakers.jpg' — the Blade view already knows how to
+        // handle both a full URL and a local filename (see home.blade.php).
         /*
         |--------------------------------------------------------------------------
         | SHOP CATEGORIES
