@@ -1,5 +1,5 @@
 <?php
-// Path in your project: app/Http/Controllers/HomeController.php
+// Path: app/Http/Controllers/HomeController.php
 
 namespace App\Http\Controllers;
 
@@ -12,28 +12,89 @@ class HomeController extends Controller
      */
     public function index()
     {
-        // Later: pull these from the database (Category, Product models)
+        /*
+        |--------------------------------------------------------------------------
+        | SHOP CATEGORIES
+        |--------------------------------------------------------------------------
+        | Temporary static data.
+        | Later, these can be fetched from the database using a Category model.
+        |
+        | "Group 9", "Group 12", etc. are intentionally NOT included
+        | in the displayed category names.
+        */
+
         $categories = [
-            ['name' => 'Fashion',       'icon' => 'shirt'],
-            ['name' => 'Electronics',   'icon' => 'cpu'],
-            ['name' => 'Beauty',        'icon' => 'sparkles'],
-            ['name' => 'Home & Living', 'icon' => 'home'],
-            ['name' => 'Sports',        'icon' => 'dumbbell'],
-            ['name' => 'Accessories',   'icon' => 'watch'],
-            ['name' => 'Grocery',       'icon' => 'shopping-basket'],
-            ['name' => 'Gadgets',       'icon' => 'smartphone'],
+            [
+                'name' => 'Pet Supplies',
+                'icon' => 'paw-print',
+            ],
+            [
+                'name' => 'Electronics and Gadgets',
+                'icon' => 'smartphone',
+            ],
+            [
+                'name' => "Women's Apparel",
+                'icon' => 'shirt',
+            ],
+            [
+                'name' => "Men's Apparel",
+                'icon' => 'shirt',
+            ],
+            [
+                'name' => 'Kids and Baby',
+                'icon' => 'baby',
+            ],
+            [
+                'name' => 'Home and Garden',
+                'icon' => 'house',
+            ],
+            [
+                'name' => 'Sports and Outdoors',
+                'icon' => 'dumbbell',
+            ],
+            [
+                'name' => 'Health and Beauty',
+                'icon' => 'heart-pulse',
+            ],
+            [
+                'name' => 'Books and Media',
+                'icon' => 'book-open',
+            ],
+            [
+                'name' => 'Food and Gourmet',
+                'icon' => 'utensils',
+            ],
+            [
+                'name' => 'Automotive & Motorcycle',
+                'icon' => 'car-front',
+            ],
+            [
+                'name' => 'Furniture and Office Equipment',
+                'icon' => 'armchair',
+            ],
+            [
+                'name' => 'Jewelry and Watches',
+                'icon' => 'gem',
+            ],
+            [
+                'name' => 'Office and School Supplies',
+                'icon' => 'notebook-pen',
+            ],
         ];
 
-        // TEMPORARY placeholder images (via placehold.co) so the layout looks
-        // complete while you don't have real product photos yet.
-        // Once you export real images from Figma, drop them into
-        // public/images/products/ and change 'image' back to a filename like
-        // 'products/sneakers.jpg' — the Blade view already knows how to
-        // handle both a full URL and a local filename (see home.blade.php).
+
+        /*
+        |--------------------------------------------------------------------------
+        | TRENDING PRODUCTS
+        |--------------------------------------------------------------------------
+        | Temporary placeholder data.
+        | Replace these with database products later.
+        */
+
         $trendingProducts = [
             [
                 'name' => 'Minimalist Canvas Sneakers',
-                'category' => 'Fashion',
+                'category' => "Women's Apparel",
                 'price' => 899,
                 'original_price' => 1199,
                 'rating' => 4.6,
@@ -42,7 +103,7 @@ class HomeController extends Controller
             ],
             [
                 'name' => 'Wireless Earbuds Pro',
-                'category' => 'Electronics',
+                'category' => 'Electronics and Gadgets',
                 'price' => 1299,
                 'original_price' => null,
                 'rating' => 4.8,
@@ -51,7 +112,7 @@ class HomeController extends Controller
             ],
             [
                 'name' => 'Everyday Tote Bag',
-                'category' => 'Accessories',
+                'category' => "Women's Apparel",
                 'price' => 599,
                 'original_price' => 799,
                 'rating' => 4.5,
@@ -60,7 +121,7 @@ class HomeController extends Controller
             ],
             [
                 'name' => 'Smart Fitness Watch',
-                'category' => 'Gadgets',
+                'category' => 'Electronics and Gadgets',
                 'price' => 1799,
                 'original_price' => null,
                 'rating' => 4.7,
@@ -69,6 +130,10 @@ class HomeController extends Controller
             ],
         ];
 
-        return view('home', compact('categories', 'trendingProducts'));
+
+        return view('home', compact(
+            'categories',
+            'trendingProducts'
+        ));
     }
 }
