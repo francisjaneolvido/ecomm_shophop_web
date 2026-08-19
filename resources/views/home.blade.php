@@ -216,6 +216,26 @@
 {{-- =========================================================
     CATEGORIES
 ========================================================= --}}
+@php
+    $categorySlideshows = [
+        'Pet Supplies' => ['folder' => 'pet_supplies', 'files' => ['bed.webp','cage.avif','dog_food.jpg','grooming.avif','toys.jpg']],
+        'Electronics and Gadgets' => ['folder' => 'electronics_gadgets', 'files' => ['cctv.jpg','consoles.webp','cpu.jpg','gadgets.webp','laptop.avif']],
+        'Women\'s Apparel' => ['folder' => 'women_apparel', 'files' => ['activewear.png','jacket.png','outfit.jpg','shoes.png','skirt.png','sleepwear.png','tops.png']],
+        'Men\'s Apparel' => ['folder' => 'men_apparel', 'files' => ['active.jpg','casual.jpg','outfit.jpg','shoes.jpg','sleepwear.png','suit.jpg']],
+        'Kids and Baby' => ['folder' => 'kids_baby', 'files' => ['educational.jpg','safety.jpg','sleepwear.jpg','stroller.jpg','toys.png']],
+        'Home and Garden' => ['folder' => 'home_garden', 'files' => ['baskets.jpg','clocks.png','couches.png','fakegrass.jpg','gardentools.jpg','lamps.png','pots.jpg','stones.jpg','tools.jpg','wall.jpg']],
+        'Sports and Outdoors' => ['folder' => 'sports_outdoors', 'files' => ['bikes.jpg','dumbell.jpg','elliptical.jpg','goggles.jpg','pickle.jpg','tabletennis.jpg']],
+        'Health and Beauty' => ['folder' => 'health_beauty', 'files' => ['mengrooming.jpg','selfcare.png','supplement.jpg','tools.jpg']],
+        'Makeup & Cosmetics' => ['folder' => 'health_beauty', 'files' => ['makeup.jpg','brush.jpg','cuticle.jpg']],
+        'Books and Media' => ['folder' => 'books_media', 'files' => ['books.jpg','cds.jpg','dvd.jpg','magazine.jpg','ps5.jpg','ps5cds.jpg']],
+        'Food and Gourmet' => ['folder' => 'food_gourmet', 'files' => ['chips.jpg','chocolate.jpg','heinz.jpg','noodleds.jpg','sbs.jpg','spices.jpg']],
+        'Automotive & Motorcycle' => ['folder' => 'automotive_motorcycle', 'files' => ['cleaner.jpg','gloves.jpg','helmet.jpg','parts.jpg','tape.jpg','tool.jpg','tools.jpg','wheels.jpg']],
+        'Furniture and Office Equipment' => ['folder' => 'furniture_office', 'files' => ['cabinet.jpg','desk.jpg','officechair.jpg','organizer.jpg','tablelamps.jpg']],
+        'Jewelry and Watches' => ['folder' => 'jewelry_watches', 'files' => ['bracelet.jpg','hats.jpg','necklace.jpg','rings.jpg','watches.jpg']],
+        'Office and School Supplies' => ['folder' => 'office_schoolsupplies', 'files' => ['bondpapers.jpg','ink.jpg','notebooks.jpg','pens.jpg','printer.jpg','setsupplies.jpg']],
+    ];
+@endphp
+
 <section
     id="categories"
     class="py-20 bg-white"
@@ -249,25 +269,53 @@
         </div>
 
 
-        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
 
             @foreach ($categories as $category)
 
-                <a
-                    href="#"
-                    class="group bg-gray-bg rounded-2xl p-6 text-center border border-transparent hover:border-teal/30 hover:bg-teal-light transition-all duration-300 hover:-translate-y-1"
-                >
+                @php
+                    $slideshow = $categorySlideshows[$category['name']] ?? null;
+                    $slideImages = [];
 
-                    <div
-                        class="mx-auto w-14 h-14 rounded-2xl bg-white flex items-center justify-center text-teal-dark shadow-sm group-hover:bg-teal group-hover:text-white transition-all duration-300"
-                    >
-                        <x-dynamic-component
-                            :component="'lucide-' . $category['icon']"
-                            class="w-6 h-6"
-                        />
-                    </div>
+                    if ($slideshow) {
+                        foreach (array_slice($slideshow['files'], 0, 4) as $file) {
+                            $path = public_path('images/category_icons_bg/' . $slideshow['folder'] . '/' . $file);
+                            if (file_exists($path)) {
+                                $slideImages[] = $file;
+                            }
+                        }
+                    }
+                @endphp
 
-                    <span class="block mt-4 text-sm font-semibold text-navy">
+                <a href="#"
+                    class="group relative overflow-hidden aspect-square flex items-center justify-center bg-gray-bg rounded-2xl p-6 text-center border border-transparent hover:border-teal/30 hover:bg-teal-light transition-all duration-300 hover:-translate-y-1">
+
+                    @if (count($slideImages) > 0)
+
+                        <div class="absolute inset-0 z-0">
+
+                            @foreach ($slideImages as $i => $file)
+                                <img
+                                    src="{{ asset('images/category_icons_bg/' . $slideshow['folder'] . '/' . $file) }}"
+                                    class="category-slide"
+                                    style="animation-delay: {{ $i * 3 }}s;"
+                                    loading="eager"
+                                    onload="this.classList.add('is-ready')"
+                                >
+                            @endforeach
+
+                            <div class="absolute inset-0 bg-white/75 group-hover:bg-white/55 transition-colors duration-300"></div>
+
+                        </div>
+
+                    @else
+
+                        {{-- Fallback kung walang existing images --}}
+                        <div class="absolute inset-0 z-0 bg-gray-bg"></div>
+
+                    @endif
+
+                    <span class="relative z-10 text-sm font-semibold text-navy">
                         {{ $category['name'] }}
                     </span>
 
@@ -679,6 +727,24 @@
 
     }
 
+@keyframes categorySlideshow {
+    0%   { opacity: 0; transform: translateY(20px); }
+    4%   { opacity: 1; transform: translateY(0); }
+    21%  { opacity: 1; transform: translateY(0); }
+    25%  { opacity: 0; transform: translateY(-20px); }
+    100% { opacity: 0; }
+}
+
+    .category-slide {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        animation: categorySlideshow 12s ease-in-out infinite;
+    }
+
     .hero-main-product {
         animation: shopHopFloat 5s ease-in-out infinite;
     }
@@ -690,6 +756,8 @@
     .hero-delay {
         animation-delay: 1.5s;
     }
+
+
 
 </style>
 
