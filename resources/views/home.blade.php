@@ -347,7 +347,6 @@
         'Home and Garden' => ['folder' => 'home_garden', 'files' => ['baskets.jpg','clocks.png','couches.png','fakegrass.jpg','gardentools.jpg','lamps.png','pots.jpg','stones.jpg','tools.jpg','wall.jpg']],
         'Sports and Outdoors' => ['folder' => 'sports_outdoors', 'files' => ['bikes.jpg','dumbell.jpg','elliptical.jpg','goggles.jpg','pickle.jpg','tabletennis.jpg']],
         'Health and Beauty' => ['folder' => 'health_beauty', 'files' => ['mengrooming.jpg','selfcare.png','supplement.jpg','tools.jpg']],
-        'Makeup & Cosmetics' => ['folder' => 'health_beauty', 'files' => ['makeup.jpg','brush.jpg','cuticle.jpg']],
         'Books and Media' => ['folder' => 'books_media', 'files' => ['books.jpg','cds.jpg','dvd.jpg','magazine.jpg','ps5.jpg','ps5cds.jpg']],
         'Food and Gourmet' => ['folder' => 'food_gourmet', 'files' => ['chips.jpg','chocolate.jpg','heinz.jpg','noodleds.jpg','sbs.jpg','spices.jpg']],
         'Automotive & Motorcycle' => ['folder' => 'automotive_motorcycle', 'files' => ['cleaner.jpg','gloves.jpg','helmet.jpg','parts.jpg','tape.jpg','tool.jpg','tools.jpg','wheels.jpg']],
@@ -357,13 +356,9 @@
     ];
 @endphp
 
-<section
-    id="categories"
-    class="py-12 sm:py-16 lg:py-20 bg-white"
->
+<section id="categories" class="py-12 sm:py-16 lg:py-20 bg-white">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        {{-- Section Header --}}
         <div class="mb-6 sm:mb-8">
             <p class="text-teal-dark text-xs sm:text-sm font-semibold mb-2 tracking-wide">
                 EXPLORE
@@ -378,19 +373,8 @@
             </p>
         </div>
 
-        {{-- =====================================================
-            CATEGORY SLIDER
+        <div class="relative" data-category-slider>
 
-            Mobile: 2 visible
-            Small:  3 visible
-            Medium: 4 visible
-            Desktop: 7 visible
-        ====================================================== --}}
-        <div
-            class="relative"
-            data-category-slider
-        >
-            {{-- Previous Button --}}
             <button
                 type="button"
                 data-category-prev
@@ -406,7 +390,6 @@
                 <x-lucide-chevron-left class="w-5 h-5" />
             </button>
 
-            {{-- Slider Track --}}
             <div
                 data-category-track
                 class="grid grid-flow-col gap-4
@@ -420,74 +403,61 @@
                        lg:auto-cols-[calc((100%-6rem)/7)]"
             >
                 @foreach ($categories as $category)
+                    @php
+                        $slideshow = $categorySlideshows[$category['name']] ?? null;
+                        $slideImages = [];
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
+                        if ($slideshow) {
+                            foreach (array_slice($slideshow['files'], 0, 4) as $file) {
+                                $path = public_path(
+                                    'images/category_icons_bg/' .
+                                    $slideshow['folder'] .
+                                    '/' .
+                                    $file
+                                );
 
-            @foreach ($categories as $category)
-
-                @php
-                    $slideshow = $categorySlideshows[$category['name']] ?? null;
-                    $slideImages = [];
-
-                    if ($slideshow) {
-                        foreach (array_slice($slideshow['files'], 0, 4) as $file) {
-                            $path = public_path('images/category_icons_bg/' . $slideshow['folder'] . '/' . $file);
-                            if (file_exists($path)) {
-                                $slideImages[] = $file;
+                                if (file_exists($path)) {
+                                    $slideImages[] = $file;
+                                }
                             }
                         }
-                    }
-                @endphp
+                    @endphp
 
-                <a href="#"
-                    class="group relative overflow-hidden aspect-square flex items-center justify-center bg-gray-bg rounded-2xl p-6 text-center border border-transparent hover:border-teal/30 hover:bg-teal-light transition-all duration-300 hover:-translate-y-1">
-
-                    @if (count($slideImages) > 0)
-
-                        <div class="absolute inset-0 z-0">
-
-                            @foreach ($slideImages as $i => $file)
-                                <img
-                                    src="{{ asset('images/category_icons_bg/' . $slideshow['folder'] . '/' . $file) }}"
-                                    class="category-slide"
-                                    style="animation-delay: {{ $i * 3 }}s;"
-                                    loading="eager"
-                                    onload="this.classList.add('is-ready')"
-                                >
-                            @endforeach
-
-                            <div class="absolute inset-0 bg-white/75 group-hover:bg-white/55 transition-colors duration-300"></div>
-
-                        </div>
-
-                    @else
-
-                        {{-- Fallback kung walang existing images --}}
-                        <div class="absolute inset-0 z-0 bg-gray-bg"></div>
-
-                    @endif
-
-                    <span class="relative z-10 text-sm font-semibold text-navy">
-                        {{ $category['name'] }}
-                    </span>
                     <a
                         href="#"
-                        class="group min-h-46 sm:min-h-48
+                        class="group relative overflow-hidden
+                               min-h-46 sm:min-h-48
                                rounded-2xl bg-gray-bg
                                px-4 py-5 text-center
                                flex flex-col items-center justify-center
                                border border-transparent
-                               hover:bg-teal-light
                                hover:border-teal/30
                                hover:-translate-y-1
                                hover:shadow-lg
                                snap-start
                                transition-all duration-300"
                     >
-                        {{-- Category Icon --}}
+                        @if (count($slideImages) > 0)
+                            <div class="absolute inset-0 z-0">
+                                @foreach ($slideImages as $i => $file)
+                                    <img
+                                        src="{{ asset('images/category_icons_bg/' . $slideshow['folder'] . '/' . $file) }}"
+                                        alt=""
+                                        class="category-slide"
+                                        style="animation-delay: {{ $i * 3 }}s;"
+                                        loading="lazy"
+                                    >
+                                @endforeach
+
+                                <div class="absolute inset-0 bg-white/75 group-hover:bg-white/60 transition-colors duration-300"></div>
+                            </div>
+                        @else
+                            <div class="absolute inset-0 z-0 bg-gray-bg"></div>
+                        @endif
+
                         <div
-                            class="w-16 h-16
-                                   rounded-2xl bg-white
+                            class="relative z-10
+                                   w-16 h-16 rounded-2xl bg-white/90
                                    flex items-center justify-center
                                    text-teal-dark shadow-sm
                                    group-hover:bg-teal
@@ -501,9 +471,8 @@
                             />
                         </div>
 
-                        {{-- Category Name --}}
                         <span
-                            class="block mt-4
+                            class="relative z-10 block mt-4
                                    text-xs sm:text-sm
                                    font-semibold text-navy
                                    leading-snug"
@@ -511,11 +480,9 @@
                             {{ $category['name'] }}
                         </span>
                     </a>
-
                 @endforeach
             </div>
 
-            {{-- Next Button --}}
             <button
                 type="button"
                 data-category-next
@@ -530,15 +497,11 @@
             >
                 <x-lucide-chevron-right class="w-5 h-5" />
             </button>
-        </div>
 
+        </div>
     </div>
 </section>
 
-
-{{-- =========================================================
-    CATEGORY SLIDER SCRIPT
-========================================================= --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-category-slider]').forEach(function (slider) {
@@ -555,43 +518,24 @@
                 const atStart = track.scrollLeft <= 5;
                 const atEnd = track.scrollLeft >= maxScrollLeft - 5;
 
-                if (atStart) {
-                    prevButton.classList.add('hidden');
-                    prevButton.classList.remove('flex');
-                } else {
-                    prevButton.classList.remove('hidden');
-                    prevButton.classList.add('flex');
-                }
+                prevButton.classList.toggle('hidden', atStart);
+                prevButton.classList.toggle('flex', !atStart);
 
-                if (atEnd || maxScrollLeft <= 5) {
-                    nextButton.classList.add('hidden');
-                    nextButton.classList.remove('flex');
-                } else {
-                    nextButton.classList.remove('hidden');
-                    nextButton.classList.add('flex');
-                }
+                const hideNext = atEnd || maxScrollLeft <= 5;
+                nextButton.classList.toggle('hidden', hideNext);
+                nextButton.classList.toggle('flex', !hideNext);
             }
 
             function scrollAmount() {
-                /*
-                 * Scroll roughly one full visible set.
-                 * On desktop this moves close to 7 cards.
-                 */
                 return track.clientWidth * 0.95;
             }
 
             nextButton.addEventListener('click', function () {
-                track.scrollBy({
-                    left: scrollAmount(),
-                    behavior: 'smooth'
-                });
+                track.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
             });
 
             prevButton.addEventListener('click', function () {
-                track.scrollBy({
-                    left: -scrollAmount(),
-                    behavior: 'smooth'
-                });
+                track.scrollBy({ left: -scrollAmount(), behavior: 'smooth' });
             });
 
             track.addEventListener('scroll', updateButtons, { passive: true });
@@ -1423,32 +1367,45 @@
 
 
 {{-- =========================================================
-    HERO ANIMATION
+    HERO / CATEGORY ANIMATIONS
 ========================================================= --}}
 @push('styles')
-
 <style>
-
     @keyframes shopHopFloat {
-
-        0%,
-        100% {
+        0%, 100% {
             transform: translateY(0);
         }
 
         50% {
             transform: translateY(-10px);
         }
-
     }
 
-@keyframes categorySlideshow {
-    0%   { opacity: 0; transform: translateY(20px); }
-    4%   { opacity: 1; transform: translateY(0); }
-    21%  { opacity: 1; transform: translateY(0); }
-    25%  { opacity: 0; transform: translateY(-20px); }
-    100% { opacity: 0; }
-}
+    @keyframes categorySlideshow {
+        0% {
+            opacity: 0;
+            transform: scale(1.03);
+        }
+
+        4% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        21% {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        25% {
+            opacity: 0;
+            transform: scale(1.02);
+        }
+
+        100% {
+            opacity: 0;
+        }
+    }
 
     .category-slide {
         position: absolute;
@@ -1464,37 +1421,24 @@
         animation: shopHopFloat 5s ease-in-out infinite;
     }
 
-
     .hero-floating-card {
         animation: shopHopFloat 4s ease-in-out infinite;
     }
-
 
     .hero-delay {
         animation-delay: 1.5s;
     }
 
-
-
-</style>
-
-    /*
-    ========================================
-    ACCESSIBILITY
-    Disable animations when user prefers
-    reduced motion.
-    ========================================
-    */
-
     @media (prefers-reduced-motion: reduce) {
-
         .hero-main-product,
-        .hero-floating-card {
+        .hero-floating-card,
+        .category-slide {
             animation: none;
         }
 
+        .category-slide:first-child {
+            opacity: 1;
+        }
     }
-
 </style>
-
 @endpush

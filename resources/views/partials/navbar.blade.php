@@ -154,42 +154,42 @@
 
 
                 {{-- ACCOUNT --}}
-                <a
-                    href="#"
-                    title="Account"
-                    class="hidden sm:flex w-8 h-8 items-center justify-center
-                           rounded-full text-navy
-                           hover:bg-gray-bg hover:text-teal-dark transition"
-                >
-                    <x-lucide-user class="w-4.5 h-4.5" />
-                </a>
+<a
+    href="{{ route('login') }}"
+    title="Account"
+    class="hidden sm:flex w-8 h-8 items-center justify-center
+           rounded-full text-navy
+           hover:bg-gray-bg hover:text-teal-dark transition"
+>
+    <x-lucide-user class="w-4.5 h-4.5" />
+</a>
 
 
-                {{-- DIVIDER --}}
-                <div class="hidden xl:block h-5 w-px bg-gray-border mx-1"></div>
+{{-- DIVIDER --}}
+<div class="hidden xl:block h-5 w-px bg-gray-border mx-1"></div>
 
 
-                {{-- SIGN IN --}}
-                <a
-                    href="#"
-                    class="hidden xl:block text-[11px] font-medium text-navy
-                           hover:text-teal-dark transition whitespace-nowrap"
-                >
-                    Sign In
-                </a>
+{{-- LOG IN --}}
+<a
+    href="{{ route('login') }}"
+    class="hidden xl:block text-[11px] font-medium text-navy
+           hover:text-teal-dark transition whitespace-nowrap"
+>
+    Log In
+</a>
 
 
-                {{-- CREATE ACCOUNT --}}
-                <a
-                    href="#"
-                    class="hidden xl:inline-flex items-center justify-center
-                           bg-teal hover:bg-teal-dark
-                           text-white text-[11px] font-semibold
-                           px-3.5 py-2 rounded-full
-                           transition whitespace-nowrap"
-                >
-                    Create Account
-                </a>
+{{-- CREATE ACCOUNT --}}
+<a
+    href="{{ route('register') }}"
+    class="hidden xl:inline-flex items-center justify-center
+           bg-teal hover:bg-teal-dark
+           text-white text-[11px] font-semibold
+           px-3.5 py-2 rounded-full
+           transition whitespace-nowrap"
+>
+    Create Account
+</a>
 
 
                 {{-- MOBILE MENU --}}
