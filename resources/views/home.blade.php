@@ -339,20 +339,20 @@
 ========================================================= --}}
 @php
     $categorySlideshows = [
-        'Pet Supplies' => ['folder' => 'pet_supplies', 'files' => ['bed.webp','cage.avif','dog_food.jpg','grooming.avif','toys.jpg']],
-        'Electronics and Gadgets' => ['folder' => 'electronics_gadgets', 'files' => ['cctv.jpg','consoles.webp','cpu.jpg','gadgets.webp','laptop.avif']],
-        'Women\'s Apparel' => ['folder' => 'women_apparel', 'files' => ['activewear.png','jacket.png','outfit.jpg','shoes.png','skirt.png','sleepwear.png','tops.png']],
-        'Men\'s Apparel' => ['folder' => 'men_apparel', 'files' => ['active.jpg','casual.jpg','outfit.jpg','shoes.jpg','sleepwear.png','suit.jpg']],
-        'Kids and Baby' => ['folder' => 'kids_baby', 'files' => ['educational.jpg','safety.jpg','sleepwear.jpg','stroller.jpg','toys.png']],
-        'Home and Garden' => ['folder' => 'home_garden', 'files' => ['baskets.jpg','clocks.png','couches.png','fakegrass.jpg','gardentools.jpg','lamps.png','pots.jpg','stones.jpg','tools.jpg','wall.jpg']],
-        'Sports and Outdoors' => ['folder' => 'sports_outdoors', 'files' => ['bikes.jpg','dumbell.jpg','elliptical.jpg','goggles.jpg','pickle.jpg','tabletennis.jpg']],
-        'Health and Beauty' => ['folder' => 'health_beauty', 'files' => ['mengrooming.jpg','selfcare.png','supplement.jpg','tools.jpg']],
-        'Books and Media' => ['folder' => 'books_media', 'files' => ['books.jpg','cds.jpg','dvd.jpg','magazine.jpg','ps5.jpg','ps5cds.jpg']],
-        'Food and Gourmet' => ['folder' => 'food_gourmet', 'files' => ['chips.jpg','chocolate.jpg','heinz.jpg','noodleds.jpg','sbs.jpg','spices.jpg']],
-        'Automotive & Motorcycle' => ['folder' => 'automotive_motorcycle', 'files' => ['cleaner.jpg','gloves.jpg','helmet.jpg','parts.jpg','tape.jpg','tool.jpg','tools.jpg','wheels.jpg']],
-        'Furniture and Office Equipment' => ['folder' => 'furniture_office', 'files' => ['cabinet.jpg','desk.jpg','officechair.jpg','organizer.jpg','tablelamps.jpg']],
-        'Jewelry and Watches' => ['folder' => 'jewelry_watches', 'files' => ['bracelet.jpg','hats.jpg','necklace.jpg','rings.jpg','watches.jpg']],
-        'Office and School Supplies' => ['folder' => 'office_schoolsupplies', 'files' => ['bondpapers.jpg','ink.jpg','notebooks.jpg','pens.jpg','printer.jpg','setsupplies.jpg']],
+        'Pet Supplies' => 'pet_supplies',
+        'Electronics and Gadgets' => 'electronics_gadgets',
+        'Women\'s Apparel' => 'women_apparel',
+        'Men\'s Apparel' => 'men_apparel',
+        'Kids and Baby' => 'kids_baby',
+        'Home and Garden' => 'home_garden',
+        'Sports and Outdoors' => 'sports_outdoors',
+        'Health and Beauty' => 'health_beauty',
+        'Books and Media' => 'books_media',
+        'Food and Gourmet' => 'food_gourmet',
+        'Automotive & Motorcycle' => 'automotive_motorcycle',
+        'Furniture and Office Equipment' => 'furniture_office',
+        'Jewelry and Watches' => 'jewelry_watches',
+        'Office and School Supplies' => 'office_schoolsupplies',
     ];
 @endphp
 
@@ -404,26 +404,24 @@
             >
                 @foreach ($categories as $category)
                     @php
-                        $slideshow = $categorySlideshows[$category['name']] ?? null;
+                        $folder = $categorySlideshows[$category['name']] ?? null;
                         $slideImages = [];
 
-                        if ($slideshow) {
-                            foreach (array_slice($slideshow['files'], 0, 4) as $file) {
-                                $path = public_path(
-                                    'images/category_icons_bg/' .
-                                    $slideshow['folder'] .
-                                    '/' .
-                                    $file
-                                );
+                        if ($folder) {
+                            $folderPath = public_path('images/category_icons_bg/' . $folder);
 
-                                if (file_exists($path)) {
-                                    $slideImages[] = $file;
-                                }
+                            if (is_dir($folderPath)) {
+                                $allFiles = glob($folderPath . '/*.{jpg,jpeg,png,webp,avif,gif}', GLOB_BRACE);
+                                $slideImages = array_map('basename', array_slice($allFiles, 0, 6));
                             }
                         }
+
+                        // Even spacing sa loob ng 12s animation cycle base sa bilang ng images
+                        $imageCount = count($slideImages);
+                        $slideInterval = $imageCount > 0 ? 12 / $imageCount : 0;
                     @endphp
 
-                    <a
+                    
                         href="#"
                         class="group relative overflow-hidden
                                min-h-46 sm:min-h-48
@@ -437,14 +435,14 @@
                                snap-start
                                transition-all duration-300"
                     >
-                        @if (count($slideImages) > 0)
+                        @if ($imageCount > 0)
                             <div class="absolute inset-0 z-0">
                                 @foreach ($slideImages as $i => $file)
                                     <img
-                                        src="{{ asset('images/category_icons_bg/' . $slideshow['folder'] . '/' . $file) }}"
+                                        src="{{ asset('images/category_icons_bg/' . $folder . '/' . $file) }}"
                                         alt=""
                                         class="category-slide"
-                                        style="animation-delay: {{ $i * 3 }}s;"
+                                        style="animation-delay: {{ $i * $slideInterval }}s;"
                                         loading="lazy"
                                     >
                                 @endforeach
@@ -1389,7 +1387,7 @@
 
         4% {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(1);`
         }
 
         21% {
