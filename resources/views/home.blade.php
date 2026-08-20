@@ -339,30 +339,26 @@
 ========================================================= --}}
 @php
     $categorySlideshows = [
-        'Pet Supplies' => 'pet_supplies',
-        'Electronics and Gadgets' => 'electronics_gadgets',
-        'Women\'s Apparel' => 'women_apparel',
-        'Men\'s Apparel' => 'men_apparel',
-        'Kids and Baby' => 'kids_baby',
-        'Home and Garden' => 'home_garden',
-        'Sports and Outdoors' => 'sports_outdoors',
-        'Health and Beauty' => 'health_beauty',
-        'Books and Media' => 'books_media',
-        'Food and Gourmet' => 'food_gourmet',
-        'Automotive & Motorcycle' => 'automotive_motorcycle',
-        'Furniture and Office Equipment' => 'furniture_office',
-        'Jewelry and Watches' => 'jewelry_watches',
-        'Office and School Supplies' => 'office_schoolsupplies',
+        'Pet Supplies' => ['folder' => 'pet_supplies', 'files' => ['bed.webp','cage.avif','dog_food.jpg','grooming.avif','toys.jpg']],
+        'Electronics and Gadgets' => ['folder' => 'electronics_gadgets', 'files' => ['cctv.jpg','consoles.webp','cpu.jpg','gadgets.webp','laptop.avif']],
+        'Women\'s Apparel' => ['folder' => 'women_apparel', 'files' => ['activewear.png','jacket.png','outfit.jpg','shoes.png','skirt.png','sleepwear.png','tops.png']],
+        'Men\'s Apparel' => ['folder' => 'men_apparel', 'files' => ['active.jpg','casual.jpg','outfit.jpg','shoes.jpg','sleepwear.png','suit.jpg']],
+        'Kids and Baby' => ['folder' => 'kids_baby', 'files' => ['educational.jpg','safety.jpg','sleepwear.jpg','stroller.jpg','toys.png']],
+        'Home and Garden' => ['folder' => 'home_garden', 'files' => ['baskets.jpg','clocks.png','couches.png','fakegrass.jpg','gardentools.jpg','lamps.png','pots.jpg','stones.jpg','tools.jpg','wall.jpg']],
+        'Sports and Outdoors' => ['folder' => 'sports_outdoors', 'files' => ['bikes.jpg','dumbell.jpg','elliptical.jpg','goggles.jpg','pickle.jpg','tabletennis.jpg']],
+        'Health and Beauty' => ['folder' => 'health_beauty', 'files' => ['mengrooming.jpg','selfcare.png','supplement.jpg','tools.jpg']],
+        'Books and Media' => ['folder' => 'books_media', 'files' => ['books.jpg','cds.jpg','dvd.jpg','magazine.jpg','ps5.jpg','ps5cds.jpg']],
+        'Food and Gourmet' => ['folder' => 'food_gourmet', 'files' => ['chips.jpg','chocolate.jpg','heinz.jpg','noodleds.jpg','sbs.jpg','spices.jpg']],
+        'Automotive & Motorcycle' => ['folder' => 'automotive_motorcycle', 'files' => ['cleaner.jpg','gloves.jpg','helmet.jpg','parts.jpg','tape.jpg','tool.jpg','tools.jpg','wheels.jpg']],
+        'Furniture and Office Equipment' => ['folder' => 'furniture_office', 'files' => ['cabinet.jpg','desk.jpg','officechair.jpg','organizer.jpg','tablelamps.jpg']],
+        'Jewelry and Watches' => ['folder' => 'jewelry_watches', 'files' => ['bracelet.jpg','hats.jpg','necklace.jpg','rings.jpg','watches.jpg']],
+        'Office and School Supplies' => ['folder' => 'office_schoolsupplies', 'files' => ['bondpapers.jpg','ink.jpg','notebooks.jpg','pens.jpg','printer.jpg','setsupplies.jpg']],
     ];
 @endphp
 
-<section
-    id="categories"
-    class="py-12 sm:py-16 lg:py-20 bg-white"
->
+<section id="categories" class="py-12 sm:py-16 lg:py-20 bg-white">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        {{-- Section Header --}}
         <div class="mb-6 sm:mb-8">
             <p class="text-teal-dark text-xs sm:text-sm font-semibold mb-2 tracking-wide">
                 EXPLORE
@@ -377,19 +373,8 @@
             </p>
         </div>
 
-        {{-- =====================================================
-            CATEGORY SLIDER
+        <div class="relative" data-category-slider>
 
-            Mobile: 2 visible
-            Small:  3 visible
-            Medium: 4 visible
-            Desktop: 7 visible
-        ====================================================== --}}
-        <div
-            class="relative"
-            data-category-slider
-        >
-            {{-- Previous Button --}}
             <button
                 type="button"
                 data-category-prev
@@ -405,7 +390,6 @@
                 <x-lucide-chevron-left class="w-5 h-5" />
             </button>
 
-            {{-- Slider Track --}}
             <div
                 data-category-track
                 class="grid grid-flow-col gap-4
@@ -420,21 +404,23 @@
             >
                 @foreach ($categories as $category)
                     @php
-                        $folder = $categorySlideshows[$category['name']] ?? null;
+                        $slideshow = $categorySlideshows[$category['name']] ?? null;
                         $slideImages = [];
 
-                        if ($folder) {
-                            $folderPath = public_path('images/category_icons_bg/' . $folder);
+                        if ($slideshow) {
+                            foreach (array_slice($slideshow['files'], 0, 4) as $file) {
+                                $path = public_path(
+                                    'images/category_icons_bg/' .
+                                    $slideshow['folder'] .
+                                    '/' .
+                                    $file
+                                );
 
-                            if (is_dir($folderPath)) {
-                                $allFiles = glob($folderPath . '/*.{jpg,jpeg,png,webp,avif,gif}', GLOB_BRACE);
-                                $slideImages = array_map('basename', array_slice($allFiles, 0, 6));
+                                if (file_exists($path)) {
+                                    $slideImages[] = $file;
+                                }
                             }
                         }
-
-                        // Even spacing sa loob ng 12s animation cycle base sa bilang ng images
-                        $imageCount = count($slideImages);
-                        $slideInterval = $imageCount > 0 ? 12 / $imageCount : 0;
                     @endphp
 
                     <a
@@ -452,30 +438,27 @@
                                snap-start
                                transition-all duration-300"
                     >
-                        @if ($imageCount > 0)
+                        @if (count($slideImages) > 0)
                             <div class="absolute inset-0 z-0">
                                 @foreach ($slideImages as $i => $file)
                                     <img
-                                        src="{{ asset('images/category_icons_bg/' . $folder . '/' . $file) }}"
+                                        src="{{ asset('images/category_icons_bg/' . $slideshow['folder'] . '/' . $file) }}"
                                         alt=""
                                         class="category-slide"
-                                        style="animation-delay: {{ $i * $slideInterval }}s;"
+                                        style="animation-delay: {{ $i * 3 }}s;"
                                         loading="lazy"
                                     >
                                 @endforeach
 
-                                <div class="absolute inset-0 bg-white/75 group-hover:bg-white/55 transition-colors duration-300"></div>
+                                <div class="absolute inset-0 bg-white/75 group-hover:bg-white/60 transition-colors duration-300"></div>
                             </div>
                         @else
-                            {{-- Fallback kung walang existing images --}}
                             <div class="absolute inset-0 z-0 bg-gray-bg"></div>
                         @endif
 
-                        {{-- Category Icon --}}
                         <div
                             class="relative z-10
-                                   w-16 h-16
-                                   rounded-2xl bg-white/90
+                                   w-16 h-16 rounded-2xl bg-white/90
                                    flex items-center justify-center
                                    text-teal-dark shadow-sm
                                    group-hover:bg-teal
@@ -489,7 +472,6 @@
                             />
                         </div>
 
-                        {{-- Category Name --}}
                         <span
                             class="relative z-10 block mt-4
                                    text-xs sm:text-sm
@@ -502,7 +484,6 @@
                 @endforeach
             </div>
 
-            {{-- Next Button --}}
             <button
                 type="button"
                 data-category-next
@@ -517,15 +498,11 @@
             >
                 <x-lucide-chevron-right class="w-5 h-5" />
             </button>
-        </div>
 
+        </div>
     </div>
 </section>
 
-
-{{-- =========================================================
-    CATEGORY SLIDER SCRIPT
-========================================================= --}}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('[data-category-slider]').forEach(function (slider) {
@@ -542,43 +519,24 @@
                 const atStart = track.scrollLeft <= 5;
                 const atEnd = track.scrollLeft >= maxScrollLeft - 5;
 
-                if (atStart) {
-                    prevButton.classList.add('hidden');
-                    prevButton.classList.remove('flex');
-                } else {
-                    prevButton.classList.remove('hidden');
-                    prevButton.classList.add('flex');
-                }
+                prevButton.classList.toggle('hidden', atStart);
+                prevButton.classList.toggle('flex', !atStart);
 
-                if (atEnd || maxScrollLeft <= 5) {
-                    nextButton.classList.add('hidden');
-                    nextButton.classList.remove('flex');
-                } else {
-                    nextButton.classList.remove('hidden');
-                    nextButton.classList.add('flex');
-                }
+                const hideNext = atEnd || maxScrollLeft <= 5;
+                nextButton.classList.toggle('hidden', hideNext);
+                nextButton.classList.toggle('flex', !hideNext);
             }
 
             function scrollAmount() {
-                /*
-                 * Scroll roughly one full visible set.
-                 * On desktop this moves close to 7 cards.
-                 */
                 return track.clientWidth * 0.95;
             }
 
             nextButton.addEventListener('click', function () {
-                track.scrollBy({
-                    left: scrollAmount(),
-                    behavior: 'smooth'
-                });
+                track.scrollBy({ left: scrollAmount(), behavior: 'smooth' });
             });
 
             prevButton.addEventListener('click', function () {
-                track.scrollBy({
-                    left: -scrollAmount(),
-                    behavior: 'smooth'
-                });
+                track.scrollBy({ left: -scrollAmount(), behavior: 'smooth' });
             });
 
             track.addEventListener('scroll', updateButtons, { passive: true });
