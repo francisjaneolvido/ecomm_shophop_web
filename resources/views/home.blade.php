@@ -430,6 +430,7 @@
                                flex flex-col items-center justify-center
                                border border-transparent
                                hover:border-teal/30
+                               hover:bg-teal-light
                                hover:-translate-y-1
                                hover:shadow-lg
                                snap-start
