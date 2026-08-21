@@ -421,7 +421,7 @@
                         $slideInterval = $imageCount > 0 ? 12 / $imageCount : 0;
                     @endphp
 
-                    
+                    <a
                         href="#"
                         class="group relative overflow-hidden
                                min-h-46 sm:min-h-48
@@ -1388,7 +1388,7 @@
 
         4% {
             opacity: 1;
-            transform: scale(1);`
+            transform: scale(1);
         }
 
         21% {
