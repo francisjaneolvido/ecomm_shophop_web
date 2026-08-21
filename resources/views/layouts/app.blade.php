@@ -4,13 +4,14 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
 
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
+
+    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
     <title>
         @yield('title', 'ShopHop — Hop In. Shop More.')
@@ -57,9 +58,13 @@
 
     {{-- ========================================
         NAVBAR
+        Skipped when the page sets @section('hideChrome', true)
+        e.g. the registration page.
     ========================================= --}}
 
-    @include('partials.navbar')
+    @unless (View::hasSection('hideChrome'))
+        @include('partials.navbar')
+    @endunless
 
 
     {{-- ========================================
@@ -73,9 +78,13 @@
 
     {{-- ========================================
         FOOTER
+        Skipped when the page sets @section('hideChrome', true)
+        e.g. the registration page.
     ========================================= --}}
 
-    @include('partials.footer')
+    @unless (View::hasSection('hideChrome'))
+        @include('partials.footer')
+    @endunless
 
 
     {{-- ========================================

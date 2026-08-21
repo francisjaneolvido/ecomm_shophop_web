@@ -2,16 +2,39 @@
 
 @section('title', 'Create Account — ShopHop')
 
+{{-- This flag tells layouts/app.blade.php to skip rendering the navbar
+     and footer on this page. See the instructions provided alongside
+     this file for the small change needed in that layout. --}}
+@section('hideChrome', true)
+
 @section('content')
 
 <section class="relative overflow-hidden bg-gray-bg">
 
+    <style>
+        /* Hide Chrome's built-in "strong password suggestion" and
+           "saved credentials" icons inside password fields so only
+           our custom show/hide eye button appears. */
+        input[type="password"]::-webkit-strong-password-auto-fill-button,
+        input[type="password"]::-webkit-credentials-auto-fill-button {
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+
+        /* Hide Edge's built-in reveal-password icon for the same reason. */
+        input[type="password"]::-ms-reveal,
+        input[type="password"]::-ms-clear {
+            display: none !important;
+        }
+    </style>
+
     {{-- =========================================================
         REGISTRATION HERO / SPLIT SCREEN
     ========================================================= --}}
-    <div class="relative min-h-[calc(100vh-56px)]">
+    <div class="relative min-h-screen">
 
-        <div class="grid lg:grid-cols-[1fr_560px] min-h-[calc(100vh-56px)]">
+        <div class="grid lg:grid-cols-[1fr_560px] min-h-screen">
 
 
             {{-- =====================================================
@@ -22,7 +45,7 @@
                        overflow-hidden
                        bg-navy
                        px-10 xl:px-16
-                       py-14
+                       py-8
                        items-center"
             >
 
@@ -79,15 +102,12 @@
 
                         <div
                             class="w-14 h-14
-                                   rounded-2xl
-                                   bg-white
-                                   flex items-center justify-center
-                                   shadow-xl shadow-black/10"
-                        >
+                                flex items-center justify-center"
+                            >
                             <img
                                 src="{{ asset('images/logo.png') }}"
                                 alt="ShopHop"
-                                class="w-10 h-10 object-contain"
+                                class="w-14 h-14 object-contain"
                             >
                         </div>
 
@@ -112,7 +132,7 @@
 
 
                     {{-- Main artwork content --}}
-                    <div class="mt-12 xl:mt-16">
+                    <div class="mt-7 xl:mt-9">
 
                         <span
                             class="inline-flex items-center gap-2
@@ -131,14 +151,14 @@
 
 
                         <h1
-                            class="mt-6
+                            class="mt-5
                                    text-white
-                                   text-5xl xl:text-6xl
+                                   text-4xl xl:text-5xl
                                    font-extrabold
                                    leading-[1.05]
                                    max-w-xl"
                         >
-                            Discover more.
+                            <span class="text-white">Discover more.</span>
                             <span class="block text-teal">
                                 Shop your way.
                             </span>
@@ -146,7 +166,7 @@
 
 
                         <p
-                            class="mt-6
+                            class="mt-4
                                    text-white/65
                                    text-base xl:text-lg
                                    leading-relaxed
@@ -163,8 +183,8 @@
                     {{-- Artistic shopping cards --}}
                     <div
                         class="relative
-                               mt-12 xl:mt-14
-                               h-72
+                               mt-7 xl:mt-8
+                               h-56
                                max-w-xl"
                     >
 
@@ -346,6 +366,111 @@
 
                     </div>
 
+
+                    {{-- Trust stats row --}}
+                    <div
+                        class="mt-7 xl:mt-8
+                               flex items-center
+                               gap-6 xl:gap-8
+                               max-w-xl"
+                    >
+
+                        <div>
+
+                            <p class="text-white text-2xl xl:text-3xl font-extrabold">
+                                10K+
+                            </p>
+
+                            <p class="text-white/50 text-xs mt-1">
+                                Active Sellers
+                            </p>
+
+                        </div>
+
+                        <div class="w-px h-10 bg-white/10"></div>
+
+                        <div>
+
+                            <p class="text-white text-2xl xl:text-3xl font-extrabold">
+                                50K+
+                            </p>
+
+                            <p class="text-white/50 text-xs mt-1">
+                                Products Listed
+                            </p>
+
+                        </div>
+
+                        <div class="w-px h-10 bg-white/10"></div>
+
+                        <div>
+
+                            <p class="text-white text-2xl xl:text-3xl font-extrabold">
+                                4.8<span class="text-teal">★</span>
+                            </p>
+
+                            <p class="text-white/50 text-xs mt-1">
+                                Customer Rating
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    {{-- Testimonial --}}
+                    <div
+                        class="mt-5 xl:mt-6
+                               max-w-md
+                               rounded-2xl
+                               bg-white/5
+                               border border-white/10
+                               backdrop-blur
+                               p-4"
+                    >
+
+                        <div class="flex items-center gap-1 text-teal mb-2.5">
+                            <x-lucide-star class="w-4 h-4 fill-current" />
+                            <x-lucide-star class="w-4 h-4 fill-current" />
+                            <x-lucide-star class="w-4 h-4 fill-current" />
+                            <x-lucide-star class="w-4 h-4 fill-current" />
+                            <x-lucide-star class="w-4 h-4 fill-current" />
+                        </div>
+
+                        <p class="text-white/70 text-sm leading-relaxed">
+                            "Sobrang bilis mag-checkout at ang dami pang deals
+                            kada araw. Paborito ko na ito for online shopping!"
+                        </p>
+
+                        <div class="flex items-center gap-3 mt-3">
+
+                            <div
+                                class="w-8 h-8
+                                       rounded-full
+                                       bg-teal-light
+                                       flex items-center justify-center
+                                       text-teal-dark
+                                       text-xs font-bold"
+                            >
+                                JM
+                            </div>
+
+                            <div>
+
+                                <p class="text-white text-xs font-semibold">
+                                    Jasmine M.
+                                </p>
+
+                                <p class="text-white/40 text-[10px]">
+                                    Verified Buyer
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
                 </div>
 
             </div>
@@ -361,7 +486,7 @@
                        py-8 sm:py-10 lg:py-12"
             >
 
-                <div class="max-w-xl mx-auto">
+                <div id="registration-panel" class="max-w-xl mx-auto">
 
 
                     {{-- Mobile branding --}}
@@ -413,6 +538,102 @@
                         >
                             Enter your details below to create your ShopHop account.
                         </p>
+
+                    </div>
+
+
+                    {{-- =================================================
+                        STEP PROGRESS BAR
+                    ================================================== --}}
+                    <div class="mb-8">
+
+                        {{-- Circles + connecting lines --}}
+                        <div
+                            class="grid items-center"
+                            style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto;"
+                        >
+
+                            <div
+                                class="step-circle justify-self-center w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold bg-teal border-teal text-white transition-colors duration-300"
+                                data-step-circle="1"
+                            >
+                                <span class="step-number">1</span>
+                                <x-lucide-check class="step-check hidden w-4 h-4" />
+                            </div>
+
+                            <div class="step-line h-0.5 mx-1 bg-gray-border transition-colors duration-300" data-step-line="1"></div>
+
+                            <div
+                                class="step-circle justify-self-center w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold bg-white border-gray-border text-navy/30 transition-colors duration-300"
+                                data-step-circle="2"
+                            >
+                                <span class="step-number">2</span>
+                                <x-lucide-check class="step-check hidden w-4 h-4" />
+                            </div>
+
+                            <div class="step-line h-0.5 mx-1 bg-gray-border transition-colors duration-300" data-step-line="2"></div>
+
+                            <div
+                                class="step-circle justify-self-center w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold bg-white border-gray-border text-navy/30 transition-colors duration-300"
+                                data-step-circle="3"
+                            >
+                                <span class="step-number">3</span>
+                                <x-lucide-check class="step-check hidden w-4 h-4" />
+                            </div>
+
+                            <div class="step-line h-0.5 mx-1 bg-gray-border transition-colors duration-300" data-step-line="3"></div>
+
+                            <div
+                                class="step-circle justify-self-center w-9 h-9 rounded-full border-2 flex items-center justify-center text-xs font-bold bg-white border-gray-border text-navy/30 transition-colors duration-300"
+                                data-step-circle="4"
+                            >
+                                <span class="step-number">4</span>
+                                <x-lucide-check class="step-check hidden w-4 h-4" />
+                            </div>
+
+                        </div>
+
+                        {{-- Labels --}}
+                        <div
+                            class="grid mt-2"
+                            style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto;"
+                        >
+
+                            <p
+                                class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-semibold leading-tight text-navy transition-colors duration-300"
+                                data-step-label="1"
+                            >
+                                Personal
+                            </p>
+
+                            <div></div>
+
+                            <p
+                                class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30 transition-colors duration-300"
+                                data-step-label="2"
+                            >
+                                Address
+                            </p>
+
+                            <div></div>
+
+                            <p
+                                class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30 transition-colors duration-300"
+                                data-step-label="3"
+                            >
+                                Verification
+                            </p>
+
+                            <div></div>
+
+                            <p
+                                class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30 transition-colors duration-300"
+                                data-step-label="4"
+                            >
+                                Security
+                            </p>
+
+                        </div>
 
                     </div>
 
@@ -470,335 +691,402 @@
                         action="{{ route('register.store') }}"
                         method="POST"
                         enctype="multipart/form-data"
+                        id="register-form"
                     >
 
                         @csrf
 
 
                         {{-- =================================================
-                            PERSONAL DETAILS
+                            STEP 1 — PERSONAL DETAILS
                         ================================================== --}}
-                        <div class="grid sm:grid-cols-2 gap-4">
+                        <div data-step-panel="1">
+
+                            <div class="grid sm:grid-cols-2 gap-4">
 
 
-                            {{-- First Name --}}
-                            <div>
+                                {{-- First Name --}}
+                                <div>
 
-                                <label
-                                    for="first_name"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    First Name
-                                    <span class="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="first_name"
-                                    name="first_name"
-                                    value="{{ old('first_name') }}"
-                                    required
-                                    autocomplete="given-name"
-                                    placeholder="Enter first name"
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           placeholder:text-navy/30
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
-
-                            </div>
-
-
-                            {{-- Last Name --}}
-                            <div>
-
-                                <label
-                                    for="last_name"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    Last Name
-                                    <span class="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="last_name"
-                                    name="last_name"
-                                    value="{{ old('last_name') }}"
-                                    required
-                                    autocomplete="family-name"
-                                    placeholder="Enter last name"
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           placeholder:text-navy/30
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
-
-                            </div>
-
-
-                            {{-- Middle Initial --}}
-                            <div>
-
-                                <label
-                                    for="middle_initial"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    Middle Initial
-                                </label>
-
-                                <input
-                                    type="text"
-                                    id="middle_initial"
-                                    name="middle_initial"
-                                    value="{{ old('middle_initial') }}"
-                                    maxlength="2"
-                                    placeholder="e.g. M."
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           placeholder:text-navy/30
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
-
-                            </div>
-
-
-                            {{-- Sex --}}
-                            <div>
-
-                                <label
-                                    for="sex"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    Sex
-                                    <span class="text-red-500">*</span>
-                                </label>
-
-                                <select
-                                    id="sex"
-                                    name="sex"
-                                    required
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm text-navy
-                                           outline-none
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
-                                    <option value="">
-                                        Select sex
-                                    </option>
-
-                                    <option
-                                        value="Male"
-                                        @selected(old('sex') === 'Male')
+                                    <label
+                                        for="first_name"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
                                     >
-                                        Male
-                                    </option>
+                                        First Name
+                                        <span class="text-red-500">*</span>
+                                    </label>
 
-                                    <option
-                                        value="Female"
-                                        @selected(old('sex') === 'Female')
+                                    <input
+                                        type="text"
+                                        id="first_name"
+                                        name="first_name"
+                                        value="{{ old('first_name') }}"
+                                        required
+                                        autocomplete="given-name"
+                                        placeholder="Enter first name"
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-white
+                                               px-4 py-3
+                                               text-sm
+                                               text-navy
+                                               outline-none
+                                               placeholder:text-navy/30
+                                               focus:border-teal
+                                               focus:ring-4
+                                               focus:ring-teal/10
+                                               transition"
                                     >
-                                        Female
-                                    </option>
-                                </select>
+
+                                    <p
+                                        id="first_name_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                {{-- Last Name --}}
+                                <div>
+
+                                    <label
+                                        for="last_name"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
+                                    >
+                                        Last Name
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="last_name"
+                                        name="last_name"
+                                        value="{{ old('last_name') }}"
+                                        required
+                                        autocomplete="family-name"
+                                        placeholder="Enter last name"
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-white
+                                               px-4 py-3
+                                               text-sm
+                                               text-navy
+                                               outline-none
+                                               placeholder:text-navy/30
+                                               focus:border-teal
+                                               focus:ring-4
+                                               focus:ring-teal/10
+                                               transition"
+                                    >
+
+                                    <p
+                                        id="last_name_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                {{-- Middle Initial --}}
+                                <div>
+
+                                    <label
+                                        for="middle_initial"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
+                                    >
+                                        Middle Initial
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        id="middle_initial"
+                                        name="middle_initial"
+                                        value="{{ old('middle_initial') }}"
+                                        maxlength="2"
+                                        placeholder="e.g. M."
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-white
+                                               px-4 py-3
+                                               text-sm
+                                               text-navy
+                                               outline-none
+                                               placeholder:text-navy/30
+                                               focus:border-teal
+                                               focus:ring-4
+                                               focus:ring-teal/10
+                                               transition"
+                                    >
+
+                                    <p
+                                        id="middle_initial_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                {{-- Sex --}}
+                                <div>
+
+                                    <label
+                                        for="sex"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
+                                    >
+                                        Sex
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <select
+                                        id="sex"
+                                        name="sex"
+                                        required
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-white
+                                               px-4 py-3
+                                               text-sm text-navy
+                                               outline-none
+                                               focus:border-teal
+                                               focus:ring-4
+                                               focus:ring-teal/10
+                                               transition"
+                                    >
+                                        <option value="">
+                                            Select sex
+                                        </option>
+
+                                        <option
+                                            value="Male"
+                                            @selected(old('sex') === 'Male')
+                                        >
+                                            Male
+                                        </option>
+
+                                        <option
+                                            value="Female"
+                                            @selected(old('sex') === 'Female')
+                                        >
+                                            Female
+                                        </option>
+                                    </select>
+
+                                    <p
+                                        id="sex_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                {{-- Email --}}
+                                <div class="sm:col-span-2">
+
+                                    <label
+                                        for="email"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
+                                    >
+                                        E-mail
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <input
+                                        type="email"
+                                        id="email"
+                                        name="email"
+                                        value="{{ old('email') }}"
+                                        required
+                                        autocomplete="email"
+                                        placeholder="your@email.com"
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-white
+                                               px-4 py-3
+                                               text-sm
+                                               text-navy
+                                               outline-none
+                                               placeholder:text-navy/30
+                                               focus:border-teal
+                                               focus:ring-4
+                                               focus:ring-teal/10
+                                               transition"
+                                    >
+
+                                    <p
+                                        id="email_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                {{-- Contact --}}
+                                <div>
+
+                                    <label
+                                        for="contact_no"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
+                                    >
+                                        Contact No.
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <input
+                                        type="tel"
+                                        id="contact_no"
+                                        name="contact_no"
+                                        value="{{ old('contact_no') }}"
+                                        required
+                                        inputmode="numeric"
+                                        maxlength="11"
+                                        placeholder="09XXXXXXXXX"
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-white
+                                               px-4 py-3
+                                               text-sm
+                                               text-navy
+                                               outline-none
+                                               placeholder:text-navy/30
+                                               focus:border-teal
+                                               focus:ring-4
+                                               focus:ring-teal/10
+                                               transition"
+                                    >
+
+                                    <p
+                                        id="contact_no_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                {{-- Birthday --}}
+                                <div>
+
+                                    <label
+                                        for="birthday"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
+                                    >
+                                        Birthday
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <input
+                                        type="date"
+                                        id="birthday"
+                                        name="birthday"
+                                        value="{{ old('birthday') }}"
+                                        max="{{ now()->format('Y-m-d') }}"
+                                        required
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-white
+                                               px-4 py-3
+                                               text-sm
+                                               text-navy
+                                               outline-none
+                                               focus:border-teal
+                                               focus:ring-4
+                                               focus:ring-teal/10
+                                               transition"
+                                    >
+
+                                    <p
+                                        id="birthday_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                {{-- Age --}}
+                                <div>
+
+                                    <label
+                                        for="age"
+                                        class="block
+                                               text-xs font-medium
+                                               text-navy
+                                               mb-2"
+                                    >
+                                        Age
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <input
+                                        type="number"
+                                        id="age"
+                                        value="{{ old('age') }}"
+                                        readonly
+                                        placeholder="Auto-generated"
+                                        class="w-full
+                                               rounded-xl
+                                               border border-gray-border
+                                               bg-gray-bg
+                                               px-4 py-3
+                                               text-sm
+                                               text-navy
+                                               outline-none"
+                                    >
+
+                                </div>
 
                             </div>
 
 
-                            {{-- Email --}}
-                            <div class="sm:col-span-2">
+                            {{-- Step 1 navigation --}}
+                            <div class="flex items-center gap-3 mt-8">
 
-                                <label
-                                    for="email"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    E-mail
-                                    <span class="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    type="email"
-                                    id="email"
-                                    name="email"
-                                    value="{{ old('email') }}"
-                                    required
-                                    autocomplete="email"
-                                    placeholder="your@email.com"
-                                    class="w-full
+                                <button
+                                    type="button"
+                                    id="step1-next"
+                                    class="flex-1
+                                           inline-flex
+                                           items-center justify-center gap-2
+                                           bg-teal
+                                           hover:bg-teal-dark
+                                           text-white
+                                           text-sm font-semibold
+                                           py-3.5
                                            rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           placeholder:text-navy/30
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
+                                           shadow-lg shadow-teal/20
+                                           hover:-translate-y-0.5
+                                           transition-all duration-300"
                                 >
+                                    Next
 
-                            </div>
-
-
-                            {{-- Contact --}}
-                            <div>
-
-                                <label
-                                    for="contact_no"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    Contact No.
-                                    <span class="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    type="tel"
-                                    id="contact_no"
-                                    name="contact_no"
-                                    value="{{ old('contact_no') }}"
-                                    required
-                                    inputmode="numeric"
-                                    maxlength="11"
-                                    placeholder="09XXXXXXXXX"
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           placeholder:text-navy/30
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
-
-                            </div>
-
-
-                            {{-- Birthday --}}
-                            <div>
-
-                                <label
-                                    for="birthday"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    Birthday
-                                    <span class="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    type="date"
-                                    id="birthday"
-                                    name="birthday"
-                                    value="{{ old('birthday') }}"
-                                    max="{{ now()->format('Y-m-d') }}"
-                                    required
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
-
-                            </div>
-
-
-                            {{-- Age --}}
-                            <div>
-
-                                <label
-                                    for="age"
-                                    class="block
-                                           text-xs font-medium
-                                           text-navy
-                                           mb-2"
-                                >
-                                    Age
-                                    <span class="text-red-500">*</span>
-                                </label>
-
-                                <input
-                                    type="number"
-                                    id="age"
-                                    value="{{ old('age') }}"
-                                    readonly
-                                    placeholder="Auto-generated"
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-gray-bg
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none"
-                                >
+                                    <x-lucide-arrow-right class="w-4 h-4" />
+                                </button>
 
                             </div>
 
@@ -806,15 +1094,10 @@
 
 
 
-                        {{-- Divider --}}
-                        <div class="h-px bg-gray-border my-6"></div>
-
-
-
                         {{-- =================================================
-                            ADDRESS
+                            STEP 2 — ADDRESS
                         ================================================== --}}
-                        <div>
+                        <div data-step-panel="2" class="hidden">
 
                             <div class="flex items-center gap-2 mb-4">
 
@@ -882,6 +1165,11 @@
                                         value="{{ old('province_name') }}"
                                     >
 
+                                    <p
+                                        id="province_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
                                 </div>
 
 
@@ -926,6 +1214,11 @@
                                         name="municipality_name"
                                         value="{{ old('municipality_name') }}"
                                     >
+
+                                    <p
+                                        id="municipality_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
 
                                 </div>
 
@@ -972,6 +1265,11 @@
                                         value="{{ old('barangay_name') }}"
                                     >
 
+                                    <p
+                                        id="barangay_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
                                 </div>
 
 
@@ -1007,7 +1305,56 @@
                                                transition"
                                     >{{ old('street_address') }}</textarea>
 
+                                    <p
+                                        id="street_address_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
                                 </div>
+
+                            </div>
+
+
+                            {{-- Step 2 navigation --}}
+                            <div class="flex items-center gap-3 mt-8">
+
+                                <button
+                                    type="button"
+                                    id="step2-back"
+                                    class="inline-flex
+                                           items-center justify-center gap-2
+                                           border border-gray-border
+                                           text-navy
+                                           text-sm font-semibold
+                                           py-3.5 px-6
+                                           rounded-xl
+                                           hover:bg-gray-bg
+                                           transition"
+                                >
+                                    <x-lucide-arrow-left class="w-4 h-4" />
+                                    Back
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="step2-next"
+                                    class="flex-1
+                                           inline-flex
+                                           items-center justify-center gap-2
+                                           bg-teal
+                                           hover:bg-teal-dark
+                                           text-white
+                                           text-sm font-semibold
+                                           py-3.5
+                                           rounded-xl
+                                           shadow-lg shadow-teal/20
+                                           hover:-translate-y-0.5
+                                           transition-all duration-300"
+                                >
+                                    Next
+
+                                    <x-lucide-arrow-right class="w-4 h-4" />
+                                </button>
 
                             </div>
 
@@ -1015,14 +1362,10 @@
 
 
 
-                        <div class="h-px bg-gray-border my-6"></div>
-
-
-
                         {{-- =================================================
-                            VALID ID
+                            STEP 3 — VALID ID
                         ================================================== --}}
-                        <div>
+                        <div data-step-panel="3" class="hidden">
 
                             <label
                                 for="valid_id"
@@ -1095,150 +1438,432 @@
 
                             </label>
 
+                            <p
+                                id="valid_id_error"
+                                class="hidden text-[11px] text-red-500 mt-1.5"
+                            ></p>
+
+
+                            {{-- Step 3 navigation --}}
+                            <div class="flex items-center gap-3 mt-8">
+
+                                <button
+                                    type="button"
+                                    id="step3-back"
+                                    class="inline-flex
+                                           items-center justify-center gap-2
+                                           border border-gray-border
+                                           text-navy
+                                           text-sm font-semibold
+                                           py-3.5 px-6
+                                           rounded-xl
+                                           hover:bg-gray-bg
+                                           transition"
+                                >
+                                    <x-lucide-arrow-left class="w-4 h-4" />
+                                    Back
+                                </button>
+
+                                <button
+                                    type="button"
+                                    id="step3-next"
+                                    class="flex-1
+                                           inline-flex
+                                           items-center justify-center gap-2
+                                           bg-teal
+                                           hover:bg-teal-dark
+                                           text-white
+                                           text-sm font-semibold
+                                           py-3.5
+                                           rounded-xl
+                                           shadow-lg shadow-teal/20
+                                           hover:-translate-y-0.5
+                                           transition-all duration-300"
+                                >
+                                    Next
+
+                                    <x-lucide-arrow-right class="w-4 h-4" />
+                                </button>
+
+                            </div>
+
                         </div>
-
-
-
-                        <div class="h-px bg-gray-border my-6"></div>
 
 
 
                         {{-- =================================================
-                            PASSWORD
+                            STEP 4 — SECURITY
                         ================================================== --}}
-                        <div class="grid sm:grid-cols-2 gap-4">
+                        <div data-step-panel="4" class="hidden">
 
-                            <div>
+                            <div class="grid sm:grid-cols-2 gap-4">
 
-                                <label
-                                    for="password"
-                                    class="block text-xs font-medium text-navy mb-2"
-                                >
-                                    Password
-                                    <span class="text-red-500">*</span>
-                                </label>
+                                <div>
 
-                                <input
-                                    type="password"
-                                    id="password"
-                                    name="password"
-                                    minlength="8"
-                                    required
-                                    autocomplete="new-password"
-                                    placeholder="Minimum 8 characters"
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           placeholder:text-navy/30
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
+                                    <label
+                                        for="password"
+                                        class="block text-xs font-medium text-navy mb-2"
+                                    >
+                                        Password
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <div class="relative">
+
+                                        <input
+                                            type="password"
+                                            id="password"
+                                            name="password"
+                                            minlength="8"
+                                            required
+                                            autocomplete="new-password"
+                                            placeholder="Minimum 8 characters"
+                                            class="w-full
+                                                   rounded-xl
+                                                   border border-gray-border
+                                                   bg-white
+                                                   px-4 py-3
+                                                   pr-11
+                                                   text-sm
+                                                   text-navy
+                                                   outline-none
+                                                   placeholder:text-navy/30
+                                                   focus:border-teal
+                                                   focus:ring-4
+                                                   focus:ring-teal/10
+                                                   transition"
+                                        >
+
+                                        <button
+                                            type="button"
+                                            id="toggle_password"
+                                            aria-label="Show password"
+                                            aria-pressed="false"
+                                            class="absolute
+                                                   right-3 top-1/2
+                                                   -translate-y-1/2
+                                                   w-4 h-4
+                                                   text-navy/40
+                                                   hover:text-navy
+                                                   transition"
+                                        >
+                                            <svg
+                                                class="password-icon-show w-4 h-4"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+
+                                            <svg
+                                                class="password-icon-hide w-4 h-4"
+                                                style="display:none"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                                <path d="M6.61 6.61A13.53 13.53 0 0 0 1 11s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61" />
+                                                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                                                <path d="M1 1l22 22" />
+                                            </svg>
+                                        </button>
+
+                                    </div>
+
+                                    <p
+                                        id="password_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
+
+
+                                <div>
+
+                                    <label
+                                        for="password_confirmation"
+                                        class="block text-xs font-medium text-navy mb-2"
+                                    >
+                                        Confirm Password
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <div class="relative">
+
+                                        <input
+                                            type="password"
+                                            id="password_confirmation"
+                                            name="password_confirmation"
+                                            minlength="8"
+                                            required
+                                            autocomplete="new-password"
+                                            placeholder="Re-enter password"
+                                            class="w-full
+                                                   rounded-xl
+                                                   border border-gray-border
+                                                   bg-white
+                                                   px-4 py-3
+                                                   pr-11
+                                                   text-sm
+                                                   text-navy
+                                                   outline-none
+                                                   placeholder:text-navy/30
+                                                   focus:border-teal
+                                                   focus:ring-4
+                                                   focus:ring-teal/10
+                                                   transition"
+                                        >
+
+                                        <button
+                                            type="button"
+                                            id="toggle_password_confirmation"
+                                            aria-label="Show password"
+                                            aria-pressed="false"
+                                            class="absolute
+                                                   right-3 top-1/2
+                                                   -translate-y-1/2
+                                                   w-4 h-4
+                                                   text-navy/40
+                                                   hover:text-navy
+                                                   transition"
+                                        >
+                                            <svg
+                                                class="password-icon-show w-4 h-4"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+                                                <circle cx="12" cy="12" r="3" />
+                                            </svg>
+
+                                            <svg
+                                                class="password-icon-hide w-4 h-4"
+                                                style="display:none"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round"
+                                            >
+                                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                                <path d="M6.61 6.61A13.53 13.53 0 0 0 1 11s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61" />
+                                                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                                                <path d="M1 1l22 22" />
+                                            </svg>
+                                        </button>
+
+                                    </div>
+
+                                    <p
+                                        id="password_confirmation_error"
+                                        class="hidden text-[11px] text-red-500 mt-1.5"
+                                    ></p>
+
+                                </div>
 
                             </div>
 
+                            {{-- Password requirements checklist --}}
+                            <div
+                                id="password-requirements"
+                                class="mt-4
+                                    rounded-xl
+                                    border border-gray-border
+                                    bg-gray-bg
+                                    p-4
+                                    grid
+                                    grid-cols-1 sm:grid-cols-2
+                                    gap-x-4 gap-y-2"
+                            >
 
-                            <div>
+                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="length">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                        <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
+                                    </span>
+                                    Minimum 8 characters
+                                </p>
 
-                                <label
-                                    for="password_confirmation"
-                                    class="block text-xs font-medium text-navy mb-2"
-                                >
-                                    Confirm Password
-                                    <span class="text-red-500">*</span>
-                                </label>
+                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="uppercase">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                        <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
+                                    </span>
+                                    At least 1 uppercase letter (A–Z)
+                                </p>
 
-                                <input
-                                    type="password"
-                                    id="password_confirmation"
-                                    name="password_confirmation"
-                                    minlength="8"
-                                    required
-                                    autocomplete="new-password"
-                                    placeholder="Re-enter password"
-                                    class="w-full
-                                           rounded-xl
-                                           border border-gray-border
-                                           bg-white
-                                           px-4 py-3
-                                           text-sm
-                                           text-navy
-                                           outline-none
-                                           placeholder:text-navy/30
-                                           focus:border-teal
-                                           focus:ring-4
-                                           focus:ring-teal/10
-                                           transition"
-                                >
+                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="lowercase">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                        <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
+                                    </span>
+                                    At least 1 lowercase letter (a–z)
+                                </p>
 
-                            </div>
+                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="number">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                        <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
+                                    </span>
+                                    At least 1 number (0–9)
+                                </p>
 
-                        </div>
-
-
-
-                        {{-- Approval notice --}}
-                        <div
-                            class="mt-6
-                                   rounded-xl
-                                   border border-teal/20
-                                   bg-teal-light/50
-                                   p-4"
-                        >
-
-                            <div class="flex gap-3">
-
-                                <x-lucide-info
-                                    class="w-4 h-4
-                                           text-teal-dark
-                                           shrink-0
-                                           mt-0.5"
-                                />
-
-                                <p
-                                    class="text-[11px] sm:text-xs
-                                           text-navy/60
-                                           leading-relaxed"
-                                >
-                                    After submitting your registration, please
-                                    wait for the administrator's approval.
-                                    Your approval status will be sent to your
-                                    registered email.
+                                <p class="req-item sm:col-span-2 flex items-center gap-2 text-[11px] text-navy/30 transition-colors duration-200" data-req="special">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                        <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
+                                    </span>
+                                    Special character
+                                    <span class="text-navy/30">(recommended: ! @ # $ % ^ &amp; *)</span>
                                 </p>
 
                             </div>
 
+                            {{-- Approval notice --}}
+                            <div
+                                class="mt-6
+                                       rounded-xl
+                                       border border-teal/20
+                                       bg-teal-light/50
+                                       p-4"
+                            >
+
+                                <div class="flex gap-3">
+
+                                    <x-lucide-info
+                                        class="w-4 h-4
+                                               text-teal-dark
+                                               shrink-0
+                                               mt-0.5"
+                                    />
+
+                                    <p
+                                        class="text-[11px] sm:text-xs
+                                               text-navy/60
+                                               leading-relaxed"
+                                    >
+                                        After submitting your registration, please
+                                        wait for the administrator's approval.
+                                        Your approval status will be sent to your
+                                        registered email.
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            {{-- Terms & Agreement --}}
+                            <div class="mt-5">
+
+                                <label
+                                    for="terms"
+                                    class="flex items-start gap-3 cursor-pointer group"
+                                >
+
+                                    <input
+                                        type="checkbox"
+                                        id="terms"
+                                        name="terms"
+                                        required
+                                        class="peer sr-only"
+                                    >
+
+                                    <span
+                                        class="mt-0.5
+                                            shrink-0
+                                            w-5 h-5
+                                            rounded-md
+                                            border-2 border-gray-border
+                                            bg-white
+                                            flex items-center justify-center
+                                            peer-checked:bg-teal
+                                            peer-checked:border-teal
+                                            group-hover:border-teal
+                                            transition-colors duration-200"
+                                    >
+                                        <x-lucide-check class="w-3.5 h-3.5 text-white" />
+                                    </span>
+
+                                    <span class="text-xs text-navy/60 leading-relaxed">
+                                        I have read and agree to ShopHop's
+                                        <a
+                                            href="#"
+                                            target="_blank"
+                                            class="font-semibold text-teal-dark hover:text-navy transition"
+                                            onclick="event.stopPropagation()"
+                                        >Terms and Conditions</a>
+                                        and
+                                        <a
+                                            href="#"
+                                            target="_blank"
+                                            class="font-semibold text-teal-dark hover:text-navy transition"
+                                            onclick="event.stopPropagation()"
+                                        >Privacy Policy</a>.
+                                        <span class="text-red-500">*</span>
+                                    </span>
+
+                                </label>
+
+                                <p
+                                    id="terms_error"
+                                    class="hidden text-[11px] text-red-500 mt-1.5 ml-8"
+                                ></p>
+
+                            </div>
+
+
+                            {{-- Step 4 navigation --}}
+                            <div class="flex items-center gap-3 mt-6">
+
+                                <button
+                                    type="button"
+                                    id="step4-back"
+                                    class="inline-flex
+                                           items-center justify-center gap-2
+                                           border border-gray-border
+                                           text-navy
+                                           text-sm font-semibold
+                                           py-3.5 px-6
+                                           rounded-xl
+                                           hover:bg-gray-bg
+                                           transition"
+                                >
+                                    <x-lucide-arrow-left class="w-4 h-4" />
+                                    Back
+                                </button>
+
+                                <button
+                                    type="submit"
+                                    class="flex-1
+                                           inline-flex
+                                           items-center justify-center gap-2
+                                           bg-teal
+                                           hover:bg-teal-dark
+                                           text-white
+                                           text-sm font-semibold
+                                           py-3.5
+                                           rounded-xl
+                                           shadow-lg shadow-teal/20
+                                           hover:-translate-y-0.5
+                                           transition-all duration-300"
+                                >
+                                    Create Account
+
+                                    <x-lucide-arrow-right class="w-4 h-4" />
+                                </button>
+
+                            </div>
+
                         </div>
-
-
-
-                        {{-- Submit --}}
-                        <button
-                            type="submit"
-                            class="w-full
-                                   mt-6
-                                   inline-flex
-                                   items-center justify-center gap-2
-                                   bg-teal
-                                   hover:bg-teal-dark
-                                   text-white
-                                   text-sm font-semibold
-                                   py-3.5
-                                   rounded-xl
-                                   shadow-lg shadow-teal/20
-                                   hover:-translate-y-0.5
-                                   transition-all duration-300"
-                        >
-                            Create Account
-
-                            <x-lucide-arrow-right class="w-4 h-4" />
-                        </button>
 
 
                         {{-- Sign in --}}
@@ -1314,6 +1939,12 @@
         const fileName =
             document.getElementById('file-name');
 
+        const validIdError =
+            document.getElementById('valid_id_error');
+
+        const registerForm =
+            document.getElementById('register-form');
+
 
         /*
         |--------------------------------------------------------------------------
@@ -1385,8 +2016,50 @@
 
                 if (this.files.length > 0) {
 
+                    const file = this.files[0];
+
+                    const allowedTypes = [
+                        'image/jpeg',
+                        'image/png',
+                        'application/pdf',
+                    ];
+
+                    const maxSizeBytes = 5 * 1024 * 1024;
+
+                    if (!allowedTypes.includes(file.type)) {
+
+                        showError(
+                            validIdInput,
+                            validIdError,
+                            'Only JPG, JPEG, PNG or PDF files are allowed.'
+                        );
+
+                        fileName.textContent = '';
+                        fileName.classList.add('hidden');
+                        this.value = '';
+                        return;
+
+                    }
+
+                    if (file.size > maxSizeBytes) {
+
+                        showError(
+                            validIdInput,
+                            validIdError,
+                            'File is too large. Maximum size is 5MB.'
+                        );
+
+                        fileName.textContent = '';
+                        fileName.classList.add('hidden');
+                        this.value = '';
+                        return;
+
+                    }
+
+                    showError(validIdInput, validIdError, '');
+
                     fileName.textContent =
-                        this.files[0].name;
+                        file.name;
 
                     fileName.classList.remove(
                         'hidden'
@@ -1404,6 +2077,705 @@
 
             }
         );
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | REAL-TIME FIELD VALIDATION
+        |--------------------------------------------------------------------------
+        */
+
+        const nameRegex = /^[A-Za-zÀ-ÿñÑ\s'.-]*$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const contactRegex = /^09\d{9}$/;
+
+        const passwordUppercaseRegex = /[A-Z]/;
+        const passwordLowercaseRegex = /[a-z]/;
+        const passwordNumberRegex = /[0-9]/;
+        const passwordSpecialRegex = /[!@#$%^&*]/;
+
+        function showError(input, errorEl, message) {
+
+            if (message) {
+
+                errorEl.textContent = message;
+                errorEl.classList.remove('hidden');
+
+                input.classList.add(
+                    'border-red-400',
+                    'focus:border-red-400',
+                    'focus:ring-red-100'
+                );
+
+                input.classList.remove(
+                    'border-gray-border',
+                    'focus:border-teal',
+                    'focus:ring-teal/10'
+                );
+
+            } else {
+
+                errorEl.textContent = '';
+                errorEl.classList.add('hidden');
+
+                input.classList.remove(
+                    'border-red-400',
+                    'focus:border-red-400',
+                    'focus:ring-red-100'
+                );
+
+                input.classList.add(
+                    'border-gray-border',
+                    'focus:border-teal',
+                    'focus:ring-teal/10'
+                );
+
+            }
+
+        }
+
+        function validateNameField(input, errorEl, label) {
+
+            const value = input.value;
+
+            if (!value && input.required) {
+                showError(input, errorEl, `${label} is required.`);
+                return false;
+            }
+
+            if (value && !nameRegex.test(value)) {
+                showError(
+                    input,
+                    errorEl,
+                    `${label} should not contain numbers or special characters.`
+                );
+                return false;
+            }
+
+            showError(input, errorEl, '');
+            return true;
+
+        }
+
+        function validateEmailField(input, errorEl) {
+
+            const value = input.value.trim();
+
+            if (!value && input.required) {
+                showError(input, errorEl, 'Email is required.');
+                return false;
+            }
+
+            if (value && !emailRegex.test(value)) {
+                showError(
+                    input,
+                    errorEl,
+                    'Please enter a valid email address (e.g. juan@example.com).'
+                );
+                return false;
+            }
+
+            showError(input, errorEl, '');
+            return true;
+
+        }
+
+        function validateContactField(input, errorEl) {
+
+            const value = input.value.trim();
+
+            if (!value && input.required) {
+                showError(input, errorEl, 'Contact number is required.');
+                return false;
+            }
+
+            if (value && !contactRegex.test(value)) {
+                showError(
+                    input,
+                    errorEl,
+                    'Enter a valid 11-digit number starting with 09 (e.g. 09171234567).'
+                );
+                return false;
+            }
+
+            showError(input, errorEl, '');
+            return true;
+
+        }
+
+        function validateRequiredField(input, errorEl, label) {
+
+            const value = input.value.trim();
+
+            if (!value) {
+                showError(input, errorEl, `${label} is required.`);
+                return false;
+            }
+
+            showError(input, errorEl, '');
+            return true;
+
+        }
+
+        function updatePasswordRequirements(value) {
+
+            const checks = {
+                length: value.length >= 8,
+                uppercase: passwordUppercaseRegex.test(value),
+                lowercase: passwordLowercaseRegex.test(value),
+                number: passwordNumberRegex.test(value),
+                special: passwordSpecialRegex.test(value),
+            };
+
+            Object.keys(checks).forEach(function (key) {
+
+                const item = document.querySelector(`[data-req="${key}"]`);
+
+                if (!item) return;
+
+                const dot = item.querySelector('.req-dot');
+                const check = item.querySelector('.req-check');
+                const satisfied = checks[key];
+
+                item.classList.toggle('text-teal-dark', satisfied);
+                item.classList.toggle('text-navy/40', !satisfied && key !== 'special');
+                item.classList.toggle('text-navy/30', !satisfied && key === 'special');
+
+                dot.classList.toggle('bg-teal', satisfied);
+                dot.classList.toggle('border-teal', satisfied);
+                dot.classList.toggle('border-gray-border', !satisfied);
+
+                check.classList.toggle('hidden', !satisfied);
+
+            });
+
+        }
+
+        function validatePasswordField(input, errorEl) {
+
+            const value = input.value;
+
+            if (!value && input.required) {
+                showError(input, errorEl, 'Password is required.');
+                return false;
+            }
+
+            if (value && value.length < 8) {
+                showError(input, errorEl, 'Password must be at least 8 characters long.');
+                return false;
+            }
+
+            if (value && !passwordUppercaseRegex.test(value)) {
+                showError(input, errorEl, 'Password must contain at least 1 uppercase letter (A–Z).');
+                return false;
+            }
+
+            if (value && !passwordLowercaseRegex.test(value)) {
+                showError(input, errorEl, 'Password must contain at least 1 lowercase letter (a–z).');
+                return false;
+            }
+
+            if (value && !passwordNumberRegex.test(value)) {
+                showError(input, errorEl, 'Password must contain at least 1 number (0–9).');
+                return false;
+            }
+
+            showError(input, errorEl, '');
+            return true;
+
+        }
+
+        function validatePasswordConfirmation(
+            passwordInput,
+            confirmInput,
+            errorEl
+        ) {
+
+            const value = confirmInput.value;
+
+            if (!value && confirmInput.required) {
+                showError(confirmInput, errorEl, 'Please confirm your password.');
+                return false;
+            }
+
+            if (value && value !== passwordInput.value) {
+                showError(confirmInput, errorEl, 'Passwords do not match.');
+                return false;
+            }
+
+            showError(confirmInput, errorEl, '');
+            return true;
+
+        }
+
+
+        const firstNameInput = document.getElementById('first_name');
+        const firstNameError = document.getElementById('first_name_error');
+
+        firstNameInput.addEventListener('input', function () {
+            validateNameField(firstNameInput, firstNameError, 'First name');
+        });
+
+
+        const lastNameInput = document.getElementById('last_name');
+        const lastNameError = document.getElementById('last_name_error');
+
+        lastNameInput.addEventListener('input', function () {
+            validateNameField(lastNameInput, lastNameError, 'Last name');
+        });
+
+
+        const middleInitialInput = document.getElementById('middle_initial');
+        const middleInitialError = document.getElementById('middle_initial_error');
+
+        middleInitialInput.addEventListener('input', function () {
+            validateNameField(middleInitialInput, middleInitialError, 'Middle initial');
+        });
+
+
+        const emailInput = document.getElementById('email');
+        const emailError = document.getElementById('email_error');
+
+        emailInput.addEventListener('input', function () {
+            validateEmailField(emailInput, emailError);
+        });
+
+        emailInput.addEventListener('blur', function () {
+            validateEmailField(emailInput, emailError);
+        });
+
+
+        const contactInput = document.getElementById('contact_no');
+        const contactError = document.getElementById('contact_no_error');
+
+        contactInput.addEventListener('input', function () {
+
+            this.value = this.value.replace(/\D/g, '');
+
+            validateContactField(contactInput, contactError);
+
+        });
+
+
+        {{-- Sex, birthday, and address required-field warnings --}}
+        const sexInput = document.getElementById('sex');
+        const sexError = document.getElementById('sex_error');
+
+        sexInput.addEventListener('change', function () {
+            validateRequiredField(sexInput, sexError, 'Sex');
+        });
+
+
+        const birthdayError = document.getElementById('birthday_error');
+
+        birthdayInput.addEventListener('change', function () {
+            validateRequiredField(birthdayInput, birthdayError, 'Birthday');
+        });
+
+
+        const provinceError = document.getElementById('province_error');
+        const municipalityError = document.getElementById('municipality_error');
+        const barangayError = document.getElementById('barangay_error');
+
+        provinceSelect.addEventListener('change', function () {
+            validateRequiredField(provinceSelect, provinceError, 'Province');
+        });
+
+        municipalitySelect.addEventListener('change', function () {
+            validateRequiredField(municipalitySelect, municipalityError, 'Municipality / City');
+        });
+
+        barangaySelect.addEventListener('change', function () {
+            validateRequiredField(barangaySelect, barangayError, 'Barangay');
+        });
+
+
+        const streetAddressInput = document.getElementById('street_address');
+        const streetAddressError = document.getElementById('street_address_error');
+
+        streetAddressInput.addEventListener('input', function () {
+            validateRequiredField(streetAddressInput, streetAddressError, 'Street address');
+        });
+
+
+        const passwordInput = document.getElementById('password');
+        const passwordError = document.getElementById('password_error');
+
+        const passwordConfirmInput =
+            document.getElementById('password_confirmation');
+
+        const passwordConfirmError =
+            document.getElementById('password_confirmation_error');
+
+        passwordInput.addEventListener('input', function () {
+
+            updatePasswordRequirements(passwordInput.value);
+
+            validatePasswordField(passwordInput, passwordError);
+
+            if (passwordConfirmInput.value) {
+                validatePasswordConfirmation(
+                    passwordInput,
+                    passwordConfirmInput,
+                    passwordConfirmError
+                );
+            }
+
+        });
+
+        passwordConfirmInput.addEventListener('input', function () {
+            validatePasswordConfirmation(
+                passwordInput,
+                passwordConfirmInput,
+                passwordConfirmError
+            );
+        });
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | SHOW / HIDE PASSWORD
+        |--------------------------------------------------------------------------
+        */
+
+        function setupPasswordToggle(inputEl, buttonEl) {
+
+            const showIcon =
+                buttonEl.querySelector('.password-icon-show');
+
+            const hideIcon =
+                buttonEl.querySelector('.password-icon-hide');
+
+            buttonEl.addEventListener('click', function () {
+
+                const isHidden =
+                    inputEl.type === 'password';
+
+                inputEl.type =
+                    isHidden
+                        ? 'text'
+                        : 'password';
+
+                showIcon.style.display = isHidden ? 'none' : '';
+                hideIcon.style.display = isHidden ? '' : 'none';
+
+                buttonEl.setAttribute(
+                    'aria-pressed',
+                    isHidden ? 'true' : 'false'
+                );
+
+                buttonEl.setAttribute(
+                    'aria-label',
+                    isHidden ? 'Hide password' : 'Show password'
+                );
+
+                // Keep focus and caret on the input after toggling,
+                // instead of losing focus to the button.
+                inputEl.focus();
+
+                const caretPosition = inputEl.value.length;
+
+                inputEl.setSelectionRange(
+                    caretPosition,
+                    caretPosition
+                );
+
+            });
+
+        }
+
+        setupPasswordToggle(
+            passwordInput,
+            document.getElementById('toggle_password')
+        );
+
+        setupPasswordToggle(
+            passwordConfirmInput,
+            document.getElementById('toggle_password_confirmation')
+        );
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | STEP-BY-STEP FLOW
+        |--------------------------------------------------------------------------
+        */
+
+        const registrationPanel = document.getElementById('registration-panel');
+
+        function getPanel(step) {
+            return document.querySelector(`[data-step-panel="${step}"]`);
+        }
+
+        function updateProgressBar(activeStep) {
+
+            document.querySelectorAll('[data-step-circle]').forEach(function (circle) {
+
+                const s = parseInt(circle.dataset.stepCircle, 10);
+                const numberEl = circle.querySelector('.step-number');
+                const checkEl = circle.querySelector('.step-check');
+
+                circle.classList.remove(
+                    'bg-teal', 'border-teal', 'text-white',
+                    'bg-white', 'border-gray-border', 'text-navy/30'
+                );
+
+                if (s < activeStep) {
+
+                    circle.classList.add('bg-teal', 'border-teal', 'text-white');
+                    numberEl.classList.add('hidden');
+                    checkEl.classList.remove('hidden');
+
+                } else if (s === activeStep) {
+
+                    circle.classList.add('bg-teal', 'border-teal', 'text-white');
+                    numberEl.classList.remove('hidden');
+                    checkEl.classList.add('hidden');
+
+                } else {
+
+                    circle.classList.add('bg-white', 'border-gray-border', 'text-navy/30');
+                    numberEl.classList.remove('hidden');
+                    checkEl.classList.add('hidden');
+
+                }
+
+            });
+
+            document.querySelectorAll('[data-step-label]').forEach(function (label) {
+
+                const s = parseInt(label.dataset.stepLabel, 10);
+
+                label.classList.toggle('text-navy', s <= activeStep);
+                label.classList.toggle('font-semibold', s <= activeStep);
+                label.classList.toggle('text-navy/30', s > activeStep);
+                label.classList.toggle('font-medium', s > activeStep);
+
+            });
+
+            document.querySelectorAll('[data-step-line]').forEach(function (line) {
+
+                const s = parseInt(line.dataset.stepLine, 10);
+
+                line.classList.toggle('bg-teal', s < activeStep);
+                line.classList.toggle('bg-gray-border', s >= activeStep);
+
+            });
+
+        }
+
+        function goToStep(step) {
+
+            document.querySelectorAll('[data-step-panel]').forEach(function (panel) {
+
+                const s = parseInt(panel.dataset.stepPanel, 10);
+
+                panel.classList.toggle('hidden', s !== step);
+
+            });
+
+            updateProgressBar(step);
+
+            if (registrationPanel) {
+                registrationPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+        }
+
+        function validateAndReportPanel(panel) {
+
+            const fields = panel.querySelectorAll('input[required], select[required], textarea[required]');
+
+            for (const field of fields) {
+
+                if (!field.checkValidity()) {
+                    field.reportValidity();
+                    return false;
+                }
+
+            }
+
+            return true;
+
+        }
+
+        function validatePanelSilently(panel) {
+
+            const fields = panel.querySelectorAll('input[required], select[required], textarea[required]');
+
+            let allValid = true;
+
+            fields.forEach(function (field) {
+                if (!field.checkValidity()) {
+                    allValid = false;
+                }
+            });
+
+            return allValid;
+
+        }
+
+        function validateValidId() {
+
+            if (!validIdInput.files || validIdInput.files.length === 0) {
+                showError(validIdInput, validIdError, 'Please upload a valid ID.');
+                return false;
+            }
+
+            showError(validIdInput, validIdError, '');
+            return true;
+
+        }
+
+        function validateTerms() {
+
+            const termsInput = document.getElementById('terms');
+            const termsError = document.getElementById('terms_error');
+
+            if (!termsInput.checked) {
+                showError(termsInput, termsError, 'You must agree to the Terms and Conditions.');
+                return false;
+            }
+
+            showError(termsInput, termsError, '');
+            return true;
+
+        }
+
+        function validateStep1() {
+
+            const isFirstNameValid = validateNameField(firstNameInput, firstNameError, 'First name');
+            const isLastNameValid = validateNameField(lastNameInput, lastNameError, 'Last name');
+            const isMiddleInitialValid = validateNameField(middleInitialInput, middleInitialError, 'Middle initial');
+            const isEmailValid = validateEmailField(emailInput, emailError);
+            const isContactValid = validateContactField(contactInput, contactError);
+            const isSexValid = validateRequiredField(sexInput, sexError, 'Sex');
+            const isBirthdayValid = validateRequiredField(birthdayInput, birthdayError, 'Birthday');
+
+            if (!isFirstNameValid || !isLastNameValid || !isMiddleInitialValid ||
+                !isEmailValid || !isContactValid || !isSexValid || !isBirthdayValid) {
+                return false;
+            }
+
+            return validateAndReportPanel(getPanel(1));
+
+        }
+
+        function validateStep2() {
+
+            const isProvinceValid = validateRequiredField(provinceSelect, provinceError, 'Province');
+            const isMunicipalityValid = validateRequiredField(municipalitySelect, municipalityError, 'Municipality / City');
+            const isBarangayValid = validateRequiredField(barangaySelect, barangayError, 'Barangay');
+            const isStreetAddressValid = validateRequiredField(streetAddressInput, streetAddressError, 'Street address');
+
+            if (!isProvinceValid || !isMunicipalityValid || !isBarangayValid || !isStreetAddressValid) {
+                return false;
+            }
+
+            return validateAndReportPanel(getPanel(2));
+
+        }
+
+        function validateStep3() {
+            return validateValidId();
+        }
+
+
+        document.getElementById('step1-next').addEventListener('click', function () {
+            if (validateStep1()) goToStep(2);
+        });
+
+        document.getElementById('step2-back').addEventListener('click', function () {
+            goToStep(1);
+        });
+
+        document.getElementById('step2-next').addEventListener('click', function () {
+            if (validateStep2()) goToStep(3);
+        });
+
+        document.getElementById('step3-back').addEventListener('click', function () {
+            goToStep(2);
+        });
+
+        document.getElementById('step3-next').addEventListener('click', function () {
+            if (validateStep3()) goToStep(4);
+        });
+
+        document.getElementById('step4-back').addEventListener('click', function () {
+            goToStep(3);
+        });
+
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | FORM SUBMIT GUARD
+        |--------------------------------------------------------------------------
+        */
+
+        registerForm.addEventListener('submit', function (e) {
+
+            const isFirstNameValid = validateNameField(firstNameInput, firstNameError, 'First name');
+            const isLastNameValid = validateNameField(lastNameInput, lastNameError, 'Last name');
+            const isMiddleInitialValid = validateNameField(middleInitialInput, middleInitialError, 'Middle initial');
+            const isEmailValid = validateEmailField(emailInput, emailError);
+            const isContactValid = validateContactField(contactInput, contactError);
+            const isSexValid = validateRequiredField(sexInput, sexError, 'Sex');
+            const isBirthdayValid = validateRequiredField(birthdayInput, birthdayError, 'Birthday');
+            const isStep1RequiredValid = validatePanelSilently(getPanel(1));
+
+            const step1Ok = isFirstNameValid && isLastNameValid && isMiddleInitialValid &&
+                isEmailValid && isContactValid && isSexValid && isBirthdayValid && isStep1RequiredValid;
+
+            if (!step1Ok) {
+                e.preventDefault();
+                goToStep(1);
+                return;
+            }
+
+            const isProvinceValid = validateRequiredField(provinceSelect, provinceError, 'Province');
+            const isMunicipalityValid = validateRequiredField(municipalitySelect, municipalityError, 'Municipality / City');
+            const isBarangayValid = validateRequiredField(barangaySelect, barangayError, 'Barangay');
+            const isStreetAddressValid = validateRequiredField(streetAddressInput, streetAddressError, 'Street address');
+            const isStep2RequiredValid = validatePanelSilently(getPanel(2));
+
+            const step2Ok = isProvinceValid && isMunicipalityValid && isBarangayValid &&
+                isStreetAddressValid && isStep2RequiredValid;
+
+            if (!step2Ok) {
+                e.preventDefault();
+                goToStep(2);
+                return;
+            }
+
+            const isValidIdValid = validateValidId();
+
+            if (!isValidIdValid) {
+                e.preventDefault();
+                goToStep(3);
+                return;
+            }
+
+            const isPasswordValid = validatePasswordField(passwordInput, passwordError);
+
+            const isPasswordConfirmValid = validatePasswordConfirmation(
+                passwordInput,
+                passwordConfirmInput,
+                passwordConfirmError
+            );
+
+            const isTermsValid = validateTerms();
+
+            if (!isPasswordValid || !isPasswordConfirmValid || !isTermsValid) {
+                e.preventDefault();
+                goToStep(4);
+                return;
+            }
+
+        });
 
 
 
@@ -1781,6 +3153,9 @@
 
 
         loadProvinces();
+
+        // Start on step 1
+        updateProgressBar(1);
 
     });
 </script>
