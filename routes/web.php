@@ -15,7 +15,6 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 
-
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes
@@ -31,7 +30,6 @@ Route::post('/register', [RegisterController::class, 'store'])
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -51,21 +49,52 @@ Route::get('/login', function () {
 // Route::get('/deals', [HomeController::class, 'deals'])
 //     ->name('deals');
 
-
 /*
 |--------------------------------------------------------------------------
-| Logistics Partner Routes
+| Admin Routes
 |--------------------------------------------------------------------------
 */
 
-require __DIR__.'/logistics.php';
+Route::get('/admin/dashboard', function () {
+    return view('admin.dashboard');
+})->name('admin.dashboard');
 
+Route::get('/admin/registration', function () {
+    return view('admin.registration');
+})->name('admin.registrations');
 
+Route::get('/admin/users', function () {
+    return view('admin.user-accounts');
+})->name('admin.users');
 
-use App\Http\Controllers\Logistics\RegistrationController;
+Route::get('/admin/seller-compliance', function () {
+    return view('admin.seller-compliance');
+})->name('admin.compliance');
 
-Route::get('/logistics-partner/terms', [RegistrationController::class, 'terms'])
-    ->name('logistics.terms');
+Route::get('/admin/complaints-disputes', function () {
+    return view('admin.complaints-disputes');
+})->name('admin.disputes');
 
-Route::post('/logistics-partner/terms', [RegistrationController::class, 'acceptTerms'])
-    ->name('logistics.terms.accept');
+Route::get('/admin/commission', function () {
+    return view('admin.commission');
+})->name('admin.commission');
+
+Route::get('/admin/reports', function () {
+    return view('admin.reports');
+})->name('admin.reports');
+
+Route::get('/admin/chat', function () {
+    return view('admin.chat-messaging');
+})->name('admin.chat');
+
+Route::get('/admin/settings', function () {
+    return view('admin.platform-settings');
+})->name('admin.settings');
+
+Route::get('/admin/accounts', function () {
+    return view('admin.account-management');
+})->name('admin.accounts');
+
+Route::get('/admin/logout', function () {
+    return redirect('/');
+})->name('admin.logout');
