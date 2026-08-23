@@ -79,12 +79,13 @@
     3-column base grid — widgets set their own col-span via
     data-size (sm = 1 col, lg = 2 cols, full = 3 cols) and their
     order via the "order" CSS property, both applied by JS from
-    the saved layout in localStorage.
+    the saved layout in localStorage. Resizing is now done via
+    the corner handle on each widget (drag or click/tap).
 ========================================================= --}}
 <div id="dashboardGrid" class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
 
     {{-- Deliveries chart --}}
-    <div data-widget="chart" data-size="lg" class="dash-widget bg-white border border-gray-border rounded-2xl p-6">
+    <div data-widget="chart" data-size="lg" class="dash-widget relative bg-white border border-gray-border rounded-2xl p-6">
         <div class="flex items-center justify-between mb-5">
             <p class="text-sm font-bold text-navy">Deliveries — last 7 days</p>
             <a href="{{ route('logistics.reports.index') }}" class="text-xs font-semibold text-teal-dark hover:text-navy transition">View report</a>
@@ -101,10 +102,15 @@
                 <span class="flex-1 text-center text-[10px] font-semibold text-navy/40">{{ $day['label'] }}</span>
             @endforeach
         </div>
+
+        <div class="resize-handle" data-resize-handle data-key="chart" title="Drag or click to resize">
+            <x-lucide-maximize-2 class="w-3.5 h-3.5 icon-grow" />
+            <x-lucide-minimize-2 class="w-3.5 h-3.5 icon-shrink" />
+        </div>
     </div>
 
     {{-- Top riders --}}
-    <div data-widget="topRiders" data-size="sm" class="dash-widget bg-white border border-gray-border rounded-2xl p-6">
+    <div data-widget="topRiders" data-size="sm" class="dash-widget relative bg-white border border-gray-border rounded-2xl p-6">
         <div class="flex items-center justify-between mb-4">
             <p class="text-sm font-bold text-navy">Top riders today</p>
             <a href="{{ route('logistics.riders.index') }}" class="text-xs font-semibold text-teal-dark hover:text-navy transition">See all</a>
@@ -120,10 +126,15 @@
                 </div>
             @endforeach
         </div>
+
+        <div class="resize-handle" data-resize-handle data-key="topRiders" title="Drag or click to resize">
+            <x-lucide-maximize-2 class="w-3.5 h-3.5 icon-grow" />
+            <x-lucide-minimize-2 class="w-3.5 h-3.5 icon-shrink" />
+        </div>
     </div>
 
     {{-- Calendar (NEW) --}}
-    <div data-widget="calendar" data-size="sm" class="dash-widget bg-white border border-gray-border rounded-2xl p-6">
+    <div data-widget="calendar" data-size="sm" class="dash-widget relative bg-white border border-gray-border rounded-2xl p-6">
         <div class="flex items-center justify-between mb-4">
             <p class="text-sm font-bold text-navy">{{ $calendarMonth->format('F Y') }}</p>
             <div class="flex items-center gap-1">
@@ -166,10 +177,15 @@
                 </div>
             @endfor
         </div>
+
+        <div class="resize-handle" data-resize-handle data-key="calendar" title="Drag or click to resize">
+            <x-lucide-maximize-2 class="w-3.5 h-3.5 icon-grow" />
+            <x-lucide-minimize-2 class="w-3.5 h-3.5 icon-shrink" />
+        </div>
     </div>
 
     {{-- Pending rider applications --}}
-    <div data-widget="pendingApps" data-size="lg" class="dash-widget bg-white border border-gray-border rounded-2xl overflow-hidden">
+    <div data-widget="pendingApps" data-size="lg" class="dash-widget relative bg-white border border-gray-border rounded-2xl overflow-hidden">
         <div class="flex items-center justify-between px-6 py-5 border-b border-gray-border">
             <p class="text-sm font-bold text-navy">Pending rider applications</p>
             <a href="{{ route('logistics.riders.index') }}" class="text-xs font-semibold text-teal-dark hover:text-navy transition">View all</a>
@@ -187,6 +203,11 @@
         @empty
             <p class="px-6 py-10 text-center text-navy/40 text-sm">No pending applications right now.</p>
         @endforelse
+
+        <div class="resize-handle" data-resize-handle data-key="pendingApps" title="Drag or click to resize">
+            <x-lucide-maximize-2 class="w-3.5 h-3.5 icon-grow" />
+            <x-lucide-minimize-2 class="w-3.5 h-3.5 icon-shrink" />
+        </div>
     </div>
 
 </div>
@@ -205,6 +226,16 @@
         </button>
     </div>
 
+    <div class="px-6 pt-4 pb-1">
+        <p class="text-xs text-navy/45 leading-relaxed">
+            Show/hide and reorder widgets below. To resize a widget, drag or tap the
+            <span class="inline-flex items-center justify-center w-4 h-4 rounded bg-gray-bg text-navy/60 align-middle mx-0.5">
+                <x-lucide-maximize-2 class="w-2.5 h-2.5" />
+            </span>
+            handle on its bottom-right corner.
+        </p>
+    </div>
+
     <div id="widgetList" class="flex-1 overflow-y-auto px-6 py-5 space-y-3"></div>
 
     <div class="px-6 py-5 border-t border-gray-border flex gap-2.5">
@@ -220,17 +251,53 @@
 </div>
 
 <style>
-    .dash-widget { transition: opacity .2s ease; }
+    .dash-widget { transition: opacity .2s ease, box-shadow .2s ease, outline-color .2s ease; }
     .dash-widget[data-hidden="1"] { display: none !important; }
 
     .widget-row { display: flex; align-items: center; gap: .625rem; padding: .75rem; border: 1px solid #E7E9EE; border-radius: 1rem; background: #fff; }
-    .widget-row .size-btn { font-size: 10px; font-weight: 700; padding: .25rem .5rem; border-radius: 9999px; border: 1px solid #E7E9EE; color: rgba(15,23,42,.5); }
-    .widget-row .size-btn.active { background: #0F172A; color: #fff; border-color: #0F172A; }
 
     .toggle-switch { width: 34px; height: 19px; border-radius: 9999px; background: #E7E9EE; position: relative; cursor: pointer; transition: background .2s ease; flex-shrink: 0; }
     .toggle-switch[data-on="1"] { background: #14B8A6; }
     .toggle-switch span { position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; border-radius: 9999px; background: #fff; transition: transform .2s ease; }
     .toggle-switch[data-on="1"] span { transform: translateX(15px); }
+
+    /* --- Corner resize handle --- */
+    .resize-handle {
+        display: none;
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: #0F172A;
+        color: #fff;
+        align-items: center;
+        justify-content: center;
+        cursor: ew-resize;
+        user-select: none;
+        touch-action: none;
+        z-index: 5;
+        box-shadow: 0 2px 6px rgba(15,23,42,.25);
+        transition: transform .12s ease, background .15s ease;
+    }
+    .resize-handle:hover { background: #14B8A6; }
+    .resize-handle:active { transform: scale(0.92); }
+    .resize-handle .icon-grow,
+    .resize-handle .icon-shrink { position: absolute; }
+    .resize-handle .icon-shrink { display: none; }
+
+    /* when widget is at max size (full), show shrink icon instead of grow icon */
+    .dash-widget[data-size="full"] .resize-handle .icon-grow { display: none; }
+    .dash-widget[data-size="full"] .resize-handle .icon-shrink { display: block; }
+
+    #dashboardGrid.customizing .dash-widget:not([data-fixed]) {
+        outline: 2px dashed #CBD5E1;
+        outline-offset: 3px;
+        border-radius: 1rem;
+    }
+    #dashboardGrid.customizing .dash-widget:not([data-fixed]) .resize-handle { display: flex; }
+    .dash-widget.is-resizing { box-shadow: 0 0 0 2px #14B8A6; }
 </style>
 
 <script>
@@ -246,6 +313,7 @@
     };
 
     const SIZE_SPAN = { sm: 'lg:col-span-1', lg: 'lg:col-span-2', full: 'lg:col-span-3' };
+    const SIZE_ORDER = ['sm', 'lg', 'full'];
 
     function defaultLayout() {
         const widgets = document.querySelectorAll('.dash-widget');
@@ -285,6 +353,7 @@
             el.style.order = conf.order ?? 0;
 
             if (!el.dataset.fixed) {
+                el.dataset.size = conf.size;
                 Object.values(SIZE_SPAN).forEach((c) => el.classList.remove(c));
                 el.classList.add(SIZE_SPAN[conf.size] || SIZE_SPAN.sm);
             }
@@ -297,9 +366,7 @@
 
         const ordered = Object.entries(layout).sort((a, b) => (a[1].order ?? 0) - (b[1].order ?? 0));
 
-        ordered.forEach(([key, conf], idx) => {
-            const isFixed = document.querySelector(`.dash-widget[data-widget="${key}"]`)?.dataset.fixed === '1';
-
+        ordered.forEach(([key, conf]) => {
             const row = document.createElement('div');
             row.className = 'widget-row';
             row.innerHTML = `
@@ -308,32 +375,16 @@
                     <button type="button" data-move="down" data-key="${key}" class="text-navy/30 hover:text-navy leading-none text-[10px]">▼</button>
                 </div>
                 <p class="flex-1 text-sm font-semibold text-navy">${WIDGET_LABELS[key] || key}</p>
-                ${isFixed ? '' : `
-                    <div class="flex items-center gap-1">
-                        <button type="button" data-size-btn="sm" data-key="${key}" class="size-btn ${conf.size === 'sm' ? 'active' : ''}">S</button>
-                        <button type="button" data-size-btn="lg" data-key="${key}" class="size-btn ${conf.size === 'lg' ? 'active' : ''}">M</button>
-                        <button type="button" data-size-btn="full" data-key="${key}" class="size-btn ${conf.size === 'full' ? 'active' : ''}">L</button>
-                    </div>
-                `}
                 <div class="toggle-switch" data-on="${conf.visible ? '1' : '0'}" data-toggle="${key}"><span></span></div>
             `;
             list.appendChild(row);
         });
 
-        // wire up interactions
         list.querySelectorAll('[data-toggle]').forEach((el) => {
             el.addEventListener('click', () => {
                 const key = el.dataset.toggle;
                 currentLayout[key].visible = !currentLayout[key].visible;
                 el.dataset.on = currentLayout[key].visible ? '1' : '0';
-            });
-        });
-
-        list.querySelectorAll('[data-size-btn]').forEach((el) => {
-            el.addEventListener('click', () => {
-                const key = el.dataset.key;
-                currentLayout[key].size = el.dataset.sizeBtn;
-                renderWidgetList(currentLayout);
             });
         });
 
@@ -356,15 +407,18 @@
 
     const overlay = document.getElementById('customizeOverlay');
     const panel = document.getElementById('customizePanel');
+    const grid = document.getElementById('dashboardGrid');
 
     function openPanel() {
         currentLayout = loadLayout();
         renderWidgetList(currentLayout);
+        grid.classList.add('customizing');
         overlay.classList.remove('hidden');
         requestAnimationFrame(() => { overlay.classList.remove('opacity-0'); panel.classList.remove('translate-x-full'); });
     }
 
     function closePanel() {
+        grid.classList.remove('customizing');
         overlay.classList.add('opacity-0');
         panel.classList.add('translate-x-full');
         setTimeout(() => overlay.classList.add('hidden'), 300);
@@ -385,6 +439,72 @@
         currentLayout = defaultLayout();
         applyLayout(currentLayout);
         renderWidgetList(currentLayout);
+    });
+
+    // ---------------------------------------------------------
+    // Corner resize handles — click to cycle, drag to snap size
+    // ---------------------------------------------------------
+    const DRAG_THRESHOLD = 50; // px of horizontal movement needed to bump a size step
+
+    document.querySelectorAll('[data-resize-handle]').forEach((handle) => {
+        const key = handle.dataset.key;
+        const widgetEl = handle.closest('.dash-widget');
+
+        let startX = 0;
+        let dragged = false;
+        let stepApplied = false;
+
+        function setSize(newSize) {
+            if (!SIZE_ORDER.includes(newSize)) return;
+            currentLayout[key].size = newSize;
+            widgetEl.dataset.size = newSize;
+            Object.values(SIZE_SPAN).forEach((c) => widgetEl.classList.remove(c));
+            widgetEl.classList.add(SIZE_SPAN[newSize]);
+        }
+
+        function cycleSize(dir) {
+            const idx = SIZE_ORDER.indexOf(currentLayout[key].size);
+            const nextIdx = Math.min(SIZE_ORDER.length - 1, Math.max(0, idx + dir));
+            setSize(SIZE_ORDER[nextIdx]);
+        }
+
+        function onPointerDown(e) {
+            startX = e.clientX;
+            dragged = false;
+            stepApplied = false;
+            widgetEl.classList.add('is-resizing');
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+            e.preventDefault();
+        }
+
+        function onPointerMove(e) {
+            const delta = e.clientX - startX;
+            if (Math.abs(delta) > 8) dragged = true;
+
+            if (!stepApplied && delta > DRAG_THRESHOLD) {
+                cycleSize(1);
+                stepApplied = true;
+            } else if (!stepApplied && delta < -DRAG_THRESHOLD) {
+                cycleSize(-1);
+                stepApplied = true;
+            }
+        }
+
+        function onPointerUp() {
+            widgetEl.classList.remove('is-resizing');
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup', onPointerUp);
+
+            // plain click (no real drag) -> cycle forward, wrapping back to sm after full
+            if (!dragged) {
+                const idx = SIZE_ORDER.indexOf(currentLayout[key].size);
+                const nextIdx = (idx + 1) % SIZE_ORDER.length;
+                setSize(SIZE_ORDER[nextIdx]);
+            }
+        }
+
+        handle.addEventListener('pointerdown', onPointerDown);
     });
 })();
 </script>
