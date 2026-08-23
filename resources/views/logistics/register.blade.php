@@ -1628,4 +1628,6 @@
     });
 </script>
 
-@endsection
+@endsectiongit add .
+git commit -m "Update logistics features"
+git push origin user/logistics
