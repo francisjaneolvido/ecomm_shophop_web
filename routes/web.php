@@ -50,3 +50,22 @@ Route::get('/login', function () {
 
 // Route::get('/deals', [HomeController::class, 'deals'])
 //     ->name('deals');
+
+
+/*
+|--------------------------------------------------------------------------
+| Logistics Partner Routes
+|--------------------------------------------------------------------------
+*/
+
+require __DIR__.'/logistics.php';
+
+
+
+use App\Http\Controllers\Logistics\RegistrationController;
+
+Route::get('/logistics-partner/terms', [RegistrationController::class, 'terms'])
+    ->name('logistics.terms');
+
+Route::post('/logistics-partner/terms', [RegistrationController::class, 'acceptTerms'])
+    ->name('logistics.terms.accept');
