@@ -37,6 +37,14 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
+
+Route::get('/create-account', function () {
+    return view('auth.create-account');
+})->name('create-account');
+
 /*
 |--------------------------------------------------------------------------
 | Future Shop Routes
