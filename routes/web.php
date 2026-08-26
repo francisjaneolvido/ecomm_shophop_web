@@ -164,3 +164,28 @@ Route::patch('/buyer/settings/allergens', [ProfileController::class, 'updateAlle
 Route::patch('/buyer/settings/password', [ProfileController::class, 'updatePassword'])->name('buyer.settings.password.update');
 Route::patch('/buyer/settings/notifications', [ProfileController::class, 'updateNotifications'])->name('buyer.settings.notifications.update');
 
+/*
+|--------------------------------------------------------------------------
+| TEMP DEBUG ROUTES — modal isolation test
+| Tanggalin na 'to pag nahanap na yung looping modal
+|--------------------------------------------------------------------------
+*/
+Route::get('/debug/modal/login', function () {
+    return view('auth.modals.login-modal');
+});
+
+Route::get('/debug/modal/account-type', function () {
+    return view('auth.modals.account-type-modal');
+});
+
+Route::get('/debug/modal/buyer-registration', function () {
+    return view('auth.modals.buyer-registration-modal');
+});
+
+Route::get('/debug/modal/seller-registration', function () {
+    return view('auth.modals.seller-registration-modal');
+});
+
+Route::get('/debug/modal/logistics-registration', function () {
+    return view('auth.modals.logistics-registration-modal');
+});
