@@ -1,10 +1,15 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
+
 use App\Http\Controllers\Auth\RegisterController;
-use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
+
 use App\Http\Controllers\Logistics\RegistrationController as LogisticsRegistrationController;
 use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
 use App\Http\Controllers\Logistics\RiderController;
@@ -21,6 +26,7 @@ use App\Http\Controllers\Logistics\ReportController;
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 
+
 /*
 |--------------------------------------------------------------------------
 | Authentication Routes
@@ -33,17 +39,16 @@ Route::get('/register', [RegisterController::class, 'create'])
 Route::post('/register', [RegisterController::class, 'store'])
     ->name('register.store');
 
-Route::get('/login', function () {
-    return view('auth.login');
-})->name('login');
 
 Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
+
 
 Route::get('/create-account', function () {
     return view('auth.create-account');
 })->name('create-account');
+
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +68,7 @@ Route::get('/create-account', function () {
 // Route::get('/deals', [HomeController::class, 'deals'])
 //     ->name('deals');
 
+
 /*
 |--------------------------------------------------------------------------
 | Admin Routes
@@ -73,41 +79,51 @@ Route::get('/admin/dashboard', function () {
     return view('admin.dashboard');
 })->name('admin.dashboard');
 
+
 Route::get('/admin/registration', function () {
     return view('admin.registration');
 })->name('admin.registrations');
+
 
 Route::get('/admin/users', function () {
     return view('admin.user-accounts');
 })->name('admin.users');
 
+
 Route::get('/admin/seller-compliance', function () {
     return view('admin.seller-compliance');
 })->name('admin.compliance');
+
 
 Route::get('/admin/complaints-disputes', function () {
     return view('admin.complaints-disputes');
 })->name('admin.disputes');
 
+
 Route::get('/admin/commission', function () {
     return view('admin.commission');
 })->name('admin.commission');
+
 
 Route::get('/admin/reports', function () {
     return view('admin.reports');
 })->name('admin.reports');
 
+
 Route::get('/admin/chat', function () {
     return view('admin.chat-messaging');
 })->name('admin.chat');
+
 
 Route::get('/admin/settings', function () {
     return view('admin.platform-settings');
 })->name('admin.settings');
 
+
 Route::get('/admin/accounts', function () {
     return view('admin.account-management');
 })->name('admin.accounts');
+
 
 Route::get('/admin/logout', function () {
     return redirect('/');
@@ -118,73 +134,240 @@ Route::get('/admin/logout', function () {
 |--------------------------------------------------------------------------
 | Logistics Routes
 |--------------------------------------------------------------------------
+|
+| Public routes for logistics partner registration.
+|
 */
-// Public — anyone can apply to become a Logistics Partner.
-Route::prefix('logistics-partner')->name('logistics.')->group(function () {
-    Route::get('/apply', [LogisticsRegistrationController::class, 'create'])->name('register');
-    Route::post('/apply', [LogisticsRegistrationController::class, 'store'])->name('register.store');
-    Route::get('/terms', [LogisticsRegistrationController::class, 'terms'])->name('terms');
-});
 
-// Partner console. Auth muna disabled habang wala pang account/login system — IBALIK PAG READY NA.
 Route::prefix('logistics-partner')
     ->name('logistics.')
-    // ->middleware(['auth']) // TODO: i-uncomment 'to pag may account system na
     ->group(function () {
-        Route::get('/dashboard', [LogisticsDashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
-        Route::post('/riders/{rider}/approve', [RiderController::class, 'approve'])->name('riders.approve');
-        Route::post('/riders/{rider}/disapprove', [RiderController::class, 'disapprove'])->name('riders.disapprove');
-        Route::post('/riders/{rider}/suspend', [RiderController::class, 'suspend'])->name('riders.suspend');
-        Route::post('/riders/{rider}/activate', [RiderController::class, 'activate'])->name('riders.activate');
-        Route::post('/riders/{rider}/warn', [RiderController::class, 'warn'])->name('riders.warn');
+        Route::get('/apply', [
+            LogisticsRegistrationController::class,
+            'create'
+        ])->name('register');
 
-        Route::get('/deliveries', [DeliveryController::class, 'board'])->name('deliveries.board');
-        Route::post('/deliveries/{delivery}/assign', [DeliveryController::class, 'assign'])->name('deliveries.assign');
+        Route::post('/apply', [
+            LogisticsRegistrationController::class,
+            'store'
+        ])->name('register.store');
 
-        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/export', [ReportController::class, 'export'])->name('reports.export');
+        Route::get('/terms', [
+            LogisticsRegistrationController::class,
+            'terms'
+        ])->name('terms');
     });
 
+
+/*
+|--------------------------------------------------------------------------
+| Logistics Partner Console
+|--------------------------------------------------------------------------
+|
+| Auth temporarily disabled.
+| Ibalik ang middleware kapag ready na ang login/account system.
+|
+*/
+
+Route::prefix('logistics-partner')
+    ->name('logistics.')
+    // ->middleware(['auth'])
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Dashboard
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/dashboard', [
+            LogisticsDashboardController::class,
+            'index'
+        ])->name('dashboard');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Riders
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/riders', [
+            RiderController::class,
+            'index'
+        ])->name('riders.index');
+
+        Route::post('/riders/{rider}/approve', [
+            RiderController::class,
+            'approve'
+        ])->name('riders.approve');
+
+        Route::post('/riders/{rider}/disapprove', [
+            RiderController::class,
+            'disapprove'
+        ])->name('riders.disapprove');
+
+        Route::post('/riders/{rider}/suspend', [
+            RiderController::class,
+            'suspend'
+        ])->name('riders.suspend');
+
+        Route::post('/riders/{rider}/activate', [
+            RiderController::class,
+            'activate'
+        ])->name('riders.activate');
+
+        Route::post('/riders/{rider}/warn', [
+            RiderController::class,
+            'warn'
+        ])->name('riders.warn');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Deliveries
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/deliveries', [
+            DeliveryController::class,
+            'board'
+        ])->name('deliveries.board');
+
+        Route::post('/deliveries/{delivery}/assign', [
+            DeliveryController::class,
+            'assign'
+        ])->name('deliveries.assign');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Reports
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/reports', [
+            ReportController::class,
+            'index'
+        ])->name('reports.index');
+
+        Route::get('/reports/export', [
+            ReportController::class,
+            'export'
+        ])->name('reports.export');
+    });
 
 
 /*
 |--------------------------------------------------------------------------
 | Buyer Routes
 |--------------------------------------------------------------------------
+|
+| Buyer-specific pages.
+|
+| Auth muna disabled habang tine-test ang dashboard.
+| Kapag ready na ang login system, pwede nating idagdag:
+|
+| ->middleware(['auth'])
+|
 */
-Route::get('/buyer/profile', function () {
-    return view('buyer.buyer-profile-settings');
+
+Route::prefix('buyer')
+    ->name('buyer.')
+    ->group(function () {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Buyer Dashboard
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/dashboard', [
+            BuyerDashboardController::class,
+            'index'
+        ])->name('dashboard');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Buyer Profile
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/profile', function () {
+            return view('buyer.buyer-profile-settings');
+        })->name('profile');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Buyer Settings
+        |--------------------------------------------------------------------------
+        |
+        | TEMPORARILY COMMENTED OUT.
+        |
+        | I-enable natin ito kapag nagawa na ang:
+        |
+        | app/Http/Controllers/Buyer/ProfileController.php
+        |
+        */
+
+        // Route::patch('/settings/profile', [
+        //     BuyerProfileController::class,
+        //     'update'
+        // ])->name('settings.profile.update');
+
+        // Route::patch('/settings/address', [
+        //     BuyerProfileController::class,
+        //     'updateAddress'
+        // ])->name('settings.address.update');
+
+        // Route::patch('/settings/allergens', [
+        //     BuyerProfileController::class,
+        //     'updateAllergens'
+        // ])->name('settings.allergens.update');
+
+        // Route::patch('/settings/password', [
+        //     BuyerProfileController::class,
+        //     'updatePassword'
+        // ])->name('settings.password.update');
+
+        // Route::patch('/settings/notifications', [
+        //     BuyerProfileController::class,
+        //     'updateNotifications'
+        // ])->name('settings.notifications.update');
     });
 
-Route::patch('/buyer/settings/profile', [ProfileController::class, 'update'])->name('buyer.settings.profile.update');
-Route::patch('/buyer/settings/address', [ProfileController::class, 'updateAddress'])->name('buyer.settings.address.update');
-Route::patch('/buyer/settings/allergens', [ProfileController::class, 'updateAllergens'])->name('buyer.settings.allergens.update');
-Route::patch('/buyer/settings/password', [ProfileController::class, 'updatePassword'])->name('buyer.settings.password.update');
-Route::patch('/buyer/settings/notifications', [ProfileController::class, 'updateNotifications'])->name('buyer.settings.notifications.update');
 
 /*
 |--------------------------------------------------------------------------
-| TEMP DEBUG ROUTES — modal isolation test
-| Tanggalin na 'to pag nahanap na yung looping modal
+| TEMP DEBUG ROUTES — Modal Isolation Test
 |--------------------------------------------------------------------------
+|
+| Tanggalin kapag nahanap na yung looping modal.
+|
 */
+
 Route::get('/debug/modal/login', function () {
     return view('auth.modals.login-modal');
 });
+
 
 Route::get('/debug/modal/account-type', function () {
     return view('auth.modals.account-type-modal');
 });
 
+
 Route::get('/debug/modal/buyer-registration', function () {
     return view('auth.modals.buyer-registration-modal');
 });
 
+
 Route::get('/debug/modal/seller-registration', function () {
     return view('auth.modals.seller-registration-modal');
 });
+
 
 Route::get('/debug/modal/logistics-registration', function () {
     return view('auth.modals.logistics-registration-modal');

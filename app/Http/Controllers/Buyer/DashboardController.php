@@ -1,22 +1,36 @@
 <?php
-// Path: app/Http/Controllers/HomeController.php
+// Path: app/Http/Controllers/Buyer/DashboardController.php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Buyer;
 
-class HomeController extends Controller
+use App\Http\Controllers\Controller;
+
+class DashboardController extends Controller
 {
     /**
-     * Show the ShopHop public landing page.
+     * Display the buyer dashboard.
      */
     public function index()
     {
-        /*
-        |--------------------------------------------------------------------------
-        | ALL SHOP CATEGORIES
-        |--------------------------------------------------------------------------
-        */
+        $categories = $this->getCategories();
+        $trendingProducts = $this->getTrendingProducts();
 
-        $allCategories = [
+        return view('buyer.dashboard', compact(
+            'categories',
+            'trendingProducts'
+        ));
+    }
+
+
+    /**
+     * Temporary category data.
+     *
+     * Later, pwede na itong manggaling sa database
+     * gamit ang Category model.
+     */
+    private function getCategories(): array
+    {
+        return [
             [
                 'name' => 'Pet Supplies',
                 'icon' => 'paw-print',
@@ -74,34 +88,18 @@ class HomeController extends Controller
                 'icon' => 'notebook-pen',
             ],
         ];
+    }
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | CATEGORY DISPLAY
-        |--------------------------------------------------------------------------
-        |
-        | Guest = first 7 categories
-        | Logged in = all categories
-        |
-        */
-
-        $categories = auth()->check()
-            ? $allCategories
-            : array_slice($allCategories, 0, 7);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | TRENDING PRODUCTS
-        |--------------------------------------------------------------------------
-        |
-        | Temporary static data.
-        | Later pwede itong manggaling sa Product model/database.
-        |
-        */
-
-        $trendingProducts = [
+    /**
+     * Temporary trending products.
+     *
+     * Later, pwede na itong manggaling sa database
+     * gamit ang Product model.
+     */
+    private function getTrendingProducts(): array
+    {
+        return [
             [
                 'name' => 'Minimalist Canvas Sneakers',
                 'category' => "Women's Apparel",
@@ -142,17 +140,5 @@ class HomeController extends Controller
                 'image' => 'https://placehold.co/400x400/F3F5F7/0F1B3D?text=Fitness+Watch',
             ],
         ];
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN VIEW
-        |--------------------------------------------------------------------------
-        */
-
-        return view('home', compact(
-            'categories',
-            'trendingProducts'
-        ));
     }
 }
