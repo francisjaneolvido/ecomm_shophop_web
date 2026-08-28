@@ -3,10 +3,17 @@
     Path: resources/views/auth/modals/seller-registration-modal.blade.php
 
     Opened from account-type-modal when "Seller" is selected.
-    Same split-screen registration content as the original
-    seller register page (artistic navy panel + 5-step form),
-    now rendered as a centered modal dialog with a light,
-    translucent backdrop instead of a full page.
+
+    REDESIGN NOTE: This modal now mirrors
+    buyer-registration-modal.blade.php's compact split-screen
+    layout (30/70 ratio, plain show/hide steps, feature-list
+    left panel instead of the old floating-card cluster) so the
+    two flows feel like one system. The floating back/close
+    buttons and the icon + eyebrow + title header block are
+    copied from login-modal.blade.php's "upper part" so all
+    three modals now share the same chrome. The left panel
+    copy/paddings were tightened and the logo enlarged so the
+    panel never needs its own scrollbar.
 
     IMPORTANT: This file is @include()'d directly into
     layouts/app.blade.php. It must NEVER contain @extends —
@@ -106,7 +113,7 @@ FILE STORAGE:
                w-full h-full
                sm:h-auto
                sm:max-h-[calc(100vh-3rem)]
-               sm:max-w-5xl xl:max-w-6xl
+               sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl
                overflow-y-auto
                sm:rounded-2xl
                bg-white
@@ -116,70 +123,68 @@ FILE STORAGE:
                transition-all duration-300 ease-out"
     >
 
-        {{-- Top bar --}}
-        <div
-            class="sticky top-0 z-20
-                   flex items-center gap-3
-                   bg-white/90 backdrop-blur
-                   border-b border-gray-border/60
-                   px-4 sm:px-6
-                   py-3"
+        {{-- Back — floating, matches login modal's close-button treatment --}}
+        <button
+            type="button"
+            data-seller-registration-modal-back
+            aria-label="Back to account type"
+            class="absolute top-4 left-4 z-20
+                   w-10 h-10
+                   rounded-full
+                   bg-gray-bg
+                   text-navy/45
+                   flex items-center justify-center
+                   hover:bg-teal-light
+                   hover:text-teal-dark
+                   focus:outline-none
+                   focus:ring-4 focus:ring-teal/15
+                   transition"
         >
-            <button
-                type="button"
-                data-seller-registration-modal-back
-                aria-label="Back to account type"
-                class="w-8 h-8 shrink-0
-                       rounded-full
-                       text-navy/40
-                       flex items-center justify-center
-                       hover:bg-teal-light hover:text-teal-dark
-                       focus:outline-none
-                       focus:ring-4 focus:ring-teal/15
-                       transition"
-            >
-                <x-lucide-arrow-left class="w-4 h-4" />
-            </button>
+            <x-lucide-arrow-left class="w-4 h-4" />
+        </button>
 
-            <p
-                id="seller-registration-modal-title"
-                class="flex-1 min-w-0 text-sm font-semibold text-navy truncate"
-            >
-                Seller Registration
-            </p>
+        {{-- Close — same size/position/classes as login-modal.blade.php --}}
+        <button
+            type="button"
+            data-seller-registration-modal-close
+            aria-label="Close seller registration"
+            class="absolute top-4 right-4 z-20
+                   w-10 h-10
+                   rounded-full
+                   bg-gray-bg
+                   text-navy/45
+                   flex items-center justify-center
+                   hover:bg-teal-light
+                   hover:text-teal-dark
+                   focus:outline-none
+                   focus:ring-4 focus:ring-teal/15
+                   transition"
+        >
+            <x-lucide-x class="w-4 h-4" />
+        </button>
 
-            <button
-                type="button"
-                data-seller-registration-modal-close
-                aria-label="Close seller registration"
-                class="w-8 h-8 shrink-0
-                       rounded-full
-                       text-navy/40
-                       flex items-center justify-center
-                       hover:bg-teal-light hover:text-teal-dark
-                       focus:outline-none
-                       focus:ring-4 focus:ring-teal/15
-                       transition"
-            >
-                <x-lucide-x class="w-4 h-4" />
-            </button>
-        </div>
+        {{-- Accent — same as login modal --}}
+        <div class="hidden sm:block h-1.5 bg-teal"></div>
+
+        <p id="seller-registration-modal-title" class="sr-only">Seller Registration</p>
 
 
         {{-- =====================================================
-            SPLIT CONTENT
+            SPLIT CONTENT — 30 / 70, same ratio as buyer modal
         ====================================================== --}}
-        <div class="grid lg:grid-cols-[1fr_560px]">
+        <div class="grid lg:grid-cols-[3fr_7fr]">
 
 
             {{-- =================================================
-                LEFT ARTISTIC PANEL
+                LEFT ARTISTIC PANEL (30%) — condensed to a feature
+                list (no absolutely-positioned card cluster) so it
+                never needs its own scrollbar.
             ================================================== --}}
             <div
                 class="relative hidden lg:flex
                        overflow-hidden
                        bg-navy
-                       px-10 xl:px-16
+                       px-6 xl:px-8
                        py-10
                        items-center"
             >
@@ -187,8 +192,8 @@ FILE STORAGE:
                 {{-- Background decorations --}}
                 <div
                     class="pointer-events-none absolute
-                           -top-24 -left-24
-                           w-80 h-80
+                           -top-20 -left-20
+                           w-64 h-64
                            rounded-full
                            bg-teal/15
                            blur-3xl"
@@ -196,8 +201,8 @@ FILE STORAGE:
 
                 <div
                     class="pointer-events-none absolute
-                           -bottom-32 -right-20
-                           w-96 h-96
+                           -bottom-24 -right-16
+                           w-72 h-72
                            rounded-full
                            bg-teal/[0.06]
                            blur-3xl"
@@ -205,42 +210,42 @@ FILE STORAGE:
 
                 <div
                     class="pointer-events-none absolute
-                           top-[18%] right-[12%]
-                           w-24 h-24
+                           top-[16%] right-[14%]
+                           w-16 h-16
                            rounded-full
                            border border-white/10"
                 ></div>
 
                 <div
                     class="pointer-events-none absolute
-                           bottom-[12%] left-[10%]
-                           w-16 h-16
+                           bottom-[14%] left-[12%]
+                           w-12 h-12
                            rounded-full
                            border border-teal/30"
                 ></div>
 
 
-                <div class="relative z-10 w-full max-w-2xl mx-auto">
+                <div class="relative z-10 w-full mx-auto">
 
 
-                    {{-- Logo --}}
+                    {{-- Logo — enlarged --}}
                     <div class="flex items-center gap-3">
 
-                        <div class="w-12 h-12 flex items-center justify-center">
+                        <div class="w-16 h-16 flex items-center justify-center shrink-0">
                             <img
                                 src="{{ asset('images/logo.png') }}"
                                 alt="ShopHop"
-                                class="w-12 h-12 object-contain"
+                                class="w-16 h-16 object-contain"
                             >
                         </div>
 
-                        <div>
+                        <div class="min-w-0">
 
-                            <p class="text-white text-xl font-bold leading-none">
+                            <p class="text-white text-lg font-bold leading-none">
                                 ShopHop
                             </p>
 
-                            <p class="text-teal text-[9px] tracking-[0.24em] mt-2">
+                            <p class="text-teal text-[8px] tracking-[0.22em] mt-2">
                                 HOP IN. SHOP MORE.
                             </p>
 
@@ -249,31 +254,30 @@ FILE STORAGE:
                     </div>
 
 
-                    {{-- Main artwork content --}}
-                    <div class="mt-8 xl:mt-10">
+                    {{-- Main content --}}
+                    <div class="mt-3 xl:mt-4">
 
                         <span
-                            class="inline-flex items-center gap-2
+                            class="inline-flex items-center gap-1.5
                                    rounded-full
                                    bg-white/[0.06]
                                    border border-white/10
-                                   px-3.5 py-1.5
-                                   text-[11px] font-medium
+                                   px-3 py-1
+                                   text-[10px] font-medium
                                    text-teal"
                         >
-                            <x-lucide-store class="w-3.5 h-3.5" />
+                            <x-lucide-store class="w-3 h-3" />
 
-                            GROW YOUR BUSINESS WITH SHOPHOP
+                            GROW YOUR BUSINESS
                         </span>
 
 
                         <h1
-                            class="mt-5
+                            class="mt-4
                                    text-white
-                                   text-4xl xl:text-5xl
+                                   text-2xl xl:text-3xl
                                    font-extrabold
-                                   leading-[1.05]
-                                   max-w-xl"
+                                   leading-[1.1]"
                         >
                             <span class="text-white">Sell more.</span>
                             <span class="block text-teal">
@@ -283,131 +287,57 @@ FILE STORAGE:
 
 
                         <p
-                            class="mt-4
+                            class="mt-3
                                    text-white/55
-                                   text-base
-                                   leading-relaxed
-                                   max-w-md"
+                                   text-[13px]
+                                   leading-relaxed"
                         >
-                            Register your business as a ShopHop seller and
-                            start listing products to thousands of active
-                            shoppers across the platform.
+                            Register your business and start listing
+                            products to thousands of active shoppers
+                            across ShopHop.
                         </p>
 
                     </div>
 
 
-                    {{-- Floating card cluster --}}
-                    <div class="relative mt-10 xl:mt-12 h-48 max-w-xl">
+                    {{-- Feature list --}}
+                    <div class="mt-7 xl:mt-8 space-y-2.5">
 
-                        {{-- Main center card --}}
-                        <div
-                            class="absolute
-                                   left-1/2 top-1/2
-                                   -translate-x-1/2
-                                   -translate-y-1/2
-                                   w-44 h-44
-                                   rounded-3xl
-                                   bg-white
-                                   shadow-xl shadow-black/20
-                                   flex flex-col
-                                   items-center justify-center"
-                        >
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
 
-                            <div
-                                class="w-16 h-16
-                                       rounded-2xl
-                                       bg-teal-light
-                                       flex items-center justify-center
-                                       text-teal-dark"
-                            >
-                                <x-lucide-store class="w-8 h-8" />
+                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-package class="w-4 h-4" />
                             </div>
 
-                            <p class="text-navy font-bold text-base mt-4">
-                                ShopHop Seller
-                            </p>
-
-                            <p class="text-navy/40 text-[11px] mt-1">
-                                List. Sell. Grow.
-                            </p>
-
-                        </div>
-
-
-                        {{-- Floating card - listings --}}
-                        <div
-                            class="absolute
-                                   left-2 top-2
-                                   w-36
-                                   rounded-2xl
-                                   bg-white/95
-                                   p-3.5
-                                   shadow-lg shadow-black/10"
-                        >
-
-                            <div class="flex items-center gap-2.5">
-
-                                <div
-                                    class="w-9 h-9
-                                           rounded-xl
-                                           bg-teal-light
-                                           flex items-center justify-center"
-                                >
-                                    <x-lucide-package class="w-4 h-4 text-teal-dark" />
-                                </div>
-
-                                <div>
-
-                                    <p class="text-navy text-[11px] font-semibold">
-                                        List Products
-                                    </p>
-
-                                    <p class="text-navy/40 text-[10px] mt-0.5">
-                                        Reach more buyers
-                                    </p>
-
-                                </div>
-
+                            <div class="min-w-0">
+                                <p class="text-white text-[11.5px] font-semibold leading-tight">List Products</p>
+                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Reach more buyers</p>
                             </div>
 
                         </div>
 
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
 
-                        {{-- Floating card - payouts --}}
-                        <div
-                            class="absolute
-                                   right-2 bottom-2
-                                   w-36
-                                   rounded-2xl
-                                   bg-teal
-                                   p-3.5
-                                   shadow-lg shadow-black/10"
-                        >
+                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-wallet class="w-4 h-4" />
+                            </div>
 
-                            <div class="flex items-center gap-2.5">
+                            <div class="min-w-0">
+                                <p class="text-white text-[11.5px] font-semibold leading-tight">Fast Payouts</p>
+                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Get paid on time</p>
+                            </div>
 
-                                <div
-                                    class="w-9 h-9
-                                           rounded-xl
-                                           bg-white/15
-                                           flex items-center justify-center"
-                                >
-                                    <x-lucide-wallet class="w-4 h-4 text-white" />
-                                </div>
+                        </div>
 
-                                <div>
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
 
-                                    <p class="text-white text-[11px] font-semibold">
-                                        Fast Payouts
-                                    </p>
+                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-shield-check class="w-4 h-4" />
+                            </div>
 
-                                    <p class="text-white/60 text-[10px] mt-0.5">
-                                        Get paid on time
-                                    </p>
-
-                                </div>
-
+                            <div class="min-w-0">
+                                <p class="text-white text-[11.5px] font-semibold leading-tight">Verified &amp; Trusted</p>
+                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Admin-approved sellers</p>
                             </div>
 
                         </div>
@@ -416,46 +346,25 @@ FILE STORAGE:
 
 
                     {{-- Trust stats row --}}
-                    <div class="mt-8 flex items-center gap-6 xl:gap-8 max-w-xl">
+                    <div class="mt-7 xl:mt-8 flex items-center gap-4 xl:gap-5">
 
                         <div>
-
-                            <p class="text-white text-xl xl:text-2xl font-extrabold">
-                                10K+
-                            </p>
-
-                            <p class="text-white/45 text-[11px] mt-1">
-                                Active Sellers
-                            </p>
-
+                            <p class="text-white text-base xl:text-lg font-extrabold">10K+</p>
+                            <p class="text-white/45 text-[9.5px] mt-1">Active Sellers</p>
                         </div>
 
-                        <div class="w-px h-8 bg-white/10"></div>
+                        <div class="w-px h-7 bg-white/10"></div>
 
                         <div>
-
-                            <p class="text-white text-xl xl:text-2xl font-extrabold">
-                                50K+
-                            </p>
-
-                            <p class="text-white/45 text-[11px] mt-1">
-                                Products Listed
-                            </p>
-
+                            <p class="text-white text-base xl:text-lg font-extrabold">50K+</p>
+                            <p class="text-white/45 text-[9.5px] mt-1">Products Listed</p>
                         </div>
 
-                        <div class="w-px h-8 bg-white/10"></div>
+                        <div class="w-px h-7 bg-white/10"></div>
 
                         <div>
-
-                            <p class="text-white text-xl xl:text-2xl font-extrabold">
-                                4.8<span class="text-teal">★</span>
-                            </p>
-
-                            <p class="text-white/45 text-[11px] mt-1">
-                                Customer Rating
-                            </p>
-
+                            <p class="text-white text-base xl:text-lg font-extrabold">4.8<span class="text-teal">★</span></p>
+                            <p class="text-white/45 text-[9.5px] mt-1">Rating</p>
                         </div>
 
                     </div>
@@ -467,24 +376,24 @@ FILE STORAGE:
 
 
             {{-- =================================================
-                RIGHT REGISTRATION PANEL
+                RIGHT REGISTRATION PANEL (70%)
             ================================================== --}}
             <div
                 class="bg-white
                        px-4 sm:px-8 xl:px-10
-                       py-8 sm:py-10 lg:py-12"
+                       py-6 sm:py-8"
             >
 
                 <div id="seller-registration-panel" class="max-w-xl mx-auto">
 
 
                     {{-- Mobile branding --}}
-                    <div class="lg:hidden flex items-center gap-3 mb-7">
+                    <div class="lg:hidden flex items-center gap-3 mb-5">
 
                         <img
                             src="{{ asset('images/logo.png') }}"
                             alt="ShopHop"
-                            class="w-9 h-9 object-contain"
+                            class="w-10 h-10 object-contain"
                         >
 
                         <div>
@@ -502,18 +411,31 @@ FILE STORAGE:
                     </div>
 
 
-                    {{-- Header --}}
-                    <div class="mb-7">
+                    {{-- Header — copied from login-modal.blade.php's
+                         icon + eyebrow + title treatment so all three
+                         modals share the same "upper part". --}}
+                    <div class="mb-6">
 
-                        <p class="text-[11px] font-semibold tracking-wide text-teal-dark mb-2">
+                        <div
+                            class="w-11 h-11
+                                   rounded-xl
+                                   bg-teal-light
+                                   flex items-center justify-center
+                                   text-teal-dark
+                                   mb-4"
+                        >
+                            <x-lucide-store class="w-5 h-5" />
+                        </div>
+
+                        <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-1.5">
                             SELLER REGISTRATION
                         </p>
 
-                        <h2 class="text-navy text-2xl sm:text-3xl font-bold">
+                        <h2 class="text-navy text-2xl sm:text-3xl font-bold leading-tight">
                             Become a Seller
                         </h2>
 
-                        <p class="text-sm text-navy/45 mt-2 leading-relaxed">
+                        <p class="text-sm text-navy/50 mt-2 leading-relaxed">
                             Enter your details below to register your business on ShopHop.
                         </p>
 
@@ -523,7 +445,7 @@ FILE STORAGE:
                     {{-- =============================================
                         STEP PROGRESS BAR (5 steps)
                     ============================================== --}}
-                    <div class="mb-8">
+                    <div class="mb-6">
 
                         <div
                             class="grid items-center"
@@ -531,51 +453,51 @@ FILE STORAGE:
                         >
 
                             <div
-                                class="step-circle step-circle-active justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-teal border-teal text-white"
+                                class="step-circle step-circle-active justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-teal border-teal text-white"
                                 data-step-circle="1"
                             >
                                 <span class="step-number">1</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
                             <div class="step-line h-px mx-1 bg-gray-border" data-step-line="1"></div>
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-white border-gray-border text-navy/30"
+                                class="step-circle justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-white border-gray-border text-navy/30"
                                 data-step-circle="2"
                             >
                                 <span class="step-number">2</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
                             <div class="step-line h-px mx-1 bg-gray-border" data-step-line="2"></div>
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-white border-gray-border text-navy/30"
+                                class="step-circle justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-white border-gray-border text-navy/30"
                                 data-step-circle="3"
                             >
                                 <span class="step-number">3</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
                             <div class="step-line h-px mx-1 bg-gray-border" data-step-line="3"></div>
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-white border-gray-border text-navy/30"
+                                class="step-circle justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-white border-gray-border text-navy/30"
                                 data-step-circle="4"
                             >
                                 <span class="step-number">4</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
                             <div class="step-line h-px mx-1 bg-gray-border" data-step-line="4"></div>
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-white border-gray-border text-navy/30"
+                                class="step-circle justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-white border-gray-border text-navy/30"
                                 data-step-circle="5"
                             >
                                 <span class="step-number">5</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
                         </div>
@@ -622,7 +544,7 @@ FILE STORAGE:
                     {{-- Validation Errors --}}
                     @if ($errors->any())
 
-                        <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4">
+                        <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4">
 
                             <div class="flex gap-3">
 
@@ -662,40 +584,43 @@ FILE STORAGE:
                         @csrf
                         <input type="hidden" name="account_type" value="seller">
 
-                        {{-- Viewport wraps all step panels so absolutely
-                             positioned panels (mid-transition) don't
-                             collapse the layout height. --}}
                         <div id="seller-step-viewport">
 
 
                         {{-- =========================================
                             STEP 1 — PERSONAL DETAILS
                         ========================================== --}}
-                        <div data-step-panel="1" class="step-current">
+                        <div data-step-panel="1">
 
-                            <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="grid sm:grid-cols-2 gap-3.5">
 
 
                                 {{-- First Name --}}
                                 <div>
 
-                                    <label for="seller_first_name" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_first_name" class="block text-xs font-semibold text-navy mb-1.5">
                                         First Name
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        id="seller_first_name"
-                                        name="first_name"
-                                        value="{{ old('first_name') }}"
-                                        required
-                                        autocomplete="given-name"
-                                        placeholder="Enter first name"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="seller_first_name_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-user class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="text"
+                                            id="seller_first_name"
+                                            name="first_name"
+                                            value="{{ old('first_name') }}"
+                                            required
+                                            autocomplete="given-name"
+                                            placeholder="Enter first name"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="seller_first_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -703,23 +628,29 @@ FILE STORAGE:
                                 {{-- Last Name --}}
                                 <div>
 
-                                    <label for="seller_last_name" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_last_name" class="block text-xs font-semibold text-navy mb-1.5">
                                         Last Name
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        id="seller_last_name"
-                                        name="last_name"
-                                        value="{{ old('last_name') }}"
-                                        required
-                                        autocomplete="family-name"
-                                        placeholder="Enter last name"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="seller_last_name_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-user class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="text"
+                                            id="seller_last_name"
+                                            name="last_name"
+                                            value="{{ old('last_name') }}"
+                                            required
+                                            autocomplete="family-name"
+                                            placeholder="Enter last name"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="seller_last_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -727,7 +658,7 @@ FILE STORAGE:
                                 {{-- Middle Initial --}}
                                 <div>
 
-                                    <label for="seller_middle_initial" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_middle_initial" class="block text-xs font-semibold text-navy mb-1.5">
                                         Middle Initial
                                     </label>
 
@@ -738,10 +669,10 @@ FILE STORAGE:
                                         value="{{ old('middle_initial') }}"
                                         maxlength="2"
                                         placeholder="e.g. M."
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                     >
 
-                                    <p id="seller_middle_initial_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="seller_middle_initial_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -749,23 +680,31 @@ FILE STORAGE:
                                 {{-- Sex --}}
                                 <div>
 
-                                    <label for="seller_sex" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_sex" class="block text-xs font-semibold text-navy mb-1.5">
                                         Sex
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="seller_sex"
-                                        name="sex"
-                                        required
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select sex</option>
-                                        <option value="Male" @selected(old('sex') === 'Male')>Male</option>
-                                        <option value="Female" @selected(old('sex') === 'Female')>Female</option>
-                                    </select>
+                                    <div class="relative">
 
-                                    <p id="seller_sex_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-users class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="seller_sex"
+                                            name="sex"
+                                            required
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select sex</option>
+                                            <option value="Male" @selected(old('sex') === 'Male')>Male</option>
+                                            <option value="Female" @selected(old('sex') === 'Female')>Female</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
+
+                                    <p id="seller_sex_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -773,23 +712,29 @@ FILE STORAGE:
                                 {{-- Email --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_email" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_email" class="block text-xs font-semibold text-navy mb-1.5">
                                         E-mail
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="email"
-                                        id="seller_email"
-                                        name="email"
-                                        value="{{ old('email') }}"
-                                        required
-                                        autocomplete="email"
-                                        placeholder="your@email.com"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="seller_email_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-mail class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="email"
+                                            id="seller_email"
+                                            name="email"
+                                            value="{{ old('email') }}"
+                                            required
+                                            autocomplete="email"
+                                            placeholder="your@email.com"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="seller_email_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -797,79 +742,85 @@ FILE STORAGE:
                                 {{-- Contact --}}
                                 <div>
 
-                                    <label for="seller_contact_no" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_contact_no" class="block text-xs font-semibold text-navy mb-1.5">
                                         Contact No.
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="tel"
-                                        id="seller_contact_no"
-                                        name="contact_no"
-                                        value="{{ old('contact_no') }}"
-                                        required
-                                        inputmode="numeric"
-                                        maxlength="11"
-                                        placeholder="09XXXXXXXXX"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="seller_contact_no_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-phone class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="tel"
+                                            id="seller_contact_no"
+                                            name="contact_no"
+                                            value="{{ old('contact_no') }}"
+                                            required
+                                            inputmode="numeric"
+                                            maxlength="11"
+                                            placeholder="09XXXXXXXXX"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="seller_contact_no_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
 
-                                {{-- Birthday --}}
+                                {{-- Birthday + Age --}}
                                 <div>
 
-                                    <label for="seller_birthday" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_birthday" class="block text-xs font-semibold text-navy mb-1.5">
                                         Birthday
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="date"
-                                        id="seller_birthday"
-                                        name="birthday"
-                                        value="{{ old('birthday') }}"
-                                        max="{{ now()->format('Y-m-d') }}"
-                                        required
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="flex gap-2">
 
-                                    <p id="seller_birthday_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <div class="relative flex-1">
 
-                                </div>
+                                            <x-lucide-calendar class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
+                                            <input
+                                                type="date"
+                                                id="seller_birthday"
+                                                name="birthday"
+                                                value="{{ old('birthday') }}"
+                                                max="{{ now()->format('Y-m-d') }}"
+                                                required
+                                                class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-2 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            >
 
-                                {{-- Age --}}
-                                <div>
+                                        </div>
 
-                                    <label for="seller_age" class="block text-xs font-medium text-navy/70 mb-2">
-                                        Age
-                                        <span class="text-red-500">*</span>
-                                    </label>
+                                        <input
+                                            type="number"
+                                            id="seller_age"
+                                            value="{{ old('age') }}"
+                                            readonly
+                                            aria-label="Age (auto-generated)"
+                                            placeholder="Age"
+                                            class="w-16 shrink-0 min-h-11 rounded-xl border border-gray-border/70 bg-gray-bg px-2 text-center text-sm text-navy outline-none"
+                                        >
 
-                                    <input
-                                        type="number"
-                                        id="seller_age"
-                                        value="{{ old('age') }}"
-                                        readonly
-                                        placeholder="Auto-generated"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-gray-bg px-4 py-3 text-sm text-navy outline-none"
-                                    >
+                                    </div>
+
+                                    <p id="seller_birthday_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
                             </div>
 
 
-                            <div class="flex items-center gap-3 mt-8">
+                            <div class="flex items-center gap-3 mt-6">
 
                                 <button
                                     type="button"
                                     id="seller-step1-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -884,42 +835,50 @@ FILE STORAGE:
                         {{-- =========================================
                             STEP 2 — ADDRESS
                         ========================================== --}}
-                        <div data-step-panel="2" class="step-offstage">
+                        <div data-step-panel="2" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-4">
+                            <div class="flex items-center gap-2 mb-3.5">
                                 <x-lucide-map-pin class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Address</p>
                             </div>
 
 
-                            <div id="seller-address-status" class="hidden mb-4 text-xs text-teal-dark">
+                            <div id="seller-address-status" class="hidden mb-3.5 rounded-xl bg-teal-light/50 px-3.5 py-2 text-xs text-teal-dark">
                                 Loading address information...
                             </div>
 
 
-                            <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="grid sm:grid-cols-2 gap-3.5">
 
 
                                 {{-- Province --}}
                                 <div>
 
-                                    <label for="seller_province" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_province" class="block text-xs font-semibold text-navy mb-1.5">
                                         Province
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="seller_province"
-                                        name="province_code"
-                                        required
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select province</option>
-                                    </select>
+                                    <div class="relative">
+
+                                        <x-lucide-map-pin class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="seller_province"
+                                            name="province_code"
+                                            required
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select province</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
 
                                     <input type="hidden" id="seller_province_name" name="province_name" value="{{ old('province_name') }}">
 
-                                    <p id="seller_province_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="seller_province_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -927,24 +886,32 @@ FILE STORAGE:
                                 {{-- City / Municipality --}}
                                 <div>
 
-                                    <label for="seller_municipality" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_municipality" class="block text-xs font-semibold text-navy mb-1.5">
                                         Municipality / City
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="seller_municipality"
-                                        name="municipality_code"
-                                        required
-                                        disabled
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select municipality / city</option>
-                                    </select>
+                                    <div class="relative">
+
+                                        <x-lucide-building-2 class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="seller_municipality"
+                                            name="municipality_code"
+                                            required
+                                            disabled
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select municipality / city</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
 
                                     <input type="hidden" id="seller_municipality_name" name="municipality_name" value="{{ old('municipality_name') }}">
 
-                                    <p id="seller_municipality_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="seller_municipality_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -952,24 +919,32 @@ FILE STORAGE:
                                 {{-- Barangay --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_barangay" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_barangay" class="block text-xs font-semibold text-navy mb-1.5">
                                         Barangay
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="seller_barangay"
-                                        name="barangay_code"
-                                        required
-                                        disabled
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select barangay</option>
-                                    </select>
+                                    <div class="relative">
+
+                                        <x-lucide-home class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="seller_barangay"
+                                            name="barangay_code"
+                                            required
+                                            disabled
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select barangay</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
 
                                     <input type="hidden" id="seller_barangay_name" name="barangay_name" value="{{ old('barangay_name') }}">
 
-                                    <p id="seller_barangay_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="seller_barangay_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -977,7 +952,7 @@ FILE STORAGE:
                                 {{-- Street --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_street_address" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_street_address" class="block text-xs font-semibold text-navy mb-1.5">
                                         Street / House No. / Subdivision
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -985,25 +960,25 @@ FILE STORAGE:
                                     <textarea
                                         id="seller_street_address"
                                         name="street_address"
-                                        rows="3"
+                                        rows="2"
                                         required
                                         placeholder="House no., street, subdivision, building, etc."
-                                        class="w-full resize-none rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        class="w-full resize-none rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                     >{{ old('street_address') }}</textarea>
 
-                                    <p id="seller_street_address_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="seller_street_address_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
                             </div>
 
 
-                            <div class="flex items-center gap-3 mt-8">
+                            <div class="flex items-center gap-3 mt-6">
 
                                 <button
                                     type="button"
                                     id="seller-step2-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3.5 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1012,7 +987,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step2-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1027,34 +1002,40 @@ FILE STORAGE:
                         {{-- =========================================
                             STEP 3 — BUSINESS DETAILS
                         ========================================== --}}
-                        <div data-step-panel="3" class="step-offstage">
+                        <div data-step-panel="3" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-4">
+                            <div class="flex items-center gap-2 mb-3.5">
                                 <x-lucide-store class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Business Details</p>
                             </div>
 
-                            <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="grid sm:grid-cols-2 gap-3.5">
 
                                 {{-- Business Name --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_business_name" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_business_name" class="block text-xs font-semibold text-navy mb-1.5">
                                         Business Name
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        id="seller_business_name"
-                                        name="business_name"
-                                        value="{{ old('business_name') }}"
-                                        required
-                                        placeholder="Enter your registered business name"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="seller_business_name_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-store class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="text"
+                                            id="seller_business_name"
+                                            name="business_name"
+                                            value="{{ old('business_name') }}"
+                                            required
+                                            placeholder="Enter your registered business name"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="seller_business_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -1062,7 +1043,7 @@ FILE STORAGE:
                                 {{-- Line of Business / Category --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_business_category" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_business_category" class="block text-xs font-semibold text-navy mb-1.5">
                                         Line of Business (Category)
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -1076,53 +1057,61 @@ FILE STORAGE:
                                         old('business_category') selection
                                         logic when you do.
                                     --}}
-                                    <select
-                                        id="seller_business_category"
-                                        name="business_category"
-                                        required
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select line of business</option>
+                                    <div class="relative">
 
-                                        @php
-                                            $placeholderCategories = [
-                                                'Fashion & Apparel',
-                                                'Electronics & Gadgets',
-                                                'Health & Beauty',
-                                                'Home & Living',
-                                                'Groceries & Food',
-                                                'Toys, Kids & Baby',
-                                                'Sports & Outdoors',
-                                                'Automotive',
-                                                'Books, Hobbies & Stationery',
-                                                'Pet Supplies',
-                                                'Other',
-                                            ];
-                                        @endphp
+                                        <x-lucide-tag class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
-                                        @foreach ($placeholderCategories as $category)
+                                        <select
+                                            id="seller_business_category"
+                                            name="business_category"
+                                            required
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select line of business</option>
 
-                                            <option value="{{ $category }}" @selected(old('business_category') === $category)>
-                                                {{ $category }}
-                                            </option>
+                                            @php
+                                                $placeholderCategories = [
+                                                    'Fashion & Apparel',
+                                                    'Electronics & Gadgets',
+                                                    'Health & Beauty',
+                                                    'Home & Living',
+                                                    'Groceries & Food',
+                                                    'Toys, Kids & Baby',
+                                                    'Sports & Outdoors',
+                                                    'Automotive',
+                                                    'Books, Hobbies & Stationery',
+                                                    'Pet Supplies',
+                                                    'Other',
+                                                ];
+                                            @endphp
 
-                                        @endforeach
+                                            @foreach ($placeholderCategories as $category)
 
-                                    </select>
+                                                <option value="{{ $category }}" @selected(old('business_category') === $category)>
+                                                    {{ $category }}
+                                                </option>
 
-                                    <p id="seller_business_category_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                            @endforeach
+
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
+
+                                    <p id="seller_business_category_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
                             </div>
 
 
-                            <div class="flex items-center gap-3 mt-8">
+                            <div class="flex items-center gap-3 mt-6">
 
                                 <button
                                     type="button"
                                     id="seller-step3-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3.5 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1131,7 +1120,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step3-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1146,17 +1135,17 @@ FILE STORAGE:
                         {{-- =========================================
                             STEP 4 — VERIFICATION (VALID ID + BUSINESS PERMIT)
                         ========================================== --}}
-                        <div data-step-panel="4" class="step-offstage">
+                        <div data-step-panel="4" class="hidden">
 
                             {{-- Valid ID --}}
-                            <label for="seller_valid_id" class="block text-xs font-medium text-navy/70 mb-2">
+                            <label for="seller_valid_id" class="block text-xs font-semibold text-navy mb-1.5">
                                 Upload Valid ID
                                 <span class="text-red-500">*</span>
                             </label>
 
                             <label
                                 for="seller_valid_id"
-                                class="flex items-center gap-4 rounded-xl border border-dashed border-gray-border/80 bg-gray-bg hover:border-teal hover:bg-teal-light/30 px-4 py-4 cursor-pointer transition"
+                                class="flex items-center gap-4 rounded-2xl border border-dashed border-gray-border/80 bg-gray-bg hover:border-teal hover:bg-teal-light/30 px-4 py-4 cursor-pointer transition"
                             >
 
                                 <div class="shrink-0 w-11 h-11 rounded-xl bg-white flex items-center justify-center text-teal-dark shadow-sm">
@@ -1193,14 +1182,14 @@ FILE STORAGE:
 
 
                             {{-- Business Permit --}}
-                            <label for="seller_business_permit" class="block text-xs font-medium text-navy/70 mb-2 mt-6">
+                            <label for="seller_business_permit" class="block text-xs font-semibold text-navy mb-1.5 mt-5">
                                 Upload Business Permit
                                 <span class="text-red-500">*</span>
                             </label>
 
                             <label
                                 for="seller_business_permit"
-                                class="flex items-center gap-4 rounded-xl border border-dashed border-gray-border/80 bg-gray-bg hover:border-teal hover:bg-teal-light/30 px-4 py-4 cursor-pointer transition"
+                                class="flex items-center gap-4 rounded-2xl border border-dashed border-gray-border/80 bg-gray-bg hover:border-teal hover:bg-teal-light/30 px-4 py-4 cursor-pointer transition"
                             >
 
                                 <div class="shrink-0 w-11 h-11 rounded-xl bg-white flex items-center justify-center text-teal-dark shadow-sm">
@@ -1236,12 +1225,12 @@ FILE STORAGE:
                             <p id="seller_business_permit_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
 
 
-                            <div class="flex items-center gap-3 mt-8">
+                            <div class="flex items-center gap-3 mt-6">
 
                                 <button
                                     type="button"
                                     id="seller-step4-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3.5 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1250,7 +1239,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step4-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1265,18 +1254,20 @@ FILE STORAGE:
                         {{-- =========================================
                             STEP 5 — SECURITY
                         ========================================== --}}
-                        <div data-step-panel="5" class="step-offstage">
+                        <div data-step-panel="5" class="hidden">
 
-                            <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="grid sm:grid-cols-2 gap-3.5">
 
                                 <div>
 
-                                    <label for="seller_password" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_password" class="block text-xs font-semibold text-navy mb-1.5">
                                         Password
                                         <span class="text-red-500">*</span>
                                     </label>
 
                                     <div class="relative">
+
+                                        <x-lucide-lock class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
                                         <input
                                             type="password"
@@ -1286,7 +1277,7 @@ FILE STORAGE:
                                             required
                                             autocomplete="new-password"
                                             placeholder="Minimum 8 characters"
-                                            class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 pr-11 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                         >
 
                                         <button
@@ -1294,7 +1285,7 @@ FILE STORAGE:
                                             id="seller_toggle_password"
                                             aria-label="Show password"
                                             aria-pressed="false"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/40 hover:text-navy transition"
+                                            class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-navy/35 hover:text-teal-dark hover:bg-gray-bg focus:outline-none focus:ring-4 focus:ring-teal/10 transition"
                                         >
                                             <svg class="password-icon-show w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
@@ -1311,19 +1302,21 @@ FILE STORAGE:
 
                                     </div>
 
-                                    <p id="seller_password_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="seller_password_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
 
                                 <div>
 
-                                    <label for="seller_password_confirmation" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="seller_password_confirmation" class="block text-xs font-semibold text-navy mb-1.5">
                                         Confirm Password
                                         <span class="text-red-500">*</span>
                                     </label>
 
                                     <div class="relative">
+
+                                        <x-lucide-lock class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
                                         <input
                                             type="password"
@@ -1333,7 +1326,7 @@ FILE STORAGE:
                                             required
                                             autocomplete="new-password"
                                             placeholder="Re-enter password"
-                                            class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 pr-11 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                         >
 
                                         <button
@@ -1341,7 +1334,7 @@ FILE STORAGE:
                                             id="seller_toggle_password_confirmation"
                                             aria-label="Show password"
                                             aria-pressed="false"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/40 hover:text-navy transition"
+                                            class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-navy/35 hover:text-teal-dark hover:bg-gray-bg focus:outline-none focus:ring-4 focus:ring-teal/10 transition"
                                         >
                                             <svg class="password-icon-show w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
@@ -1358,7 +1351,7 @@ FILE STORAGE:
 
                                     </div>
 
-                                    <p id="seller_password_confirmation_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="seller_password_confirmation_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -1367,67 +1360,60 @@ FILE STORAGE:
                             {{-- Password requirements checklist --}}
                             <div
                                 id="seller-password-requirements"
-                                class="mt-4 rounded-xl border border-gray-border/70 bg-gray-bg p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2"
+                                class="mt-3.5 rounded-xl border border-gray-border/70 bg-gray-bg p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5"
                             >
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40" data-req="length">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="length">
                                     <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
                                     Minimum 8 characters
                                 </p>
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40" data-req="uppercase">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="uppercase">
                                     <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
-                                    At least 1 uppercase letter (A–Z)
+                                    1 uppercase letter (A–Z)
                                 </p>
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40" data-req="lowercase">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="lowercase">
                                     <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
-                                    At least 1 lowercase letter (a–z)
+                                    1 lowercase letter (a–z)
                                 </p>
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40" data-req="number">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="number">
                                     <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
-                                    At least 1 number (0–9)
+                                    1 number (0–9)
                                 </p>
 
-                                <p class="req-item sm:col-span-2 flex items-center gap-2 text-[11px] text-navy/30" data-req="special">
+                                <p class="req-item sm:col-span-2 flex items-center gap-2 text-[10.5px] text-navy/30" data-req="special">
                                     <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
                                     Special character
-                                    <span class="text-navy/30">(recommended: ! @ # $ % ^ &amp; *)</span>
+                                    <span class="text-navy/30">(! @ # $ % ^ &amp; *)</span>
                                 </p>
 
                             </div>
 
                             {{-- Approval notice --}}
-                            <div class="mt-6 rounded-xl border border-teal/20 bg-teal-light/50 p-4">
+                            <div class="mt-3.5 flex gap-3 rounded-xl border border-teal/15 bg-teal-light/35 p-3">
 
-                                <div class="flex gap-3">
+                                <x-lucide-info class="w-4 h-4 text-teal-dark shrink-0 mt-0.5" />
 
-                                    <x-lucide-info class="w-4 h-4 text-teal-dark shrink-0 mt-0.5" />
-
-                                    <p class="text-[11px] sm:text-xs text-navy/60 leading-relaxed">
-                                        After submitting your registration, please
-                                        wait for the administrator's approval.
-                                        Your approval status will be sent to your
-                                        registered email.
-                                    </p>
-
-                                </div>
+                                <p class="text-[11px] text-navy/50 leading-relaxed">
+                                    After submitting your registration, please wait for the administrator's approval. Your approval status will be sent to your registered email.
+                                </p>
 
                             </div>
 
                             {{-- Terms & Agreement --}}
-                            <div class="mt-5">
+                            <div class="mt-3.5">
 
                                 <label for="seller_terms" class="flex items-start gap-3 cursor-pointer group">
 
@@ -1449,17 +1435,17 @@ FILE STORAGE:
 
                                 </label>
 
-                                <p id="seller_terms_error" class="hidden text-[11px] text-red-500 mt-1.5 ml-8"></p>
+                                <p id="seller_terms_error" class="hidden text-[11px] text-red-500 mt-1 ml-8"></p>
 
                             </div>
 
 
-                            <div class="flex items-center gap-3 mt-6">
+                            <div class="flex items-center gap-3 mt-5">
 
                                 <button
                                     type="button"
                                     id="seller-step5-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3.5 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1467,7 +1453,7 @@ FILE STORAGE:
 
                                 <button
                                     type="submit"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Create Seller Account
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1528,62 +1514,6 @@ FILE STORAGE:
         display: none !important;
     }
 
-    /* =====================================================
-       STEP TRANSITIONS (scoped to the seller modal only)
-       Panels are kept in the DOM (never `hidden`) so we can
-       animate them. Only one panel is interactive/visible at
-       a time via step-current / step-offstage classes.
-    ===================================================== */
-    #seller-step-viewport {
-        position: relative;
-    }
-
-    #seller-registration-modal [data-step-panel] {
-        transition:
-            opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1),
-            transform 0.38s cubic-bezier(0.22, 1, 0.36, 1);
-        will-change: opacity, transform;
-    }
-
-    #seller-registration-modal [data-step-panel].step-current {
-        position: relative;
-        opacity: 1;
-        transform: translateX(0);
-        pointer-events: auto;
-    }
-
-    #seller-registration-modal [data-step-panel].step-enter-from-right {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        transform: translateX(28px);
-        pointer-events: none;
-    }
-
-    #seller-registration-modal [data-step-panel].step-enter-from-left {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        transform: translateX(-28px);
-        pointer-events: none;
-    }
-
-    #seller-registration-modal [data-step-panel].step-offstage {
-        position: absolute;
-        inset: 0;
-        opacity: 0;
-        transform: translateX(0);
-        pointer-events: none;
-        visibility: hidden;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        #seller-registration-modal [data-step-panel] {
-            transition: opacity 0.15s linear !important;
-            transform: none !important;
-        }
-    }
-
     #seller-registration-modal .step-circle {
         transition:
             background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
@@ -1632,6 +1562,17 @@ FILE STORAGE:
 
     #seller-registration-modal .req-item.req-satisfied .req-dot {
         transform: scale(1.12);
+    }
+
+    /* Hide the dialog's scrollbar visually but keep it functional
+   as a safety net for very short viewports. */
+    #seller-registration-dialog {
+        scrollbar-width: none;      /* Firefox */
+        -ms-overflow-style: none;   /* old Edge/IE */
+    }
+
+    #seller-registration-dialog::-webkit-scrollbar {
+        display: none;              /* Chrome / Safari / new Edge */
     }
 </style>
 @endpush
@@ -1688,9 +1629,7 @@ FILE STORAGE:
                 });
             });
 
-            if (dialog) {
-                dialog.scrollTo({ top: 0 });
-            }
+            
 
             if (!provincesLoaded) {
                 provincesLoaded = true;
@@ -2241,15 +2180,9 @@ FILE STORAGE:
 
         /*
         |--------------------------------------------------------------------------
-        | STEP-BY-STEP FLOW (5 steps) — with slide/fade transitions
+        | STEP-BY-STEP FLOW (5 steps) — plain show/hide, same as buyer modal
         |--------------------------------------------------------------------------
         */
-
-        const registrationPanel = document.getElementById('seller-registration-panel');
-        const stepViewport = document.getElementById('seller-step-viewport');
-
-        let currentStep = 1;
-        let isTransitioning = false;
 
         function getPanel(step) {
             return modal.querySelector(`[data-step-panel="${step}"]`);
@@ -2315,60 +2248,10 @@ FILE STORAGE:
 
         function goToStep(step) {
 
-            if (isTransitioning || step === currentStep) return;
-
-            const goingForward = step > currentStep;
-
-            const outgoing = getPanel(currentStep);
-            const incoming = getPanel(step);
-
-            if (!outgoing || !incoming) return;
-
-            isTransitioning = true;
-
-            const startHeight = stepViewport.offsetHeight;
-            stepViewport.style.height = startHeight + 'px';
-
-            incoming.classList.remove('step-offstage', 'step-current', 'step-enter-from-left', 'step-enter-from-right');
-            incoming.classList.add(goingForward ? 'step-enter-from-right' : 'step-enter-from-left');
-
-            void incoming.offsetWidth;
-
-            outgoing.classList.remove('step-current');
-            outgoing.classList.add(goingForward ? 'step-enter-from-left' : 'step-enter-from-right');
-
-            requestAnimationFrame(function () {
-
-                const endHeight = incoming.scrollHeight;
-
-                stepViewport.style.transition = 'height 0.38s cubic-bezier(0.22, 1, 0.36, 1)';
-                stepViewport.style.height = endHeight + 'px';
-
-                incoming.classList.remove('step-enter-from-left', 'step-enter-from-right');
-                incoming.classList.add('step-current');
-
+            modal.querySelectorAll('[data-step-panel]').forEach(function (panel) {
+                const s = parseInt(panel.dataset.stepPanel, 10);
+                panel.classList.toggle('hidden', s !== step);
             });
-
-            const cleanup = function () {
-
-                outgoing.classList.remove('step-enter-from-left', 'step-enter-from-right');
-                outgoing.classList.add('step-offstage');
-
-                stepViewport.style.transition = '';
-                stepViewport.style.height = '';
-
-                incoming.removeEventListener('transitionend', cleanup);
-
-                currentStep = step;
-                isTransitioning = false;
-
-            };
-
-            incoming.addEventListener('transitionend', cleanup, { once: true });
-
-            setTimeout(function () {
-                if (isTransitioning && currentStep !== step) cleanup();
-            }, 500);
 
             updateProgressBar(step);
 

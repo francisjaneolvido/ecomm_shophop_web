@@ -3,18 +3,39 @@
     Path: resources/views/auth/modals/buyer-registration-modal.blade.php
 
     Opened from account-type-modal when "Buyer" is selected.
-    Same split-screen registration content as the original
-    register page (artistic navy panel + multi-step form),
-    now rendered as a centered modal dialog with a light,
-    translucent backdrop instead of a full page.
+    Redesigned to match seller-registration-modal.blade.php:
+    same backdrop opacity/blur, same dialog chrome (sticky top
+    bar with back/close, fade+scale open animation), and the
+    same split-screen pattern — artistic navy panel on the left
+    + form on the right — just at a 30/70 ratio instead of the
+    seller's wider left panel, since the buyer flow is shorter.
+
+    Steps are plain step-by-step (one panel shown, the rest
+    `hidden`) — no per-step transition, so navigation is
+    instant and predictable. Panels are kept compact enough
+    that the dialog doesn't need an internal scrollbar in
+    normal use (a safety-net overflow-y-auto is still kept on
+    the dialog for very small viewports).
+
+    IMPORTANT: This file is @include()'d directly into
+    layouts/app.blade.php. It must NEVER contain @extends —
+    doing so causes layouts/app.blade.php to re-render itself
+    from inside its own @include, which recurses forever and
+    exhausts PHP's memory limit / execution time.
+
+    NOTE: all ids, name attributes, data-* hooks, and the
+    field-level JS below are unchanged from the original —
+    only markup structure, layout, and the step-transition
+    mechanics were reworked for the split-screen redesign.
 ========================================================= --}}
+
 <div
     id="buyer-registration-modal"
     class="fixed inset-0 z-100 hidden items-stretch sm:items-center justify-center sm:p-6
            opacity-0 transition-opacity duration-300 ease-out"
     aria-hidden="true"
 >
-    {{-- Backdrop --}}
+    {{-- Backdrop — matches seller-registration-modal's opacity/blur --}}
     <button
         type="button"
         data-buyer-registration-modal-close
@@ -34,7 +55,7 @@
                w-full h-full
                sm:h-auto
                sm:max-h-[calc(100vh-3rem)]
-               sm:max-w-5xl xl:max-w-6xl
+               sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl
                overflow-y-auto
                sm:rounded-2xl
                bg-white
@@ -95,28 +116,28 @@
 
 
         {{-- =====================================================
-            SPLIT CONTENT
+            SPLIT CONTENT — 30 / 70
         ====================================================== --}}
-        <div class="grid lg:grid-cols-[1fr_560px]">
+        <div class="grid lg:grid-cols-[3fr_7fr]">
 
 
             {{-- =================================================
-                LEFT ARTISTIC PANEL — simplified / minimalist
+                LEFT ARTISTIC PANEL (30%)
             ================================================== --}}
             <div
                 class="relative hidden lg:flex
                        overflow-hidden
                        bg-navy
-                       px-10 xl:px-16
+                       px-6 xl:px-8
                        py-10
                        items-center"
             >
 
-                {{-- Background decorations — reduced to two soft blobs --}}
+                {{-- Background decorations --}}
                 <div
                     class="pointer-events-none absolute
-                           -top-24 -left-24
-                           w-80 h-80
+                           -top-20 -left-20
+                           w-64 h-64
                            rounded-full
                            bg-teal/15
                            blur-3xl"
@@ -124,35 +145,51 @@
 
                 <div
                     class="pointer-events-none absolute
-                           -bottom-32 -right-20
-                           w-96 h-96
+                           -bottom-24 -right-16
+                           w-72 h-72
                            rounded-full
                            bg-teal/[0.06]
                            blur-3xl"
                 ></div>
 
+                <div
+                    class="pointer-events-none absolute
+                           top-[16%] right-[14%]
+                           w-16 h-16
+                           rounded-full
+                           border border-white/10"
+                ></div>
 
-                <div class="relative z-10 w-full max-w-2xl mx-auto">
+                <div
+                    class="pointer-events-none absolute
+                           bottom-[14%] left-[12%]
+                           w-12 h-12
+                           rounded-full
+                           border border-teal/30"
+                ></div>
+
+
+                <div class="relative z-10 w-full mx-auto">
 
 
                     {{-- Logo --}}
-                    <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2.5">
 
-                        <div class="w-12 h-12 flex items-center justify-center">
+                        <div class="w-10 h-10 flex items-center justify-center shrink-0">
                             <img
                                 src="{{ asset('images/logo.png') }}"
                                 alt="ShopHop"
-                                class="w-12 h-12 object-contain"
+                                class="w-10 h-10 object-contain"
                             >
                         </div>
 
-                        <div>
+                        <div class="min-w-0">
 
-                            <p class="text-white text-xl font-bold leading-none">
+                            <p class="text-white text-lg font-bold leading-none">
                                 ShopHop
                             </p>
 
-                            <p class="text-teal text-[9px] tracking-[0.24em] mt-2">
+                            <p class="text-teal text-[8px] tracking-[0.22em] mt-2">
                                 HOP IN. SHOP MORE.
                             </p>
 
@@ -161,165 +198,90 @@
                     </div>
 
 
-                    {{-- Main artwork content --}}
-                    <div class="mt-8 xl:mt-10">
+                    {{-- Main content --}}
+                    <div class="mt-7 xl:mt-9">
 
                         <span
-                            class="inline-flex items-center gap-2
+                            class="inline-flex items-center gap-1.5
                                    rounded-full
                                    bg-white/[0.06]
                                    border border-white/10
-                                   px-3.5 py-1.5
-                                   text-[11px] font-medium
+                                   px-3 py-1.5
+                                   text-[10px] font-medium
                                    text-teal"
                         >
-                            <x-lucide-sparkles class="w-3.5 h-3.5" />
+                            <x-lucide-shopping-bag class="w-3 h-3" />
 
-                            YOUR SHOPPING JOURNEY STARTS HERE
+                            JOIN AS A BUYER
                         </span>
 
 
                         <h1
-                            class="mt-5
+                            class="mt-4
                                    text-white
-                                   text-4xl xl:text-5xl
+                                   text-2xl xl:text-3xl
                                    font-extrabold
-                                   leading-[1.05]
-                                   max-w-xl"
+                                   leading-[1.1]"
                         >
-                            <span class="text-white">Discover more.</span>
+                            <span class="text-white">Shop more.</span>
                             <span class="block text-teal">
-                                Shop your way.
+                                Discover more.
                             </span>
                         </h1>
 
 
                         <p
-                            class="mt-4
+                            class="mt-3
                                    text-white/55
-                                   text-base
-                                   leading-relaxed
-                                   max-w-md"
+                                   text-[13px]
+                                   leading-relaxed"
                         >
-                            Create your ShopHop account and enjoy a smoother
-                            way to discover products, save favorites,
-                            and manage your shopping experience.
+                            Create your buyer account and start exploring
+                            thousands of products from trusted sellers
+                            across ShopHop.
                         </p>
 
                     </div>
 
 
-                    {{-- Minimal floating card cluster --}}
-                    <div class="relative mt-10 xl:mt-12 h-48 max-w-xl">
+                    {{-- Feature list --}}
+                    <div class="mt-7 xl:mt-8 space-y-2.5">
 
-                        {{-- Main center card --}}
-                        <div
-                            class="absolute
-                                   left-1/2 top-1/2
-                                   -translate-x-1/2
-                                   -translate-y-1/2
-                                   w-44 h-44
-                                   rounded-3xl
-                                   bg-white
-                                   shadow-xl shadow-black/20
-                                   flex flex-col
-                                   items-center justify-center"
-                        >
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
 
-                            <div
-                                class="w-16 h-16
-                                       rounded-2xl
-                                       bg-teal-light
-                                       flex items-center justify-center
-                                       text-teal-dark"
-                            >
-                                <x-lucide-shopping-bag class="w-8 h-8" />
+                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-shopping-bag class="w-4 h-4" />
                             </div>
 
-                            <p class="text-navy font-bold text-base mt-4">
-                                ShopHop
-                            </p>
-
-                            <p class="text-navy/40 text-[11px] mt-1">
-                                Find. Love. Shop.
-                            </p>
-
-                        </div>
-
-
-                        {{-- Floating card - save favorites --}}
-                        <div
-                            class="absolute
-                                   left-2 top-2
-                                   w-36
-                                   rounded-2xl
-                                   bg-white/95
-                                   p-3.5
-                                   shadow-lg shadow-black/10"
-                        >
-
-                            <div class="flex items-center gap-2.5">
-
-                                <div
-                                    class="w-9 h-9
-                                           rounded-xl
-                                           bg-teal-light
-                                           flex items-center justify-center"
-                                >
-                                    <x-lucide-heart class="w-4 h-4 text-teal-dark" />
-                                </div>
-
-                                <div>
-
-                                    <p class="text-navy text-[11px] font-semibold">
-                                        Save Favorites
-                                    </p>
-
-                                    <p class="text-navy/40 text-[10px] mt-0.5">
-                                        Keep what you love
-                                    </p>
-
-                                </div>
-
+                            <div class="min-w-0">
+                                <p class="text-white text-[11.5px] font-semibold leading-tight">Thousands of Products</p>
+                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">From trusted local sellers</p>
                             </div>
 
                         </div>
 
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
 
-                        {{-- Floating card - easy shopping --}}
-                        <div
-                            class="absolute
-                                   right-2 bottom-2
-                                   w-36
-                                   rounded-2xl
-                                   bg-teal
-                                   p-3.5
-                                   shadow-lg shadow-black/10"
-                        >
+                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-shield-check class="w-4 h-4" />
+                            </div>
 
-                            <div class="flex items-center gap-2.5">
+                            <div class="min-w-0">
+                                <p class="text-white text-[11.5px] font-semibold leading-tight">Secure Checkout</p>
+                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Your payments, always protected</p>
+                            </div>
 
-                                <div
-                                    class="w-9 h-9
-                                           rounded-xl
-                                           bg-white/15
-                                           flex items-center justify-center"
-                                >
-                                    <x-lucide-truck class="w-4 h-4 text-white" />
-                                </div>
+                        </div>
 
-                                <div>
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
 
-                                    <p class="text-white text-[11px] font-semibold">
-                                        Easy Shopping
-                                    </p>
+                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-truck class="w-4 h-4" />
+                            </div>
 
-                                    <p class="text-white/60 text-[10px] mt-0.5">
-                                        Everything in one place
-                                    </p>
-
-                                </div>
-
+                            <div class="min-w-0">
+                                <p class="text-white text-[11.5px] font-semibold leading-tight">Fast Delivery</p>
+                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Track every order in real time</p>
                             </div>
 
                         </div>
@@ -328,46 +290,25 @@
 
 
                     {{-- Trust stats row --}}
-                    <div class="mt-8 flex items-center gap-6 xl:gap-8 max-w-xl">
+                    <div class="mt-7 xl:mt-8 flex items-center gap-4 xl:gap-5">
 
                         <div>
-
-                            <p class="text-white text-xl xl:text-2xl font-extrabold">
-                                10K+
-                            </p>
-
-                            <p class="text-white/45 text-[11px] mt-1">
-                                Active Sellers
-                            </p>
-
+                            <p class="text-white text-base xl:text-lg font-extrabold">50K+</p>
+                            <p class="text-white/45 text-[9.5px] mt-1">Products</p>
                         </div>
 
-                        <div class="w-px h-8 bg-white/10"></div>
+                        <div class="w-px h-7 bg-white/10"></div>
 
                         <div>
-
-                            <p class="text-white text-xl xl:text-2xl font-extrabold">
-                                50K+
-                            </p>
-
-                            <p class="text-white/45 text-[11px] mt-1">
-                                Products Listed
-                            </p>
-
+                            <p class="text-white text-base xl:text-lg font-extrabold">10K+</p>
+                            <p class="text-white/45 text-[9.5px] mt-1">Sellers</p>
                         </div>
 
-                        <div class="w-px h-8 bg-white/10"></div>
+                        <div class="w-px h-7 bg-white/10"></div>
 
                         <div>
-
-                            <p class="text-white text-xl xl:text-2xl font-extrabold">
-                                4.8<span class="text-teal">★</span>
-                            </p>
-
-                            <p class="text-white/45 text-[11px] mt-1">
-                                Customer Rating
-                            </p>
-
+                            <p class="text-white text-base xl:text-lg font-extrabold">4.8<span class="text-teal">★</span></p>
+                            <p class="text-white/45 text-[9.5px] mt-1">Rating</p>
                         </div>
 
                     </div>
@@ -379,19 +320,19 @@
 
 
             {{-- =================================================
-                RIGHT REGISTRATION PANEL
+                RIGHT REGISTRATION PANEL (70%)
             ================================================== --}}
             <div
                 class="bg-white
                        px-4 sm:px-8 xl:px-10
-                       py-8 sm:py-10 lg:py-12"
+                       py-6 sm:py-8"
             >
 
                 <div id="buyer-registration-panel" class="max-w-xl mx-auto">
 
 
                     {{-- Mobile branding --}}
-                    <div class="lg:hidden flex items-center gap-3 mb-7">
+                    <div class="lg:hidden flex items-center gap-3 mb-5">
 
                         <img
                             src="{{ asset('images/logo.png') }}"
@@ -415,27 +356,27 @@
 
 
                     {{-- Header --}}
-                    <div class="mb-7">
+                    <div class="mb-5">
 
-                        <p class="text-[11px] font-semibold tracking-wide text-teal-dark mb-2">
-                            CREATE ACCOUNT
+                        <p class="text-[11px] font-semibold tracking-wide text-teal-dark mb-1.5">
+                            BUYER REGISTRATION
                         </p>
 
-                        <h2 class="text-navy text-2xl sm:text-3xl font-bold">
-                            Buyer Sign Up
+                        <h2 class="text-navy text-xl sm:text-2xl font-bold">
+                            Create Your Account
                         </h2>
 
-                        <p class="text-sm text-navy/45 mt-2 leading-relaxed">
-                            Enter your details below to create your ShopHop buyer account.
+                        <p class="text-sm text-navy/45 mt-1.5 leading-relaxed">
+                            Enter your details below to start shopping on ShopHop.
                         </p>
 
                     </div>
 
 
                     {{-- =============================================
-                        STEP PROGRESS BAR — sleeker, thinner
+                        STEP PROGRESS BAR (4 steps)
                     ============================================== --}}
-                    <div class="mb-8">
+                    <div class="mb-6">
 
                         <div
                             class="grid items-center"
@@ -443,41 +384,41 @@
                         >
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-teal border-teal text-white transition-colors duration-300"
+                                class="step-circle step-circle-active justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-teal border-teal text-white"
                                 data-step-circle="1"
                             >
                                 <span class="step-number">1</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
-                            <div class="step-line h-px mx-1 bg-gray-border transition-colors duration-300" data-step-line="1"></div>
+                            <div class="step-line h-px mx-1 bg-gray-border" data-step-line="1"></div>
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-white border-gray-border text-navy/30 transition-colors duration-300"
+                                class="step-circle justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-white border-gray-border text-navy/30"
                                 data-step-circle="2"
                             >
                                 <span class="step-number">2</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
-                            <div class="step-line h-px mx-1 bg-gray-border transition-colors duration-300" data-step-line="2"></div>
+                            <div class="step-line h-px mx-1 bg-gray-border" data-step-line="2"></div>
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-white border-gray-border text-navy/30 transition-colors duration-300"
+                                class="step-circle justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-white border-gray-border text-navy/30"
                                 data-step-circle="3"
                             >
                                 <span class="step-number">3</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
-                            <div class="step-line h-px mx-1 bg-gray-border transition-colors duration-300" data-step-line="3"></div>
+                            <div class="step-line h-px mx-1 bg-gray-border" data-step-line="3"></div>
 
                             <div
-                                class="step-circle justify-self-center w-8 h-8 rounded-full border flex items-center justify-center text-[11px] font-bold bg-white border-gray-border text-navy/30 transition-colors duration-300"
+                                class="step-circle justify-self-center w-7 h-7 rounded-full border flex items-center justify-center text-[10.5px] font-bold bg-white border-gray-border text-navy/30"
                                 data-step-circle="4"
                             >
                                 <span class="step-number">4</span>
-                                <x-lucide-check class="step-check hidden w-3.5 h-3.5" />
+                                <x-lucide-check class="step-check hidden w-3 h-3" />
                             </div>
 
                         </div>
@@ -487,25 +428,25 @@
                             style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto;"
                         >
 
-                            <p class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-semibold leading-tight text-navy transition-colors duration-300" data-step-label="1">
+                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-semibold leading-tight text-navy" data-step-label="1">
                                 Personal
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30 transition-colors duration-300" data-step-label="2">
+                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="2">
                                 Address
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30 transition-colors duration-300" data-step-label="3">
+                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="3">
                                 Verification
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[70px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30 transition-colors duration-300" data-step-label="4">
+                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="4">
                                 Security
                             </p>
 
@@ -518,7 +459,7 @@
                     {{-- Validation Errors --}}
                     @if ($errors->any())
 
-                        <div class="mb-6 rounded-2xl border border-red-200 bg-red-50 p-4">
+                        <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4">
 
                             <div class="flex gap-3">
 
@@ -558,35 +499,46 @@
                         @csrf
                         <input type="hidden" name="account_type" value="buyer">
 
+                        {{-- Viewport wraps all step panels so absolutely
+                             positioned panels (mid-transition) don't
+                             collapse the layout height. --}}
+                        <div id="buyer-step-viewport">
+
 
                         {{-- =========================================
                             STEP 1 — PERSONAL DETAILS
                         ========================================== --}}
                         <div data-step-panel="1">
 
-                            <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="grid sm:grid-cols-2 gap-3.5">
 
 
                                 {{-- First Name --}}
                                 <div>
 
-                                    <label for="buyer_first_name" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_first_name" class="block text-xs font-semibold text-navy mb-1.5">
                                         First Name
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        id="buyer_first_name"
-                                        name="first_name"
-                                        value="{{ old('first_name') }}"
-                                        required
-                                        autocomplete="given-name"
-                                        placeholder="Enter first name"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="buyer_first_name_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-user class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="text"
+                                            id="buyer_first_name"
+                                            name="first_name"
+                                            value="{{ old('first_name') }}"
+                                            required
+                                            autocomplete="given-name"
+                                            placeholder="Enter first name"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="buyer_first_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -594,23 +546,29 @@
                                 {{-- Last Name --}}
                                 <div>
 
-                                    <label for="buyer_last_name" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_last_name" class="block text-xs font-semibold text-navy mb-1.5">
                                         Last Name
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="text"
-                                        id="buyer_last_name"
-                                        name="last_name"
-                                        value="{{ old('last_name') }}"
-                                        required
-                                        autocomplete="family-name"
-                                        placeholder="Enter last name"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="buyer_last_name_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-user class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="text"
+                                            id="buyer_last_name"
+                                            name="last_name"
+                                            value="{{ old('last_name') }}"
+                                            required
+                                            autocomplete="family-name"
+                                            placeholder="Enter last name"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="buyer_last_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -618,7 +576,7 @@
                                 {{-- Middle Initial --}}
                                 <div>
 
-                                    <label for="buyer_middle_initial" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_middle_initial" class="block text-xs font-semibold text-navy mb-1.5">
                                         Middle Initial
                                     </label>
 
@@ -629,10 +587,10 @@
                                         value="{{ old('middle_initial') }}"
                                         maxlength="2"
                                         placeholder="e.g. M."
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                     >
 
-                                    <p id="buyer_middle_initial_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="buyer_middle_initial_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -640,23 +598,31 @@
                                 {{-- Sex --}}
                                 <div>
 
-                                    <label for="buyer_sex" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_sex" class="block text-xs font-semibold text-navy mb-1.5">
                                         Sex
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="buyer_sex"
-                                        name="sex"
-                                        required
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select sex</option>
-                                        <option value="Male" @selected(old('sex') === 'Male')>Male</option>
-                                        <option value="Female" @selected(old('sex') === 'Female')>Female</option>
-                                    </select>
+                                    <div class="relative">
 
-                                    <p id="buyer_sex_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-users class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="buyer_sex"
+                                            name="sex"
+                                            required
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select sex</option>
+                                            <option value="Male" @selected(old('sex') === 'Male')>Male</option>
+                                            <option value="Female" @selected(old('sex') === 'Female')>Female</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
+
+                                    <p id="buyer_sex_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -664,23 +630,29 @@
                                 {{-- Email --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="buyer_email" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_email" class="block text-xs font-semibold text-navy mb-1.5">
                                         E-mail
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="email"
-                                        id="buyer_email"
-                                        name="email"
-                                        value="{{ old('email') }}"
-                                        required
-                                        autocomplete="email"
-                                        placeholder="your@email.com"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="buyer_email_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-mail class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="email"
+                                            id="buyer_email"
+                                            name="email"
+                                            value="{{ old('email') }}"
+                                            required
+                                            autocomplete="email"
+                                            placeholder="your@email.com"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="buyer_email_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -688,79 +660,85 @@
                                 {{-- Contact --}}
                                 <div>
 
-                                    <label for="buyer_contact_no" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_contact_no" class="block text-xs font-semibold text-navy mb-1.5">
                                         Contact No.
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="tel"
-                                        id="buyer_contact_no"
-                                        name="contact_no"
-                                        value="{{ old('contact_no') }}"
-                                        required
-                                        inputmode="numeric"
-                                        maxlength="11"
-                                        placeholder="09XXXXXXXXX"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="relative">
 
-                                    <p id="buyer_contact_no_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <x-lucide-phone class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <input
+                                            type="tel"
+                                            id="buyer_contact_no"
+                                            name="contact_no"
+                                            value="{{ old('contact_no') }}"
+                                            required
+                                            inputmode="numeric"
+                                            maxlength="11"
+                                            placeholder="09XXXXXXXXX"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        >
+
+                                    </div>
+
+                                    <p id="buyer_contact_no_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
 
-                                {{-- Birthday --}}
+                                {{-- Birthday + Age --}}
                                 <div>
 
-                                    <label for="buyer_birthday" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_birthday" class="block text-xs font-semibold text-navy mb-1.5">
                                         Birthday
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <input
-                                        type="date"
-                                        id="buyer_birthday"
-                                        name="birthday"
-                                        value="{{ old('birthday') }}"
-                                        max="{{ now()->format('Y-m-d') }}"
-                                        required
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
+                                    <div class="flex gap-2">
 
-                                    <p id="buyer_birthday_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                        <div class="relative flex-1">
 
-                                </div>
+                                            <x-lucide-calendar class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
+                                            <input
+                                                type="date"
+                                                id="buyer_birthday"
+                                                name="birthday"
+                                                value="{{ old('birthday') }}"
+                                                max="{{ now()->format('Y-m-d') }}"
+                                                required
+                                                class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-2 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            >
 
-                                {{-- Age --}}
-                                <div>
+                                        </div>
 
-                                    <label for="buyer_age" class="block text-xs font-medium text-navy/70 mb-2">
-                                        Age
-                                        <span class="text-red-500">*</span>
-                                    </label>
+                                        <input
+                                            type="number"
+                                            id="buyer_age"
+                                            value="{{ old('age') }}"
+                                            readonly
+                                            aria-label="Age (auto-generated)"
+                                            placeholder="Age"
+                                            class="w-16 shrink-0 min-h-11 rounded-xl border border-gray-border/70 bg-gray-bg px-2 text-center text-sm text-navy outline-none"
+                                        >
 
-                                    <input
-                                        type="number"
-                                        id="buyer_age"
-                                        value="{{ old('age') }}"
-                                        readonly
-                                        placeholder="Auto-generated"
-                                        class="w-full rounded-xl border border-gray-border/70 bg-gray-bg px-4 py-3 text-sm text-navy outline-none"
-                                    >
+                                    </div>
+
+                                    <p id="buyer_birthday_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
                             </div>
 
 
-                            <div class="flex items-center gap-3 mt-8">
+                            <div class="flex items-center gap-3 mt-6">
 
                                 <button
                                     type="button"
                                     id="buyer-step1-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -777,40 +755,48 @@
                         ========================================== --}}
                         <div data-step-panel="2" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-4">
+                            <div class="flex items-center gap-2 mb-3.5">
                                 <x-lucide-map-pin class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Address</p>
                             </div>
 
 
-                            <div id="buyer-address-status" class="hidden mb-4 text-xs text-teal-dark">
+                            <div id="buyer-address-status" class="hidden mb-3.5 rounded-xl bg-teal-light/50 px-3.5 py-2 text-xs text-teal-dark">
                                 Loading address information...
                             </div>
 
 
-                            <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="grid sm:grid-cols-2 gap-3.5">
 
 
                                 {{-- Province --}}
                                 <div>
 
-                                    <label for="buyer_province" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_province" class="block text-xs font-semibold text-navy mb-1.5">
                                         Province
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="buyer_province"
-                                        name="province_code"
-                                        required
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select province</option>
-                                    </select>
+                                    <div class="relative">
+
+                                        <x-lucide-map-pin class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="buyer_province"
+                                            name="province_code"
+                                            required
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select province</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
 
                                     <input type="hidden" id="buyer_province_name" name="province_name" value="{{ old('province_name') }}">
 
-                                    <p id="buyer_province_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="buyer_province_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -818,24 +804,32 @@
                                 {{-- City / Municipality --}}
                                 <div>
 
-                                    <label for="buyer_municipality" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_municipality" class="block text-xs font-semibold text-navy mb-1.5">
                                         Municipality / City
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="buyer_municipality"
-                                        name="municipality_code"
-                                        required
-                                        disabled
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select municipality / city</option>
-                                    </select>
+                                    <div class="relative">
+
+                                        <x-lucide-building-2 class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="buyer_municipality"
+                                            name="municipality_code"
+                                            required
+                                            disabled
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select municipality / city</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
 
                                     <input type="hidden" id="buyer_municipality_name" name="municipality_name" value="{{ old('municipality_name') }}">
 
-                                    <p id="buyer_municipality_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="buyer_municipality_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -843,24 +837,32 @@
                                 {{-- Barangay --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="buyer_barangay" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_barangay" class="block text-xs font-semibold text-navy mb-1.5">
                                         Barangay
                                         <span class="text-red-500">*</span>
                                     </label>
 
-                                    <select
-                                        id="buyer_barangay"
-                                        name="barangay_code"
-                                        required
-                                        disabled
-                                        class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
-                                    >
-                                        <option value="">Select barangay</option>
-                                    </select>
+                                    <div class="relative">
+
+                                        <x-lucide-home class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                        <select
+                                            id="buyer_barangay"
+                                            name="barangay_code"
+                                            required
+                                            disabled
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                        >
+                                            <option value="">Select barangay</option>
+                                        </select>
+
+                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+
+                                    </div>
 
                                     <input type="hidden" id="buyer_barangay_name" name="barangay_name" value="{{ old('barangay_name') }}">
 
-                                    <p id="buyer_barangay_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="buyer_barangay_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -868,7 +870,7 @@
                                 {{-- Street --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="buyer_street_address" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_street_address" class="block text-xs font-semibold text-navy mb-1.5">
                                         Street / House No. / Subdivision
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -876,25 +878,25 @@
                                     <textarea
                                         id="buyer_street_address"
                                         name="street_address"
-                                        rows="3"
+                                        rows="2"
                                         required
                                         placeholder="House no., street, subdivision, building, etc."
-                                        class="w-full resize-none rounded-xl border border-gray-border/70 bg-white px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        class="w-full resize-none rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                     >{{ old('street_address') }}</textarea>
 
-                                    <p id="buyer_street_address_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="buyer_street_address_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
                             </div>
 
 
-                            <div class="flex items-center gap-3 mt-8">
+                            <div class="flex items-center gap-3 mt-6">
 
                                 <button
                                     type="button"
                                     id="buyer-step2-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3.5 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -903,7 +905,7 @@
                                 <button
                                     type="button"
                                     id="buyer-step2-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -920,7 +922,7 @@
                         ========================================== --}}
                         <div data-step-panel="3" class="hidden">
 
-                            <label for="buyer_valid_id" class="block text-xs font-medium text-navy/70 mb-2">
+                            <label for="buyer_valid_id" class="block text-xs font-semibold text-navy mb-1.5">
                                 Upload Valid ID
                                 <span class="text-red-500">*</span>
                             </label>
@@ -928,7 +930,7 @@
 
                             <label
                                 for="buyer_valid_id"
-                                class="flex items-center gap-4 rounded-xl border border-dashed border-gray-border/80 bg-gray-bg hover:border-teal hover:bg-teal-light/30 px-4 py-4 cursor-pointer transition"
+                                class="flex items-center gap-4 rounded-2xl border border-dashed border-gray-border/80 bg-gray-bg hover:border-teal hover:bg-teal-light/30 px-4 py-4 cursor-pointer transition"
                             >
 
                                 <div class="shrink-0 w-11 h-11 rounded-xl bg-white flex items-center justify-center text-teal-dark shadow-sm">
@@ -964,12 +966,12 @@
                             <p id="buyer_valid_id_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
 
 
-                            <div class="flex items-center gap-3 mt-8">
+                            <div class="flex items-center gap-3 mt-6">
 
                                 <button
                                     type="button"
                                     id="buyer-step3-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3.5 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -978,7 +980,7 @@
                                 <button
                                     type="button"
                                     id="buyer-step3-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -995,16 +997,18 @@
                         ========================================== --}}
                         <div data-step-panel="4" class="hidden">
 
-                            <div class="grid sm:grid-cols-2 gap-4">
+                            <div class="grid sm:grid-cols-2 gap-3.5">
 
                                 <div>
 
-                                    <label for="buyer_password" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_password" class="block text-xs font-semibold text-navy mb-1.5">
                                         Password
                                         <span class="text-red-500">*</span>
                                     </label>
 
                                     <div class="relative">
+
+                                        <x-lucide-lock class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
                                         <input
                                             type="password"
@@ -1014,7 +1018,7 @@
                                             required
                                             autocomplete="new-password"
                                             placeholder="Minimum 8 characters"
-                                            class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 pr-11 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                         >
 
                                         <button
@@ -1022,7 +1026,7 @@
                                             id="buyer_toggle_password"
                                             aria-label="Show password"
                                             aria-pressed="false"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/40 hover:text-navy transition"
+                                            class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-navy/35 hover:text-teal-dark hover:bg-gray-bg focus:outline-none focus:ring-4 focus:ring-teal/10 transition"
                                         >
                                             <svg class="password-icon-show w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
@@ -1039,19 +1043,21 @@
 
                                     </div>
 
-                                    <p id="buyer_password_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="buyer_password_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
 
                                 <div>
 
-                                    <label for="buyer_password_confirmation" class="block text-xs font-medium text-navy/70 mb-2">
+                                    <label for="buyer_password_confirmation" class="block text-xs font-semibold text-navy mb-1.5">
                                         Confirm Password
                                         <span class="text-red-500">*</span>
                                     </label>
 
                                     <div class="relative">
+
+                                        <x-lucide-lock class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
                                         <input
                                             type="password"
@@ -1061,7 +1067,7 @@
                                             required
                                             autocomplete="new-password"
                                             placeholder="Re-enter password"
-                                            class="w-full rounded-xl border border-gray-border/70 bg-white px-4 py-3 pr-11 text-sm text-navy outline-none placeholder:text-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                         >
 
                                         <button
@@ -1069,7 +1075,7 @@
                                             id="buyer_toggle_password_confirmation"
                                             aria-label="Show password"
                                             aria-pressed="false"
-                                            class="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/40 hover:text-navy transition"
+                                            class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-navy/35 hover:text-teal-dark hover:bg-gray-bg focus:outline-none focus:ring-4 focus:ring-teal/10 transition"
                                         >
                                             <svg class="password-icon-show w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                 <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
@@ -1086,7 +1092,7 @@
 
                                     </div>
 
-                                    <p id="buyer_password_confirmation_error" class="hidden text-[11px] text-red-500 mt-1.5"></p>
+                                    <p id="buyer_password_confirmation_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
                                 </div>
 
@@ -1095,67 +1101,60 @@
                             {{-- Password requirements checklist --}}
                             <div
                                 id="buyer-password-requirements"
-                                class="mt-4 rounded-xl border border-gray-border/70 bg-gray-bg p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2"
+                                class="mt-3.5 rounded-xl border border-gray-border/70 bg-gray-bg p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5"
                             >
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="length">
-                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="length">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
                                     Minimum 8 characters
                                 </p>
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="uppercase">
-                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="uppercase">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
-                                    At least 1 uppercase letter (A–Z)
+                                    1 uppercase letter (A–Z)
                                 </p>
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="lowercase">
-                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="lowercase">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
-                                    At least 1 lowercase letter (a–z)
+                                    1 lowercase letter (a–z)
                                 </p>
 
-                                <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="number">
-                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="number">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
-                                    At least 1 number (0–9)
+                                    1 number (0–9)
                                 </p>
 
-                                <p class="req-item sm:col-span-2 flex items-center gap-2 text-[11px] text-navy/30 transition-colors duration-200" data-req="special">
-                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                                <p class="req-item sm:col-span-2 flex items-center gap-2 text-[10.5px] text-navy/30" data-req="special">
+                                    <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
                                         <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
                                     </span>
                                     Special character
-                                    <span class="text-navy/30">(recommended: ! @ # $ % ^ &amp; *)</span>
+                                    <span class="text-navy/30">(! @ # $ % ^ &amp; *)</span>
                                 </p>
 
                             </div>
 
                             {{-- Approval notice --}}
-                            <div class="mt-6 rounded-xl border border-teal/15 bg-teal-light/40 p-4">
+                            <div class="mt-3.5 flex gap-3 rounded-xl border border-teal/15 bg-teal-light/35 p-3">
 
-                                <div class="flex gap-3">
+                                <x-lucide-info class="w-4 h-4 text-teal-dark shrink-0 mt-0.5" />
 
-                                    <x-lucide-info class="w-4 h-4 text-teal-dark shrink-0 mt-0.5" />
-
-                                    <p class="text-[11px] sm:text-xs text-navy/60 leading-relaxed">
-                                        After submitting your registration, please
-                                        wait for the administrator's approval.
-                                        Your approval status will be sent to your
-                                        registered email.
-                                    </p>
-
-                                </div>
+                                <p class="text-[11px] text-navy/50 leading-relaxed">
+                                    After submitting, please wait for the administrator's approval. Your status will be emailed to you.
+                                </p>
 
                             </div>
 
                             {{-- Terms & Agreement --}}
-                            <div class="mt-5">
+                            <div class="mt-3.5">
 
                                 <label for="buyer_terms" class="flex items-start gap-3 cursor-pointer group">
 
@@ -1177,17 +1176,17 @@
 
                                 </label>
 
-                                <p id="buyer_terms_error" class="hidden text-[11px] text-red-500 mt-1.5 ml-8"></p>
+                                <p id="buyer_terms_error" class="hidden text-[11px] text-red-500 mt-1 ml-8"></p>
 
                             </div>
 
 
-                            <div class="flex items-center gap-3 mt-6">
+                            <div class="flex items-center gap-3 mt-5">
 
                                 <button
                                     type="button"
                                     id="buyer-step4-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3.5 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1195,7 +1194,7 @@
 
                                 <button
                                     type="submit"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3.5 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Create Account
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1204,6 +1203,8 @@
                             </div>
 
                         </div>
+
+                        </div> {{-- /#buyer-step-viewport --}}
 
 
                         {{-- Sign in --}}
@@ -1241,17 +1242,67 @@
     /* Hide Chrome's built-in "strong password suggestion" and
        "saved credentials" icons inside password fields so only
        our custom show/hide eye button appears. */
-    input[type="password"]::-webkit-strong-password-auto-fill-button,
-    input[type="password"]::-webkit-credentials-auto-fill-button {
+    #buyer-registration-modal input[type="password"]::-webkit-strong-password-auto-fill-button,
+    #buyer-registration-modal input[type="password"]::-webkit-credentials-auto-fill-button {
         display: none !important;
         visibility: hidden !important;
         pointer-events: none !important;
     }
 
     /* Hide Edge's built-in reveal-password icon for the same reason. */
-    input[type="password"]::-ms-reveal,
-    input[type="password"]::-ms-clear {
+    #buyer-registration-modal input[type="password"]::-ms-reveal,
+    #buyer-registration-modal input[type="password"]::-ms-clear {
         display: none !important;
+    }
+
+    #buyer-registration-modal .step-circle {
+        transition:
+            background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+            border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+            color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+            transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.35s ease;
+    }
+
+    #buyer-registration-modal .step-circle.step-circle-active {
+        transform: scale(1.08);
+        box-shadow: 0 0 0 5px rgba(20, 184, 166, 0.15);
+    }
+
+    #buyer-registration-modal .step-check {
+        transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #buyer-registration-modal .step-line {
+        transition: background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    #buyer-registration-modal .step-label {
+        transition: color 0.3s ease, font-weight 0.3s ease;
+    }
+
+    #buyer-registration-modal #buyer-register-form button[type="button"],
+    #buyer-registration-modal #buyer-register-form button[type="submit"] {
+        transition:
+            transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.25s ease,
+            background-color 0.25s ease;
+    }
+
+    #buyer-registration-modal #buyer-register-form button[type="button"]:active,
+    #buyer-registration-modal #buyer-register-form button[type="submit"]:active {
+        transform: scale(0.97);
+    }
+
+    #buyer-registration-modal .req-dot {
+        transition:
+            background-color 0.25s ease,
+            border-color 0.25s ease,
+            transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    #buyer-registration-modal .req-item.req-satisfied .req-dot {
+        transform: scale(1.12);
     }
 </style>
 @endpush
@@ -1294,8 +1345,6 @@
             modal.setAttribute('aria-hidden', 'false');
             document.body.classList.add('overflow-hidden');
 
-            // Force layout so the transition actually animates from the
-            // starting (opacity-0 / scale-95) state instead of jump-cutting.
             requestAnimationFrame(function () {
                 requestAnimationFrame(function () {
 
@@ -1622,6 +1671,7 @@
                 const check = item.querySelector('.req-check');
                 const satisfied = checks[key];
 
+                item.classList.toggle('req-satisfied', satisfied);
                 item.classList.toggle('text-teal-dark', satisfied);
                 item.classList.toggle('text-navy/40', !satisfied && key !== 'special');
                 item.classList.toggle('text-navy/30', !satisfied && key === 'special');
@@ -1835,7 +1885,7 @@
 
         /*
         |--------------------------------------------------------------------------
-        | STEP-BY-STEP FLOW
+        | STEP-BY-STEP FLOW (4 steps) — with slide/fade + height transitions
         |--------------------------------------------------------------------------
         */
 
@@ -1853,21 +1903,28 @@
 
                 circle.classList.remove(
                     'bg-teal', 'border-teal', 'text-white',
-                    'bg-white', 'border-gray-border', 'text-navy/30'
+                    'bg-white', 'border-gray-border', 'text-navy/30',
+                    'step-circle-active'
                 );
 
                 if (s < activeStep) {
+
                     circle.classList.add('bg-teal', 'border-teal', 'text-white');
                     numberEl.classList.add('hidden');
                     checkEl.classList.remove('hidden');
+
                 } else if (s === activeStep) {
-                    circle.classList.add('bg-teal', 'border-teal', 'text-white');
+
+                    circle.classList.add('bg-teal', 'border-teal', 'text-white', 'step-circle-active');
                     numberEl.classList.remove('hidden');
                     checkEl.classList.add('hidden');
+
                 } else {
+
                     circle.classList.add('bg-white', 'border-gray-border', 'text-navy/30');
                     numberEl.classList.remove('hidden');
                     checkEl.classList.add('hidden');
+
                 }
 
             });

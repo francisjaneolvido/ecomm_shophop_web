@@ -17,9 +17,12 @@
         type="button"
         data-account-type-modal-close
         aria-label="Close account type modal"
+        id="account-type-modal-backdrop"
         class="absolute inset-0 w-full h-full
                bg-navy/65 backdrop-blur-sm
-               cursor-default"
+               cursor-default
+               opacity-0
+               transition-opacity duration-300 ease-out"
     ></button>
 
     {{-- Dialog --}}
@@ -28,6 +31,7 @@
         aria-modal="true"
         aria-labelledby="account-type-modal-title"
         aria-describedby="account-type-modal-description"
+        id="account-type-modal-dialog"
         class="relative z-10
                w-full sm:max-w-lg
                max-h-[92vh] sm:max-h-[calc(100vh-3rem)]
@@ -35,7 +39,9 @@
                rounded-t-3xl sm:rounded-3xl
                bg-white
                border border-gray-border
-               shadow-2xl shadow-navy/25"
+               shadow-2xl shadow-navy/25
+               opacity-0 scale-95 translate-y-3 sm:translate-y-0
+               transition-all duration-300 ease-out"
     >
         {{-- Mobile drag handle --}}
         <div class="sm:hidden flex justify-center pt-3">
@@ -47,8 +53,8 @@
             type="button"
             data-account-type-modal-back
             aria-label="Back to sign in"
-            class="absolute top-4 left-4 z-20
-                   w-10 h-10
+            class="absolute top-3 left-3 z-20
+                   w-9 h-9
                    rounded-full
                    bg-gray-bg
                    text-navy/45
@@ -67,8 +73,8 @@
             type="button"
             data-account-type-modal-close
             aria-label="Close account type modal"
-            class="absolute top-4 right-4 z-20
-                   w-10 h-10
+            class="absolute top-3 right-3 z-20
+                   w-9 h-9
                    rounded-full
                    bg-gray-bg
                    text-navy/45
@@ -85,68 +91,79 @@
         {{-- Accent --}}
         <div class="hidden sm:block h-1.5 bg-teal"></div>
 
-        <div class="px-5 pb-6 pt-14 sm:pt-8 sm:p-8">
+        <div class="px-5 pb-4 pt-12 sm:pt-6 sm:p-6">
 
             {{-- Header --}}
-            <div class="text-center mb-6 sm:mb-7">
-                <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-1.5">
+            <div class="text-center mb-4 sm:mb-5">
+                <div
+                    class="w-9 h-9 mx-auto
+                           rounded-xl
+                           bg-teal-light
+                           flex items-center justify-center
+                           text-teal-dark
+                           mb-2.5"
+                >
+                    <x-lucide-users-round class="w-4 h-4" />
+                </div>
+
+                <p class="text-teal-dark text-[10px] font-bold tracking-[0.12em] mb-1">
                     JOIN SHOPHOP
                 </p>
 
                 <h2
                     id="account-type-modal-title"
-                    class="text-navy text-2xl sm:text-3xl font-bold leading-tight"
+                    class="text-navy text-xl sm:text-2xl font-bold leading-tight"
                 >
                     How will you use ShopHop?
                 </h2>
 
                 <p
                     id="account-type-modal-description"
-                    class="text-sm text-navy/50 mt-2 leading-relaxed"
+                    class="text-xs sm:text-sm text-navy/50 mt-1.5 leading-relaxed"
                 >
                     Pick an account type to get started. You can always add another later.
                 </p>
             </div>
 
             {{-- Options --}}
-            <div class="space-y-3">
+            <div class="space-y-2.5">
 
                 {{-- Buyer --}}
                 <button
                     type="button"
                     data-account-type="buyer"
                     data-open-registration-modal="buyer"
-                    class="group flex items-start gap-4 w-full
-                           rounded-2xl
-                           border border-gray-border
+                    class="group relative flex items-start gap-3 w-full
+                           rounded-xl
+                           border-2 border-gray-border
                            bg-white
-                           p-4 sm:p-5
+                           hover:bg-teal-dark
+                           hover:border-teal-dark
+                           p-3.5
                            text-left
-                           hover:border-teal
-                           hover:bg-teal-light/30
                            focus:outline-none
                            focus:ring-4 focus:ring-teal/10
-                           transition"
+                           transition-colors duration-300"
                 >
                     <div
-                        class="w-11 h-11 shrink-0
-                               rounded-xl
+                        class="w-10 h-10 shrink-0
+                               rounded-lg
                                bg-teal-light
+                               group-hover:bg-white/15
                                flex items-center justify-center
                                text-teal-dark
-                               group-hover:bg-teal
                                group-hover:text-white
-                               transition"
+                               transition-colors duration-300"
                     >
-                        <x-lucide-shopping-bag class="w-5 h-5" />
+                        <x-lucide-shopping-bag class="w-4.5 h-4.5" />
                     </div>
 
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm sm:text-base font-semibold text-navy">
+                        <p class="text-sm sm:text-base font-semibold text-navy group-hover:text-white transition-colors duration-300">
                             Buyer
                         </p>
 
-                        <p class="text-xs sm:text-sm text-navy/50 mt-1 leading-relaxed">
+                        <p class="text-xs sm:text-sm text-navy/50 group-hover:text-white/80 mt-0.5 leading-snug transition-colors duration-300">
                             Shop thousands of products, track your orders, and save your favorites.
                         </p>
                     </div>
@@ -154,9 +171,9 @@
                     <x-lucide-arrow-right
                         class="w-4 h-4 shrink-0 mt-1
                                text-navy/25
-                               group-hover:text-teal-dark
+                               group-hover:text-white
                                group-hover:translate-x-0.5
-                               transition-all"
+                               transition-all duration-300"
                     />
                 </button>
 
@@ -165,37 +182,37 @@
                     type="button"
                     data-account-type="seller"
                     data-open-registration-modal="seller"
-                    class="group flex items-start gap-4 w-full
-                           rounded-2xl
-                           border border-gray-border
+                    class="group relative flex items-start gap-3 w-full
+                           rounded-xl
+                           border-2 border-gray-border
                            bg-white
-                           p-4 sm:p-5
+                           hover:bg-teal-dark
+                           hover:border-teal-dark
+                           p-3.5
                            text-left
-                           hover:border-teal
-                           hover:bg-teal-light/30
                            focus:outline-none
                            focus:ring-4 focus:ring-teal/10
-                           transition"
+                           transition-colors duration-300"
                 >
                     <div
-                        class="w-11 h-11 shrink-0
-                               rounded-xl
+                        class="w-10 h-10 shrink-0
+                               rounded-lg
                                bg-teal-light
+                               group-hover:bg-white/15
                                flex items-center justify-center
                                text-teal-dark
-                               group-hover:bg-teal
                                group-hover:text-white
-                               transition"
+                               transition-colors duration-300"
                     >
-                        <x-lucide-store class="w-5 h-5" />
+                        <x-lucide-store class="w-4.5 h-4.5" />
                     </div>
 
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm sm:text-base font-semibold text-navy">
+                        <p class="text-sm sm:text-base font-semibold text-navy group-hover:text-white transition-colors duration-300">
                             Seller
                         </p>
 
-                        <p class="text-xs sm:text-sm text-navy/50 mt-1 leading-relaxed">
+                        <p class="text-xs sm:text-sm text-navy/50 group-hover:text-white/80 mt-0.5 leading-snug transition-colors duration-300">
                             List your products, manage your store, and reach ShopHop buyers.
                         </p>
                     </div>
@@ -203,9 +220,9 @@
                     <x-lucide-arrow-right
                         class="w-4 h-4 shrink-0 mt-1
                                text-navy/25
-                               group-hover:text-teal-dark
+                               group-hover:text-white
                                group-hover:translate-x-0.5
-                               transition-all"
+                               transition-all duration-300"
                     />
                 </button>
 
@@ -214,37 +231,37 @@
                     type="button"
                     data-account-type="logistics"
                     data-open-registration-modal="logistics"
-                    class="group flex items-start gap-4 w-full
-                           rounded-2xl
-                           border border-gray-border
+                    class="group relative flex items-start gap-3 w-full
+                           rounded-xl
+                           border-2 border-gray-border
                            bg-white
-                           p-4 sm:p-5
+                           hover:bg-teal-dark
+                           hover:border-teal-dark
+                           p-3.5
                            text-left
-                           hover:border-teal
-                           hover:bg-teal-light/30
                            focus:outline-none
                            focus:ring-4 focus:ring-teal/10
-                           transition"
+                           transition-colors duration-300"
                 >
                     <div
-                        class="w-11 h-11 shrink-0
-                               rounded-xl
+                        class="w-10 h-10 shrink-0
+                               rounded-lg
                                bg-teal-light
+                               group-hover:bg-white/15
                                flex items-center justify-center
                                text-teal-dark
-                               group-hover:bg-teal
                                group-hover:text-white
-                               transition"
+                               transition-colors duration-300"
                     >
-                        <x-lucide-truck class="w-5 h-5" />
+                        <x-lucide-truck class="w-4.5 h-4.5" />
                     </div>
 
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm sm:text-base font-semibold text-navy">
+                        <p class="text-sm sm:text-base font-semibold text-navy group-hover:text-white transition-colors duration-300">
                             Logistics
                         </p>
 
-                        <p class="text-xs sm:text-sm text-navy/50 mt-1 leading-relaxed">
+                        <p class="text-xs sm:text-sm text-navy/50 group-hover:text-white/80 mt-0.5 leading-snug transition-colors duration-300">
                             Partner with ShopHop to deliver orders and grow your fleet.
                         </p>
                     </div>
@@ -252,9 +269,9 @@
                     <x-lucide-arrow-right
                         class="w-4 h-4 shrink-0 mt-1
                                text-navy/25
-                               group-hover:text-teal-dark
+                               group-hover:text-white
                                group-hover:translate-x-0.5
-                               transition-all"
+                               transition-all duration-300"
                     />
                 </button>
 
@@ -262,10 +279,10 @@
 
             {{-- Already have an account --}}
             <div
-                class="mt-5
+                class="mt-3.5
                        rounded-xl
                        bg-gray-bg
-                       px-4 py-3.5
+                       px-4 py-2.5
                        text-center"
             >
                 <p class="text-xs sm:text-sm text-navy/50">
@@ -292,62 +309,110 @@
 
 @once
 <script>
-    function openAccountTypeModal() {
-        const modal = document.getElementById('account-type-modal');
-        if (!modal) return;
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-        modal.setAttribute('aria-hidden', 'false');
-    }
+    (function () {
+        let atModalOpenFrame = null;
+        let atModalCloseTimeout = null;
 
-    function closeAccountTypeModal() {
-        const modal = document.getElementById('account-type-modal');
-        if (!modal) return;
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-        modal.setAttribute('aria-hidden', 'true');
-    }
-
-    document.addEventListener('click', function (event) {
-
-        // Open the account type modal (e.g. from "Create an account" button/link)
-        const openTrigger = event.target.closest('[data-open-account-type-modal]');
-        if (openTrigger) {
-            event.preventDefault();
-            openAccountTypeModal();
-            return;
+        function getAccountTypeModalParts() {
+            return {
+                modal: document.getElementById('account-type-modal'),
+                backdrop: document.getElementById('account-type-modal-backdrop'),
+                dialog: document.getElementById('account-type-modal-dialog'),
+            };
         }
 
-        // Close the account type modal (backdrop / X button)
-        const closeTrigger = event.target.closest('[data-account-type-modal-close]');
-        if (closeTrigger) {
-            event.preventDefault();
-            closeAccountTypeModal();
-            return;
+        function openAccountTypeModal() {
+            const { modal, backdrop, dialog } = getAccountTypeModalParts();
+            if (!modal || !backdrop || !dialog) return;
+
+            clearTimeout(atModalCloseTimeout);
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            modal.setAttribute('aria-hidden', 'false');
+
+            // Force a reflow so the transition triggers from the initial state.
+            void dialog.offsetWidth;
+
+            atModalOpenFrame = requestAnimationFrame(function () {
+                backdrop.classList.remove('opacity-0');
+                dialog.classList.remove('opacity-0', 'scale-95', 'translate-y-3');
+                dialog.classList.add('opacity-100', 'scale-100', 'translate-y-0');
+            });
         }
 
-        // "Back to sign in" -> close this modal, reopen login modal
-        const backTrigger = event.target.closest('[data-account-type-modal-back]');
-        if (backTrigger) {
-            event.preventDefault();
-            closeAccountTypeModal();
-            document.dispatchEvent(new CustomEvent('shophop:open-login-modal'));
-            return;
+        function closeAccountTypeModal() {
+            const { modal, backdrop, dialog } = getAccountTypeModalParts();
+            if (!modal || !backdrop || !dialog) return;
+
+            cancelAnimationFrame(atModalOpenFrame);
+
+            backdrop.classList.add('opacity-0');
+            dialog.classList.remove('opacity-100', 'scale-100', 'translate-y-0');
+            dialog.classList.add('opacity-0', 'scale-95', 'translate-y-3');
+            modal.setAttribute('aria-hidden', 'true');
+
+            atModalCloseTimeout = setTimeout(function () {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }, 300);
         }
 
-        // Buyer / Seller / Logistics -> close this modal, open the matching registration modal
-        const registrationTrigger = event.target.closest('[data-open-registration-modal]');
-        if (registrationTrigger) {
-            event.preventDefault();
-            const type = registrationTrigger.dataset.openRegistrationModal;
-            closeAccountTypeModal();
-            document.dispatchEvent(new CustomEvent('shophop:open-registration-modal', { detail: { type: type } }));
-            return;
-        }
+        document.addEventListener('click', function (event) {
 
-    });
+            // Open the account type modal (e.g. from "Create an account" button/link)
+            const openTrigger = event.target.closest('[data-open-account-type-modal]');
+            if (openTrigger) {
+                event.preventDefault();
 
-    // Allow any other script (e.g. login modal) to reopen this modal via event
-    document.addEventListener('shophop:open-account-type-modal', openAccountTypeModal);
+                // Close the login modal first if it's the one that triggered this,
+                // so both modals never appear stacked/overlapping.
+                if (typeof window.closeLoginModal === 'function') {
+                    window.closeLoginModal();
+                }
+
+                openAccountTypeModal();
+                return;
+            }
+
+            // Close the account type modal (backdrop / X button)
+            const closeTrigger = event.target.closest('[data-account-type-modal-close]');
+            if (closeTrigger) {
+                event.preventDefault();
+                closeAccountTypeModal();
+                return;
+            }
+
+            // "Back to sign in" -> close this modal, reopen login modal
+            const backTrigger = event.target.closest('[data-account-type-modal-back]');
+            if (backTrigger) {
+                event.preventDefault();
+                closeAccountTypeModal();
+                document.dispatchEvent(new CustomEvent('shophop:open-login-modal'));
+                return;
+            }
+
+            // Buyer / Seller / Logistics -> close this modal, open the matching registration modal
+            const registrationTrigger = event.target.closest('[data-open-registration-modal]');
+            if (registrationTrigger) {
+                event.preventDefault();
+                const type = registrationTrigger.dataset.openRegistrationModal;
+                closeAccountTypeModal();
+                document.dispatchEvent(new CustomEvent('shophop:open-registration-modal', { detail: { type: type } }));
+                return;
+            }
+
+        });
+
+        document.addEventListener('keydown', function (event) {
+            const { modal } = getAccountTypeModalParts();
+            if (modal && event.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {
+                closeAccountTypeModal();
+            }
+        });
+
+        // Allow any other script (e.g. login modal) to reopen this modal via event
+        document.addEventListener('shophop:open-account-type-modal', openAccountTypeModal);
+    })();
 </script>
 @endonce
