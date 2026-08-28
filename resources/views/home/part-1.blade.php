@@ -455,11 +455,11 @@
                                    group-hover:scale-105
                                    transition-all duration-300"
                         >
-                            <!-- <x-dynamic-component
+                            <x-dynamic-component
                                 :component="'lucide-' . $category['icon']"
-                                class="w-7 h-7" -->
-                            <!-- /> -->
-                             <x-lucide-tag />
+                                class="w-7 h-7"
+                            />
+                             
                         </div>
 
                         <span
