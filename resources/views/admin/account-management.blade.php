@@ -9,12 +9,20 @@
             <h1 class="text-2xl font-bold text-navy">Account Management</h1>
             <p class="text-sm text-slate-500 mt-1">Pamahalaan ang mga admin at staff accounts ng ShopHop.</p>
         </div>
-        <button class="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-mint-dark hover:opacity-90 transition flex items-center gap-2">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-            Add Admin Account
-        </button>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('logistics.register') }}" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-navy border border-slate-200 hover:bg-slate-50 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h6m-3-3v6M9 12a4 4 0 100-8 4 4 0 000 8zm-6 8a6 6 0 0112 0H3z" />
+                </svg>
+                Add Logistics Partner Account
+            </a>
+            <button class="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-mint-dark hover:opacity-90 transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+                Add Admin Account
+            </button>
+        </div>
     </div>
 
     {{-- ============ STAT SUMMARY ============ --}}
