@@ -807,7 +807,7 @@
                     BECOME A SELLER TAB
                 ===================================================== --}}
                 <div data-tab-content="become-seller" class="settings-panel hidden">
-                    <div class="bg-white rounded-2xl border border-gray-border shadow-sm p-6 sm:p-8 sm:p-10 text-center sm:text-left">
+                    <div class="bg-white rounded-2xl border border-gray-border shadow-sm p-6 sm:p-8 text-center sm:text-left
                         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5">
                             <div class="w-16 h-16 rounded-2xl bg-teal-light text-teal-dark flex items-center justify-center shrink-0">
                                 <x-lucide-store class="w-8 h-8" />
@@ -863,7 +863,7 @@
 {{-- =========================================================
     CONFIRM MODAL (generic — used by all data-confirm-action buttons)
 ========================================================= --}}
-<div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+<div id="confirmModal" class="fixed inset-0 z-50 flex items-center justify-center px-4">
     <div class="absolute inset-0 bg-navy/50"></div>
     <div class="relative bg-white rounded-2xl shadow-2xl border border-gray-border max-w-sm w-full p-6">
         <div class="flex items-start gap-3 mb-4">
@@ -900,7 +900,7 @@
 {{-- =========================================================
     ADD / EDIT ADDRESS MODAL
 ========================================================= --}}
-<div id="addressModal" class="hidden fixed inset-0 z-50 flex items-center justify-center px-4">
+<div id="addressModal" class="hidden fixed inset-0 z-50 items-center justify-center px-4
     <div class="absolute inset-0 bg-navy/50"></div>
     <div class="relative bg-white rounded-2xl shadow-2xl border border-gray-border max-w-lg w-full p-6 sm:p-7 max-h-[90vh] overflow-y-auto">
         <h3 id="addressModalTitle" class="text-navy text-base font-bold mb-5">Add New Address</h3>
