@@ -16,7 +16,7 @@ class RegisterController extends Controller
      */
     public function create()
     {
-        return view('auth.register');
+        return view('auth.modals.account-type-modal');
     }
 
     /**

@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,125 +9,119 @@
     {{-- Adjust to match how the main app loads its build assets --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('styles')
+
+    {{-- Sidebar collapse/hide behaviour. Plain CSS (not JIT-generated Tailwind classes)
+         so the show/hide toggle works reliably regardless of what gets purged at build time. --}}
+    <style>
+        [data-sidebar] {
+            transform: translateX(-100%);
+            transition: transform .2s ease-in-out;
+        }
+        [data-sidebar].is-open { transform: translateX(0); }
+
+        @media (min-width: 768px) {
+            [data-sidebar] { transform: translateX(0); }
+            [data-sidebar].is-closed { transform: translateX(-100%); }
+        }
+
+        [data-sidebar-wrapper] { transition: padding-left .2s ease-in-out; }
+
+        @media (min-width: 768px) {
+            [data-sidebar-wrapper] { padding-left: 16rem; }
+            [data-sidebar-wrapper].is-collapsed { padding-left: 0; }
+        }
+    </style>
 </head>
 <body class="bg-gray-bg text-navy antialiased">
 
 {{-- =========================================================
-    PORTAL HEADER
+    SIDEBAR
 ========================================================= --}}
-<header class="sticky top-0 z-40 bg-white border-b border-gray-border">
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between h-16 sm:h-18">
+@include('logistics.partials.sidebar')
 
-            {{-- Wordmark --}}
-            <a href="{{ route('logistics.dashboard') }}" class="flex items-baseline gap-2 shrink-0">
-                <span class="text-lg sm:text-xl font-extrabold tracking-tight text-navy">
-                    Shop<span class="text-teal">Hop</span>
-                </span>
-                <span class="text-[11px] sm:text-xs font-semibold text-navy/45 uppercase tracking-wide">
-                    Logistics
-                </span>
-            </a>
+<div data-sidebar-wrapper class="flex flex-col min-h-screen">
 
-            {{-- Desktop nav --}}
-            <nav class="hidden md:flex items-center gap-7 text-sm font-semibold">
-                <a href="{{ route('logistics.dashboard') }}"
-                   class="{{ request()->routeIs('logistics.dashboard') ? 'text-teal-dark' : 'text-navy/60 hover:text-navy transition' }}">
-                    Dashboard
-                </a>
-                <a href="{{ route('logistics.riders.index') }}"
-                   class="{{ request()->routeIs('logistics.riders.*') ? 'text-teal-dark' : 'text-navy/60 hover:text-navy transition' }}">
-                    Riders
-                </a>
-                <a href="{{ route('logistics.deliveries.board') }}"
-                   class="{{ request()->routeIs('logistics.deliveries.*') ? 'text-teal-dark' : 'text-navy/60 hover:text-navy transition' }}">
-                    Deliveries
-                </a>
-                <a href="{{ route('logistics.reports.index') }}"
-                   class="{{ request()->routeIs('logistics.reports.*') ? 'text-teal-dark' : 'text-navy/60 hover:text-navy transition' }}">
-                    Reports
-                </a>
-                <a href="#" class="text-navy/60 hover:text-navy transition">Messages</a>
-            </nav>
+    {{-- =========================================================
+        SLIM TOP BAR — sidebar toggle + notifications
+    ========================================================= --}}
+    <header class="sticky top-0 z-30 bg-white border-b border-gray-border">
+        <div class="flex items-center justify-between h-16 sm:h-18 px-4 sm:px-6 lg:px-8">
+            <button type="button" data-sidebar-toggle aria-label="Toggle menu"
+                    class="w-9 h-9 rounded-full flex items-center justify-center text-navy hover:bg-gray-bg transition">
+                <x-lucide-menu class="w-5 h-5" />
+            </button>
 
-            {{-- Right cluster --}}
+            <div class="flex-1"></div>
+
             <div class="flex items-center gap-3 sm:gap-4">
                 <button type="button" aria-label="Notifications"
                         class="relative w-9 h-9 rounded-full flex items-center justify-center text-navy/60 hover:text-navy hover:bg-gray-bg transition">
                     <x-lucide-bell class="w-5 h-5" />
-                    {{-- TODO: move this into a view composer shared by every logistics.* view
-                         instead of relying on $pendingApplications being passed per-page. --}}
                     @isset($pendingApplications)
                         @if (count($pendingApplications))
                             <span class="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500"></span>
                         @endif
                     @endisset
                 </button>
-
-                <div class="hidden sm:flex items-center gap-2 pl-3 sm:pl-4 border-l border-gray-border">
-                    <div class="w-9 h-9 rounded-full bg-navy text-white flex items-center justify-center text-xs font-bold shrink-0">
-                        J&amp;T
-                    </div>
-                    <div class="leading-tight">
-                        <p class="text-xs font-semibold text-navy">J&amp;T Express</p>
-                        <p class="text-[11px] text-navy/50">Cavite Hub</p>
-                    </div>
-                </div>
-
-                <button type="button" data-mobile-menu-toggle aria-label="Open menu"
-                        class="md:hidden w-9 h-9 rounded-full flex items-center justify-center text-navy hover:bg-gray-bg transition">
-                    <x-lucide-menu class="w-5 h-5" />
-                </button>
             </div>
         </div>
+    </header>
 
-        {{-- Mobile nav --}}
-        <nav data-mobile-menu class="hidden flex-col gap-1 pb-4 text-sm font-semibold md:hidden">
-            <a href="{{ route('logistics.dashboard') }}" class="px-2 py-2 rounded-lg {{ request()->routeIs('logistics.dashboard') ? 'bg-teal-light text-teal-dark' : 'text-navy/70' }}">Dashboard</a>
-            <a href="{{ route('logistics.riders.index') }}" class="px-2 py-2 rounded-lg {{ request()->routeIs('logistics.riders.*') ? 'bg-teal-light text-teal-dark' : 'text-navy/70' }}">Riders</a>
-            <a href="{{ route('logistics.deliveries.board') }}" class="px-2 py-2 rounded-lg {{ request()->routeIs('logistics.deliveries.*') ? 'bg-teal-light text-teal-dark' : 'text-navy/70' }}">Deliveries</a>
-            <a href="{{ route('logistics.reports.index') }}" class="px-2 py-2 rounded-lg {{ request()->routeIs('logistics.reports.*') ? 'bg-teal-light text-teal-dark' : 'text-navy/70' }}">Reports</a>
-            <a href="#" class="px-2 py-2 rounded-lg text-navy/70">Messages</a>
-        </nav>
-    </div>
-</header>
-
-{{-- =========================================================
-    FLASH MESSAGE
-========================================================= --}}
-@if (session('status'))
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-        <div class="flex items-center gap-3 bg-teal-light text-teal-dark text-sm font-medium px-4 py-3 rounded-xl">
-            <x-lucide-check-circle-2 class="w-4 h-4 shrink-0" />
-            {{ session('status') }}
+    {{-- =========================================================
+        FLASH MESSAGE
+    ========================================================= --}}
+    @if (session('status'))
+        <div class="px-4 sm:px-6 lg:px-8 pt-6">
+            <div class="flex items-center gap-3 bg-teal-light text-teal-dark text-sm font-medium px-4 py-3 rounded-xl">
+                <x-lucide-check-circle-2 class="w-4 h-4 shrink-0" />
+                {{ session('status') }}
+            </div>
         </div>
-    </div>
-@endif
+    @endif
 
-{{-- =========================================================
-    PAGE CONTENT
-========================================================= --}}
-<main class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-    @yield('content')
-</main>
+    {{-- =========================================================
+        PAGE CONTENT
+    ========================================================= --}}
+    <main class="flex-1 px-4 sm:px-6 lg:px-8 py-8 sm:py-10 max-w-310 w-full mx-auto">
+        @yield('content')
+    </main>
 
-<footer class="border-t border-gray-border py-8">
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-navy/50">
-        <p>&copy; {{ date('Y') }} ShopHop Logistics · Partner Console</p>
-        <a href="{{ url('/') }}" class="font-semibold text-navy/60 hover:text-navy transition">Back to ShopHop</a>
-    </div>
-</footer>
+    <footer class="border-t border-gray-border py-6">
+        <div class="px-4 sm:px-6 lg:px-8 text-xs text-navy/50">
+            &copy; {{ date('Y') }} ShopHop Logistics · Partner Console
+        </div>
+    </footer>
+</div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const toggle = document.querySelector('[data-mobile-menu-toggle]');
-        const menu = document.querySelector('[data-mobile-menu]');
-        if (!toggle || !menu) return;
+        const sidebar = document.querySelector('[data-sidebar]');
+        const wrapper = document.querySelector('[data-sidebar-wrapper]');
+        const overlay = document.querySelector('[data-sidebar-overlay]');
+        const toggleBtn = document.querySelector('[data-sidebar-toggle]');
+        const closeBtn = document.querySelector('[data-sidebar-close]');
 
-        toggle.addEventListener('click', function () {
-            menu.classList.toggle('hidden');
-            menu.classList.toggle('flex');
-        });
+        // Start "open" on desktop widths, "closed" on mobile — matches the CSS defaults.
+        let isOpen = window.innerWidth >= 768;
+
+        function render() {
+            sidebar.classList.toggle('is-open', isOpen);
+            sidebar.classList.toggle('is-closed', !isOpen);
+            wrapper.classList.toggle('is-collapsed', !isOpen);
+            const showOverlay = isOpen && window.innerWidth < 768;
+            overlay.classList.toggle('hidden', !showOverlay);
+        }
+
+        function toggleSidebar() {
+            isOpen = !isOpen;
+            render();
+        }
+
+        toggleBtn?.addEventListener('click', toggleSidebar);
+        closeBtn?.addEventListener('click', function () { isOpen = false; render(); });
+        overlay?.addEventListener('click', function () { isOpen = false; render(); });
+
+        render();
     });
 </script>
 

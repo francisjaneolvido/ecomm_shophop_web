@@ -171,16 +171,6 @@
 
 {{-- LOG IN --}}
 <a
-    href="{{ route('login') }}"
-    class="hidden xl:block text-[11px] font-medium text-navy
-           hover:text-teal-dark transition whitespace-nowrap"
->
-    Log In
-</a>
-
-
-{{-- CREATE ACCOUNT --}}
-<a
     href="{{ route('register') }}"
     class="hidden xl:inline-flex items-center justify-center
            bg-teal hover:bg-teal-dark
@@ -188,7 +178,7 @@
            px-3.5 py-2 rounded-full
            transition whitespace-nowrap"
 >
-    Create Account
+    Log In
 </a>
 
 

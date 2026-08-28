@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 {{-- Path: resources/views/layouts/app.blade.php --}}
 
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 
 <head>
     <meta charset="UTF-8">
@@ -10,6 +10,9 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
+
+    {{-- Matches navy brand color in mobile browser chrome / PWA task switcher --}}
+    <meta name="theme-color" content="#0B1B33">
 
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
@@ -53,7 +56,7 @@
 </head>
 
 
-<body class="text-navy bg-white">
+<body class="min-h-screen bg-white text-navy font-poppins antialiased selection:bg-teal/20 selection:text-navy">
 
 
     {{-- ========================================
@@ -71,7 +74,7 @@
         MAIN CONTENT
     ========================================= --}}
 
-    <main>
+    <main class="min-h-[60vh]">
         @yield('content')
     </main>
 
@@ -85,6 +88,23 @@
     @unless (View::hasSection('hideChrome'))
         @include('partials.footer')
     @endunless
+
+
+    {{-- ========================================
+        AUTH MODALS
+        Available site-wide (login, account type,
+        buyer/seller/logistics registration). Each
+        modal starts hidden and is only shown when
+        opened via its click trigger or a
+        `shophop:open-*-modal` custom event, so it's
+        safe to always include them here.
+    ========================================= --}}
+
+    @include('auth.modals.login-modal')
+    @include('auth.modals.account-type-modal')
+    @include('auth.modals.buyer-registration-modal')
+    @include('auth.modals.seller-registration-modal')
+    @include('auth.modals.logistics-registration-modal')
 
 
     {{-- ========================================
