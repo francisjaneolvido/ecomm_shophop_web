@@ -104,6 +104,7 @@
     @include('auth.modals.account-type-modal')
     @include('auth.modals.buyer-registration-modal')
     @include('auth.modals.seller-registration-modal')
+    @include('auth.modals.logistics-registration-modal')
 
 
     {{-- ========================================

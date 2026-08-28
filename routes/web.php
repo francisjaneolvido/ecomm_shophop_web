@@ -189,3 +189,12 @@ Route::get('/debug/modal/seller-registration', function () {
 Route::get('/debug/modal/logistics-registration', function () {
     return view('auth.modals.logistics-registration-modal');
 });
+
+/*
+|--------------------------------------------------------------------------
+| LOADING
+|--------------------------------------------------------------------------
+*/
+Route::get('/dev/loading-preview', function () {
+    return view('partials.loading-screen');
+});

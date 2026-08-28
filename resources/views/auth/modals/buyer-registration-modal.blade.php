@@ -3,12 +3,14 @@
     Path: resources/views/auth/modals/buyer-registration-modal.blade.php
 
     Opened from account-type-modal when "Buyer" is selected.
-    Redesigned to match seller-registration-modal.blade.php:
-    same backdrop opacity/blur, same dialog chrome (sticky top
-    bar with back/close, fade+scale open animation), and the
-    same split-screen pattern — artistic navy panel on the left
-    + form on the right — just at a 30/70 ratio instead of the
-    seller's wider left panel, since the buyer flow is shorter.
+    Redesigned to match login-modal.blade.php's chrome: floating
+    back/close circle buttons + a thin teal accent bar, plus a
+    login-style header (icon badge, small label, big heading,
+    description) — and the split-screen pattern from
+    seller-registration-modal.blade.php — artistic navy panel on
+    the left + form on the right — at a 30/70 ratio instead of
+    the seller's wider left panel, since the buyer flow is
+    shorter.
 
     Steps are plain step-by-step (one panel shown, the rest
     `hidden`) — no per-step transition, so navigation is
@@ -65,54 +67,48 @@
                transition-all duration-300 ease-out"
     >
 
-        {{-- Top bar --}}
-        <div
-            class="sticky top-0 z-20
-                   flex items-center gap-3
-                   bg-white/90 backdrop-blur
-                   border-b border-gray-border/60
-                   px-4 sm:px-6
-                   py-3"
+        {{-- Back — floating, matches login-modal / account-type-modal chrome --}}
+        <button
+            type="button"
+            data-buyer-registration-modal-back
+            aria-label="Back to account type"
+            class="absolute top-4 left-4 z-20
+                   w-10 h-10
+                   rounded-full
+                   bg-gray-bg
+                   text-navy/45
+                   flex items-center justify-center
+                   hover:bg-teal-light
+                   hover:text-teal-dark
+                   focus:outline-none
+                   focus:ring-4 focus:ring-teal/15
+                   transition"
         >
-            <button
-                type="button"
-                data-buyer-registration-modal-back
-                aria-label="Back to account type"
-                class="w-8 h-8 shrink-0
-                       rounded-full
-                       text-navy/40
-                       flex items-center justify-center
-                       hover:bg-teal-light hover:text-teal-dark
-                       focus:outline-none
-                       focus:ring-4 focus:ring-teal/15
-                       transition"
-            >
-                <x-lucide-arrow-left class="w-4 h-4" />
-            </button>
+            <x-lucide-arrow-left class="w-4 h-4" />
+        </button>
 
-            <p
-                id="buyer-registration-modal-title"
-                class="flex-1 min-w-0 text-sm font-semibold text-navy truncate"
-            >
-                Buyer Registration
-            </p>
+        {{-- Close — floating, matches login-modal / account-type-modal chrome --}}
+        <button
+            type="button"
+            data-buyer-registration-modal-close
+            aria-label="Close buyer registration"
+            class="absolute top-4 right-4 z-20
+                   w-10 h-10
+                   rounded-full
+                   bg-gray-bg
+                   text-navy/45
+                   flex items-center justify-center
+                   hover:bg-teal-light
+                   hover:text-teal-dark
+                   focus:outline-none
+                   focus:ring-4 focus:ring-teal/15
+                   transition"
+        >
+            <x-lucide-x class="w-4 h-4" />
+        </button>
 
-            <button
-                type="button"
-                data-buyer-registration-modal-close
-                aria-label="Close buyer registration"
-                class="w-8 h-8 shrink-0
-                       rounded-full
-                       text-navy/40
-                       flex items-center justify-center
-                       hover:bg-teal-light hover:text-teal-dark
-                       focus:outline-none
-                       focus:ring-4 focus:ring-teal/15
-                       transition"
-            >
-                <x-lucide-x class="w-4 h-4" />
-            </button>
-        </div>
+        {{-- Accent — matches login-modal --}}
+        <div class="hidden sm:block h-1.5 bg-teal"></div>
 
 
         {{-- =====================================================
@@ -129,7 +125,7 @@
                        overflow-hidden
                        bg-navy
                        px-6 xl:px-8
-                       py-10
+                       py-5
                        items-center"
             >
 
@@ -173,23 +169,23 @@
 
 
                     {{-- Logo --}}
-                    <div class="flex items-center gap-2.5">
+                    <div class="flex items-center gap-3">
 
-                        <div class="w-10 h-10 flex items-center justify-center shrink-0">
+                        <div class="w-16 h-16 flex items-center justify-center shrink-0">
                             <img
                                 src="{{ asset('images/logo.png') }}"
                                 alt="ShopHop"
-                                class="w-10 h-10 object-contain"
+                                class="w-16 h-16 object-contain"
                             >
                         </div>
 
                         <div class="min-w-0">
 
-                            <p class="text-white text-lg font-bold leading-none">
+                            <p class="text-white text-2xl font-bold leading-none">
                                 ShopHop
                             </p>
 
-                            <p class="text-teal text-[8px] tracking-[0.22em] mt-2">
+                            <p class="text-teal text-[9px] tracking-[0.22em] mt-1.5">
                                 HOP IN. SHOP MORE.
                             </p>
 
@@ -199,7 +195,7 @@
 
 
                     {{-- Main content --}}
-                    <div class="mt-7 xl:mt-9">
+                    <div class="mt-4 xl:mt-5">
 
                         <span
                             class="inline-flex items-center gap-1.5
@@ -217,9 +213,9 @@
 
 
                         <h1
-                            class="mt-4
+                            class="mt-3
                                    text-white
-                                   text-2xl xl:text-3xl
+                                   text-xl xl:text-2xl
                                    font-extrabold
                                    leading-[1.1]"
                         >
@@ -231,9 +227,9 @@
 
 
                         <p
-                            class="mt-3
+                            class="mt-2
                                    text-white/55
-                                   text-[13px]
+                                   text-[12px]
                                    leading-relaxed"
                         >
                             Create your buyer account and start exploring
@@ -245,43 +241,43 @@
 
 
                     {{-- Feature list --}}
-                    <div class="mt-7 xl:mt-8 space-y-2.5">
+                    <div class="mt-4 xl:mt-4 space-y-1.5">
 
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
+                        <div class="flex items-center gap-2.5 rounded-xl bg-white/[0.06] border border-white/10 px-3 py-1.5">
 
-                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
-                                <x-lucide-shopping-bag class="w-4 h-4" />
+                            <div class="shrink-0 w-6 h-6 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-shopping-bag class="w-3.5 h-3.5" />
                             </div>
 
                             <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Thousands of Products</p>
-                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">From trusted local sellers</p>
+                                <p class="text-white text-[11px] font-semibold leading-tight">Thousands of Products</p>
+                                <p class="text-white/45 text-[9.5px] mt-0.5 leading-tight">From trusted local sellers</p>
                             </div>
 
                         </div>
 
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
+                        <div class="flex items-center gap-2.5 rounded-xl bg-white/[0.06] border border-white/10 px-3 py-1.5">
 
-                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
-                                <x-lucide-shield-check class="w-4 h-4" />
+                            <div class="shrink-0 w-6 h-6 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-shield-check class="w-3.5 h-3.5" />
                             </div>
 
                             <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Secure Checkout</p>
-                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Your payments, always protected</p>
+                                <p class="text-white text-[11px] font-semibold leading-tight">Secure Checkout</p>
+                                <p class="text-white/45 text-[9.5px] mt-0.5 leading-tight">Your payments, always protected</p>
                             </div>
 
                         </div>
 
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
+                        <div class="flex items-center gap-2.5 rounded-xl bg-white/[0.06] border border-white/10 px-3 py-1.5">
 
-                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
-                                <x-lucide-truck class="w-4 h-4" />
+                            <div class="shrink-0 w-6 h-6 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
+                                <x-lucide-truck class="w-3.5 h-3.5" />
                             </div>
 
                             <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Fast Delivery</p>
-                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Track every order in real time</p>
+                                <p class="text-white text-[11px] font-semibold leading-tight">Fast Delivery</p>
+                                <p class="text-white/45 text-[9.5px] mt-0.5 leading-tight">Track every order in real time</p>
                             </div>
 
                         </div>
@@ -290,24 +286,24 @@
 
 
                     {{-- Trust stats row --}}
-                    <div class="mt-7 xl:mt-8 flex items-center gap-4 xl:gap-5">
+                    <div class="mt-4 xl:mt-4 flex items-center gap-3 xl:gap-4">
 
                         <div>
-                            <p class="text-white text-base xl:text-lg font-extrabold">50K+</p>
+                            <p class="text-white text-sm xl:text-base font-extrabold">50K+</p>
                             <p class="text-white/45 text-[9.5px] mt-1">Products</p>
                         </div>
 
                         <div class="w-px h-7 bg-white/10"></div>
 
                         <div>
-                            <p class="text-white text-base xl:text-lg font-extrabold">10K+</p>
+                            <p class="text-white text-sm xl:text-base font-extrabold">10K+</p>
                             <p class="text-white/45 text-[9.5px] mt-1">Sellers</p>
                         </div>
 
                         <div class="w-px h-7 bg-white/10"></div>
 
                         <div>
-                            <p class="text-white text-base xl:text-lg font-extrabold">4.8<span class="text-teal">★</span></p>
+                            <p class="text-white text-sm xl:text-base font-extrabold">4.8<span class="text-teal">★</span></p>
                             <p class="text-white/45 text-[9.5px] mt-1">Rating</p>
                         </div>
 
@@ -331,44 +327,62 @@
                 <div id="buyer-registration-panel" class="max-w-xl mx-auto">
 
 
-                    {{-- Mobile branding --}}
-                    <div class="lg:hidden flex items-center gap-3 mb-5">
+                    <div class="pt-9 lg:pt-0">
 
-                        <img
-                            src="{{ asset('images/logo.png') }}"
-                            alt="ShopHop"
-                            class="w-9 h-9 object-contain"
-                        >
+                        {{-- Mobile branding --}}
+                        <div class="lg:hidden flex items-center gap-3 mb-5">
 
-                        <div>
+                            <img
+                                src="{{ asset('images/logo.png') }}"
+                                alt="ShopHop"
+                                class="w-9 h-9 object-contain"
+                            >
 
-                            <p class="font-bold text-navy text-sm">
-                                ShopHop
-                            </p>
+                            <div>
 
-                            <p class="text-[7px] tracking-[0.2em] text-teal-dark mt-1">
-                                HOP IN. SHOP MORE.
-                            </p>
+                                <p class="font-bold text-navy text-sm">
+                                    ShopHop
+                                </p>
+
+                                <p class="text-[7px] tracking-[0.2em] text-teal-dark mt-1">
+                                    HOP IN. SHOP MORE.
+                                </p>
+
+                            </div>
 
                         </div>
 
-                    </div>
 
+                        {{-- Header — matches login-modal's header treatment --}}
+                        <div class="mb-6">
 
-                    {{-- Header --}}
-                    <div class="mb-5">
+                            <div
+                                class="w-11 h-11
+                                       rounded-xl
+                                       bg-teal-light
+                                       flex items-center justify-center
+                                       text-teal-dark
+                                       mb-4"
+                            >
+                                <x-lucide-shopping-bag class="w-5 h-5" />
+                            </div>
 
-                        <p class="text-[11px] font-semibold tracking-wide text-teal-dark mb-1.5">
-                            BUYER REGISTRATION
-                        </p>
+                            <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-1.5">
+                                BUYER REGISTRATION
+                            </p>
 
-                        <h2 class="text-navy text-xl sm:text-2xl font-bold">
-                            Create Your Account
-                        </h2>
+                            <h2
+                                id="buyer-registration-modal-title"
+                                class="text-navy text-2xl sm:text-3xl font-bold leading-tight"
+                            >
+                                Create Your Account
+                            </h2>
 
-                        <p class="text-sm text-navy/45 mt-1.5 leading-relaxed">
-                            Enter your details below to start shopping on ShopHop.
-                        </p>
+                            <p class="text-sm text-navy/50 mt-2 leading-relaxed">
+                                Enter your details below to start shopping on ShopHop.
+                            </p>
+
+                        </div>
 
                     </div>
 
