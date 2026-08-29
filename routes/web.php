@@ -6,7 +6,8 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ProductController;
 
-use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\BuyerRegistrationController;
+use App\Http\Controllers\Auth\SellerRegistrationController;
 
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 
@@ -33,11 +34,15 @@ Route::get('/', [HomeController::class, 'index'])
 |--------------------------------------------------------------------------
 */
 
-Route::get('/register', [RegisterController::class, 'create'])
-    ->name('register');
+Route::get('/register', function () {
+    return view('auth.modals.account-type-modal');
+})->name('register');
 
-Route::post('/register', [RegisterController::class, 'store'])
+Route::post('/register', [BuyerRegistrationController::class, 'store'])
     ->name('register.store');
+
+Route::post('/seller/register', [SellerRegistrationController::class, 'store'])
+    ->name('seller.register.store');
 
 
 Route::get('/login', function () {
