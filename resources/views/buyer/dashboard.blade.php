@@ -17,7 +17,7 @@
 
 @section('content')
 
-    @include('partials.navbar-buyer')
+       @include('buyer.partials.navbar-buyer')
 
 {{-- =========================================================
     HERO SECTION

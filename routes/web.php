@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\LoginController;
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
+use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 
@@ -94,9 +95,8 @@ Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
     ->name('admin.dashboard');
 
 
-Route::get('/admin/registration', function () {
-    return view('admin.registration');
-})->name('admin.registrations');
+Route::get('/admin/registration', [AdminRegistrationController::class, 'index'])
+    ->name('admin.registrations');
 
 
 Route::get('/admin/users', [UserAccountController::class, 'index'])
