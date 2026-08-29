@@ -45,4 +45,34 @@ class User extends Authenticatable
     {
         return $this->hasOne(LogisticsPartner::class);
     }
+
+    /**
+     * A human-friendly name for admin tables, regardless of account type.
+     * Falls back to the e-mail when no profile name is available.
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        return match ($this->account_type) {
+            'buyer' => trim(($this->buyer?->first_name ?? '').' '.($this->buyer?->last_name ?? '')) ?: $this->email,
+            'seller' => trim(($this->seller?->first_name ?? '').' '.($this->seller?->last_name ?? '')) ?: $this->email,
+            'logistics' => $this->logisticsPartner?->company_name ?? $this->email,
+            default => $this->email,
+        };
+    }
+
+    /**
+     * Two-letter initials for the little avatar circle in admin tables.
+     */
+    public function getInitialsAttribute(): string
+    {
+        $name = $this->display_name;
+        $words = preg_split('/\s+/', trim($name));
+        $words = array_filter($words);
+
+        if (count($words) >= 2) {
+            return strtoupper(substr($words[0], 0, 1).substr($words[1], 0, 1));
+        }
+
+        return strtoupper(substr($name, 0, 2));
+    }
 }

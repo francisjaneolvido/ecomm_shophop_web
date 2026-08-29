@@ -97,6 +97,15 @@
                 </p>
             </div>
 
+            {{-- Login error (wrong credentials / pending approval) --}}
+            @if ($errors->any())
+                <div class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
+                    <p class="text-xs text-red-600">
+                        {{ $errors->first() }}
+                    </p>
+                </div>
+            @endif
+
             {{--
                 Front-end only for now.
                 When Google auth is ready, connect this button to your Google route.
@@ -145,13 +154,11 @@
             </div>
 
             {{--
-                Front-end modal only for now.
-                When your authentication backend is ready, replace action="#"
-                with your real login POST route and remove the JS preventDefault.
+                Now posts to the real login route.
             --}}
             <form
                 id="home-login-form"
-                action="#"
+                action="{{ route('login.store') }}"
                 method="POST"
             >
                 @csrf
@@ -178,6 +185,7 @@
                             type="email"
                             id="login-modal-email"
                             name="email"
+                            value="{{ old('email') }}"
                             required
                             autocomplete="email"
                             inputmode="email"
@@ -312,17 +320,6 @@
                     Sign In
                     <x-lucide-arrow-right class="w-4 h-4" />
                 </button>
-
-                <p
-                    id="home-login-form-message"
-                    class="hidden mt-3
-                           rounded-xl
-                           bg-gray-bg
-                           px-4 py-3
-                           text-center text-xs text-navy/50"
-                >
-                    The sign-in modal is ready. Connect this form to your login backend when authentication is available.
-                </p>
             </form>
 
             {{-- Register --}}
@@ -386,8 +383,6 @@
                 emailInput: document.getElementById('login-modal-email'),
                 passwordInput: document.getElementById('login-modal-password'),
                 togglePassword: document.getElementById('login-modal-toggle-password'),
-                loginForm: document.getElementById('home-login-form'),
-                formMessage: document.getElementById('home-login-form-message'),
             };
         }
 
@@ -487,7 +482,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', function () {
-            const { modal, passwordInput, togglePassword, loginForm, formMessage } = getModalParts();
+            const { modal, passwordInput, togglePassword } = getModalParts();
 
             if (!modal) {
                 return;
@@ -525,7 +520,7 @@
             document.addEventListener('submit', function (event) {
                 const form = event.target;
 
-                if (!form || form === loginForm || modal.contains(form)) {
+                if (!form || modal.contains(form)) {
                     return;
                 }
 
@@ -558,21 +553,20 @@
                 });
             }
 
-            // Remove this preventDefault once you connect a real authentication POST route.
-            if (loginForm) {
-                loginForm.addEventListener('submit', function (event) {
-                    event.preventDefault();
-
-                    if (formMessage) {
-                        formMessage.classList.remove('hidden');
-                    }
-                });
-            }
+            // Login form now submits for real to the backend — no more
+            // preventDefault() here.
         });
 
         // Allow other modals/scripts to open this one via a custom event,
         // e.g. document.dispatchEvent(new CustomEvent('shophop:open-login-modal'))
         document.addEventListener('shophop:open-login-modal', openLoginModal);
+
+        // If the server sent back validation errors (wrong password, pending
+        // approval, etc.) for the login form, auto-open this modal so the
+        // person actually sees the error message.
+        @if ($errors->any() && old('email') !== null)
+            document.addEventListener('DOMContentLoaded', openLoginModal);
+        @endif
     })();
 </script>
 @endonce

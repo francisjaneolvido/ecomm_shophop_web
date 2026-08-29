@@ -8,6 +8,10 @@ use App\Http\Controllers\ProductController;
 
 use App\Http\Controllers\Auth\BuyerRegistrationController;
 use App\Http\Controllers\Auth\SellerRegistrationController;
+use App\Http\Controllers\Auth\LoginController;
+
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\UserAccountController;
 
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 
@@ -49,6 +53,12 @@ Route::get('/login', function () {
     return view('auth.login');
 })->name('login');
 
+Route::post('/login', [LoginController::class, 'store'])
+    ->name('login.store');
+
+Route::post('/logout', [LoginController::class, 'destroy'])
+    ->name('logout');
+
 
 Route::get('/create-account', function () {
     return view('auth.create-account');
@@ -80,9 +90,8 @@ Route::get('/create-account', function () {
 |--------------------------------------------------------------------------
 */
 
-Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
-})->name('admin.dashboard');
+Route::get('/admin/dashboard', [AdminDashboardController::class, 'index'])
+    ->name('admin.dashboard');
 
 
 Route::get('/admin/registration', function () {
@@ -90,9 +99,20 @@ Route::get('/admin/registration', function () {
 })->name('admin.registrations');
 
 
-Route::get('/admin/users', function () {
-    return view('admin.user-accounts');
-})->name('admin.users');
+Route::get('/admin/users', [UserAccountController::class, 'index'])
+    ->name('admin.users');
+
+Route::post('/admin/users/{user}/approve', [UserAccountController::class, 'approve'])
+    ->name('admin.users.approve');
+
+Route::post('/admin/users/{user}/reject', [UserAccountController::class, 'reject'])
+    ->name('admin.users.reject');
+
+Route::post('/admin/users/{user}/suspend', [UserAccountController::class, 'suspend'])
+    ->name('admin.users.suspend');
+
+Route::post('/admin/users/{user}/reactivate', [UserAccountController::class, 'reactivate'])
+    ->name('admin.users.reactivate');
 
 
 Route::get('/admin/seller-compliance', function () {
