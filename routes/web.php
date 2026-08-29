@@ -102,6 +102,9 @@ Route::get('/admin/registration', function () {
 Route::get('/admin/users', [UserAccountController::class, 'index'])
     ->name('admin.users');
 
+Route::get('/admin/users/{user}', [UserAccountController::class, 'show'])
+    ->name('admin.users.show');
+
 Route::post('/admin/users/{user}/approve', [UserAccountController::class, 'approve'])
     ->name('admin.users.approve');
 

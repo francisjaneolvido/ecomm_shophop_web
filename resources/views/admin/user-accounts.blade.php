@@ -731,23 +731,23 @@
                                 >
 
                                     {{-- View --}}
-                                    <button
-                                        type="button"
-                                        class="inline-flex
-                                               items-center gap-1.5
-                                               px-3 py-1.5
-                                               rounded-lg
-                                               text-xs font-semibold
-                                               text-slate-500
-                                               border border-slate-200
-                                               hover:bg-slate-50
-                                               hover:text-navy
-                                               transition"
-                                    >
-                                        <x-lucide-eye class="w-3.5 h-3.5" />
+<a
+    href="{{ route('admin.users.show', $user) }}"
+    class="inline-flex
+           items-center gap-1.5
+           px-3 py-1.5
+           rounded-lg
+           text-xs font-semibold
+           text-slate-500
+           border border-slate-200
+           hover:bg-slate-50
+           hover:text-navy
+           transition"
+>
+    <x-lucide-eye class="w-3.5 h-3.5" />
 
-                                        View
-                                    </button>
+    View
+</a>
 
 
                                     {{-- Suspended → Reactivate --}}
