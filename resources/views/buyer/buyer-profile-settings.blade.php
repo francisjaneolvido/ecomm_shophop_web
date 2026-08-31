@@ -22,6 +22,80 @@
 
 @section('title', 'Account Settings - ShopHop')
 
+{{--
+    This page belongs to the Buyer area, so hide the default landing-page
+    navbar/footer from layouts.app and render the Buyer chrome below.
+--}}
+@section('hideChrome', true)
+
+@push('styles')
+<style>
+    html {
+        scroll-behavior: smooth;
+    }
+
+    .settings-shell {
+        background-image:
+            radial-gradient(circle at 8% 0%, rgba(20, 184, 166, 0.08), transparent 28rem),
+            radial-gradient(circle at 100% 20%, rgba(15, 27, 61, 0.05), transparent 24rem);
+    }
+
+    .settings-panel:not(.hidden) {
+        animation: settingsPanelIn 180ms ease-out;
+    }
+
+    @keyframes settingsPanelIn {
+        from {
+            opacity: 0;
+            transform: translateY(4px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .settings-shell input,
+    .settings-shell select,
+    .settings-shell textarea,
+    .settings-shell button,
+    .settings-shell a {
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .settings-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    .settings-shell select,
+    .settings-shell textarea {
+        transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+    }
+
+    .settings-tab-btn:focus-visible,
+    .settings-shell button:focus-visible,
+    .settings-shell a:focus-visible,
+    .settings-shell input:focus-visible,
+    .settings-shell select:focus-visible,
+    .settings-shell textarea:focus-visible {
+        outline: 2px solid rgba(20, 184, 166, 0.75);
+        outline-offset: 2px;
+    }
+
+    .settings-sidebar-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(15, 27, 61, 0.18) transparent;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        html {
+            scroll-behavior: auto;
+        }
+
+        .settings-panel:not(.hidden) {
+            animation: none;
+        }
+    }
+</style>
+@endpush
+
 @php
     $user = auth()->user();
 
@@ -104,40 +178,74 @@
 @endphp
 
 @section('content')
-<section class="settings-shell bg-gray-bg min-h-screen py-6 sm:py-8">
+
+<a
+    href="#settings-main"
+    class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-navy focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg"
+>
+    Skip to account settings
+</a>
+
+@include('buyer.partials.navbar-buyer')
+
+<section id="settings-main" class="settings-shell bg-gray-bg min-h-screen py-5 sm:py-7 lg:py-8 scroll-mt-20">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        {{-- Page heading --}}
-        <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5 sm:mb-6">
-            <div>
-                <div class="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold text-teal-dark uppercase tracking-[0.16em]">
-                    <span class="w-1.5 h-1.5 rounded-full bg-teal"></span>
-                    Account Center
+        {{-- Page heading / account overview --}}
+        <div class="relative overflow-hidden bg-white border border-gray-border rounded-2xl shadow-sm mb-5 sm:mb-6">
+            <div class="pointer-events-none absolute -top-20 -right-14 w-56 h-56 rounded-full bg-teal/10"></div>
+            <div class="pointer-events-none absolute -bottom-24 left-1/3 w-48 h-48 rounded-full bg-navy/5"></div>
+
+            <div class="relative p-4 sm:p-5 lg:p-6">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                    <div class="min-w-0">
+                        <div class="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold text-teal-dark uppercase tracking-[0.16em]">
+                            <span class="w-1.5 h-1.5 rounded-full bg-teal"></span>
+                            Buyer Account Center
+                        </div>
+
+                        <h1 class="text-navy text-2xl sm:text-[28px] lg:text-3xl font-bold leading-tight mt-1.5">
+                            Account Settings
+                        </h1>
+
+                        <p class="text-xs sm:text-sm text-navy/50 mt-1.5 max-w-2xl leading-relaxed">
+                            Keep your personal information, delivery details, security, shopping preferences, and account activity in one place.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 lg:justify-end">
+                        <div class="flex items-center gap-3 min-w-0 rounded-xl bg-gray-bg/80 border border-gray-border px-3 py-2.5">
+                            <img
+                                src="{{ $user->avatar_url ?? asset('images/avatar-placeholder.png') }}"
+                                alt="{{ $displayName }}"
+                                class="w-9 h-9 rounded-full object-cover border border-white shadow-sm shrink-0"
+                            >
+                            <div class="min-w-0">
+                                <p class="text-xs sm:text-sm font-semibold text-navy truncate">{{ $displayName }}</p>
+                                <p class="text-[10px] sm:text-[11px] text-navy/45 truncate">{{ $user->email ?? 'Buyer account' }}</p>
+                            </div>
+                            <span class="hidden sm:inline-flex text-[9px] font-bold uppercase tracking-wide text-teal-dark bg-teal-light px-2 py-1 rounded-md shrink-0">
+                                Buyer
+                            </span>
+                        </div>
+
+                        <a
+                            href="{{ Route::has('buyer.dashboard') ? route('buyer.dashboard') : '#' }}"
+                            class="inline-flex items-center justify-center gap-1.5
+                                   text-xs font-semibold text-navy/65 hover:text-teal-dark
+                                   bg-white hover:bg-teal-light/30 border border-gray-border hover:border-teal/30
+                                   rounded-xl px-3.5 py-2.5 transition-all"
+                        >
+                            <x-lucide-arrow-left class="w-3.5 h-3.5" />
+                            Back to Dashboard
+                        </a>
+                    </div>
                 </div>
-
-                <h1 class="text-navy text-2xl sm:text-[28px] font-bold leading-tight mt-1.5">
-                    Account Settings
-                </h1>
-
-                <p class="text-xs sm:text-sm text-navy/50 mt-1">
-                    Manage your profile, security, shopping preferences, and account activity.
-                </p>
             </div>
-
-            <a
-                href="{{ Route::has('buyer.dashboard') ? route('buyer.dashboard') : '#' }}"
-                class="inline-flex items-center gap-1.5 self-start sm:self-auto
-                       text-xs font-semibold text-navy/60 hover:text-teal-dark
-                       bg-white border border-gray-border rounded-lg px-3 py-2
-                       transition-colors"
-            >
-                <x-lucide-arrow-left class="w-3.5 h-3.5" />
-                Back to Dashboard
-            </a>
         </div>
 
         {{-- Compact mobile navigation --}}
-        <div class="lg:hidden bg-white border border-gray-border rounded-xl p-3 mb-4 shadow-sm">
+        <div class="lg:hidden sticky top-16 z-40 bg-white/95 backdrop-blur border border-gray-border rounded-xl p-3 mb-4 shadow-sm">
             <label for="settingsMobileSelect" class="block text-[10px] font-bold text-navy/40 uppercase tracking-[0.12em] mb-1.5">
                 Settings section
             </label>
@@ -168,12 +276,12 @@
             </div>
         </div>
 
-        <div class="grid lg:grid-cols-[228px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
+        <div class="grid lg:grid-cols-[240px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
 
             {{-- =========================================================
                 SIDEBAR NAV
             ========================================================= --}}
-            <aside class="hidden lg:block bg-white rounded-xl border border-gray-border shadow-sm p-2.5 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto">
+            <aside class="settings-sidebar-scroll hidden lg:block bg-white rounded-2xl border border-gray-border shadow-sm p-2.5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
 
                 <div class="flex items-center gap-2.5 px-2.5 py-2.5 mb-2 border-b border-gray-border">
                     <img
@@ -281,7 +389,7 @@
             {{-- =========================================================
                 CONTENT
             ========================================================= --}}
-            <div class="min-w-0 space-y-4">
+            <div class="min-w-0 space-y-4 sm:space-y-5">
 
                 {{-- Form feedback --}}
                 @if (session('status'))
@@ -988,6 +1096,8 @@
     </div>
 </section>
 
+@include('partials.footer')
+
 {{-- =========================================================
     CONFIRM MODAL (generic — used by all data-confirm-action buttons)
 ========================================================= --}}
@@ -1156,6 +1266,7 @@ document.addEventListener('DOMContentLoaded', function () {
             button.classList.toggle('text-white', isActive);
             button.classList.toggle('shadow-sm', isActive);
             button.classList.toggle('text-navy/70', !isActive);
+            button.setAttribute('aria-pressed', String(isActive));
         });
 
         panels.forEach(function (panel) {
@@ -1181,6 +1292,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (mobileSelect) {
         mobileSelect.addEventListener('change', function () {
             activateTab(mobileSelect.value, true);
+
+            const activePanel = document.querySelector(
+                '[data-tab-content="' + mobileSelect.value + '"]'
+            );
+
+            if (activePanel && window.matchMedia('(max-width: 1023px)').matches) {
+                window.setTimeout(function () {
+                    activePanel.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start',
+                    });
+                }, 40);
+            }
         });
     }
 
