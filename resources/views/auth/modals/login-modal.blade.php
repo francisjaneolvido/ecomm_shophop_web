@@ -235,7 +235,7 @@
                                    rounded-xl
                                    border border-gray-border
                                    bg-white
-                                   pl-11 pr-12 py-3
+                                   pl-11 pr-4 py-3
                                    text-sm text-navy
                                    outline-none
                                    placeholder:text-navy/30
@@ -244,25 +244,6 @@
                                    focus:ring-4 focus:ring-teal/10
                                    transition"
                         >
-
-                        <button
-                            type="button"
-                            id="login-modal-toggle-password"
-                            aria-label="Show password"
-                            class="absolute right-2 top-1/2
-                                   -translate-y-1/2
-                                   w-10 h-10
-                                   rounded-lg
-                                   flex items-center justify-center
-                                   text-navy/35
-                                   hover:text-teal-dark
-                                   hover:bg-gray-bg
-                                   focus:outline-none
-                                   focus:ring-4 focus:ring-teal/10
-                                   transition"
-                        >
-                            <x-lucide-eye class="w-4 h-4" />
-                        </button>
                     </div>
                 </div>
 
@@ -541,17 +522,6 @@
                 }
             });
 
-            if (togglePassword && passwordInput) {
-                togglePassword.addEventListener('click', function () {
-                    const passwordIsHidden = passwordInput.type === 'password';
-
-                    passwordInput.type = passwordIsHidden ? 'text' : 'password';
-                    togglePassword.setAttribute(
-                        'aria-label',
-                        passwordIsHidden ? 'Hide password' : 'Show password'
-                    );
-                });
-            }
 
             // Login form now submits for real to the backend — no more
             // preventDefault() here.

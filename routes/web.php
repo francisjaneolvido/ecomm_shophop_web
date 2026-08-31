@@ -157,6 +157,11 @@ Route::get('/admin/logout', function () {
     return redirect('/');
 })->name('admin.logout');
 
+Route::post('/admin/users/{user}/approve', [UserAccountController::class, 'approve'])
+    ->name('admin.users.approve');
+
+Route::post('/admin/users/{user}/reject', [UserAccountController::class, 'reject'])
+    ->name('admin.users.reject');
 
 /*
 |--------------------------------------------------------------------------
