@@ -345,7 +345,7 @@
                            hover:shadow-lg
                            transition-all duration-200"
                 >
-                    <div class="relative aspect-[4/3] bg-white overflow-hidden">
+                    <div class="relative aspect-4/3 bg-white overflow-hidden">
                         <img
                             src="{{ str_starts_with($product['image'], 'http')
                                 ? $product['image']
@@ -490,7 +490,7 @@
                            hover:shadow-lg
                            transition-all duration-200"
                 >
-                    <div class="relative aspect-[4/3] bg-gray-bg overflow-hidden">
+                    <div class="relative aspect-4/3 bg-gray-bg overflow-hidden">
                         <img
                             src="{{ str_starts_with($product['image'], 'http')
                                 ? $product['image']

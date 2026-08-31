@@ -349,7 +349,7 @@
             @foreach ($recentlyViewed as $product)
                 <article class="group bg-white rounded-xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-px transition-all">
 
-                    <div class="relative aspect-[4/3] bg-white overflow-hidden">
+                    <div class="relative aspect-4/3g-white overflow-hidden">
                         <img
                             src="{{ str_starts_with($product['image'], 'http')
                                 ? $product['image']
@@ -454,7 +454,7 @@
             @foreach ($recommendedProducts as $product)
                 <article class="group bg-white rounded-xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-px transition-all">
 
-                    <div class="relative aspect-[4/3] bg-gray-bg overflow-hidden">
+                    <div class="relative aspect-4/3 bg-gray-bg overflow-hidden">
                         <img
                             src="{{ str_starts_with($product['image'], 'http')
                                 ? $product['image']
