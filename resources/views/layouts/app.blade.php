@@ -111,14 +111,8 @@
         PAGE-SPECIFIC SCRIPTS
     ========================================= --}}
     {{-- Toast container — isang beses lang, pang-buong app --}}
-    <x-toast-container />
+    @include('admin.partial.toast-container')
 
-    {{-- Existing modals --}}
-    @include('components.login-modal')
-    {{-- ... --}}
-
-
-    @stack('scripts')
 
 
 </body>

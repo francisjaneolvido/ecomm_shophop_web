@@ -30,9 +30,6 @@
     <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
 
         <div>
-            <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-mint-dark mb-1">
-                Registration Review
-            </p>
 
             <h1 class="text-2xl font-bold text-navy">
                 Account Registrations

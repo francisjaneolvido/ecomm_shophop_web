@@ -16,6 +16,7 @@
         use Carbon\Carbon;
 
         $filter = request('filter', 'all');
+        $sort   = request('sort', 'newest');
 
         $counts = [
             'all'       => 42,
@@ -287,6 +288,25 @@
             default     => $sampleUsers,
         };
 
+        // Search simulation — same idea, filters by name or email
+        if ($search = request('search')) {
+            $needle = strtolower($search);
+            $filtered = $filtered->filter(function ($u) use ($needle) {
+                return str_contains(strtolower($u->display_name), $needle)
+                    || str_contains(strtolower($u->email), $needle);
+            });
+        }
+
+        // Sort simulation — stands in for an ->orderBy() once this is
+        // wired to the DB. sortBy/sortByDesc don't reindex keys, hence
+        // the ->values() right after.
+        $filtered = match ($sort) {
+            'oldest' => $filtered->sortBy('created_at'),
+            'az'     => $filtered->sortBy(fn ($u) => strtolower($u->display_name)),
+            'za'     => $filtered->sortByDesc(fn ($u) => strtolower($u->display_name)),
+            default  => $filtered->sortByDesc('created_at'), // newest
+        };
+
         $filtered = $filtered->values();
 
         $users = new LengthAwarePaginator(
@@ -358,9 +378,6 @@
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
 
             <div>
-                <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-mint-dark mb-1">
-                    Account Directory
-                </p>
 
                 <h1 class="text-2xl font-bold text-navy">
                     User Accounts
@@ -529,7 +546,7 @@
 
 
     {{-- =========================================================
-        FILTER + SEARCH
+        FILTER + SORT + SEARCH
     ========================================================= --}}
     <div
         class="flex flex-col xl:flex-row
@@ -544,7 +561,7 @@
 
             {{-- All --}}
             <a
-                href="{{ route('admin.users') }}"
+                href="{{ route('admin.users', ['sort' => $sort]) }}"
                 class="px-4 py-2
                        rounded-xl
                        text-xs sm:text-sm
@@ -566,7 +583,7 @@
 
             {{-- Buyers --}}
             <a
-                href="{{ route('admin.users', ['filter' => 'buyers']) }}"
+                href="{{ route('admin.users', ['filter' => 'buyers', 'sort' => $sort]) }}"
                 class="px-4 py-2
                        rounded-xl
                        text-xs sm:text-sm
@@ -588,7 +605,7 @@
 
             {{-- Sellers --}}
             <a
-                href="{{ route('admin.users', ['filter' => 'sellers']) }}"
+                href="{{ route('admin.users', ['filter' => 'sellers', 'sort' => $sort]) }}"
                 class="px-4 py-2
                        rounded-xl
                        text-xs sm:text-sm
@@ -610,7 +627,7 @@
 
             {{-- Logistics --}}
             <a
-                href="{{ route('admin.users', ['filter' => 'logistics']) }}"
+                href="{{ route('admin.users', ['filter' => 'logistics', 'sort' => $sort]) }}"
                 class="px-4 py-2
                        rounded-xl
                        text-xs sm:text-sm
@@ -632,7 +649,7 @@
 
             {{-- Riders --}}
             <a
-                href="{{ route('admin.users', ['filter' => 'riders']) }}"
+                href="{{ route('admin.users', ['filter' => 'riders', 'sort' => $sort]) }}"
                 class="px-4 py-2
                        rounded-xl
                        text-xs sm:text-sm
@@ -654,7 +671,7 @@
 
             {{-- Suspended --}}
             <a
-                href="{{ route('admin.users', ['filter' => 'suspended']) }}"
+                href="{{ route('admin.users', ['filter' => 'suspended', 'sort' => $sort]) }}"
                 class="px-4 py-2
                        rounded-xl
                        text-xs sm:text-sm
@@ -676,50 +693,89 @@
         </div>
 
 
-        {{-- SEARCH --}}
-        <form
-            method="GET"
-            action="{{ route('admin.users') }}"
-            class="relative w-full xl:w-72"
-        >
+        {{-- SORT + SEARCH --}}
+        <div class="flex items-center gap-2 w-full xl:w-auto">
 
-            <input
-                type="hidden"
-                name="filter"
-                value="{{ $filter }}"
+            {{-- SORT --}}
+            <form method="GET" action="{{ route('admin.users') }}" class="shrink-0">
+                <input type="hidden" name="filter" value="{{ $filter }}">
+                <input type="hidden" name="search" value="{{ request('search') }}">
+
+                <select
+                    name="sort"
+                    onchange="this.form.submit()"
+                    class="text-sm
+                           rounded-xl
+                           border border-slate-200
+                           px-3 py-2.5
+                           bg-white
+                           text-slate-600
+                           font-medium
+                           focus:outline-none
+                           focus:ring-2
+                           focus:ring-mint/20
+                           transition"
+                >
+                    <option value="newest" {{ $sort === 'newest' ? 'selected' : '' }}>Newest first</option>
+                    <option value="oldest" {{ $sort === 'oldest' ? 'selected' : '' }}>Oldest first</option>
+                    <option value="az" {{ $sort === 'az' ? 'selected' : '' }}>Name (A–Z)</option>
+                    <option value="za" {{ $sort === 'za' ? 'selected' : '' }}>Name (Z–A)</option>
+                </select>
+            </form>
+
+
+            {{-- SEARCH --}}
+            <form
+                method="GET"
+                action="{{ route('admin.users') }}"
+                class="relative w-full xl:w-72"
             >
 
+                <input
+                    type="hidden"
+                    name="filter"
+                    value="{{ $filter }}"
+                >
 
-            <x-lucide-search
-                class="w-4 h-4
-                       absolute left-3 top-1/2
-                       -translate-y-1/2
-                       text-slate-400"
-            />
+                <input
+                    type="hidden"
+                    name="sort"
+                    value="{{ $sort }}"
+                >
 
 
-            <input
-                type="text"
-                name="search"
-                value="{{ request('search') }}"
-                placeholder="Search by name or email..."
-                class="w-full
-                       pl-9 pr-4
-                       py-2.5
-                       text-sm
-                       rounded-xl
-                       bg-white
-                       border border-slate-200
-                       text-navy
-                       placeholder:text-slate-400
-                       focus:border-mint
-                       focus:outline-none
-                       focus:ring-2
-                       focus:ring-mint/20
-                       transition"
-            >
+                <x-lucide-search
+                    class="w-4 h-4
+                           absolute left-3 top-1/2
+                           -translate-y-1/2
+                           text-slate-400"
+                />
 
-        </form>
+
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ request('search') }}"
+                    placeholder="Search by name or email..."
+                    class="w-full
+                           pl-9 pr-4
+                           py-2.5
+                           text-sm
+                           rounded-xl
+                           bg-white
+                           border border-slate-200
+                           text-navy
+                           placeholder:text-slate-400
+                           focus:border-mint
+                           focus:outline-none
+                           focus:ring-2
+                           focus:ring-mint/20
+                           transition"
+                >
+
+            </form>
+
+        </div>
 
     </div>
 
