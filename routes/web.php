@@ -163,6 +163,9 @@ Route::post('/admin/users/{user}/approve', [UserAccountController::class, 'appro
 Route::post('/admin/users/{user}/reject', [UserAccountController::class, 'reject'])
     ->name('admin.users.reject');
 
+Route::get('commissions/export-pdf', [CommissionController::class, 'exportPdf'])
+    ->name('admin.commissions.export-pdf');
+
 /*
 |--------------------------------------------------------------------------
 | Logistics Routes
