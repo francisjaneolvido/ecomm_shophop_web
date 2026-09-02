@@ -409,6 +409,12 @@ Route::get('/debug/modal/logistics-registration', function () {
     return view('auth.modals.logistics-registration-modal');
 });
 
+
+Route::view(
+    '/seller-ui',
+    'seller.dashboard.dashboard'
+)->name('seller.dashboard');
+
 /*
 |--------------------------------------------------------------------------
 | LOADING
