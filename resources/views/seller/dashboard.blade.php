@@ -5,876 +5,3260 @@
 @section('content')
 
 @php
-    /*
-    |--------------------------------------------------------------------------
-    | BACKEND-SAFE VIEW DEFAULTS
-    |--------------------------------------------------------------------------
-    | Same convention as admin.dashboard — controller can pass real
-    | data later without breaking this view.
-    */
-    $newOrders = $newOrders ?? 0;
-    $ordersToPrepare = $ordersToPrepare ?? 0;
-    $lowStockCount = $lowStockCount ?? 0;
-    $revenueThisMonth = $revenueThisMonth ?? 0;
-    $revenueChangePct = $revenueChangePct ?? 0;
 
-    $recentOrders = collect($recentOrders ?? []);
-    $lowStockProducts = collect($lowStockProducts ?? []);
-    $weeklySales = collect($weeklySales ?? []);
-    $topProducts = collect($topProducts ?? []);
+/*
+|--------------------------------------------------------------------------
+| SAFE DEFAULT DATA
+|--------------------------------------------------------------------------
+*/
 
-    $authSeller = auth()->user();
+$newOrders = $newOrders ?? 0;
+$ordersToPrepare = $ordersToPrepare ?? 0;
+$lowStockCount = $lowStockCount ?? 0;
 
-    $sellerFirstName = $sellerFirstName
-        ?? $authSeller?->name
-        ?? ($authSeller?->email ? explode('@', $authSeller->email)[0] : null)
-        ?? 'Seller';
+$revenueToday = $revenueToday ?? 0;
+$revenueMonth = $revenueMonth ?? 0;
 
-    $needsAttention = $newOrders + $lowStockCount;
+$revenueChangePct = $revenueChangePct ?? 0;
 
-    $hour = now()->hour;
+$recentOrders = collect($recentOrders ?? []);
+$lowStockProducts = collect($lowStockProducts ?? []);
+$topProducts = collect($topProducts ?? []);
 
-    $greeting = $hour < 12
+$weeklySales = collect($weeklySales ?? []);
+
+$orderPipeline = $orderPipeline ?? [
+    'placed' => 0,
+    'confirmed' => 0,
+    'preparing' => 0,
+    'ready' => 0,
+    'picked_up' => 0,
+    'delivery' => 0,
+    'completed' => 0,
+];
+
+
+$authSeller = auth()->user();
+
+$sellerName =
+    $authSeller?->name
+    ?? ($authSeller?->email
+        ? ucfirst(explode('@',$authSeller->email)[0])
+        : 'Seller');
+
+
+$hour = now()->hour;
+
+$greeting =
+    $hour < 12
         ? 'Good morning'
-        : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+        : ($hour < 18
+            ? 'Good afternoon'
+            : 'Good evening');
 
-    /*
-    |--------------------------------------------------------------------------
-    | ORDER STATUS BREAKDOWN
-    |--------------------------------------------------------------------------
-    | Mirrors the ERP status list (PLACED → COMPLETED) collapsed into
-    | the stages a seller actually acts on.
-    */
-    $statusConfig = [
-        'to_confirm' => [
-            'label' => 'To Confirm',
-            'classes' => 'bg-coral/10 text-coral',
-            'bar' => 'bg-coral',
-        ],
-        'preparing' => [
-            'label' => 'Preparing',
-            'classes' => 'bg-yellow/15 text-amber-700',
-            'bar' => 'bg-yellow',
-        ],
-        'ready_for_pickup' => [
-            'label' => 'Ready for Pickup',
-            'classes' => 'bg-sky/10 text-sky',
-            'bar' => 'bg-sky',
-        ],
-        'in_transit' => [
-            'label' => 'In Transit',
-            'classes' => 'bg-navy/10 text-navy',
-            'bar' => 'bg-navy',
-        ],
-        'completed' => [
-            'label' => 'Completed',
-            'classes' => 'bg-teal/10 text-teal-dark',
-            'bar' => 'bg-teal',
-        ],
-    ];
 
-    $orderStatusMix = $orderStatusMix ?? [
-        'to_confirm' => 0,
-        'preparing' => 0,
-        'ready_for_pickup' => 0,
-        'in_transit' => 0,
-        'completed' => 0,
-    ];
+$attentionCount =
+    $newOrders
+    + $lowStockCount;
 
-    $orderStatusTotal = max(1, array_sum($orderStatusMix));
 
-    $orderRowStatusClasses = [
-        'PLACED' => 'bg-coral/10 text-coral border-coral/20',
-        'CONFIRMED' => 'bg-sky/10 text-sky border-sky/20',
-        'PREPARING' => 'bg-yellow/15 text-amber-700 border-yellow/30',
-        'READY_FOR_PICKUP' => 'bg-sky/10 text-sky border-sky/20',
-        'PICKED_UP' => 'bg-navy/10 text-navy border-navy/15',
-        'OUT_FOR_DELIVERY' => 'bg-navy/10 text-navy border-navy/15',
-        'DELIVERED' => 'bg-teal/10 text-teal-dark border-teal/20',
-        'COMPLETED' => 'bg-teal/10 text-teal-dark border-teal/20',
-        'DELIVERY_FAILED' => 'bg-red-50 text-red-600 border-red-200',
-        'RETURNED' => 'bg-red-50 text-red-600 border-red-200',
-    ];
+/*
+|--------------------------------------------------------------------------
+| PIPELINE STYLE
+|--------------------------------------------------------------------------
+*/
 
-    $weeklySalesMax = max(1, ...($weeklySales->pluck('amount')->all() ?: [1]));
+$pipelineConfig = [
+
+    'placed'=>[
+        'label'=>'New Orders',
+        'icon'=>'bell-ring',
+        'color'=>'bg-teal/10 text-teal-dark',
+        'bar'=>'bg-teal'
+    ],
+
+    'confirmed'=>[
+        'label'=>'Confirmed',
+        'icon'=>'badge-check',
+        'color'=>'bg-sky/10 text-sky',
+        'bar'=>'bg-sky'
+    ],
+
+    'preparing'=>[
+        'label'=>'Preparing',
+        'icon'=>'box',
+        'color'=>'bg-yellow/20 text-amber-700',
+        'bar'=>'bg-yellow'
+    ],
+
+    'ready'=>[
+        'label'=>'Ready Pickup',
+        'icon'=>'package-check',
+        'color'=>'bg-coral/10 text-coral',
+        'bar'=>'bg-coral'
+    ],
+
+    'picked_up'=>[
+        'label'=>'Picked Up',
+        'icon'=>'truck',
+        'color'=>'bg-navy/10 text-navy',
+        'bar'=>'bg-navy'
+    ],
+
+    'delivery'=>[
+        'label'=>'Out Delivery',
+        'icon'=>'map-pin',
+        'color'=>'bg-sky/10 text-sky',
+        'bar'=>'bg-sky'
+    ],
+
+    'completed'=>[
+        'label'=>'Completed',
+        'icon'=>'circle-check',
+        'color'=>'bg-teal-light text-teal-dark',
+        'bar'=>'bg-teal'
+    ],
+
+];
+
+
 @endphp
 
-
-<style>
-    #sellerDashboard .dash-gap {
-        gap: 1rem;
-    }
-
-    #sellerDashboard .dash-section {
-        margin-bottom: 1.25rem;
-    }
-</style>
 
 
 <div id="sellerDashboard">
 
-    {{-- =========================================================
-        HEADER
-    ========================================================= --}}
-    <header class="dash-section flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
 
-        <div class="min-w-0">
+{{-- =========================================================
+HEADER
+========================================================= --}}
 
-            <div class="flex items-center gap-2 mb-2">
+<section class="mb-5">
 
-                <span class="relative flex w-2 h-2">
-                    <span class="animate-ping absolute inline-flex w-full h-full rounded-full bg-teal opacity-60"></span>
-                    <span class="relative inline-flex w-2 h-2 rounded-full bg-teal"></span>
-                </span>
+<div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
 
-                <p class="text-[10px] sm:text-xs font-semibold tracking-[0.16em] uppercase text-teal-dark">
-                    ShopHop Seller
-                </p>
-            </div>
 
+<div>
 
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1">
 
-                <h1 class="text-xl sm:text-2xl font-bold text-navy tracking-tight">
-                    {{ $greeting }}, {{ $sellerFirstName }}
-                </h1>
+<div class="flex items-center gap-2 mb-2">
 
-                @if ($needsAttention === 0)
-                    <span
-                        class="inline-flex items-center gap-1
-                               px-2 py-1 rounded-full
-                               bg-teal/10 text-teal-dark
-                               text-[9px] font-semibold"
-                    >
-                        <x-lucide-circle-check class="w-3 h-3" />
-                        All caught up
-                    </span>
-                @else
-                    <span
-                        class="inline-flex items-center gap-1
-                               px-2 py-1 rounded-full
-                               bg-coral/10 text-coral
-                               text-[9px] font-semibold"
-                    >
-                        <x-lucide-circle-alert class="w-3 h-3" />
-                        {{ $needsAttention }} need{{ $needsAttention === 1 ? 's' : '' }} attention
-                    </span>
-                @endif
+<span class="w-2 h-2 rounded-full bg-teal animate-pulse"></span>
 
-            </div>
+<p class="
+text-[10px]
+uppercase
+tracking-[0.18em]
+font-bold
+text-teal-dark">
 
+ShopHop Seller
 
-            <p class="text-xs sm:text-sm text-navy/45 mt-1 max-w-2xl">
-                Track your orders, stock levels, and store performance from one workspace.
-            </p>
-
-        </div>
-
-
-        <div class="flex flex-wrap items-center gap-2">
-
-            <div
-                class="hidden md:inline-flex items-center gap-2
-                       h-9 px-3 rounded-lg
-                       bg-white border border-gray-border
-                       text-[11px] text-navy/45"
-            >
-                <x-lucide-calendar-days class="w-3.5 h-3.5 text-teal-dark" />
-                {{ now()->format('M d, Y') }}
-            </div>
-
-
-            <a
-                href="{{ route('seller.reports') }}"
-                class="inline-flex items-center justify-center gap-1.5
-                       h-9 px-3.5 rounded-lg
-                       border border-gray-border
-                       bg-white
-                       text-xs font-semibold text-navy
-                       hover:border-teal/40 hover:text-teal-dark
-                       hover:shadow-sm
-                       transition-all"
-            >
-                <x-lucide-chart-no-axes-combined class="w-3.5 h-3.5" />
-                Reports
-            </a>
-
-
-            <a
-                href="{{ route('seller.inventory') }}"
-                class="inline-flex items-center justify-center gap-1.5
-                       h-9 px-3.5 rounded-lg
-                       bg-navy hover:bg-navy/90
-                       text-xs font-semibold text-white
-                       transition-colors"
-            >
-                <x-lucide-plus class="w-3.5 h-3.5" />
-                Add Product
-            </a>
-
-        </div>
-
-    </header>
-
-
-    {{-- =========================================================
-        KPI CARDS
-    ========================================================= --}}
-    <section class="dash-section">
-        <div class="grid grid-cols-2 xl:grid-cols-4 dash-gap">
-
-            {{-- New Orders --}}
-            <a
-                href="{{ route('seller.orders.notifications') }}"
-                class="group relative overflow-hidden
-                       bg-white border border-gray-border
-                       rounded-xl p-4
-                       hover:border-teal/35
-                       hover:shadow-lg hover:shadow-teal/5
-                       hover:-translate-y-0.5
-                       transition-all duration-200"
-            >
-                <span
-                    class="absolute inset-x-4 top-0 h-0.5 rounded-full
-                           bg-teal
-                           scale-x-0 group-hover:scale-x-100
-                           transition-transform origin-left"
-                ></span>
-
-                <div class="flex items-start justify-between gap-3">
-
-                    <div
-                        class="w-9 h-9 rounded-lg
-                               bg-teal/10 text-teal-dark
-                               flex items-center justify-center
-                               group-hover:bg-teal group-hover:text-white
-                               transition-colors"
-                    >
-                        <x-lucide-bell-ring class="w-4 h-4" />
-                    </div>
-
-                    @if ($newOrders > 0)
-                        <span
-                            class="inline-flex items-center gap-1
-                                   text-[9px] font-semibold
-                                   text-teal-dark bg-teal/10
-                                   px-2 py-1 rounded-full"
-                        >
-                            <span class="w-1 h-1 rounded-full bg-teal"></span>
-                            Review
-                        </span>
-                    @endif
-
-                </div>
-
-                <div class="mt-3">
-
-                    <p class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
-                        {{ number_format($newOrders) }}
-                    </p>
-
-                    <p class="text-[10px] sm:text-xs font-medium text-navy/55 mt-0.5">
-                        New Orders
-                    </p>
-
-                </div>
-
-                <div class="flex items-center mt-2 text-[9px] sm:text-[10px] text-navy/35">
-                    <span>Awaiting confirmation</span>
-
-                    <x-lucide-arrow-up-right
-                        class="w-3 h-3 ml-auto
-                               group-hover:text-teal-dark
-                               group-hover:translate-x-0.5
-                               group-hover:-translate-y-0.5
-                               transition-transform"
-                    />
-                </div>
-            </a>
-
-
-            {{-- To Prepare --}}
-            <a
-                href="{{ route('seller.orders.prepare') }}"
-                class="group relative overflow-hidden
-                       bg-white border border-gray-border
-                       rounded-xl p-4
-                       hover:border-coral/35
-                       hover:shadow-lg hover:shadow-coral/5
-                       hover:-translate-y-0.5
-                       transition-all duration-200"
-            >
-                <span
-                    class="absolute inset-x-4 top-0 h-0.5 rounded-full
-                           bg-coral
-                           scale-x-0 group-hover:scale-x-100
-                           transition-transform origin-left"
-                ></span>
-
-                <div class="flex items-start justify-between gap-3">
-
-                    <div
-                        class="w-9 h-9 rounded-lg
-                               bg-coral/10 text-coral
-                               flex items-center justify-center
-                               group-hover:bg-coral group-hover:text-white
-                               transition-colors"
-                    >
-                        <x-lucide-box class="w-4 h-4" />
-                    </div>
-
-                    <span
-                        class="text-[9px] font-semibold
-                               text-navy/40 bg-gray-bg
-                               px-2 py-1 rounded-full"
-                    >
-                        Packing
-                    </span>
-
-                </div>
-
-                <div class="mt-3">
-
-                    <p class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
-                        {{ number_format($ordersToPrepare) }}
-                    </p>
-
-                    <p class="text-[10px] sm:text-xs font-medium text-navy/55 mt-0.5">
-                        Orders to Prepare
-                    </p>
-
-                </div>
-
-                <div class="flex items-center mt-2 text-[9px] sm:text-[10px] text-navy/35">
-                    <span>Pack &amp; print waybill</span>
-
-                    <x-lucide-arrow-up-right
-                        class="w-3 h-3 ml-auto
-                               group-hover:text-coral
-                               group-hover:translate-x-0.5
-                               group-hover:-translate-y-0.5
-                               transition-transform"
-                    />
-                </div>
-            </a>
-
-
-            {{-- Low Stock --}}
-            <a
-                href="{{ route('seller.inventory') }}"
-                class="group relative overflow-hidden
-                       bg-white border border-gray-border
-                       rounded-xl p-4
-                       hover:border-yellow/50
-                       hover:shadow-lg hover:shadow-yellow/10
-                       hover:-translate-y-0.5
-                       transition-all duration-200"
-            >
-                <span
-                    class="absolute inset-x-4 top-0 h-0.5 rounded-full
-                           bg-yellow
-                           scale-x-0 group-hover:scale-x-100
-                           transition-transform origin-left"
-                ></span>
-
-                <div class="flex items-start justify-between gap-3">
-
-                    <div
-                        class="w-9 h-9 rounded-lg
-                               bg-yellow/15 text-amber-700
-                               flex items-center justify-center
-                               group-hover:bg-yellow group-hover:text-white
-                               transition-colors"
-                    >
-                        <x-lucide-triangle-alert class="w-4 h-4" />
-                    </div>
-
-                    @if ($lowStockCount > 0)
-                        <span
-                            class="inline-flex items-center gap-1
-                                   text-[9px] font-semibold
-                                   text-amber-700 bg-yellow/15
-                                   px-2 py-1 rounded-full"
-                        >
-                            <span class="w-1 h-1 rounded-full bg-yellow"></span>
-                            Restock
-                        </span>
-                    @endif
-
-                </div>
-
-                <div class="mt-3">
-
-                    <p class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
-                        {{ number_format($lowStockCount) }}
-                    </p>
-
-                    <p class="text-[10px] sm:text-xs font-medium text-navy/55 mt-0.5">
-                        Low Stock Items
-                    </p>
-
-                </div>
-
-                <div class="flex items-center mt-2 text-[9px] sm:text-[10px] text-navy/35">
-                    <span>Below reorder point</span>
-
-                    <x-lucide-arrow-up-right
-                        class="w-3 h-3 ml-auto
-                               group-hover:text-amber-700
-                               group-hover:translate-x-0.5
-                               group-hover:-translate-y-0.5
-                               transition-transform"
-                    />
-                </div>
-            </a>
-
-
-            {{-- Revenue This Month --}}
-            <a
-                href="{{ route('seller.reports') }}"
-                class="group relative overflow-hidden
-                       bg-white border border-gray-border
-                       rounded-xl p-4
-                       hover:border-sky/35
-                       hover:shadow-lg hover:shadow-sky/5
-                       hover:-translate-y-0.5
-                       transition-all duration-200"
-            >
-                <span
-                    class="absolute inset-x-4 top-0 h-0.5 rounded-full
-                           bg-sky
-                           scale-x-0 group-hover:scale-x-100
-                           transition-transform origin-left"
-                ></span>
-
-                <div class="flex items-start justify-between gap-3">
-
-                    <div
-                        class="w-9 h-9 rounded-lg
-                               bg-sky/10 text-sky
-                               flex items-center justify-center
-                               group-hover:bg-sky group-hover:text-white
-                               transition-colors"
-                    >
-                        <x-lucide-wallet class="w-4 h-4" />
-                    </div>
-
-                    @if ($revenueChangePct != 0)
-                        <span
-                            class="inline-flex items-center gap-1
-                                   text-[9px] font-semibold
-                                   px-2 py-1 rounded-full
-                                   {{ $revenueChangePct > 0 ? 'text-teal-dark bg-teal/10' : 'text-red-600 bg-red-50' }}"
-                        >
-                            <x-dynamic-component
-                                :component="$revenueChangePct > 0 ? 'lucide-trending-up' : 'lucide-trending-down'"
-                                class="w-3 h-3"
-                            />
-                            {{ abs($revenueChangePct) }}%
-                        </span>
-                    @endif
-
-                </div>
-
-                <div class="mt-3">
-
-                    <p class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
-                        ₱{{ number_format($revenueThisMonth, 2) }}
-                    </p>
-
-                    <p class="text-[10px] sm:text-xs font-medium text-navy/55 mt-0.5">
-                        Revenue This Month
-                    </p>
-
-                </div>
-
-                <div class="flex items-center mt-2 text-[9px] sm:text-[10px] text-navy/35">
-                    <span>vs. last month</span>
-
-                    <x-lucide-arrow-up-right
-                        class="w-3 h-3 ml-auto
-                               group-hover:text-sky
-                               group-hover:translate-x-0.5
-                               group-hover:-translate-y-0.5
-                               transition-transform"
-                    />
-                </div>
-            </a>
-
-        </div>
-    </section>
-
-
-    {{-- =========================================================
-        MAIN GRID — Recent Orders + Side Panels
-    ========================================================= --}}
-    <section
-        class="dash-section
-               grid grid-cols-1
-               xl:grid-cols-[minmax(0,1.72fr)_minmax(290px,0.8fr)]
-               dash-gap"
-    >
-
-        {{-- ============================
-            RECENT ORDERS
-        ============================ --}}
-        <div class="bg-white border border-gray-border rounded-xl overflow-hidden">
-
-            <div class="flex items-center justify-between px-4 py-3.5 border-b border-gray-border">
-
-                <div>
-                    <p class="text-sm font-bold text-navy">
-                        Recent Orders
-                    </p>
-                    <p class="text-[9px] text-navy/35 mt-0.5">
-                        Latest activity across your store
-                    </p>
-                </div>
-
-                <a
-                    href="{{ route('seller.orders.notifications') }}"
-                    class="inline-flex items-center gap-1
-                           text-[10px] font-semibold text-teal-dark
-                           hover:text-teal-dark/70
-                           transition"
-                >
-                    View all
-                    <x-lucide-arrow-right class="w-3 h-3" />
-                </a>
-
-            </div>
-
-
-            @if ($recentOrders->isEmpty())
-
-                <div class="px-4 py-14 text-center">
-
-                    <div
-                        class="w-11 h-11 mx-auto
-                               rounded-xl bg-gray-bg text-navy/30
-                               flex items-center justify-center"
-                    >
-                        <x-lucide-package-search class="w-5 h-5" />
-                    </div>
-
-                    <p class="text-xs font-semibold text-navy/60 mt-3">
-                        No orders yet
-                    </p>
-
-                    <p class="text-[10px] text-navy/35 mt-1">
-                        New orders from buyers will show up here.
-                    </p>
-
-                </div>
-
-            @else
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b border-gray-border">
-                                <th class="px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-navy/35">Order</th>
-                                <th class="px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-navy/35">Buyer</th>
-                                <th class="px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-navy/35">Items</th>
-                                <th class="px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-navy/35">Total</th>
-                                <th class="px-4 py-2.5 text-[9px] font-bold uppercase tracking-wider text-navy/35">Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach ($recentOrders as $order)
-                                <tr class="border-b border-gray-border last:border-0 hover:bg-gray-bg/60 transition-colors">
-
-                                    <td class="px-4 py-3">
-                                        <p class="text-[11px] font-semibold text-navy">
-                                            #{{ $order['id'] ?? '—' }}
-                                        </p>
-                                        <p class="text-[9px] text-navy/35 mt-0.5">
-                                            {{ $order['placed_at'] ?? '' }}
-                                        </p>
-                                    </td>
-
-                                    <td class="px-4 py-3 text-[11px] text-navy/70">
-                                        {{ $order['buyer_name'] ?? '—' }}
-                                    </td>
-
-                                    <td class="px-4 py-3 text-[11px] text-navy/70">
-                                        {{ $order['item_count'] ?? 0 }} item{{ ($order['item_count'] ?? 0) === 1 ? '' : 's' }}
-                                    </td>
-
-                                    <td class="px-4 py-3 text-[11px] font-semibold text-navy tabular-nums">
-                                        ₱{{ number_format($order['total'] ?? 0, 2) }}
-                                    </td>
-
-                                    <td class="px-4 py-3">
-                                        @php
-                                            $status = $order['status'] ?? 'PLACED';
-                                            $statusClass = $orderRowStatusClasses[$status] ?? 'bg-gray-bg text-navy/50 border-gray-border';
-                                        @endphp
-
-                                        <span
-                                            class="inline-flex items-center px-2 py-1 rounded-full
-                                                   border text-[9px] font-semibold
-                                                   {{ $statusClass }}"
-                                        >
-                                            {{ ucwords(strtolower(str_replace('_', ' ', $status))) }}
-                                        </span>
-                                    </td>
-
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-            @endif
-
-        </div>
-
-
-        {{-- ============================
-            SIDE PANELS
-        ============================ --}}
-        <div class="flex flex-col dash-gap">
-
-            {{-- Order Status Breakdown --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4">
-
-                <p class="text-sm font-bold text-navy">
-                    Order Status
-                </p>
-                <p class="text-[9px] text-navy/35 mt-0.5 mb-4">
-                    Where your active orders stand
-                </p>
-
-                <div class="space-y-3">
-                    @foreach ($statusConfig as $key => $config)
-                        @php
-                            $count = $orderStatusMix[$key] ?? 0;
-                            $pct = round(($count / $orderStatusTotal) * 100);
-                        @endphp
-
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <span class="text-[10px] font-medium text-navy/60">
-                                    {{ $config['label'] }}
-                                </span>
-                                <span class="text-[10px] font-semibold text-navy tabular-nums">
-                                    {{ $count }}
-                                </span>
-                            </div>
-
-                            <div class="h-1.5 rounded-full bg-gray-bg overflow-hidden">
-                                <div
-                                    class="h-full rounded-full {{ $config['bar'] }}"
-                                    style="width: {{ $pct }}%"
-                                ></div>
-                            </div>
-                        </div>
-
-                    @endforeach
-                </div>
-
-            </div>
-
-
-            {{-- Low Stock Alerts --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4 flex-1">
-
-                <div class="flex items-center justify-between mb-3">
-                    <div>
-                        <p class="text-sm font-bold text-navy">
-                            Low Stock Alerts
-                        </p>
-                        <p class="text-[9px] text-navy/35 mt-0.5">
-                            Restock before you run out
-                        </p>
-                    </div>
-
-                    <a
-                        href="{{ route('seller.inventory') }}"
-                        class="text-[10px] font-semibold text-teal-dark hover:text-teal-dark/70 transition"
-                    >
-                        Manage
-                    </a>
-                </div>
-
-                @if ($lowStockProducts->isEmpty())
-
-                    <div class="py-6 text-center">
-                        <div
-                            class="w-9 h-9 mx-auto
-                                   rounded-lg bg-teal-light text-teal-dark
-                                   flex items-center justify-center"
-                        >
-                            <x-lucide-circle-check class="w-4 h-4" />
-                        </div>
-                        <p class="text-[10px] font-semibold text-navy/50 mt-2">
-                            Stock levels look healthy
-                        </p>
-                    </div>
-
-                @else
-
-                    <div class="space-y-2">
-                        @foreach ($lowStockProducts as $product)
-                            <div class="flex items-center gap-2.5 py-1.5">
-
-                                <div
-                                    class="w-8 h-8 rounded-lg
-                                           bg-yellow/15 text-amber-700
-                                           flex items-center justify-center shrink-0"
-                                >
-                                    <x-lucide-package class="w-3.5 h-3.5" />
-                                </div>
-
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-[10px] font-semibold text-navy truncate">
-                                        {{ $product['name'] ?? 'Product' }}
-                                    </p>
-                                    <p class="text-[9px] text-navy/35 mt-0.5">
-                                        {{ $product['stock'] ?? 0 }} left
-                                    </p>
-                                </div>
-
-                                <span class="text-[9px] font-semibold text-coral bg-coral/10 px-2 py-1 rounded-full shrink-0">
-                                    Low
-                                </span>
-
-                            </div>
-                        @endforeach
-                    </div>
-
-                @endif
-
-            </div>
-
-        </div>
-
-    </section>
-
-
-    {{-- =========================================================
-        SALES OVERVIEW + TOP PRODUCTS
-    ========================================================= --}}
-    <section class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.72fr)_minmax(290px,0.8fr)] dash-gap">
-
-        {{-- Weekly Sales --}}
-        <div class="bg-white border border-gray-border rounded-xl p-4">
-
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <p class="text-sm font-bold text-navy">
-                        Sales This Week
-                    </p>
-                    <p class="text-[9px] text-navy/35 mt-0.5">
-                        Daily revenue, last 7 days
-                    </p>
-                </div>
-
-                <span class="text-[9px] font-semibold text-navy/40 bg-gray-bg px-2 py-1 rounded-full">
-                    ₱ PHP
-                </span>
-            </div>
-
-            @if ($weeklySales->isEmpty())
-
-                <div class="py-10 text-center">
-                    <p class="text-[10px] text-navy/35">
-                        No sales recorded yet this week.
-                    </p>
-                </div>
-
-            @else
-
-                <div class="flex items-end justify-between gap-2 h-40">
-                    @foreach ($weeklySales as $day)
-                        @php
-                            $barPct = max(4, round((($day['amount'] ?? 0) / $weeklySalesMax) * 100));
-                        @endphp
-
-                        <div class="flex-1 flex flex-col items-center justify-end h-full gap-2">
-
-                            <div class="w-full flex-1 flex items-end">
-                                <div
-                                    class="w-full rounded-t-md bg-teal/15 hover:bg-teal/25 transition-colors relative group"
-                                    style="height: {{ $barPct }}%"
-                                >
-                                    <span
-                                        class="absolute -top-6 left-1/2 -translate-x-1/2
-                                               text-[9px] font-semibold text-navy
-                                               opacity-0 group-hover:opacity-100 transition
-                                               whitespace-nowrap"
-                                    >
-                                        ₱{{ number_format($day['amount'] ?? 0) }}
-                                    </span>
-                                    <div class="w-full h-1 rounded-t-md bg-teal"></div>
-                                </div>
-                            </div>
-
-                            <span class="text-[9px] font-medium text-navy/40">
-                                {{ $day['label'] ?? '' }}
-                            </span>
-
-                        </div>
-                    @endforeach
-                </div>
-
-            @endif
-
-        </div>
-
-
-        {{-- Top Products --}}
-        <div class="bg-white border border-gray-border rounded-xl p-4">
-
-            <p class="text-sm font-bold text-navy">
-                Top Products
-            </p>
-            <p class="text-[9px] text-navy/35 mt-0.5 mb-3">
-                Best sellers this month
-            </p>
-
-            @if ($topProducts->isEmpty())
-
-                <div class="py-8 text-center">
-                    <p class="text-[10px] text-navy/35">
-                        No product sales yet.
-                    </p>
-                </div>
-
-            @else
-
-                <div class="space-y-3">
-                    @foreach ($topProducts as $index => $product)
-                        <div class="flex items-center gap-3">
-
-                            <span class="text-[10px] font-bold text-navy/25 w-4 shrink-0">
-                                {{ $index + 1 }}
-                            </span>
-
-                            <div class="min-w-0 flex-1">
-                                <p class="text-[10px] font-semibold text-navy truncate">
-                                    {{ $product['name'] ?? 'Product' }}
-                                </p>
-                                <p class="text-[9px] text-navy/35 mt-0.5">
-                                    {{ $product['sold'] ?? 0 }} sold
-                                </p>
-                            </div>
-
-                            <span class="text-[10px] font-semibold text-navy tabular-nums shrink-0">
-                                ₱{{ number_format($product['revenue'] ?? 0) }}
-                            </span>
-
-                        </div>
-                    @endforeach
-                </div>
-
-            @endif
-
-        </div>
-
-    </section>
+</p>
 
 </div>
+
+
+
+<div class="flex flex-wrap items-center gap-3">
+
+
+<h1 class="
+text-2xl
+font-bold
+text-navy">
+
+{{ $greeting }}, {{ $sellerName }}
+
+</h1>
+
+
+
+@if($attentionCount > 0)
+
+<span class="
+inline-flex
+items-center
+gap-1
+px-2.5
+py-1
+rounded-full
+bg-coral/10
+text-coral
+text-[10px]
+font-semibold">
+
+<x-lucide-circle-alert class="w-3 h-3"/>
+
+{{ $attentionCount }}
+Need Attention
+
+</span>
+
+
+@else
+
+
+<span class="
+inline-flex
+items-center
+gap-1
+px-2.5
+py-1
+rounded-full
+bg-teal/10
+text-teal-dark
+text-[10px]
+font-semibold">
+
+<x-lucide-circle-check class="w-3 h-3"/>
+
+All caught up
+
+</span>
+
+
+@endif
+
+
+</div>
+
+
+
+<p class="
+mt-2
+text-xs
+text-navy/40">
+
+Manage orders, inventory, sales, and customer activity.
+
+</p>
+
+
+</div>
+
+
+
+
+<div class="flex gap-2">
+
+
+<a
+href="{{ route('seller.reports') }}"
+class="
+h-9
+px-4
+rounded-lg
+bg-white
+border
+border-gray-border
+text-xs
+font-semibold
+text-navy
+flex
+items-center
+gap-2
+hover:border-teal/40
+transition">
+
+
+<x-lucide-chart-column class="w-4 h-4"/>
+
+Reports
+
+</a>
+
+
+
+<a
+href="{{ route('seller.inventory') }}"
+class="
+h-9
+px-4
+rounded-lg
+bg-navy
+text-white
+text-xs
+font-semibold
+flex
+items-center
+gap-2
+hover:bg-navy-light
+transition">
+
+
+<x-lucide-plus class="w-4 h-4"/>
+
+Add Product
+
+</a>
+
+
+</div>
+
+
+</div>
+
+</section>
+
+
+
+
+
+{{-- =========================================================
+KPI CARDS
+========================================================= --}}
+
+
+<section class="mb-5">
+
+
+<div class="
+grid
+grid-cols-2
+xl:grid-cols-4
+gap-4">
+
+
+
+{{-- NEW ORDERS --}}
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-4
+hover:shadow-soft
+transition">
+
+
+<div class="
+flex
+justify-between
+items-start">
+
+
+<div
+class="
+w-10
+h-10
+rounded-lg
+bg-teal/10
+text-teal-dark
+flex
+items-center
+justify-center">
+
+
+<x-lucide-bell-ring class="w-5 h-5"/>
+
+
+</div>
+
+
+
+<span class="
+text-[9px]
+font-semibold
+bg-teal/10
+text-teal-dark
+px-2
+py-1
+rounded-full">
+
+NEW
+
+</span>
+
+
+
+</div>
+
+
+
+<p class="
+mt-4
+text-2xl
+font-bold
+text-navy">
+
+{{ number_format($newOrders) }}
+
+</p>
+
+
+<p class="
+text-xs
+text-navy/50">
+
+New Orders
+
+</p>
+
+
+
+</div>
+
+
+
+
+
+{{-- PREPARE --}}
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-4
+hover:shadow-soft
+transition">
+
+
+<div
+class="
+w-10
+h-10
+rounded-lg
+bg-coral/10
+text-coral
+flex
+items-center
+justify-center">
+
+
+<x-lucide-box class="w-5 h-5"/>
+
+</div>
+
+
+
+<p class="
+mt-4
+text-2xl
+font-bold
+text-navy">
+
+{{ number_format($ordersToPrepare) }}
+
+</p>
+
+
+<p class="
+text-xs
+text-navy/50">
+
+Orders To Prepare
+
+</p>
+
+
+</div>
+
+
+
+
+
+{{-- STOCK --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-4
+hover:shadow-soft
+transition">
+
+
+<div
+class="
+w-10
+h-10
+rounded-lg
+bg-yellow/20
+text-amber-700
+flex
+items-center
+justify-center">
+
+
+<x-lucide-triangle-alert class="w-5 h-5"/>
+
+</div>
+
+
+
+<p class="
+mt-4
+text-2xl
+font-bold
+text-navy">
+
+{{ number_format($lowStockCount) }}
+
+</p>
+
+
+<p class="
+text-xs
+text-navy/50">
+
+Low Stock
+
+</p>
+
+
+</div>
+
+
+
+
+
+
+{{-- REVENUE --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-4
+hover:shadow-soft
+transition">
+
+
+<div
+class="
+w-10
+h-10
+rounded-lg
+bg-sky/10
+text-sky
+flex
+items-center
+justify-center">
+
+
+<x-lucide-wallet class="w-5 h-5"/>
+
+</div>
+
+
+
+<p class="
+mt-4
+text-xl
+font-bold
+text-navy">
+
+₱{{ number_format($revenueMonth,2) }}
+
+</p>
+
+
+<p class="
+text-xs
+text-navy/50">
+
+Monthly Revenue
+
+</p>
+
+
+</div>
+
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+{{-- =========================================================
+ACTION CENTER
+========================================================= --}}
+
+
+<section class="mb-5">
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div class="flex items-center justify-between mb-4">
+
+
+<div>
+
+<h2 class="
+text-sm
+font-bold
+text-navy">
+
+Action Center
+
+</h2>
+
+
+<p class="
+text-[10px]
+text-navy/40">
+
+Tasks that need your attention
+
+</p>
+
+
+</div>
+
+
+
+<x-lucide-zap class="
+w-5
+h-5
+text-teal-dark"/>
+
+
+</div>
+
+
+
+<div class="
+grid
+grid-cols-2
+lg:grid-cols-4
+gap-3">
+
+
+<div class="
+rounded-xl
+bg-teal/10
+p-3">
+
+
+<p class="
+text-xl
+font-bold
+text-teal-dark">
+
+{{ $newOrders }}
+
+</p>
+
+
+<p class="
+text-[10px]
+text-navy/50">
+
+Confirm Orders
+
+</p>
+
+
+</div>
+
+
+
+<div class="
+rounded-xl
+bg-coral/10
+p-3">
+
+
+<p class="
+text-xl
+font-bold
+text-coral">
+
+{{ $ordersToPrepare }}
+
+</p>
+
+
+<p class="
+text-[10px]
+text-navy/50">
+
+Pack Items
+
+</p>
+
+
+</div>
+
+
+
+
+<div class="
+rounded-xl
+bg-yellow/20
+p-3">
+
+
+<p class="
+text-xl
+font-bold
+text-amber-700">
+
+{{ $lowStockCount }}
+
+</p>
+
+
+<p class="
+text-[10px]
+text-navy/50">
+
+Restock
+
+</p>
+
+
+</div>
+
+
+
+
+<div class="
+rounded-xl
+bg-sky/10
+p-3">
+
+
+<p class="
+text-xl
+font-bold
+text-sky">
+
+0
+
+</p>
+
+
+<p class="
+text-[10px]
+text-navy/50">
+
+Unread Messages
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+</section>
+{{-- =========================================================
+ORDER PIPELINE
+========================================================= --}}
+
+<section class="mb-5">
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div class="
+flex
+items-center
+justify-between
+mb-5">
+
+
+<div>
+
+<h2 class="
+text-sm
+font-bold
+text-navy">
+
+Order Pipeline
+
+</h2>
+
+
+<p class="
+text-[10px]
+text-navy/40">
+
+Track order movement from placement to completion
+
+</p>
+
+</div>
+
+
+<div
+class="
+text-[10px]
+font-semibold
+text-teal-dark
+bg-teal/10
+px-3
+py-1.5
+rounded-full">
+
+
+Live Status
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div class="
+grid
+grid-cols-2
+md:grid-cols-4
+xl:grid-cols-7
+gap-3">
+
+
+@foreach($pipelineConfig as $key=>$stage)
+
+<div
+class="
+group
+rounded-xl
+border
+border-gray-border
+p-3
+hover:shadow-soft
+transition">
+
+
+<div class="
+flex
+items-center
+justify-between">
+
+
+<div
+class="
+w-8
+h-8
+rounded-lg
+flex
+items-center
+justify-center
+{{ $stage['color'] }}">
+
+
+<x-dynamic-component
+:component="'lucide-'.$stage['icon']"
+class="w-4 h-4"/>
+
+
+</div>
+
+
+
+<span
+class="
+text-lg
+font-bold
+text-navy">
+
+
+{{ $orderPipeline[$key] ?? 0 }}
+
+
+</span>
+
+
+</div>
+
+
+
+<p
+class="
+mt-3
+text-[10px]
+font-semibold
+text-navy/60">
+
+
+{{ $stage['label'] }}
+
+
+</p>
+
+
+
+<div
+class="
+mt-2
+h-1.5
+rounded-full
+bg-gray-bg
+overflow-hidden">
+
+
+<div
+class="
+h-full
+rounded-full
+{{ $stage['bar'] }}"
+style="
+width:
+{{ min(100, (($orderPipeline[$key] ?? 0) * 10)) }}%
+">
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+@endforeach
+
+
+</div>
+
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+
+{{-- =========================================================
+MAIN CONTENT GRID
+========================================================= --}}
+
+
+<section
+class="
+grid
+grid-cols-1
+xl:grid-cols-[1.7fr_.8fr]
+gap-5
+mb-5">
+
+
+
+
+
+{{-- =====================================================
+RECENT ORDERS
+===================================================== --}}
+
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+overflow-hidden">
+
+
+
+<div
+class="
+px-5
+py-4
+border-b
+border-gray-border
+flex
+items-center
+justify-between">
+
+
+<div>
+
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Recent Orders
+
+</h2>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Latest buyer activity
+
+</p>
+
+
+</div>
+
+
+
+<a
+href="{{ route('seller.orders.notifications') }}"
+class="
+text-[10px]
+font-semibold
+text-teal-dark
+hover:text-teal
+">
+
+
+View All →
+
+</a>
+
+
+</div>
+
+
+
+
+
+@if($recentOrders->isEmpty())
+
+
+<div
+class="
+py-16
+text-center">
+
+
+<div
+class="
+w-12
+h-12
+mx-auto
+rounded-xl
+bg-gray-bg
+flex
+items-center
+justify-center
+text-navy/30">
+
+
+<x-lucide-package-search class="w-5 h-5"/>
+
+
+</div>
+
+
+<p
+class="
+mt-3
+text-xs
+font-semibold
+text-navy/50">
+
+No orders yet
+
+</p>
+
+
+</div>
+
+
+
+@else
+
+
+
+<div class="overflow-x-auto">
+
+
+<table
+class="w-full">
+
+
+<thead>
+
+
+<tr
+class="
+border-b
+border-gray-border">
+
+
+<th
+class="
+px-5
+py-3
+text-left
+text-[9px]
+uppercase
+text-navy/30">
+
+
+Order
+
+
+</th>
+
+
+<th
+class="
+px-5
+py-3
+text-left
+text-[9px]
+uppercase
+text-navy/30">
+
+
+Buyer
+
+
+</th>
+
+
+<th
+class="
+px-5
+py-3
+text-left
+text-[9px]
+uppercase
+text-navy/30">
+
+
+Amount
+
+
+</th>
+
+
+<th
+class="
+px-5
+py-3
+text-left
+text-[9px]
+uppercase
+text-navy/30">
+
+
+Status
+
+
+</th>
+
+
+</tr>
+
+
+</thead>
+
+
+
+
+<tbody>
+
+
+@foreach($recentOrders as $order)
+
+
+<tr
+class="
+border-b
+border-gray-border
+hover:bg-gray-bg/60
+transition">
+
+
+
+<td
+class="
+px-5
+py-3">
+
+
+<p
+class="
+text-xs
+font-semibold
+text-navy">
+
+
+#{{ $order['id'] ?? '----' }}
+
+
+</p>
+
+
+<p
+class="
+text-[9px]
+text-navy/35">
+
+
+{{ $order['placed_at'] ?? '' }}
+
+
+</p>
+
+
+</td>
+
+
+
+
+<td
+class="
+px-5
+py-3
+text-xs
+text-navy/70">
+
+
+{{ $order['buyer_name'] ?? 'Buyer' }}
+
+
+</td>
+
+
+
+
+<td
+class="
+px-5
+py-3
+text-xs
+font-semibold
+text-navy">
+
+
+₱{{ number_format($order['total'] ?? 0,2) }}
+
+
+</td>
+
+
+
+
+<td
+class="px-5 py-3">
+
+
+@php
+
+$status =
+$order['status'] ?? 'PLACED';
+
+@endphp
+
+
+
+<span
+class="
+px-2
+py-1
+rounded-full
+text-[9px]
+font-semibold
+bg-teal/10
+text-teal-dark">
+
+
+{{ str_replace('_',' ',ucwords(strtolower($status))) }}
+
+
+</span>
+
+
+</td>
+
+
+</tr>
+
+
+@endforeach
+
+
+
+</tbody>
+
+
+</table>
+
+
+</div>
+
+
+
+@endif
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{{-- =====================================================
+RIGHT SIDE
+===================================================== --}}
+
+
+
+<div
+class="
+space-y-5">
+
+
+
+
+
+{{-- INVENTORY HEALTH --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div
+class="
+flex
+items-center
+justify-between">
+
+
+<div>
+
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Inventory Health
+
+</h2>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Current stock condition
+
+</p>
+
+
+</div>
+
+
+<x-lucide-box
+class="
+w-5
+h-5
+text-teal-dark"/>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+mt-5
+flex
+items-center
+gap-4">
+
+
+<div
+class="
+relative
+w-20
+h-20
+rounded-full
+border-8
+border-teal/20
+flex
+items-center
+justify-center">
+
+
+<span
+class="
+text-lg
+font-bold
+text-navy">
+
+82%
+
+</span>
+
+
+</div>
+
+
+
+<div
+class="space-y-2">
+
+
+<div>
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Healthy Products
+
+</p>
+
+<p
+class="
+text-sm
+font-bold
+text-navy">
+
+{{ max(0,150-$lowStockCount) }}
+
+</p>
+
+</div>
+
+
+
+<div>
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Need Restock
+
+</p>
+
+<p
+class="
+text-sm
+font-bold
+text-coral">
+
+{{ $lowStockCount }}
+
+</p>
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+{{-- COURIER TRACKER --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div
+class="
+flex
+items-center
+gap-2
+mb-4">
+
+
+<x-lucide-truck
+class="
+w-5
+h-5
+text-sky"/>
+
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Courier Pickup
+
+</h2>
+
+
+</div>
+
+
+
+<div
+class="
+space-y-3">
+
+
+<div
+class="
+flex
+justify-between
+items-center
+p-3
+rounded-lg
+bg-sky/10">
+
+
+<span
+class="
+text-[10px]
+text-navy/60">
+
+Ready Pickup
+
+</span>
+
+
+<strong
+class="
+text-sm
+text-sky">
+
+{{ $orderPipeline['ready'] ?? 0 }}
+
+</strong>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+flex
+justify-between
+items-center
+p-3
+rounded-lg
+bg-navy/10">
+
+
+<span
+class="
+text-[10px]
+text-navy/60">
+
+Picked Up
+
+</span>
+
+
+<strong
+class="
+text-sm
+text-navy">
+
+{{ $orderPipeline['picked_up'] ?? 0 }}
+
+</strong>
+
+
+</div>
+
+
+
+<div
+class="
+flex
+justify-between
+items-center
+p-3
+rounded-lg
+bg-teal/10">
+
+
+<span
+class="
+text-[10px]
+text-navy/60">
+
+Completed
+
+</span>
+
+
+<strong
+class="
+text-sm
+text-teal-dark">
+
+{{ $orderPipeline['completed'] ?? 0 }}
+
+</strong>
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+</div>
+
+
+</section>
+
+{{-- =========================================================
+SALES ANALYTICS + PERFORMANCE
+========================================================= --}}
+
+<section
+class="
+grid
+grid-cols-1
+xl:grid-cols-[1.7fr_.8fr]
+gap-5
+mb-5">
+
+
+
+
+
+{{-- =====================================================
+SALES OVERVIEW
+===================================================== --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div
+class="
+flex
+items-center
+justify-between
+mb-5">
+
+
+<div>
+
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Sales Overview
+
+</h2>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Revenue performance this week
+
+</p>
+
+
+</div>
+
+
+
+<div
+class="
+px-3
+py-1.5
+rounded-lg
+bg-gray-bg
+text-[10px]
+font-semibold
+text-navy/50">
+
+
+PHP ₱
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+grid
+grid-cols-3
+gap-3
+mb-6">
+
+
+
+<div
+class="
+rounded-xl
+bg-gray-bg
+p-3">
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Today
+
+</p>
+
+
+<p
+class="
+mt-1
+text-lg
+font-bold
+text-navy">
+
+₱{{ number_format($revenueToday,2) }}
+
+</p>
+
+
+</div>
+
+
+
+
+<div
+class="
+rounded-xl
+bg-teal/10
+p-3">
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+This Month
+
+</p>
+
+
+<p
+class="
+mt-1
+text-lg
+font-bold
+text-teal-dark">
+
+₱{{ number_format($revenueMonth,2) }}
+
+</p>
+
+
+</div>
+
+
+
+
+<div
+class="
+rounded-xl
+bg-sky/10
+p-3">
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Growth
+
+</p>
+
+
+<p
+class="
+mt-1
+text-lg
+font-bold
+text-sky">
+
+
+{{ $revenueChangePct }}%
+
+
+</p>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+{{-- SIMPLE SALES GRAPH --}}
+
+
+@if($weeklySales->isEmpty())
+
+
+<div
+class="
+h-40
+flex
+items-center
+justify-center
+text-xs
+text-navy/30">
+
+No sales data yet
+
+</div>
+
+
+@else
+
+
+
+<div
+class="
+h-40
+flex
+items-end
+gap-3">
+
+
+@php
+
+$maxSale =
+max(
+1,
+$weeklySales->max('amount')
+);
+
+@endphp
+
+
+
+@foreach($weeklySales as $sale)
+
+
+<div
+class="
+flex-1
+flex
+flex-col
+items-center
+gap-2
+h-full
+justify-end
+group">
+
+
+<div
+class="
+relative
+w-full
+rounded-t-lg
+bg-teal/20
+hover:bg-teal/40
+transition"
+style="
+height:
+{{ max(8,(($sale['amount'] ?? 0)/$maxSale)*100) }}%
+">
+
+
+<div
+class="
+absolute
+bottom-0
+left-0
+right-0
+h-1
+bg-teal
+rounded-t-lg">
+
+</div>
+
+
+</div>
+
+
+<span
+class="
+text-[9px]
+text-navy/40">
+
+
+{{ $sale['label'] ?? '' }}
+
+
+</span>
+
+
+</div>
+
+
+@endforeach
+
+
+
+</div>
+
+
+@endif
+
+
+
+</div>
+
+
+
+
+
+
+
+{{-- =====================================================
+TOP PRODUCTS
+===================================================== --}}
+
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div
+class="
+flex
+items-center
+justify-between
+mb-4">
+
+
+<div>
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Top Products
+
+</h2>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Best performing items
+
+</p>
+
+</div>
+
+
+
+<x-lucide-star
+class="
+w-5
+h-5
+text-yellow"/>
+
+
+</div>
+
+
+
+
+
+@if($topProducts->isEmpty())
+
+
+<div
+class="
+py-10
+text-center
+text-xs
+text-navy/30">
+
+No product data
+
+</div>
+
+
+
+@else
+
+
+
+<div
+class="
+space-y-4">
+
+
+@foreach($topProducts as $index=>$product)
+
+
+<div
+class="
+flex
+items-center
+gap-3">
+
+
+<div
+class="
+w-7
+h-7
+rounded-lg
+bg-navy/10
+flex
+items-center
+justify-center
+text-xs
+font-bold
+text-navy">
+
+
+{{ $index+1 }}
+
+
+</div>
+
+
+
+
+<div
+class="
+flex-1
+min-w-0">
+
+
+<p
+class="
+text-xs
+font-semibold
+text-navy
+truncate">
+
+
+{{ $product['name'] ?? 'Product' }}
+
+
+</p>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+
+{{ $product['sold'] ?? 0 }} sold
+
+
+</p>
+
+
+</div>
+
+
+
+
+<p
+class="
+text-xs
+font-bold
+text-teal-dark">
+
+
+₱{{ number_format($product['revenue'] ?? 0) }}
+
+
+</p>
+
+
+</div>
+
+
+@endforeach
+
+
+</div>
+
+
+
+@endif
+
+
+</div>
+
+
+
+
+</section>
+
+
+
+
+
+
+
+
+{{-- =========================================================
+STORE HEALTH + CUSTOMER AREA
+========================================================= --}}
+
+
+<section
+class="
+grid
+grid-cols-1
+md:grid-cols-3
+gap-5
+mb-5">
+
+
+
+
+
+{{-- STORE PERFORMANCE --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div
+class="
+flex
+items-center
+gap-2
+mb-4">
+
+
+<x-lucide-chart-no-axes-combined
+class="
+w-5
+h-5
+text-teal-dark"/>
+
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Store Performance
+
+</h2>
+
+
+</div>
+
+
+
+
+<div
+class="
+space-y-4">
+
+
+
+<div
+class="
+flex
+justify-between">
+
+
+<span
+class="
+text-xs
+text-navy/50">
+
+Rating
+
+</span>
+
+
+<strong
+class="
+text-sm
+text-navy">
+
+4.9 ⭐
+
+</strong>
+
+
+</div>
+
+
+
+<div
+class="
+h-1.5
+bg-gray-bg
+rounded-full">
+
+
+<div
+class="
+h-full
+bg-teal
+rounded-full"
+style="width:98%">
+</div>
+
+
+</div>
+
+
+
+
+
+
+<div
+class="
+flex
+justify-between">
+
+
+<span
+class="
+text-xs
+text-navy/50">
+
+Response Rate
+
+</span>
+
+
+<strong
+class="
+text-sm
+text-navy">
+
+98%
+
+</strong>
+
+
+</div>
+
+
+<div
+class="
+h-1.5
+bg-gray-bg
+rounded-full">
+
+
+<div
+class="
+h-full
+bg-sky
+rounded-full"
+style="width:98%">
+</div>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+flex
+justify-between">
+
+
+<span
+class="
+text-xs
+text-navy/50">
+
+Ship On Time
+
+</span>
+
+
+<strong
+class="
+text-sm
+text-navy">
+
+96%
+
+</strong>
+
+
+</div>
+
+
+<div
+class="
+h-1.5
+bg-gray-bg
+rounded-full">
+
+
+<div
+class="
+h-full
+bg-yellow
+rounded-full"
+style="width:96%">
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+
+
+{{-- CUSTOMER FEEDBACK --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div
+class="
+flex
+items-center
+gap-2
+mb-4">
+
+
+<x-lucide-message-circle
+class="
+w-5
+h-5
+text-sky"/>
+
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Customer Feedback
+
+</h2>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+text-center
+mb-5">
+
+
+<p
+class="
+text-3xl
+font-bold
+text-navy">
+
+4.9
+
+</p>
+
+
+<div
+class="
+text-yellow
+text-sm">
+
+★★★★★
+
+</div>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Average Seller Rating
+
+</p>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+space-y-3">
+
+
+<div
+class="
+bg-gray-bg
+rounded-xl
+p-3">
+
+
+<p
+class="
+text-xs
+text-navy/70">
+
+"Fast delivery and good packaging"
+
+</p>
+
+
+<p
+class="
+mt-1
+text-[9px]
+text-navy/35">
+
+Buyer feedback
+
+</p>
+
+
+</div>
+
+
+
+
+<div
+class="
+bg-gray-bg
+rounded-xl
+p-3">
+
+
+<p
+class="
+text-xs
+text-navy/70">
+
+"Product quality is excellent"
+
+</p>
+
+
+<p
+class="
+mt-1
+text-[9px]
+text-navy/35">
+
+Buyer feedback
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{{-- CHAT PREVIEW --}}
+
+
+<div
+class="
+bg-white
+border
+border-gray-border
+rounded-xl
+p-5">
+
+
+<div
+class="
+flex
+items-center
+justify-between
+mb-4">
+
+
+<div
+class="
+flex
+items-center
+gap-2">
+
+
+<x-lucide-messages-square
+class="
+w-5
+h-5
+text-teal-dark"/>
+
+
+<h2
+class="
+text-sm
+font-bold
+text-navy">
+
+Messages
+
+</h2>
+
+
+</div>
+
+
+
+<span
+class="
+text-[9px]
+bg-coral/10
+text-coral
+px-2
+py-1
+rounded-full
+font-semibold">
+
+
+3 unread
+
+
+</span>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+space-y-3">
+
+
+<div
+class="
+flex
+gap-3">
+
+
+<div
+class="
+w-8
+h-8
+rounded-full
+bg-teal/10
+flex
+items-center
+justify-center">
+
+
+<x-lucide-user
+class="
+w-4
+h-4
+text-teal-dark"/>
+
+
+</div>
+
+
+<div>
+
+
+<p
+class="
+text-xs
+font-semibold
+text-navy">
+
+Juan
+
+</p>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+Available po ba?
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+flex
+gap-3">
+
+
+<div
+class="
+w-8
+h-8
+rounded-full
+bg-sky/10
+flex
+items-center
+justify-center">
+
+
+<x-lucide-user
+class="
+w-4
+h-4
+text-sky"/>
+
+
+</div>
+
+
+<div>
+
+
+<p
+class="
+text-xs
+font-semibold
+text-navy">
+
+Maria
+
+</p>
+
+
+<p
+class="
+text-[10px]
+text-navy/40">
+
+When will this ship?
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+<a
+href="{{ route('seller.chat') }}"
+class="
+mt-5
+block
+text-center
+text-xs
+font-semibold
+text-teal-dark">
+
+
+Open Messages →
+
+</a>
+
+
+
+</div>
+
+
+
+
+</section>
+
+{{-- =========================================================
+QUICK ACTION FOOTER PANEL
+========================================================= --}}
+
+<section class="mb-5">
+
+
+<div
+class="
+bg-navy
+rounded-xl
+p-5
+text-white
+relative
+overflow-hidden">
+
+
+{{-- decorative --}}
+
+<div
+class="
+absolute
+-right-20
+-top-20
+w-60
+h-60
+rounded-full
+bg-teal/10
+blur-3xl">
+</div>
+
+
+
+
+<div
+class="
+relative
+flex
+flex-col
+lg:flex-row
+lg:items-center
+lg:justify-between
+gap-5">
+
+
+
+<div>
+
+
+<p
+class="
+text-[10px]
+uppercase
+tracking-[0.2em]
+text-white/40
+font-semibold">
+
+Quick Actions
+
+</p>
+
+
+<h2
+class="
+mt-1
+text-xl
+font-bold">
+
+Manage your store faster
+
+</h2>
+
+
+<p
+class="
+mt-2
+text-xs
+text-white/50">
+
+Access your most used seller tools.
+
+</p>
+
+
+</div>
+
+
+
+
+
+<div
+class="
+grid
+grid-cols-2
+sm:grid-cols-4
+gap-3">
+
+
+
+<a
+href="{{ route('seller.inventory') }}"
+class="
+px-4
+py-3
+rounded-xl
+bg-white/10
+hover:bg-white/20
+transition
+text-xs
+font-semibold
+flex
+items-center
+gap-2">
+
+
+<x-lucide-package
+class="w-4 h-4 text-teal"/>
+
+Inventory
+
+
+</a>
+
+
+
+
+<a
+href="{{ route('seller.orders.notifications') }}"
+class="
+px-4
+py-3
+rounded-xl
+bg-white/10
+hover:bg-white/20
+transition
+text-xs
+font-semibold
+flex
+items-center
+gap-2">
+
+
+<x-lucide-shopping-bag
+class="w-4 h-4 text-sky"/>
+
+Orders
+
+
+</a>
+
+
+
+
+
+<a
+href="{{ route('seller.reports') }}"
+class="
+px-4
+py-3
+rounded-xl
+bg-white/10
+hover:bg-white/20
+transition
+text-xs
+font-semibold
+flex
+items-center
+gap-2">
+
+
+<x-lucide-file-chart-column
+class="w-4 h-4 text-yellow"/>
+
+Reports
+
+
+</a>
+
+
+
+
+
+<a
+href="{{ route('seller.chat') }}"
+class="
+px-4
+py-3
+rounded-xl
+bg-white/10
+hover:bg-white/20
+transition
+text-xs
+font-semibold
+flex
+items-center
+gap-2">
+
+
+<x-lucide-messages-square
+class="w-4 h-4 text-coral"/>
+
+Chat
+
+
+</a>
+
+
+
+</div>
+
+
+</div>
+
+
+</div>
+
+
+</section>
+
+
+
+
+
+
+{{-- =========================================================
+RESPONSIVE DASHBOARD POLISH
+========================================================= --}}
+
+
+<style>
+
+
+#sellerDashboard {
+
+
+animation:
+sellerFade .35s ease;
+
+
+}
+
+
+
+@keyframes sellerFade {
+
+
+from {
+
+opacity:0;
+transform:
+translateY(8px);
+
+}
+
+
+to {
+
+opacity:1;
+transform:
+translateY(0);
+
+}
+
+
+}
+
+
+
+
+#sellerDashboard .hover-card {
+
+
+transition:
+transform .2s ease,
+box-shadow .2s ease;
+
+
+}
+
+
+
+@media(max-width:768px){
+
+
+#sellerDashboard h1 {
+
+
+font-size:
+1.25rem;
+
+
+}
+
+
+
+#sellerDashboard
+table {
+
+
+min-width:
+650px;
+
+
+}
+
+
+}
+
+
+
+</style>
+
+
+
+
+
+
+{{-- =========================================================
+DASHBOARD LIVE INTERACTION SCRIPT
+========================================================= --}}
+
+
+<script>
+
+
+document.addEventListener(
+'DOMContentLoaded',
+function(){
+
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTO UPDATE CLOCK
+|--------------------------------------------------------------------------
+*/
+
+
+const dateTargets =
+document.querySelectorAll(
+'[data-live-time]'
+);
+
+
+
+function updateTime(){
+
+
+dateTargets.forEach(
+item=>{
+
+
+item.innerText =
+new Date()
+.toLocaleTimeString();
+
+
+});
+
+
+}
+
+
+
+setInterval(
+updateTime,
+1000
+);
+
+
+
+
+
+
+/*
+|--------------------------------------------------------------------------
+| CARD CLICK FEEDBACK
+|--------------------------------------------------------------------------
+*/
+
+
+document
+.querySelectorAll(
+'#sellerDashboard a'
+)
+.forEach(
+link=>{
+
+
+link.addEventListener(
+'mouseenter',
+()=>{
+
+
+link.classList.add(
+'scale-[1.01]'
+);
+
+
+});
+
+
+link.addEventListener(
+'mouseleave',
+()=>{
+
+
+link.classList.remove(
+'scale-[1.01]'
+);
+
+
+});
+
+
+});
+
+
+});
+
+</script>
+
+
+
 
 @endsection
