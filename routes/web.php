@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
+use App\Http\Controllers\Admin\AccountManagementController;
 
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 
@@ -148,20 +149,22 @@ Route::get('/admin/settings', function () {
 })->name('admin.settings');
 
 
-Route::get('/admin/accounts', function () {
-    return view('admin.account-management');
-})->name('admin.accounts');
+Route::get('/admin/accounts', [AccountManagementController::class, 'index'])
+    ->name('admin.accounts');
+
+Route::post('/admin/accounts', [AccountManagementController::class, 'store'])
+    ->name('admin.accounts.store');
+
+Route::patch('/admin/accounts/{admin}/disable', [AccountManagementController::class, 'disable'])
+    ->name('admin.accounts.disable');
+
+Route::patch('/admin/accounts/{admin}/enable', [AccountManagementController::class, 'enable'])
+    ->name('admin.accounts.enable');
 
 
 Route::get('/admin/logout', function () {
     return redirect('/');
 })->name('admin.logout');
-
-Route::post('/admin/users/{user}/approve', [UserAccountController::class, 'approve'])
-    ->name('admin.users.approve');
-
-Route::post('/admin/users/{user}/reject', [UserAccountController::class, 'reject'])
-    ->name('admin.users.reject');
 
 Route::get('commissions/export-pdf', [CommissionController::class, 'exportPdf'])
     ->name('admin.commissions.export-pdf');

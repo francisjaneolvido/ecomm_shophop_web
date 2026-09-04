@@ -7,36 +7,162 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class UserAccountController extends Controller
 {
+    /**
+     * Approved & suspended Buyer/Seller/Logistics accounts.
+     * (Pending/rejected applications live on the separate
+     * Account Registrations page.)
+     */
     public function index(Request $request): View
     {
         $filter = $request->query('filter', 'all');
+        $sort = $request->query('sort', 'newest');
+        $search = $request->query('search');
 
-        $query = User::with(['buyer', 'seller', 'logisticsPartner'])
+        $base = User::with(['buyer', 'seller', 'logisticsPartner'])
             ->where('account_type', '!=', 'admin')
-            ->latest();
+            ->whereIn('status', ['approved', 'suspended']);
+
+        $counts = [
+            'all' => (clone $base)->count(),
+            'buyers' => (clone $base)->where('account_type', 'buyer')->count(),
+            'sellers' => (clone $base)->where('account_type', 'seller')->count(),
+            'logistics' => (clone $base)->where('account_type', 'logistics')->count(),
+            'suspended' => (clone $base)->where('status', 'suspended')->count(),
+        ];
+
+        $query = clone $base;
 
         $query->when($filter === 'buyers', fn ($q) => $q->where('account_type', 'buyer'))
             ->when($filter === 'sellers', fn ($q) => $q->where('account_type', 'seller'))
             ->when($filter === 'logistics', fn ($q) => $q->where('account_type', 'logistics'))
-            ->when($filter === 'pending', fn ($q) => $q->where('status', 'pending'))
             ->when($filter === 'suspended', fn ($q) => $q->where('status', 'suspended'));
 
-        $users = $query->paginate(15)->withQueryString();
+        $all = $query->get();
 
-        $counts = [
-            'all' => User::where('account_type', '!=', 'admin')->count(),
-            'buyers' => User::where('account_type', 'buyer')->count(),
-            'sellers' => User::where('account_type', 'seller')->count(),
-            'pending' => User::where('status', 'pending')->count(),
-            'suspended' => User::where('status', 'suspended')->count(),
+        if ($search) {
+            $needle = strtolower($search);
+            $all = $all->filter(fn (User $u) => str_contains(strtolower($u->display_name), $needle)
+                || str_contains(strtolower($u->email), $needle));
+        }
+
+        $all = (match ($sort) {
+            'oldest' => $all->sortBy('created_at'),
+            'az' => $all->sortBy(fn (User $u) => strtolower($u->display_name)),
+            'za' => $all->sortByDesc(fn (User $u) => strtolower($u->display_name)),
+            default => $all->sortByDesc('created_at'),
+        })->values();
+
+        $perPage = 10;
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $users = new LengthAwarePaginator(
+            $all->forPage($page, $perPage)->values(),
+            $all->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()],
+        );
+
+        $usersForJs = $users->getCollection()->map(fn (User $u) => $this->toJsUser($u))->values();
+
+        return view('admin.user-accounts', compact('users', 'filter', 'sort', 'counts', 'usersForJs'));
+    }
+
+    /**
+     * Shape a User (with relations already loaded) into the flat structure
+     * the details modal's JavaScript expects.
+     */
+    private function toJsUser(User $user): array
+    {
+        $fileUrl = fn (?string $path) => $path ? Storage::url($path) : null;
+
+        $phone = null;
+        $address = null;
+        $sex = null;
+        $birthday = null;
+        $age = null;
+        $businessName = null;
+        $businessCategory = null;
+        $documents = [];
+
+        if ($user->account_type === 'buyer' && $user->buyer) {
+            $b = $user->buyer;
+            $phone = $b->contact_no;
+            $address = collect([$b->street_address, $b->barangay_name, $b->municipality_name, $b->province_name])
+                ->filter()->implode(', ');
+            $sex = $b->sex;
+            $birthday = $b->birthday?->format('M d, Y');
+            $age = $b->birthday?->age;
+            $documents = [
+                ['label' => 'Valid ID', 'url' => $fileUrl($b->valid_id_path)],
+            ];
+        }
+
+        if ($user->account_type === 'seller' && $user->seller) {
+            $s = $user->seller;
+            $phone = $s->contact_no;
+            $address = collect([$s->street_address, $s->barangay_name, $s->municipality_name, $s->province_name])
+                ->filter()->implode(', ');
+            $sex = $s->sex;
+            $birthday = $s->birthday?->format('M d, Y');
+            $age = $s->birthday?->age;
+            $businessName = $s->business_name;
+            $businessCategory = $s->business_category;
+            $documents = [
+                ['label' => 'Valid ID', 'url' => $fileUrl($s->valid_id_path)],
+                ['label' => 'Business Permit', 'url' => $fileUrl($s->business_permit_path)],
+            ];
+        }
+
+        if ($user->account_type === 'logistics' && $user->logisticsPartner) {
+            $l = $user->logisticsPartner;
+            $phone = $l->contact_no;
+            $address = collect([$l->unit_no, $l->street_no, $l->barangay, $l->municipality, $l->province, $l->region])
+                ->filter()->implode(', ');
+            $sex = $l->rep_sex;
+            $birthday = $l->rep_birthday?->format('M d, Y');
+            $age = $l->rep_birthday?->age;
+            $businessName = $l->company_name;
+            $businessCategory = str_replace('_', ' ', $l->line_of_business ?? '');
+            $documents = [
+                ['label' => 'Representative Valid ID', 'url' => $fileUrl($l->rep_valid_id_path)],
+                ['label' => 'Business Permit', 'url' => $fileUrl($l->business_permit_path)],
+                ['label' => 'Accreditation Docs', 'url' => $fileUrl($l->accreditation_docs_path)],
+                ['label' => 'Agreement Signature', 'url' => $fileUrl($l->agreement_signature_path)],
+            ];
+        }
+
+        return [
+            'id' => $user->id,
+            'initials' => $user->initials,
+            'display_name' => $user->display_name,
+            'email' => $user->email,
+            'phone' => $phone,
+            'address' => $address ?: null,
+            'account_type' => $user->account_type,
+            'status' => $user->status,
+            'verified' => $user->status === 'approved',
+            'sex' => $sex,
+            'birthday' => $birthday,
+            'age' => $age,
+            'business_name' => $businessName,
+            'business_category' => $businessCategory,
+            'joined' => $user->created_at->format('M d, Y').' · '.$user->created_at->diffForHumans(),
+            'last_login' => $user->last_login_at?->diffForHumans() ?? 'Never logged in yet',
+            'account_no' => '#'.str_pad((string) $user->id, 6, '0', STR_PAD_LEFT),
+            // Not backed by real tables yet — the modal shows an honest
+            // "not tracked yet" placeholder for these instead of fake numbers.
+            'stats' => null,
+            'notes' => null,
+            'activity' => [],
+            'documents' => array_values(array_filter($documents, fn ($d) => $d['url'] !== null)),
+            'reports' => [],
         ];
-
-        return view('admin.user-accounts', compact('users', 'filter', 'counts'));
     }
 
     /**
