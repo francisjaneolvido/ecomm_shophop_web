@@ -4,179 +4,162 @@
 
 @section('content')
 
-@php
+    @php
 
-/*
+        /*
 |--------------------------------------------------------------------------
 | SAFE DEFAULT DATA
 |--------------------------------------------------------------------------
 */
 
-$newOrders = $newOrders ?? 0;
-$ordersToPrepare = $ordersToPrepare ?? 0;
-$lowStockCount = $lowStockCount ?? 0;
+        $newOrders = $newOrders ?? 0;
+        $ordersToPrepare = $ordersToPrepare ?? 0;
+        $lowStockCount = $lowStockCount ?? 0;
 
-$revenueToday = $revenueToday ?? 0;
-$revenueMonth = $revenueMonth ?? 0;
+        $revenueToday = $revenueToday ?? 0;
+        $revenueMonth = $revenueMonth ?? 0;
 
-$revenueChangePct = $revenueChangePct ?? 0;
+        $revenueChangePct = $revenueChangePct ?? 0;
 
-$recentOrders = collect($recentOrders ?? []);
-$lowStockProducts = collect($lowStockProducts ?? []);
-$topProducts = collect($topProducts ?? []);
+        $recentOrders = collect($recentOrders ?? []);
+        $lowStockProducts = collect($lowStockProducts ?? []);
+        $topProducts = collect($topProducts ?? []);
 
-$weeklySales = collect($weeklySales ?? []);
+        $weeklySales = collect($weeklySales ?? []);
 
-$orderPipeline = $orderPipeline ?? [
-    'placed' => 0,
-    'confirmed' => 0,
-    'preparing' => 0,
-    'ready' => 0,
-    'picked_up' => 0,
-    'delivery' => 0,
-    'completed' => 0,
-];
+        $orderPipeline = $orderPipeline ?? [
+            'placed' => 0,
+            'confirmed' => 0,
+            'preparing' => 0,
+            'ready' => 0,
+            'picked_up' => 0,
+            'delivery' => 0,
+            'completed' => 0,
+        ];
 
+        $authSeller = auth()->user();
 
-$authSeller = auth()->user();
+        $sellerName =
+            $authSeller?->name ?? ($authSeller?->email ? ucfirst(explode('@', $authSeller->email)[0]) : 'Seller');
 
-$sellerName =
-    $authSeller?->name
-    ?? ($authSeller?->email
-        ? ucfirst(explode('@',$authSeller->email)[0])
-        : 'Seller');
+        $hour = now()->hour;
 
+        $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
 
-$hour = now()->hour;
+        $attentionCount = $newOrders + $lowStockCount;
 
-$greeting =
-    $hour < 12
-        ? 'Good morning'
-        : ($hour < 18
-            ? 'Good afternoon'
-            : 'Good evening');
-
-
-$attentionCount =
-    $newOrders
-    + $lowStockCount;
-
-
-/*
+        /*
 |--------------------------------------------------------------------------
 | PIPELINE STYLE
 |--------------------------------------------------------------------------
 */
 
-$pipelineConfig = [
+        $pipelineConfig = [
+            'placed' => [
+                'label' => 'New Orders',
+                'icon' => 'bell-ring',
+                'color' => 'bg-teal/10 text-teal-dark',
+                'bar' => 'bg-teal',
+            ],
 
-    'placed'=>[
-        'label'=>'New Orders',
-        'icon'=>'bell-ring',
-        'color'=>'bg-teal/10 text-teal-dark',
-        'bar'=>'bg-teal'
-    ],
+            'confirmed' => [
+                'label' => 'Confirmed',
+                'icon' => 'badge-check',
+                'color' => 'bg-sky/10 text-sky',
+                'bar' => 'bg-sky',
+            ],
 
-    'confirmed'=>[
-        'label'=>'Confirmed',
-        'icon'=>'badge-check',
-        'color'=>'bg-sky/10 text-sky',
-        'bar'=>'bg-sky'
-    ],
+            'preparing' => [
+                'label' => 'Preparing',
+                'icon' => 'box',
+                'color' => 'bg-yellow/20 text-amber-700',
+                'bar' => 'bg-yellow',
+            ],
 
-    'preparing'=>[
-        'label'=>'Preparing',
-        'icon'=>'box',
-        'color'=>'bg-yellow/20 text-amber-700',
-        'bar'=>'bg-yellow'
-    ],
+            'ready' => [
+                'label' => 'Ready Pickup',
+                'icon' => 'package-check',
+                'color' => 'bg-coral/10 text-coral',
+                'bar' => 'bg-coral',
+            ],
 
-    'ready'=>[
-        'label'=>'Ready Pickup',
-        'icon'=>'package-check',
-        'color'=>'bg-coral/10 text-coral',
-        'bar'=>'bg-coral'
-    ],
+            'picked_up' => [
+                'label' => 'Picked Up',
+                'icon' => 'truck',
+                'color' => 'bg-navy/10 text-navy',
+                'bar' => 'bg-navy',
+            ],
 
-    'picked_up'=>[
-        'label'=>'Picked Up',
-        'icon'=>'truck',
-        'color'=>'bg-navy/10 text-navy',
-        'bar'=>'bg-navy'
-    ],
+            'delivery' => [
+                'label' => 'Out Delivery',
+                'icon' => 'map-pin',
+                'color' => 'bg-sky/10 text-sky',
+                'bar' => 'bg-sky',
+            ],
 
-    'delivery'=>[
-        'label'=>'Out Delivery',
-        'icon'=>'map-pin',
-        'color'=>'bg-sky/10 text-sky',
-        'bar'=>'bg-sky'
-    ],
+            'completed' => [
+                'label' => 'Completed',
+                'icon' => 'circle-check',
+                'color' => 'bg-teal-light text-teal-dark',
+                'bar' => 'bg-teal',
+            ],
+        ];
 
-    'completed'=>[
-        'label'=>'Completed',
-        'icon'=>'circle-check',
-        'color'=>'bg-teal-light text-teal-dark',
-        'bar'=>'bg-teal'
-    ],
-
-];
-
-
-@endphp
+    @endphp
 
 
 
-<div id="sellerDashboard">
+    <div id="sellerDashboard">
 
 
-{{-- =========================================================
+        {{-- =========================================================
 HEADER
 ========================================================= --}}
 
-<section class="mb-5">
+        <section class="mb-5">
 
-<div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
-
-
-<div>
+            <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
 
 
-<div class="flex items-center gap-2 mb-2">
+                <div>
 
-<span class="w-2 h-2 rounded-full bg-teal animate-pulse"></span>
 
-<p class="
+                    <div class="flex items-center gap-2 mb-2">
+
+                        <span class="w-2 h-2 rounded-full bg-teal animate-pulse"></span>
+
+                        <p class="
 text-[10px]
 uppercase
 tracking-[0.18em]
 font-bold
 text-teal-dark">
 
-ShopHop Seller
+                            ShopHop Seller
 
-</p>
+                        </p>
 
-</div>
-
-
-
-<div class="flex flex-wrap items-center gap-3">
+                    </div>
 
 
-<h1 class="
+
+                    <div class="flex flex-wrap items-center gap-3">
+
+
+                        <h1 class="
 text-2xl
 font-bold
 text-navy">
 
-{{ $greeting }}, {{ $sellerName }}
+                            {{ $greeting }}, {{ $sellerName }}
 
-</h1>
+                        </h1>
 
 
 
-@if($attentionCount > 0)
-
-<span class="
+                        @if ($attentionCount > 0)
+                            <span
+                                class="
 inline-flex
 items-center
 gap-1
@@ -188,18 +171,15 @@ text-coral
 text-[10px]
 font-semibold">
 
-<x-lucide-circle-alert class="w-3 h-3"/>
+                                <x-lucide-circle-alert class="w-3 h-3" />
 
-{{ $attentionCount }}
-Need Attention
+                                {{ $attentionCount }}
+                                Need Attention
 
-</span>
-
-
-@else
-
-
-<span class="
+                            </span>
+                        @else
+                            <span
+                                class="
 inline-flex
 items-center
 gap-1
@@ -211,41 +191,38 @@ text-teal-dark
 text-[10px]
 font-semibold">
 
-<x-lucide-circle-check class="w-3 h-3"/>
+                                <x-lucide-circle-check class="w-3 h-3" />
 
-All caught up
+                                All caught up
 
-</span>
-
-
-@endif
+                            </span>
+                        @endif
 
 
-</div>
+                    </div>
 
 
 
-<p class="
+                    <p class="
 mt-2
 text-xs
 text-navy/40">
 
-Manage orders, inventory, sales, and customer activity.
+                        Manage orders, inventory, sales, and customer activity.
 
-</p>
-
-
-</div>
+                    </p>
 
 
+                </div>
 
 
-<div class="flex gap-2">
 
 
-<a
-href="{{ route('seller.reports') }}"
-class="
+                <div class="flex gap-2">
+
+
+                    <a href="{{ route('seller.reports') }}"
+                        class="
 h-9
 px-4
 rounded-lg
@@ -262,17 +239,16 @@ hover:border-teal/40
 transition">
 
 
-<x-lucide-chart-column class="w-4 h-4"/>
+                        <x-lucide-chart-column class="w-4 h-4" />
 
-Reports
+                        Reports
 
-</a>
+                    </a>
 
 
 
-<a
-href="{{ route('seller.inventory') }}"
-class="
+                    <a href="{{ route('seller.inventory') }}"
+                        class="
 h-9
 px-4
 rounded-lg
@@ -287,33 +263,33 @@ hover:bg-navy-light
 transition">
 
 
-<x-lucide-plus class="w-4 h-4"/>
+                        <x-lucide-plus class="w-4 h-4" />
 
-Add Product
+                        Add Product
 
-</a>
-
-
-</div>
+                    </a>
 
 
-</div>
-
-</section>
+                </div>
 
 
+            </div>
+
+        </section>
 
 
 
-{{-- =========================================================
+
+
+        {{-- =========================================================
 KPI CARDS
 ========================================================= --}}
 
 
-<section class="mb-5">
+        <section class="mb-5">
 
 
-<div class="
+            <div class="
 grid
 grid-cols-2
 xl:grid-cols-4
@@ -321,10 +297,9 @@ gap-4">
 
 
 
-{{-- NEW ORDERS --}}
+                {{-- NEW ORDERS --}}
 
-<div
-class="
+                <div class="
 bg-white
 border
 border-gray-border
@@ -334,14 +309,13 @@ hover:shadow-soft
 transition">
 
 
-<div class="
+                    <div class="
 flex
 justify-between
 items-start">
 
 
-<div
-class="
+                        <div class="
 w-10
 h-10
 rounded-lg
@@ -352,14 +326,14 @@ items-center
 justify-center">
 
 
-<x-lucide-bell-ring class="w-5 h-5"/>
+                            <x-lucide-bell-ring class="w-5 h-5" />
 
 
-</div>
+                        </div>
 
 
 
-<span class="
+                        <span class="
 text-[9px]
 font-semibold
 bg-teal/10
@@ -368,47 +342,46 @@ px-2
 py-1
 rounded-full">
 
-NEW
+                            NEW
 
-</span>
-
-
-
-</div>
+                        </span>
 
 
 
-<p class="
+                    </div>
+
+
+
+                    <p class="
 mt-4
 text-2xl
 font-bold
 text-navy">
 
-{{ number_format($newOrders) }}
+                        {{ number_format($newOrders) }}
 
-</p>
+                    </p>
 
 
-<p class="
+                    <p class="
 text-xs
 text-navy/50">
 
-New Orders
+                        New Orders
 
-</p>
-
-
-
-</div>
+                    </p>
 
 
 
+                </div>
 
 
-{{-- PREPARE --}}
 
-<div
-class="
+
+
+                {{-- PREPARE --}}
+
+                <div class="
 bg-white
 border
 border-gray-border
@@ -418,8 +391,7 @@ hover:shadow-soft
 transition">
 
 
-<div
-class="
+                    <div class="
 w-10
 h-10
 rounded-lg
@@ -430,43 +402,42 @@ items-center
 justify-center">
 
 
-<x-lucide-box class="w-5 h-5"/>
+                        <x-lucide-box class="w-5 h-5" />
 
-</div>
+                    </div>
 
 
 
-<p class="
+                    <p class="
 mt-4
 text-2xl
 font-bold
 text-navy">
 
-{{ number_format($ordersToPrepare) }}
+                        {{ number_format($ordersToPrepare) }}
 
-</p>
+                    </p>
 
 
-<p class="
+                    <p class="
 text-xs
 text-navy/50">
 
-Orders To Prepare
+                        Orders To Prepare
 
-</p>
-
-
-</div>
+                    </p>
 
 
+                </div>
 
 
 
-{{-- STOCK --}}
 
 
-<div
-class="
+                {{-- STOCK --}}
+
+
+                <div class="
 bg-white
 border
 border-gray-border
@@ -476,8 +447,7 @@ hover:shadow-soft
 transition">
 
 
-<div
-class="
+                    <div class="
 w-10
 h-10
 rounded-lg
@@ -488,44 +458,43 @@ items-center
 justify-center">
 
 
-<x-lucide-triangle-alert class="w-5 h-5"/>
+                        <x-lucide-triangle-alert class="w-5 h-5" />
 
-</div>
+                    </div>
 
 
 
-<p class="
+                    <p class="
 mt-4
 text-2xl
 font-bold
 text-navy">
 
-{{ number_format($lowStockCount) }}
+                        {{ number_format($lowStockCount) }}
 
-</p>
+                    </p>
 
 
-<p class="
+                    <p class="
 text-xs
 text-navy/50">
 
-Low Stock
+                        Low Stock
 
-</p>
-
-
-</div>
+                    </p>
 
 
+                </div>
 
 
 
 
-{{-- REVENUE --}}
 
 
-<div
-class="
+                {{-- REVENUE --}}
+
+
+                <div class="
 bg-white
 border
 border-gray-border
@@ -535,8 +504,7 @@ hover:shadow-soft
 transition">
 
 
-<div
-class="
+                    <div class="
 w-10
 h-10
 rounded-lg
@@ -547,57 +515,56 @@ items-center
 justify-center">
 
 
-<x-lucide-wallet class="w-5 h-5"/>
+                        <x-lucide-wallet class="w-5 h-5" />
 
-</div>
+                    </div>
 
 
 
-<p class="
+                    <p class="
 mt-4
 text-xl
 font-bold
 text-navy">
 
-₱{{ number_format($revenueMonth,2) }}
+                        ₱{{ number_format($revenueMonth, 2) }}
 
-</p>
+                    </p>
 
 
-<p class="
+                    <p class="
 text-xs
 text-navy/50">
 
-Monthly Revenue
+                        Monthly Revenue
 
-</p>
-
-
-</div>
+                    </p>
 
 
-
-
-</div>
-
-
-</section>
+                </div>
 
 
 
 
+            </div>
 
 
-{{-- =========================================================
+        </section>
+
+
+
+
+
+
+        {{-- =========================================================
 ACTION CENTER
 ========================================================= --}}
 
 
-<section class="mb-5">
+        <section class="mb-5">
 
 
-<div
-class="
+            <div class="
 bg-white
 border
 border-gray-border
@@ -605,184 +572,183 @@ rounded-xl
 p-5">
 
 
-<div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-4">
 
 
-<div>
+                    <div>
 
-<h2 class="
+                        <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Action Center
+                            Action Center
 
-</h2>
+                        </h2>
 
 
-<p class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-Tasks that need your attention
+                            Tasks that need your attention
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
-<x-lucide-zap class="
+
+
+                    <x-lucide-zap class="
 w-5
 h-5
-text-teal-dark"/>
+text-teal-dark" />
 
 
-</div>
+                </div>
 
 
 
-<div class="
+                <div class="
 grid
 grid-cols-2
 lg:grid-cols-4
 gap-3">
 
 
-<div class="
+                    <div class="
 rounded-xl
 bg-teal/10
 p-3">
 
 
-<p class="
+                        <p class="
 text-xl
 font-bold
 text-teal-dark">
 
-{{ $newOrders }}
+                            {{ $newOrders }}
 
-</p>
+                        </p>
 
 
-<p class="
+                        <p class="
 text-[10px]
 text-navy/50">
 
-Confirm Orders
+                            Confirm Orders
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
-<div class="
+
+
+                    <div class="
 rounded-xl
 bg-coral/10
 p-3">
 
 
-<p class="
+                        <p class="
 text-xl
 font-bold
 text-coral">
 
-{{ $ordersToPrepare }}
+                            {{ $ordersToPrepare }}
 
-</p>
+                        </p>
 
 
-<p class="
+                        <p class="
 text-[10px]
 text-navy/50">
 
-Pack Items
+                            Pack Items
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
 
-<div class="
+
+
+                    <div class="
 rounded-xl
 bg-yellow/20
 p-3">
 
 
-<p class="
+                        <p class="
 text-xl
 font-bold
 text-amber-700">
 
-{{ $lowStockCount }}
+                            {{ $lowStockCount }}
 
-</p>
+                        </p>
 
 
-<p class="
+                        <p class="
 text-[10px]
 text-navy/50">
 
-Restock
+                            Restock
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
 
-<div class="
+
+
+                    <div class="
 rounded-xl
 bg-sky/10
 p-3">
 
 
-<p class="
+                        <p class="
 text-xl
 font-bold
 text-sky">
 
-0
+                            0
 
-</p>
+                        </p>
 
 
-<p class="
+                        <p class="
 text-[10px]
 text-navy/50">
 
-Unread Messages
+                            Unread Messages
 
-</p>
-
-
-</div>
+                        </p>
 
 
-</div>
+                    </div>
 
 
-</div>
+                </div>
 
 
-</section>
-{{-- =========================================================
+            </div>
+
+
+        </section>
+        {{-- =========================================================
 ORDER PIPELINE
 ========================================================= --}}
 
-<section class="mb-5">
+        <section class="mb-5">
 
 
-<div
-class="
+            <div class="
 bg-white
 border
 border-gray-border
@@ -790,38 +756,37 @@ rounded-xl
 p-5">
 
 
-<div class="
+                <div class="
 flex
 items-center
 justify-between
 mb-5">
 
 
-<div>
+                    <div>
 
-<h2 class="
+                        <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Order Pipeline
+                            Order Pipeline
 
-</h2>
+                        </h2>
 
 
-<p class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-Track order movement from placement to completion
+                            Track order movement from placement to completion
 
-</p>
+                        </p>
 
-</div>
+                    </div>
 
 
-<div
-class="
+                    <div class="
 text-[10px]
 font-semibold
 text-teal-dark
@@ -831,19 +796,19 @@ py-1.5
 rounded-full">
 
 
-Live Status
+                        Live Status
 
 
-</div>
+                    </div>
 
 
-</div>
+                </div>
 
 
 
 
 
-<div class="
+                <div class="
 grid
 grid-cols-2
 md:grid-cols-4
@@ -851,10 +816,8 @@ xl:grid-cols-7
 gap-3">
 
 
-@foreach($pipelineConfig as $key=>$stage)
-
-<div
-class="
+                    @foreach ($pipelineConfig as $key => $stage)
+                        <div class="
 group
 rounded-xl
 border
@@ -864,14 +827,13 @@ hover:shadow-soft
 transition">
 
 
-<div class="
+                            <div class="
 flex
 items-center
 justify-between">
 
 
-<div
-class="
+                                <div class="
 w-8
 h-8
 rounded-lg
@@ -881,49 +843,44 @@ justify-center
 {{ $stage['color'] }}">
 
 
-<x-dynamic-component
-:component="'lucide-'.$stage['icon']"
-class="w-4 h-4"/>
+                                    <x-dynamic-component :component="'lucide-' . $stage['icon']" class="w-4 h-4" />
 
 
-</div>
+                                </div>
 
 
 
-<span
-class="
+                                <span class="
 text-lg
 font-bold
 text-navy">
 
 
-{{ $orderPipeline[$key] ?? 0 }}
+                                    {{ $orderPipeline[$key] ?? 0 }}
 
 
-</span>
+                                </span>
 
 
-</div>
+                            </div>
 
 
 
-<p
-class="
+                            <p class="
 mt-3
 text-[10px]
 font-semibold
 text-navy/60">
 
 
-{{ $stage['label'] }}
+                                {{ $stage['label'] }}
 
 
-</p>
+                            </p>
 
 
 
-<div
-class="
+                            <div class="
 mt-2
 h-1.5
 rounded-full
@@ -931,36 +888,33 @@ bg-gray-bg
 overflow-hidden">
 
 
-<div
-class="
+                                <div class="
 h-full
 rounded-full
 {{ $stage['bar'] }}"
-style="
+                                    style="
 width:
-{{ min(100, (($orderPipeline[$key] ?? 0) * 10)) }}%
+{{ min(100, ($orderPipeline[$key] ?? 0) * 10) }}%
 ">
 
-</div>
+                                </div>
 
 
-</div>
+                            </div>
 
 
-</div>
+                        </div>
+                    @endforeach
 
 
-@endforeach
-
-
-</div>
+                </div>
 
 
 
-</div>
+            </div>
 
 
-</section>
+        </section>
 
 
 
@@ -968,13 +922,12 @@ width:
 
 
 
-{{-- =========================================================
+        {{-- =========================================================
 MAIN CONTENT GRID
 ========================================================= --}}
 
 
-<section
-class="
+        <section class="
 grid
 grid-cols-1
 xl:grid-cols-[1.7fr_.8fr]
@@ -985,14 +938,13 @@ mb-5">
 
 
 
-{{-- =====================================================
+            {{-- =====================================================
 RECENT ORDERS
 ===================================================== --}}
 
 
 
-<div
-class="
+            <div class="
 bg-white
 border
 border-gray-border
@@ -1001,8 +953,7 @@ overflow-hidden">
 
 
 
-<div
-class="
+                <div class="
 px-5
 py-4
 border-b
@@ -1012,37 +963,34 @@ items-center
 justify-between">
 
 
-<div>
+                    <div>
 
 
-<h2
-class="
+                        <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Recent Orders
+                            Recent Orders
 
-</h2>
+                        </h2>
 
 
-<p
-class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-Latest buyer activity
+                            Latest buyer activity
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
-<a
-href="{{ route('seller.orders.notifications') }}"
-class="
+
+
+                    <a href="{{ route('seller.orders.notifications') }}"
+                        class="
 text-[10px]
 font-semibold
 text-teal-dark
@@ -1050,28 +998,26 @@ hover:text-teal
 ">
 
 
-View All →
+                        View All →
 
-</a>
-
-
-</div>
+                    </a>
 
 
+                </div>
 
 
 
-@if($recentOrders->isEmpty())
 
 
-<div
-class="
+                @if ($recentOrders->isEmpty())
+
+
+                    <div class="
 py-16
 text-center">
 
 
-<div
-class="
+                        <div class="
 w-12
 h-12
 mx-auto
@@ -1083,50 +1029,40 @@ justify-center
 text-navy/30">
 
 
-<x-lucide-package-search class="w-5 h-5"/>
+                            <x-lucide-package-search class="w-5 h-5" />
 
 
-</div>
+                        </div>
 
 
-<p
-class="
+                        <p class="
 mt-3
 text-xs
 font-semibold
 text-navy/50">
 
-No orders yet
+                            No orders yet
 
-</p>
-
-
-</div>
+                        </p>
 
 
-
-@else
-
-
-
-<div class="overflow-x-auto">
+                    </div>
+                @else
+                    <div class="overflow-x-auto">
 
 
-<table
-class="w-full">
+                        <table class="w-full">
 
 
-<thead>
+                            <thead>
 
 
-<tr
-class="
+                                <tr class="
 border-b
 border-gray-border">
 
 
-<th
-class="
+                                    <th class="
 px-5
 py-3
 text-left
@@ -1135,14 +1071,13 @@ uppercase
 text-navy/30">
 
 
-Order
+                                        Order
 
 
-</th>
+                                    </th>
 
 
-<th
-class="
+                                    <th class="
 px-5
 py-3
 text-left
@@ -1151,14 +1086,13 @@ uppercase
 text-navy/30">
 
 
-Buyer
+                                        Buyer
 
 
-</th>
+                                    </th>
 
 
-<th
-class="
+                                    <th class="
 px-5
 py-3
 text-left
@@ -1167,14 +1101,13 @@ uppercase
 text-navy/30">
 
 
-Amount
+                                        Amount
 
 
-</th>
+                                    </th>
 
 
-<th
-class="
+                                    <th class="
 px-5
 py-3
 text-left
@@ -1183,28 +1116,25 @@ uppercase
 text-navy/30">
 
 
-Status
+                                        Status
 
 
-</th>
+                                    </th>
 
 
-</tr>
+                                </tr>
 
 
-</thead>
+                            </thead>
 
 
 
 
-<tbody>
+                            <tbody>
 
 
-@foreach($recentOrders as $order)
-
-
-<tr
-class="
+                                @foreach ($recentOrders as $order)
+                                    <tr class="
 border-b
 border-gray-border
 hover:bg-gray-bg/60
@@ -1212,60 +1142,55 @@ transition">
 
 
 
-<td
-class="
+                                        <td class="
 px-5
 py-3">
 
 
-<p
-class="
+                                            <p class="
 text-xs
 font-semibold
 text-navy">
 
 
-#{{ $order['id'] ?? '----' }}
+                                                #{{ $order['id'] ?? '----' }}
 
 
-</p>
+                                            </p>
 
 
-<p
-class="
+                                            <p class="
 text-[9px]
 text-navy/35">
 
 
-{{ $order['placed_at'] ?? '' }}
+                                                {{ $order['placed_at'] ?? '' }}
 
 
-</p>
+                                            </p>
 
 
-</td>
+                                        </td>
 
 
 
 
-<td
-class="
+                                        <td class="
 px-5
 py-3
 text-xs
 text-navy/70">
 
 
-{{ $order['buyer_name'] ?? 'Buyer' }}
+                                            {{ $order['buyer_name'] ?? 'Buyer' }}
 
 
-</td>
+                                        </td>
 
 
 
 
-<td
-class="
+                                        <td class="
 px-5
 py-3
 text-xs
@@ -1273,29 +1198,27 @@ font-semibold
 text-navy">
 
 
-₱{{ number_format($order['total'] ?? 0,2) }}
+                                            ₱{{ number_format($order['total'] ?? 0, 2) }}
 
 
-</td>
-
-
-
-
-<td
-class="px-5 py-3">
-
-
-@php
-
-$status =
-$order['status'] ?? 'PLACED';
-
-@endphp
+                                        </td>
 
 
 
-<span
-class="
+
+                                        <td class="px-5 py-3">
+
+
+                                            @php
+
+                                                $status = $order['status'] ?? 'PLACED';
+
+                                            @endphp
+
+
+
+                                            <span
+                                                class="
 px-2
 py-1
 rounded-full
@@ -1305,37 +1228,35 @@ bg-teal/10
 text-teal-dark">
 
 
-{{ str_replace('_',' ',ucwords(strtolower($status))) }}
+                                                {{ str_replace('_', ' ', ucwords(strtolower($status))) }}
 
 
-</span>
+                                            </span>
 
 
-</td>
+                                        </td>
 
 
-</tr>
-
-
-@endforeach
-
-
-
-</tbody>
-
-
-</table>
-
-
-</div>
+                                    </tr>
+                                @endforeach
 
 
 
-@endif
+                            </tbody>
+
+
+                        </table>
+
+
+                    </div>
 
 
 
-</div>
+                @endif
+
+
+
+            </div>
 
 
 
@@ -1344,25 +1265,23 @@ text-teal-dark">
 
 
 
-{{-- =====================================================
+            {{-- =====================================================
 RIGHT SIDE
 ===================================================== --}}
 
 
 
-<div
-class="
+            <div class="
 space-y-5">
 
 
 
 
 
-{{-- INVENTORY HEALTH --}}
+                {{-- INVENTORY HEALTH --}}
 
 
-<div
-class="
+                <div class="
 bg-white
 border
 border-gray-border
@@ -1370,63 +1289,58 @@ rounded-xl
 p-5">
 
 
-<div
-class="
+                    <div class="
 flex
 items-center
 justify-between">
 
 
-<div>
+                        <div>
 
 
-<h2
-class="
+                            <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Inventory Health
+                                Inventory Health
 
-</h2>
+                            </h2>
 
 
-<p
-class="
+                            <p class="
 text-[10px]
 text-navy/40">
 
-Current stock condition
+                                Current stock condition
 
-</p>
-
-
-</div>
+                            </p>
 
 
-<x-lucide-box
-class="
+                        </div>
+
+
+                        <x-lucide-box class="
 w-5
 h-5
-text-teal-dark"/>
+text-teal-dark" />
 
 
-</div>
+                    </div>
 
 
 
 
 
-<div
-class="
+                    <div class="
 mt-5
 flex
 items-center
 gap-4">
 
 
-<div
-class="
+                        <div
+                            class="
 relative
 w-20
 h-20
@@ -1438,93 +1352,86 @@ items-center
 justify-center">
 
 
-<span
-class="
+                            <span class="
 text-lg
 font-bold
 text-navy">
 
-82%
+                                82%
 
-</span>
-
-
-</div>
+                            </span>
 
 
-
-<div
-class="space-y-2">
+                        </div>
 
 
-<div>
 
-<p
-class="
+                        <div class="space-y-2">
+
+
+                            <div>
+
+                                <p class="
 text-[10px]
 text-navy/40">
 
-Healthy Products
+                                    Healthy Products
 
-</p>
+                                </p>
 
-<p
-class="
+                                <p class="
 text-sm
 font-bold
 text-navy">
 
-{{ max(0,150-$lowStockCount) }}
+                                    {{ max(0, 150 - $lowStockCount) }}
 
-</p>
+                                </p>
 
-</div>
+                            </div>
 
 
 
-<div>
+                            <div>
 
-<p
-class="
+                                <p class="
 text-[10px]
 text-navy/40">
 
-Need Restock
+                                    Need Restock
 
-</p>
+                                </p>
 
-<p
-class="
+                                <p class="
 text-sm
 font-bold
 text-coral">
 
-{{ $lowStockCount }}
+                                    {{ $lowStockCount }}
 
-</p>
+                                </p>
 
-</div>
-
-
-</div>
+                            </div>
 
 
-
-</div>
-
-
-</div>
+                        </div>
 
 
+
+                    </div>
+
+
+                </div>
 
 
 
 
-{{-- COURIER TRACKER --}}
 
 
-<div
-class="
+                {{-- COURIER TRACKER --}}
+
+
+                <div class="
 bg-white
 border
 border-gray-border
@@ -1532,43 +1439,38 @@ rounded-xl
 p-5">
 
 
-<div
-class="
+                    <div class="
 flex
 items-center
 gap-2
 mb-4">
 
 
-<x-lucide-truck
-class="
+                        <x-lucide-truck class="
 w-5
 h-5
-text-sky"/>
+text-sky" />
 
 
-<h2
-class="
+                        <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Courier Pickup
+                            Courier Pickup
 
-</h2>
-
-
-</div>
+                        </h2>
 
 
+                    </div>
 
-<div
-class="
+
+
+                    <div class="
 space-y-3">
 
 
-<div
-class="
+                        <div class="
 flex
 justify-between
 items-center
@@ -1577,34 +1479,31 @@ rounded-lg
 bg-sky/10">
 
 
-<span
-class="
+                            <span class="
 text-[10px]
 text-navy/60">
 
-Ready Pickup
+                                Ready Pickup
 
-</span>
+                            </span>
 
 
-<strong
-class="
+                            <strong class="
 text-sm
 text-sky">
 
-{{ $orderPipeline['ready'] ?? 0 }}
+                                {{ $orderPipeline['ready'] ?? 0 }}
 
-</strong>
-
-
-</div>
+                            </strong>
 
 
+                        </div>
 
 
 
-<div
-class="
+
+
+                        <div class="
 flex
 justify-between
 items-center
@@ -1613,32 +1512,29 @@ rounded-lg
 bg-navy/10">
 
 
-<span
-class="
+                            <span class="
 text-[10px]
 text-navy/60">
 
-Picked Up
+                                Picked Up
 
-</span>
+                            </span>
 
 
-<strong
-class="
+                            <strong class="
 text-sm
 text-navy">
 
-{{ $orderPipeline['picked_up'] ?? 0 }}
+                                {{ $orderPipeline['picked_up'] ?? 0 }}
 
-</strong>
-
-
-</div>
+                            </strong>
 
 
+                        </div>
 
-<div
-class="
+
+
+                        <div class="
 flex
 justify-between
 items-center
@@ -1647,49 +1543,46 @@ rounded-lg
 bg-teal/10">
 
 
-<span
-class="
+                            <span class="
 text-[10px]
 text-navy/60">
 
-Completed
+                                Completed
 
-</span>
+                            </span>
 
 
-<strong
-class="
+                            <strong class="
 text-sm
 text-teal-dark">
 
-{{ $orderPipeline['completed'] ?? 0 }}
+                                {{ $orderPipeline['completed'] ?? 0 }}
 
-</strong>
-
-
-</div>
+                            </strong>
 
 
-</div>
+                        </div>
 
 
-</div>
+                    </div>
 
 
+                </div>
 
 
 
-</div>
 
 
-</section>
+            </div>
 
-{{-- =========================================================
+
+        </section>
+
+        {{-- =========================================================
 SALES ANALYTICS + PERFORMANCE
 ========================================================= --}}
 
-<section
-class="
+        <section class="
 grid
 grid-cols-1
 xl:grid-cols-[1.7fr_.8fr]
@@ -1700,13 +1593,12 @@ mb-5">
 
 
 
-{{-- =====================================================
+            {{-- =====================================================
 SALES OVERVIEW
 ===================================================== --}}
 
 
-<div
-class="
+            <div class="
 bg-white
 border
 border-gray-border
@@ -1714,44 +1606,40 @@ rounded-xl
 p-5">
 
 
-<div
-class="
+                <div class="
 flex
 items-center
 justify-between
 mb-5">
 
 
-<div>
+                    <div>
 
 
-<h2
-class="
+                        <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Sales Overview
+                            Sales Overview
 
-</h2>
+                        </h2>
 
 
-<p
-class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-Revenue performance this week
+                            Revenue performance this week
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
-<div
-class="
+
+
+                    <div class="
 px-3
 py-1.5
 rounded-lg
@@ -1761,20 +1649,19 @@ font-semibold
 text-navy/50">
 
 
-PHP ₱
+                        PHP ₱
 
 
-</div>
+                    </div>
 
 
-</div>
+                </div>
 
 
 
 
 
-<div
-class="
+                <div class="
 grid
 grid-cols-3
 gap-3
@@ -1782,124 +1669,114 @@ mb-6">
 
 
 
-<div
-class="
+                    <div class="
 rounded-xl
 bg-gray-bg
 p-3">
 
 
-<p
-class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-Today
+                            Today
 
-</p>
+                        </p>
 
 
-<p
-class="
+                        <p class="
 mt-1
 text-lg
 font-bold
 text-navy">
 
-₱{{ number_format($revenueToday,2) }}
+                            ₱{{ number_format($revenueToday, 2) }}
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
 
-<div
-class="
+
+
+                    <div class="
 rounded-xl
 bg-teal/10
 p-3">
 
 
-<p
-class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-This Month
+                            This Month
 
-</p>
+                        </p>
 
 
-<p
-class="
+                        <p class="
 mt-1
 text-lg
 font-bold
 text-teal-dark">
 
-₱{{ number_format($revenueMonth,2) }}
+                            ₱{{ number_format($revenueMonth, 2) }}
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
 
-<div
-class="
+
+
+                    <div class="
 rounded-xl
 bg-sky/10
 p-3">
 
 
-<p
-class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-Growth
+                            Growth
 
-</p>
+                        </p>
 
 
-<p
-class="
+                        <p class="
 mt-1
 text-lg
 font-bold
 text-sky">
 
 
-{{ $revenueChangePct }}%
+                            {{ $revenueChangePct }}%
 
 
-</p>
+                        </p>
 
 
-</div>
-
-
-
-</div>
+                    </div>
 
 
 
+                </div>
 
 
 
-{{-- SIMPLE SALES GRAPH --}}
 
 
-@if($weeklySales->isEmpty())
+
+                {{-- SIMPLE SALES GRAPH --}}
 
 
-<div
-class="
+                @if ($weeklySales->isEmpty())
+
+
+                    <div class="
 h-40
 flex
 items-center
@@ -1907,40 +1784,27 @@ justify-center
 text-xs
 text-navy/30">
 
-No sales data yet
+                        No sales data yet
 
-</div>
-
-
-@else
-
-
-
-<div
-class="
+                    </div>
+                @else
+                    <div class="
 h-40
 flex
 items-end
 gap-3">
 
 
-@php
+                        @php
 
-$maxSale =
-max(
-1,
-$weeklySales->max('amount')
-);
+                            $maxSale = max(1, $weeklySales->max('amount'));
 
-@endphp
+                        @endphp
 
 
 
-@foreach($weeklySales as $sale)
-
-
-<div
-class="
+                        @foreach ($weeklySales as $sale)
+                            <div class="
 flex-1
 flex
 flex-col
@@ -1951,22 +1815,20 @@ justify-end
 group">
 
 
-<div
-class="
+                                <div class="
 relative
 w-full
 rounded-t-lg
 bg-teal/20
 hover:bg-teal/40
 transition"
-style="
+                                    style="
 height:
-{{ max(8,(($sale['amount'] ?? 0)/$maxSale)*100) }}%
+{{ max(8, (($sale['amount'] ?? 0) / $maxSale) * 100) }}%
 ">
 
 
-<div
-class="
+                                    <div class="
 absolute
 bottom-0
 left-0
@@ -1975,39 +1837,36 @@ h-1
 bg-teal
 rounded-t-lg">
 
-</div>
+                                    </div>
 
 
-</div>
+                                </div>
 
 
-<span
-class="
+                                <span class="
 text-[9px]
 text-navy/40">
 
 
-{{ $sale['label'] ?? '' }}
+                                    {{ $sale['label'] ?? '' }}
 
 
-</span>
+                                </span>
 
 
-</div>
-
-
-@endforeach
-
-
-
-</div>
-
-
-@endif
+                            </div>
+                        @endforeach
 
 
 
-</div>
+                    </div>
+
+
+                @endif
+
+
+
+            </div>
 
 
 
@@ -2015,14 +1874,13 @@ text-navy/40">
 
 
 
-{{-- =====================================================
+            {{-- =====================================================
 TOP PRODUCTS
 ===================================================== --}}
 
 
 
-<div
-class="
+            <div class="
 bg-white
 border
 border-gray-border
@@ -2030,90 +1888,75 @@ rounded-xl
 p-5">
 
 
-<div
-class="
+                <div class="
 flex
 items-center
 justify-between
 mb-4">
 
 
-<div>
+                    <div>
 
-<h2
-class="
+                        <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Top Products
+                            Top Products
 
-</h2>
+                        </h2>
 
 
-<p
-class="
+                        <p class="
 text-[10px]
 text-navy/40">
 
-Best performing items
+                            Best performing items
 
-</p>
+                        </p>
 
-</div>
+                    </div>
 
 
 
-<x-lucide-star
-class="
+                    <x-lucide-star class="
 w-5
 h-5
-text-yellow"/>
+text-yellow" />
 
 
-</div>
+                </div>
 
 
 
 
 
-@if($topProducts->isEmpty())
+                @if ($topProducts->isEmpty())
 
 
-<div
-class="
+                    <div class="
 py-10
 text-center
 text-xs
 text-navy/30">
 
-No product data
+                        No product data
 
-</div>
-
-
-
-@else
-
-
-
-<div
-class="
+                    </div>
+                @else
+                    <div class="
 space-y-4">
 
 
-@foreach($topProducts as $index=>$product)
-
-
-<div
-class="
+                        @foreach ($topProducts as $index => $product)
+                            <div class="
 flex
 items-center
 gap-3">
 
 
-<div
-class="
+                                <div
+                                    class="
 w-7
 h-7
 rounded-lg
@@ -2126,83 +1969,77 @@ font-bold
 text-navy">
 
 
-{{ $index+1 }}
+                                    {{ $index + 1 }}
 
 
-</div>
+                                </div>
 
 
 
 
-<div
-class="
+                                <div class="
 flex-1
 min-w-0">
 
 
-<p
-class="
+                                    <p class="
 text-xs
 font-semibold
 text-navy
 truncate">
 
 
-{{ $product['name'] ?? 'Product' }}
+                                        {{ $product['name'] ?? 'Product' }}
 
 
-</p>
+                                    </p>
 
 
-<p
-class="
+                                    <p class="
 text-[10px]
 text-navy/40">
 
 
-{{ $product['sold'] ?? 0 }} sold
+                                        {{ $product['sold'] ?? 0 }} sold
 
 
-</p>
+                                    </p>
 
 
-</div>
+                                </div>
 
 
 
 
-<p
-class="
+                                <p class="
 text-xs
 font-bold
 text-teal-dark">
 
 
-₱{{ number_format($product['revenue'] ?? 0) }}
+                                    ₱{{ number_format($product['revenue'] ?? 0) }}
 
 
-</p>
+                                </p>
 
 
-</div>
+                            </div>
+                        @endforeach
 
 
-@endforeach
-
-
-</div>
+                    </div>
 
 
 
-@endif
+                @endif
 
 
-</div>
+            </div>
 
 
 
 
-</section>
+        </section>
 
 
 
@@ -2211,13 +2048,12 @@ text-teal-dark">
 
 
 
-{{-- =========================================================
+        {{-- =========================================================
 STORE HEALTH + CUSTOMER AREA
 ========================================================= --}}
 
 
-<section
-class="
+        <section class="
 grid
 grid-cols-1
 md:grid-cols-3
@@ -2228,11 +2064,10 @@ mb-5">
 
 
 
-{{-- STORE PERFORMANCE --}}
+            {{-- STORE PERFORMANCE --}}
 
 
-<div
-class="
+            <div class="
 bg-white
 border
 border-gray-border
@@ -2240,202 +2075,178 @@ rounded-xl
 p-5">
 
 
-<div
-class="
+                <div class="
 flex
 items-center
 gap-2
 mb-4">
 
 
-<x-lucide-chart-no-axes-combined
-class="
+                    <x-lucide-chart-no-axes-combined class="
 w-5
 h-5
-text-teal-dark"/>
+text-teal-dark" />
 
 
-<h2
-class="
+                    <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Store Performance
+                        Store Performance
 
-</h2>
-
-
-</div>
+                    </h2>
 
 
+                </div>
 
 
-<div
-class="
+
+
+                <div class="
 space-y-4">
 
 
 
-<div
-class="
+                    <div class="
 flex
 justify-between">
 
 
-<span
-class="
+                        <span class="
 text-xs
 text-navy/50">
 
-Rating
+                            Rating
 
-</span>
+                        </span>
 
 
-<strong
-class="
+                        <strong class="
 text-sm
 text-navy">
 
-4.9 ⭐
+                            4.9 ⭐
 
-</strong>
-
-
-</div>
+                        </strong>
 
 
+                    </div>
 
-<div
-class="
+
+
+                    <div class="
 h-1.5
 bg-gray-bg
 rounded-full">
 
 
-<div
-class="
+                        <div class="
 h-full
 bg-teal
-rounded-full"
-style="width:98%">
-</div>
+rounded-full" style="width:98%">
+                        </div>
 
 
-</div>
-
-
+                    </div>
 
 
 
 
-<div
-class="
+
+
+                    <div class="
 flex
 justify-between">
 
 
-<span
-class="
+                        <span class="
 text-xs
 text-navy/50">
 
-Response Rate
+                            Response Rate
 
-</span>
+                        </span>
 
 
-<strong
-class="
+                        <strong class="
 text-sm
 text-navy">
 
-98%
+                            98%
 
-</strong>
-
-
-</div>
+                        </strong>
 
 
-<div
-class="
+                    </div>
+
+
+                    <div class="
 h-1.5
 bg-gray-bg
 rounded-full">
 
 
-<div
-class="
+                        <div class="
 h-full
 bg-sky
-rounded-full"
-style="width:98%">
-</div>
+rounded-full" style="width:98%">
+                        </div>
 
 
-</div>
-
-
+                    </div>
 
 
 
-<div
-class="
+
+
+                    <div class="
 flex
 justify-between">
 
 
-<span
-class="
+                        <span class="
 text-xs
 text-navy/50">
 
-Ship On Time
+                            Ship On Time
 
-</span>
+                        </span>
 
 
-<strong
-class="
+                        <strong class="
 text-sm
 text-navy">
 
-96%
+                            96%
 
-</strong>
-
-
-</div>
+                        </strong>
 
 
-<div
-class="
+                    </div>
+
+
+                    <div class="
 h-1.5
 bg-gray-bg
 rounded-full">
 
 
-<div
-class="
+                        <div class="
 h-full
 bg-yellow
-rounded-full"
-style="width:96%">
-</div>
+rounded-full" style="width:96%">
+                        </div>
 
 
-</div>
+                    </div>
 
 
 
-</div>
+                </div>
 
 
-</div>
-
-
+            </div>
 
 
 
@@ -2443,11 +2254,12 @@ style="width:96%">
 
 
 
-{{-- CUSTOMER FEEDBACK --}}
 
 
-<div
-class="
+            {{-- CUSTOMER FEEDBACK --}}
+
+
+            <div class="
 bg-white
 border
 border-gray-border
@@ -2455,168 +2267,153 @@ rounded-xl
 p-5">
 
 
-<div
-class="
+                <div class="
 flex
 items-center
 gap-2
 mb-4">
 
 
-<x-lucide-message-circle
-class="
+                    <x-lucide-message-circle class="
 w-5
 h-5
-text-sky"/>
+text-sky" />
 
 
-<h2
-class="
+                    <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Customer Feedback
+                        Customer Feedback
 
-</h2>
-
-
-</div>
+                    </h2>
 
 
+                </div>
 
 
 
-<div
-class="
+
+
+                <div class="
 text-center
 mb-5">
 
 
-<p
-class="
+                    <p class="
 text-3xl
 font-bold
 text-navy">
 
-4.9
+                        4.9
 
-</p>
+                    </p>
 
 
-<div
-class="
+                    <div class="
 text-yellow
 text-sm">
 
-★★★★★
+                        ★★★★★
 
-</div>
+                    </div>
 
 
-<p
-class="
+                    <p class="
 text-[10px]
 text-navy/40">
 
-Average Seller Rating
+                        Average Seller Rating
 
-</p>
-
-
-</div>
+                    </p>
 
 
+                </div>
 
 
 
-<div
-class="
+
+
+                <div class="
 space-y-3">
 
 
-<div
-class="
+                    <div class="
 bg-gray-bg
 rounded-xl
 p-3">
 
 
-<p
-class="
+                        <p class="
 text-xs
 text-navy/70">
 
-"Fast delivery and good packaging"
+                            "Fast delivery and good packaging"
 
-</p>
+                        </p>
 
 
-<p
-class="
+                        <p class="
 mt-1
 text-[9px]
 text-navy/35">
 
-Buyer feedback
+                            Buyer feedback
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
 
-<div
-class="
+
+
+                    <div class="
 bg-gray-bg
 rounded-xl
 p-3">
 
 
-<p
-class="
+                        <p class="
 text-xs
 text-navy/70">
 
-"Product quality is excellent"
+                            "Product quality is excellent"
 
-</p>
+                        </p>
 
 
-<p
-class="
+                        <p class="
 mt-1
 text-[9px]
 text-navy/35">
 
-Buyer feedback
+                            Buyer feedback
 
-</p>
-
-
-</div>
+                        </p>
 
 
-</div>
+                    </div>
+
+
+                </div>
 
 
 
-</div>
-
-
+            </div>
 
 
 
 
 
 
-{{-- CHAT PREVIEW --}}
 
 
-<div
-class="
+            {{-- CHAT PREVIEW --}}
+
+
+            <div class="
 bg-white
 border
 border-gray-border
@@ -2624,45 +2421,40 @@ rounded-xl
 p-5">
 
 
-<div
-class="
+                <div class="
 flex
 items-center
 justify-between
 mb-4">
 
 
-<div
-class="
+                    <div class="
 flex
 items-center
 gap-2">
 
 
-<x-lucide-messages-square
-class="
+                        <x-lucide-messages-square class="
 w-5
 h-5
-text-teal-dark"/>
+text-teal-dark" />
 
 
-<h2
-class="
+                        <h2 class="
 text-sm
 font-bold
 text-navy">
 
-Messages
+                            Messages
 
-</h2>
-
-
-</div>
+                        </h2>
 
 
+                    </div>
 
-<span
-class="
+
+
+                    <span class="
 text-[9px]
 bg-coral/10
 text-coral
@@ -2672,31 +2464,28 @@ rounded-full
 font-semibold">
 
 
-3 unread
+                        3 unread
 
 
-</span>
+                    </span>
 
 
-</div>
+                </div>
 
 
 
 
 
-<div
-class="
+                <div class="
 space-y-3">
 
 
-<div
-class="
+                    <div class="
 flex
 gap-3">
 
 
-<div
-class="
+                        <div class="
 w-8
 h-8
 rounded-full
@@ -2706,57 +2495,52 @@ items-center
 justify-center">
 
 
-<x-lucide-user
-class="
+                            <x-lucide-user class="
 w-4
 h-4
-text-teal-dark"/>
+text-teal-dark" />
 
 
-</div>
+                        </div>
 
 
-<div>
+                        <div>
 
 
-<p
-class="
+                            <p class="
 text-xs
 font-semibold
 text-navy">
 
-Juan
+                                Juan
 
-</p>
+                            </p>
 
 
-<p
-class="
+                            <p class="
 text-[10px]
 text-navy/40">
 
-Available po ba?
+                                Available po ba?
 
-</p>
-
-
-</div>
+                            </p>
 
 
-</div>
+                        </div>
 
 
+                    </div>
 
 
 
-<div
-class="
+
+
+                    <div class="
 flex
 gap-3">
 
 
-<div
-class="
+                        <div class="
 w-8
 h-8
 rounded-full
@@ -2766,55 +2550,51 @@ items-center
 justify-center">
 
 
-<x-lucide-user
-class="
+                            <x-lucide-user class="
 w-4
 h-4
-text-sky"/>
+text-sky" />
 
 
-</div>
+                        </div>
 
 
-<div>
+                        <div>
 
 
-<p
-class="
+                            <p class="
 text-xs
 font-semibold
 text-navy">
 
-Maria
+                                Maria
 
-</p>
+                            </p>
 
 
-<p
-class="
+                            <p class="
 text-[10px]
 text-navy/40">
 
-When will this ship?
+                                When will this ship?
 
-</p>
-
-
-</div>
+                            </p>
 
 
-</div>
+                        </div>
 
 
-
-</div>
+                    </div>
 
 
 
+                </div>
 
-<a
-href="{{ route('seller.chat') }}"
-class="
+
+
+
+                <a href="{{ route('seller.chat') }}"
+                    class="
 mt-5
 block
 text-center
@@ -2823,28 +2603,27 @@ font-semibold
 text-teal-dark">
 
 
-Open Messages →
+                    Open Messages →
 
-</a>
-
-
-
-</div>
+                </a>
 
 
 
+            </div>
 
-</section>
 
-{{-- =========================================================
+
+
+        </section>
+
+        {{-- =========================================================
 QUICK ACTION FOOTER PANEL
 ========================================================= --}}
 
-<section class="mb-5">
+        <section class="mb-5">
 
 
-<div
-class="
+            <div class="
 bg-navy
 rounded-xl
 p-5
@@ -2853,10 +2632,9 @@ relative
 overflow-hidden">
 
 
-{{-- decorative --}}
+                {{-- decorative --}}
 
-<div
-class="
+                <div class="
 absolute
 -right-20
 -top-20
@@ -2865,13 +2643,12 @@ h-60
 rounded-full
 bg-teal/10
 blur-3xl">
-</div>
+                </div>
 
 
 
 
-<div
-class="
+                <div class="
 relative
 flex
 flex-col
@@ -2882,52 +2659,48 @@ gap-5">
 
 
 
-<div>
+                    <div>
 
 
-<p
-class="
+                        <p class="
 text-[10px]
 uppercase
 tracking-[0.2em]
 text-white/40
 font-semibold">
 
-Quick Actions
+                            Quick Actions
 
-</p>
+                        </p>
 
 
-<h2
-class="
+                        <h2 class="
 mt-1
 text-xl
 font-bold">
 
-Manage your store faster
+                            Manage your store faster
 
-</h2>
+                        </h2>
 
 
-<p
-class="
+                        <p class="
 mt-2
 text-xs
 text-white/50">
 
-Access your most used seller tools.
+                            Access your most used seller tools.
 
-</p>
-
-
-</div>
+                        </p>
 
 
+                    </div>
 
 
 
-<div
-class="
+
+
+                    <div class="
 grid
 grid-cols-2
 sm:grid-cols-4
@@ -2935,9 +2708,8 @@ gap-3">
 
 
 
-<a
-href="{{ route('seller.inventory') }}"
-class="
+                        <a href="{{ route('seller.inventory') }}"
+                            class="
 px-4
 py-3
 rounded-xl
@@ -2951,20 +2723,18 @@ items-center
 gap-2">
 
 
-<x-lucide-package
-class="w-4 h-4 text-teal"/>
+                            <x-lucide-package class="w-4 h-4 text-teal" />
 
-Inventory
+                            Inventory
 
 
-</a>
-
+                        </a>
 
 
 
-<a
-href="{{ route('seller.orders.notifications') }}"
-class="
+
+                        <a href="{{ route('seller.orders.notifications') }}"
+                            class="
 px-4
 py-3
 rounded-xl
@@ -2978,21 +2748,19 @@ items-center
 gap-2">
 
 
-<x-lucide-shopping-bag
-class="w-4 h-4 text-sky"/>
+                            <x-lucide-shopping-bag class="w-4 h-4 text-sky" />
 
-Orders
+                            Orders
 
 
-</a>
-
+                        </a>
 
 
 
 
-<a
-href="{{ route('seller.reports') }}"
-class="
+
+                        <a href="{{ route('seller.reports') }}"
+                            class="
 px-4
 py-3
 rounded-xl
@@ -3006,21 +2774,19 @@ items-center
 gap-2">
 
 
-<x-lucide-file-chart-column
-class="w-4 h-4 text-yellow"/>
+                            <x-lucide-file-chart-column class="w-4 h-4 text-yellow" />
 
-Reports
+                            Reports
 
 
-</a>
-
+                        </a>
 
 
 
 
-<a
-href="{{ route('seller.chat') }}"
-class="
+
+                        <a href="{{ route('seller.chat') }}"
+                            class="
 px-4
 py-3
 rounded-xl
@@ -3034,231 +2800,221 @@ items-center
 gap-2">
 
 
-<x-lucide-messages-square
-class="w-4 h-4 text-coral"/>
+                            <x-lucide-messages-square class="w-4 h-4 text-coral" />
 
-Chat
-
-
-</a>
+                            Chat
 
 
-
-</div>
-
-
-</div>
+                        </a>
 
 
-</div>
+
+                    </div>
 
 
-</section>
+                </div>
 
+
+            </div>
+
+
+        </section>
 
 
 
 
 
-{{-- =========================================================
+
+        {{-- =========================================================
 RESPONSIVE DASHBOARD POLISH
 ========================================================= --}}
 
 
-<style>
+        <style>
+            #sellerDashboard {
 
 
-#sellerDashboard {
+                animation:
+                    sellerFade .35s ease;
 
 
-animation:
-sellerFade .35s ease;
-
-
-}
+            }
 
 
 
-@keyframes sellerFade {
+            @keyframes sellerFade {
 
 
-from {
+                from {
 
-opacity:0;
-transform:
-translateY(8px);
+                    opacity: 0;
+                    transform:
+                        translateY(8px);
 
-}
-
-
-to {
-
-opacity:1;
-transform:
-translateY(0);
-
-}
+                }
 
 
-}
+                to {
+
+                    opacity: 1;
+                    transform:
+                        translateY(0);
+
+                }
+
+
+            }
 
 
 
 
-#sellerDashboard .hover-card {
+            #sellerDashboard .hover-card {
 
 
-transition:
-transform .2s ease,
-box-shadow .2s ease;
+                transition:
+                    transform .2s ease,
+                    box-shadow .2s ease;
 
 
-}
-
-
-
-@media(max-width:768px){
-
-
-#sellerDashboard h1 {
-
-
-font-size:
-1.25rem;
-
-
-}
+            }
 
 
 
-#sellerDashboard
-table {
+            @media(max-width:768px) {
 
 
-min-width:
-650px;
+                #sellerDashboard h1 {
 
 
-}
+                    font-size:
+                        1.25rem;
 
 
-}
+                }
 
 
 
-</style>
+                #sellerDashboard table {
+
+
+                    min-width:
+                        650px;
+
+
+                }
+
+
+            }
+        </style>
 
 
 
 
 
 
-{{-- =========================================================
+        {{-- =========================================================
 DASHBOARD LIVE INTERACTION SCRIPT
 ========================================================= --}}
 
 
-<script>
-
-
-document.addEventListener(
-'DOMContentLoaded',
-function(){
-
-
-
-/*
-|--------------------------------------------------------------------------
-| AUTO UPDATE CLOCK
-|--------------------------------------------------------------------------
-*/
-
-
-const dateTargets =
-document.querySelectorAll(
-'[data-live-time]'
-);
+        <script>
+            document.addEventListener(
+                'DOMContentLoaded',
+                function() {
 
 
 
-function updateTime(){
+                    /*
+                    |--------------------------------------------------------------------------
+                    | AUTO UPDATE CLOCK
+                    |--------------------------------------------------------------------------
+                    */
 
 
-dateTargets.forEach(
-item=>{
-
-
-item.innerText =
-new Date()
-.toLocaleTimeString();
-
-
-});
-
-
-}
+                    const dateTargets =
+                        document.querySelectorAll(
+                            '[data-live-time]'
+                        );
 
 
 
-setInterval(
-updateTime,
-1000
-);
+                    function updateTime() {
+
+
+                        dateTargets.forEach(
+                            item => {
+
+
+                                item.innerText =
+                                    new Date()
+                                    .toLocaleTimeString();
+
+
+                            });
+
+
+                    }
+
+
+
+                    setInterval(
+                        updateTime,
+                        1000
+                    );
 
 
 
 
 
 
-/*
-|--------------------------------------------------------------------------
-| CARD CLICK FEEDBACK
-|--------------------------------------------------------------------------
-*/
+                    /*
+                    |--------------------------------------------------------------------------
+                    | CARD CLICK FEEDBACK
+                    |--------------------------------------------------------------------------
+                    */
 
 
-document
-.querySelectorAll(
-'#sellerDashboard a'
-)
-.forEach(
-link=>{
+                    document
+                        .querySelectorAll(
+                            '#sellerDashboard a'
+                        )
+                        .forEach(
+                            link => {
 
 
-link.addEventListener(
-'mouseenter',
-()=>{
+                                link.addEventListener(
+                                    'mouseenter',
+                                    () => {
 
 
-link.classList.add(
-'scale-[1.01]'
-);
+                                        link.classList.add(
+                                            'scale-[1.01]'
+                                        );
 
 
-});
+                                    });
 
 
-link.addEventListener(
-'mouseleave',
-()=>{
+                                link.addEventListener(
+                                    'mouseleave',
+                                    () => {
 
 
-link.classList.remove(
-'scale-[1.01]'
-);
+                                        link.classList.remove(
+                                            'scale-[1.01]'
+                                        );
 
 
-});
+                                    });
 
 
-});
+                            });
 
 
-});
-
-</script>
-
+                });
+        </script>
 
 
 
-@endsection
+
+    @endsection
