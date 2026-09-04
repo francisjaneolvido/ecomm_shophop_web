@@ -413,10 +413,47 @@ Route::get('/debug/modal/logistics-registration', function () {
 });
 
 
-Route::view(
-    '/seller-ui',
-    'seller.dashboard.dashboard'
-)->name('seller.dashboard');
+Route::prefix('seller')
+    ->name('seller.')
+    ->group(function () {
+
+        Route::view('/dashboard', 'seller.dashboard')
+            ->name('dashboard');
+
+        Route::view('/inventory', 'seller.inventory')
+            ->name('inventory');
+
+        Route::view('/orders/notifications', 'seller.orders.notifications')
+            ->name('orders.notifications');
+
+        Route::view('/orders/prepare', 'seller.orders.prepare')
+            ->name('orders.prepare');
+
+        Route::view('/orders/courier', 'seller.orders.courier')
+            ->name('orders.courier');
+
+        Route::view('/orders/confirm', 'seller.orders.confirm')
+            ->name('orders.confirm');
+
+        Route::view('/feedback', 'seller.feedback')
+            ->name('feedback');
+
+        Route::view('/reports', 'seller.reports')
+            ->name('reports');
+
+        Route::view('/chat', 'seller.chat')
+            ->name('chat');
+
+        Route::view('/account', 'seller.account')
+            ->name('account');
+
+        Route::view('/storefront', 'seller.storefront')
+            ->name('storefront');
+
+        Route::get('/logout', function () {
+            return redirect()->route('seller.dashboard');
+        })->name('logout');
+    });
 
 /*
 |--------------------------------------------------------------------------
