@@ -1,4 +1,3 @@
-
 {{-- Path: resources/views/buyer/dashboard/d-part-1.blade.php --}}
 
 {{-- =========================================================
@@ -349,14 +348,19 @@
             @foreach ($recentlyViewed as $product)
                 <article class="group bg-white rounded-xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-px transition-all">
 
-                    <div class="relative aspect-4/3g-white overflow-hidden">
-                        <img
-                            src="{{ str_starts_with($product['image'], 'http')
-                                ? $product['image']
-                                : asset($product['image']) }}"
-                            alt="{{ $product['name'] }}"
-                            class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                    <div class="relative aspect-4/3 bg-white overflow-hidden">
+                        <a
+                            href="{{ route('buyer.product.show', $product['id']) }}"
+                            class="block w-full h-full"
                         >
+                            <img
+                                src="{{ str_starts_with($product['image'], 'http')
+                                    ? $product['image']
+                                    : asset($product['image']) }}"
+                                alt="{{ $product['name'] }}"
+                                class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            >
+                        </a>
 
                         @if ($product['original_price'])
                             <span class="absolute top-2 left-2 bg-teal text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-sm">
@@ -379,7 +383,12 @@
                         </p>
 
                         <h3 class="text-xs sm:text-sm font-semibold text-navy mt-0.5 truncate" title="{{ $product['name'] }}">
-                            {{ $product['name'] }}
+                            <a
+                                href="{{ route('buyer.product.show', $product['id']) }}"
+                                class="hover:text-teal-dark transition"
+                            >
+                                {{ $product['name'] }}
+                            </a>
                         </h3>
 
                         <div class="flex items-center gap-1.5 mt-1.5 min-w-0">
@@ -455,13 +464,18 @@
                 <article class="group bg-white rounded-xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-px transition-all">
 
                     <div class="relative aspect-4/3 bg-gray-bg overflow-hidden">
-                        <img
-                            src="{{ str_starts_with($product['image'], 'http')
-                                ? $product['image']
-                                : asset($product['image']) }}"
-                            alt="{{ $product['name'] }}"
-                            class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                        <a
+                            href="{{ route('buyer.product.show', $product['id']) }}"
+                            class="block w-full h-full"
                         >
+                            <img
+                                src="{{ str_starts_with($product['image'], 'http')
+                                    ? $product['image']
+                                    : asset($product['image']) }}"
+                                alt="{{ $product['name'] }}"
+                                class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            >
+                        </a>
 
                         @if ($product['original_price'])
                             <span class="absolute top-2 left-2 bg-teal text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-sm">
@@ -484,7 +498,12 @@
                         </p>
 
                         <h3 class="text-xs sm:text-sm font-semibold text-navy mt-0.5 truncate" title="{{ $product['name'] }}">
-                            {{ $product['name'] }}
+                            <a
+                                href="{{ route('buyer.product.show', $product['id']) }}"
+                                class="hover:text-teal-dark transition"
+                            >
+                                {{ $product['name'] }}
+                            </a>
                         </h3>
 
                         <div class="flex items-center gap-1.5 mt-1.5 min-w-0">

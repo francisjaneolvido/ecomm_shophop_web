@@ -43,7 +43,7 @@ class LoginController extends Controller
             'admin' => redirect()->route('admin.dashboard'),
             'buyer' => redirect()->route('buyer.dashboard'),
             'logistics' => redirect()->route('logistics.dashboard'),
-            'seller' => redirect('/'), // no seller dashboard route yet
+            'seller' => redirect()->route('seller.dashboard'),
             default => redirect('/'),
         };
     }

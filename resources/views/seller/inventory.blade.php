@@ -5,81 +5,22 @@
 @section('content')
 
 @php
-    /*
-    |--------------------------------------------------------------------------
-    | BACKEND-SAFE VIEW DEFAULTS
-    |--------------------------------------------------------------------------
-    | Same convention as seller.dashboard — controller can pass real
-    | data later without breaking this view.
-    */
-    $products = collect($products ?? [
-        [
-            'id' => 1,
-            'name' => 'Handwoven Rattan Basket',
-            'category' => 'Home & Living',
-            'price' => 450,
-            'discount' => 10,
-            'stock' => 32,
-            'sold' => 58,
-            'status' => 'active',
-            'image' => null,
-        ],
-        [
-            'id' => 2,
-            'name' => 'Barako Coffee Beans 250g',
-            'category' => 'Food & Beverage',
-            'price' => 220,
-            'discount' => 0,
-            'stock' => 6,
-            'sold' => 140,
-            'status' => 'active',
-            'image' => null,
-        ],
-        [
-            'id' => 3,
-            'name' => 'Capiz Shell Wall Lamp',
-            'category' => 'Home & Living',
-            'price' => 890,
-            'discount' => 15,
-            'stock' => 0,
-            'sold' => 12,
-            'status' => 'active',
-            'image' => null,
-        ],
-        [
-            'id' => 4,
-            'name' => 'Handmade Soap Bar Set',
-            'category' => 'Beauty & Wellness',
-            'price' => 175,
-            'discount' => 0,
-            'stock' => 84,
-            'sold' => 96,
-            'status' => 'archived',
-            'image' => null,
-        ],
-    ]);
-
-    $categories = collect($categories ?? [
-        'Home & Living',
-        'Food & Beverage',
-        'Beauty & Wellness',
-        'Fashion & Apparel',
-    ]);
-
+    $products = $products ?? collect();
+    $categories = collect($categories ?? []);
     $lowStockThreshold = $lowStockThreshold ?? 10;
 
     $totalProducts = $products->where('status', 'active')->count();
     $lowStockCount = $products->where('status', 'active')
-        ->filter(fn ($p) => ($p['stock'] ?? 0) > 0 && ($p['stock'] ?? 0) <= $lowStockThreshold)
+        ->filter(fn ($p) => $p->stock > 0 && $p->stock <= $lowStockThreshold)
         ->count();
     $outOfStockCount = $products->where('status', 'active')
-        ->filter(fn ($p) => ($p['stock'] ?? 0) === 0)
+        ->filter(fn ($p) => $p->stock === 0)
         ->count();
     $totalValue = $products->where('status', 'active')
-        ->sum(fn ($p) => ($p['price'] ?? 0) * ($p['stock'] ?? 0));
+        ->sum(fn ($p) => $p->price * $p->stock);
 
     $stockBadge = function ($product) use ($lowStockThreshold) {
-        $stock = $product['stock'] ?? 0;
+        $stock = $product->stock;
 
         if ($stock === 0) {
             return ['label' => 'Out of Stock', 'classes' => 'bg-red-50 text-red-600'];
@@ -108,6 +49,23 @@
         display: none !important;
     }
 </style>
+
+
+@if (session('status'))
+    <div class="mb-4 rounded-xl border border-teal/30 bg-teal-light px-4 py-3 text-sm text-teal-dark">
+        {{ session('status') }}
+    </div>
+@endif
+
+@if ($errors->any())
+    <div class="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <ul class="list-disc list-inside space-y-0.5">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
 
 <div id="sellerInventory">
@@ -276,23 +234,27 @@
                             <tr
                                 class="border-b border-gray-border last:border-0 hover:bg-gray-bg/50 transition-colors"
                                 data-row
-                                data-name="{{ strtolower($product['name'] ?? '') }}"
-                                data-category="{{ $product['category'] ?? '' }}"
-                                data-stock-state="{{ ($product['stock'] ?? 0) === 0 ? 'out' : (($product['stock'] ?? 0) <= $lowStockThreshold ? 'low' : 'in') }}"
-                                data-status="{{ $product['status'] ?? 'active' }}"
+                                data-name="{{ strtolower($product->name) }}"
+                                data-category="{{ $product->category }}"
+                                data-stock-state="{{ $product->stock === 0 ? 'out' : ($product->stock <= $lowStockThreshold ? 'low' : 'in') }}"
+                                data-status="{{ $product->status }}"
                             >
                                 <td class="px-4 py-3">
                                     <div class="flex items-center gap-2.5">
-                                        <div class="w-8 h-8 rounded-lg bg-gray-bg flex items-center justify-center shrink-0">
-                                            <x-lucide-image class="w-3.5 h-3.5 text-navy/25" />
+                                        <div class="w-8 h-8 rounded-lg bg-gray-bg flex items-center justify-center shrink-0 overflow-hidden">
+                                            @if ($product->image)
+                                                <img src="{{ asset('storage/' . $product->image) }}" alt="{{ $product->name }}" class="w-full h-full object-cover">
+                                            @else
+                                                <x-lucide-image class="w-3.5 h-3.5 text-navy/25" />
+                                            @endif
                                         </div>
                                         <div class="min-w-0">
                                             <p class="text-[11px] font-semibold text-navy truncate">
-                                                {{ $product['name'] ?? 'Product' }}
+                                                {{ $product->name }}
                                             </p>
-                                            @if (($product['discount'] ?? 0) > 0)
+                                            @if ($product->discount > 0)
                                                 <p class="text-[9px] text-teal-dark mt-0.5">
-                                                    {{ $product['discount'] }}% off
+                                                    {{ $product->discount }}% off
                                                 </p>
                                             @endif
                                         </div>
@@ -300,21 +262,21 @@
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="text-[10px] text-navy/60">
-                                        {{ $product['category'] ?? '—' }}
+                                        {{ $product->category }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="text-[11px] font-semibold text-navy tabular-nums">
-                                        ₱{{ number_format($product['price'] ?? 0) }}
+                                        ₱{{ number_format($product->price) }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="text-[11px] text-navy/70 tabular-nums">
-                                        {{ $product['stock'] ?? 0 }}
+                                        {{ $product->stock }}
                                     </span>
                                 </td>
                                 <td class="px-4 py-3">
-                                    @if (($product['status'] ?? 'active') === 'archived')
+                                    @if ($product->status === 'archived')
                                         <span class="inline-flex text-[9px] font-semibold px-2 py-1 rounded-full bg-navy/10 text-navy/50">
                                             Archived
                                         </span>
@@ -329,7 +291,15 @@
                                         <button
                                             type="button"
                                             data-open-product-modal
-                                            data-product='{{ json_encode($product) }}'
+                                            data-product='{{ json_encode([
+                                                "id" => $product->id,
+                                                "name" => $product->name,
+                                                "category" => $product->category,
+                                                "price" => $product->price,
+                                                "discount" => $product->discount,
+                                                "stock" => $product->stock,
+                                                "description" => $product->description,
+                                            ]) }}'
                                             class="w-7 h-7 rounded-lg flex items-center justify-center
                                                    text-navy/40 hover:text-teal-dark hover:bg-teal-light
                                                    transition-colors"
@@ -341,13 +311,15 @@
                                         <button
                                             type="button"
                                             data-open-archive-modal
-                                            data-product-name="{{ $product['name'] ?? 'this product' }}"
+                                            data-product-id="{{ $product->id }}"
+                                            data-product-name="{{ $product->name }}"
+                                            data-is-archived="{{ $product->status === 'archived' ? '1' : '0' }}"
                                             class="w-7 h-7 rounded-lg flex items-center justify-center
                                                    text-navy/40 hover:text-coral hover:bg-coral/10
                                                    transition-colors"
-                                            title="{{ ($product['status'] ?? 'active') === 'archived' ? 'Restore product' : 'Archive product' }}"
+                                            title="{{ $product->status === 'archived' ? 'Restore product' : 'Archive product' }}"
                                         >
-                                            @if (($product['status'] ?? 'active') === 'archived')
+                                            @if ($product->status === 'archived')
                                                 <x-lucide-rotate-ccw class="w-3.5 h-3.5" />
                                             @else
                                                 <x-lucide-archive class="w-3.5 h-3.5" />
@@ -401,7 +373,7 @@
             </button>
         </div>
 
-        <form id="productForm" class="px-5 py-4 space-y-3" method="POST" action="{{ route('seller.inventory') }}">
+        <form id="productForm" class="px-5 py-4 space-y-3" method="POST" action="{{ route('seller.inventory.store') }}" enctype="multipart/form-data">
             @csrf
 
             <input type="hidden" name="product_id" id="productId">
@@ -514,10 +486,10 @@
             <x-lucide-archive class="w-4 h-4" />
         </div>
 
-        <p class="text-sm font-bold text-navy mt-3">
+        <p class="text-sm font-bold text-navy mt-3" id="archiveModalHeading">
             Archive <span id="archiveProductName">this product</span>?
         </p>
-        <p class="text-[10px] text-navy/45 mt-1">
+        <p class="text-[10px] text-navy/45 mt-1" id="archiveModalSubtext">
             Archived products won't be visible to buyers. You can restore them anytime from this page.
         </p>
 
@@ -529,10 +501,11 @@
             >
                 Cancel
             </button>
-            <form id="archiveForm" method="POST" action="{{ route('seller.inventory') }}">
+            <form id="archiveForm" method="POST" action="">
                 @csrf
                 <button
                     type="submit"
+                    id="archiveSubmitBtn"
                     class="h-9 px-3.5 rounded-lg bg-coral hover:bg-coral/90 text-xs font-semibold text-white transition-colors"
                 >
                     Archive
@@ -600,9 +573,31 @@ document.addEventListener('DOMContentLoaded', function () {
     ===================================================== */
     const archiveModal = document.getElementById('archiveModal');
     const archiveProductName = document.getElementById('archiveProductName');
+    const archiveForm = document.getElementById('archiveForm');
+    const archiveModalHeading = document.getElementById('archiveModalHeading');
+    const archiveModalSubtext = document.getElementById('archiveModalSubtext');
+    const archiveSubmitBtn = document.getElementById('archiveSubmitBtn');
 
-    function openArchiveModal(name) {
+    const archiveUrlTemplate = "{{ route('seller.inventory.archive', ['product' => '__ID__']) }}";
+
+    function openArchiveModal(id, name, isArchived) {
         archiveProductName.textContent = name || 'this product';
+        archiveForm.action = archiveUrlTemplate.replace('__ID__', id);
+
+        if (isArchived) {
+            archiveModalHeading.innerHTML = 'Restore <span id="archiveProductName">' + (name || 'this product') + '</span>?';
+            archiveModalSubtext.textContent = 'This product will become visible to buyers again.';
+            archiveSubmitBtn.textContent = 'Restore';
+            archiveSubmitBtn.classList.remove('bg-coral', 'hover:bg-coral/90');
+            archiveSubmitBtn.classList.add('bg-navy', 'hover:bg-navy/90');
+        } else {
+            archiveModalHeading.innerHTML = 'Archive <span id="archiveProductName">' + (name || 'this product') + '</span>?';
+            archiveModalSubtext.textContent = "Archived products won't be visible to buyers. You can restore them anytime from this page.";
+            archiveSubmitBtn.textContent = 'Archive';
+            archiveSubmitBtn.classList.remove('bg-navy', 'hover:bg-navy/90');
+            archiveSubmitBtn.classList.add('bg-coral', 'hover:bg-coral/90');
+        }
+
         archiveModal.hidden = false;
         document.body.style.overflow = 'hidden';
     }
@@ -614,7 +609,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.querySelectorAll('[data-open-archive-modal]').forEach(function (button) {
         button.addEventListener('click', function () {
-            openArchiveModal(button.getAttribute('data-product-name'));
+            openArchiveModal(
+                button.getAttribute('data-product-id'),
+                button.getAttribute('data-product-name'),
+                button.getAttribute('data-is-archived') === '1'
+            );
         });
     });
 

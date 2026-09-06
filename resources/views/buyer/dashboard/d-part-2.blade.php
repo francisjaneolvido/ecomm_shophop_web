@@ -346,15 +346,20 @@
                            transition-all duration-200"
                 >
                     <div class="relative aspect-4/3 bg-white overflow-hidden">
-                        <img
-                            src="{{ str_starts_with($product['image'], 'http')
-                                ? $product['image']
-                                : asset($product['image']) }}"
-                            alt="{{ $product['name'] }}"
-                            class="w-full h-full object-cover
-                                   group-hover:scale-[1.03]
-                                   transition-transform duration-300"
+                        <a
+                            href="{{ route('buyer.product.show', $product['id']) }}"
+                            class="block w-full h-full"
                         >
+                            <img
+                                src="{{ str_starts_with($product['image'], 'http')
+                                    ? $product['image']
+                                    : asset($product['image']) }}"
+                                alt="{{ $product['name'] }}"
+                                class="w-full h-full object-cover
+                                       group-hover:scale-[1.03]
+                                       transition-transform duration-300"
+                            >
+                        </a>
 
                         <span
                             class="absolute top-2 left-2
@@ -391,7 +396,12 @@
                                    text-navy mt-0.5 truncate"
                             title="{{ $product['name'] }}"
                         >
-                            {{ $product['name'] }}
+                            <a
+                                href="{{ route('buyer.product.show', $product['id']) }}"
+                                class="hover:text-teal-dark transition"
+                            >
+                                {{ $product['name'] }}
+                            </a>
                         </h3>
 
                         <div class="flex items-center gap-1.5 mt-1.5">
@@ -491,15 +501,20 @@
                            transition-all duration-200"
                 >
                     <div class="relative aspect-4/3 bg-gray-bg overflow-hidden">
-                        <img
-                            src="{{ str_starts_with($product['image'], 'http')
-                                ? $product['image']
-                                : asset($product['image']) }}"
-                            alt="{{ $product['name'] }}"
-                            class="w-full h-full object-cover
-                                   group-hover:scale-[1.03]
-                                   transition-transform duration-300"
+                        <a
+                            href="{{ route('buyer.product.show', $product['id']) }}"
+                            class="block w-full h-full"
                         >
+                            <img
+                                src="{{ str_starts_with($product['image'], 'http')
+                                    ? $product['image']
+                                    : asset($product['image']) }}"
+                                alt="{{ $product['name'] }}"
+                                class="w-full h-full object-cover
+                                       group-hover:scale-[1.03]
+                                       transition-transform duration-300"
+                            >
+                        </a>
 
                         <span
                             class="absolute top-2 left-2
@@ -536,7 +551,12 @@
                                    text-navy mt-0.5 truncate"
                             title="{{ $product['name'] }}"
                         >
-                            {{ $product['name'] }}
+                            <a
+                                href="{{ route('buyer.product.show', $product['id']) }}"
+                                class="hover:text-teal-dark transition"
+                            >
+                                {{ $product['name'] }}
+                            </a>
                         </h3>
 
                         <div class="flex items-center gap-1.5 mt-1.5">

@@ -113,6 +113,24 @@
     {{-- Toast container — isang beses lang, pang-buong app --}}
     @include('admin.partial.toast-container')
 
+    {{-- REQUIRED: this is what actually renders every @push('scripts')
+         block pushed by the modals included above (buyer/seller/logistics
+         registration, etc.). Without this @stack('scripts') tag, all of
+         that JavaScript — including the event listeners that open each
+         registration modal — is silently dropped and never reaches the
+         page, even though the modal HTML itself is present. --}}
+    @stack('scripts')
+
+    {{-- If a route redirected here asking to auto-open a modal
+         (e.g. /register redirecting home with open_modal = 'account-type'),
+         fire the matching open event once the page has loaded. --}}
+    @if (session('open_modal') === 'account-type')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                document.dispatchEvent(new CustomEvent('shophop:open-account-type-modal'));
+            });
+        </script>
+    @endif
 
 
 </body>

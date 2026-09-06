@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Seller\Product;
 
 class DashboardController extends Controller
 {
@@ -41,114 +42,161 @@ class DashboardController extends Controller
 
 
     /**
-     * Categories.
+     * Base query: only products that sellers have published/approved
+     * and that still have stock.
+     *
+     * NOTE: change 'active' below if your status column uses a
+     * different value (e.g. 'approved', 'published', 1, etc.)
      */
-    private function getCategories(): array
+    private function activeProductsQuery()
     {
+        return Product::query()
+            ->where('status', 'active')
+            ->where('stock', '>', 0);
+    }
+
+
+    /**
+     * Transform a Product model into the array shape the
+     * dashboard blade views expect.
+     *
+     * NOTE: there is no ratings/reviews table yet, so rating and
+     * reviews are placeholder values for now. Once you have a
+     * reviews system, swap these two lines for real aggregates
+     * (e.g. $product->reviews_avg_rating, $product->reviews_count).
+     */
+    private function formatProduct(Product $product): array
+    {
+        $price = (float) $product->price;
+        $discount = (int) ($product->discount ?? 0);
+
+        $finalPrice = $discount > 0
+            ? round($price - ($price * $discount / 100))
+            : $price;
+
+        $imagePath = $product->image
+            ? 'storage/' . ltrim($product->image, '/')
+            : 'images/placeholder-product.jpg';
+
         return [
-            [
-                'name' => 'Pet Supplies',
-                'icon' => 'paw-print',
-            ],
-            [
-                'name' => 'Electronics and Gadgets',
-                'icon' => 'smartphone',
-            ],
-            [
-                'name' => "Women's Apparel",
-                'icon' => 'shirt',
-            ],
-            [
-                'name' => "Men's Apparel",
-                'icon' => 'shirt',
-            ],
-            [
-                'name' => 'Kids and Baby',
-                'icon' => 'baby',
-            ],
-            [
-                'name' => 'Home and Garden',
-                'icon' => 'house',
-            ],
-            [
-                'name' => 'Sports and Outdoors',
-                'icon' => 'dumbbell',
-            ],
-            [
-                'name' => 'Health and Beauty',
-                'icon' => 'heart-pulse',
-            ],
-            [
-                'name' => 'Books and Media',
-                'icon' => 'book-open',
-            ],
-            [
-                'name' => 'Food and Gourmet',
-                'icon' => 'utensils',
-            ],
-            [
-                'name' => 'Automotive & Motorcycle',
-                'icon' => 'car-front',
-            ],
-            [
-                'name' => 'Furniture and Office Equipment',
-                'icon' => 'armchair',
-            ],
-            [
-                'name' => 'Jewelry and Watches',
-                'icon' => 'gem',
-            ],
-            [
-                'name' => 'Office and School Supplies',
-                'icon' => 'notebook-pen',
-            ],
+            'id' => $product->id,
+            'name' => $product->name,
+            'category' => $product->category,
+            'price' => $finalPrice,
+            'original_price' => $discount > 0 ? $price : null,
+            'rating' => 4.5,   // placeholder until reviews exist
+            'reviews' => 0,    // placeholder until reviews exist
+            'image' => asset($imagePath),
         ];
     }
 
 
     /**
-     * Trending products.
+     * Categories.
+     *
+     * Kept as a static list (for the icon mapping), but you could
+     * instead pull distinct categories from products if you want
+     * it fully dynamic:
+     *
+     *   Product::where('status', 'active')->distinct()->pluck('category');
+     */
+    private function getCategories(): array
+    {
+        return [
+            ['name' => 'Pet Supplies', 'icon' => 'paw-print'],
+            ['name' => 'Electronics and Gadgets', 'icon' => 'smartphone'],
+            ['name' => "Women's Apparel", 'icon' => 'shirt'],
+            ['name' => "Men's Apparel", 'icon' => 'shirt'],
+            ['name' => 'Kids and Baby', 'icon' => 'baby'],
+            ['name' => 'Home and Garden', 'icon' => 'house'],
+            ['name' => 'Sports and Outdoors', 'icon' => 'dumbbell'],
+            ['name' => 'Health and Beauty', 'icon' => 'heart-pulse'],
+            ['name' => 'Books and Media', 'icon' => 'book-open'],
+            ['name' => 'Food and Gourmet', 'icon' => 'utensils'],
+            ['name' => 'Automotive & Motorcycle', 'icon' => 'car-front'],
+            ['name' => 'Furniture and Office Equipment', 'icon' => 'armchair'],
+            ['name' => 'Jewelry and Watches', 'icon' => 'gem'],
+            ['name' => 'Office and School Supplies', 'icon' => 'notebook-pen'],
+        ];
+    }
+
+
+    /**
+     * Trending products — newest active products, most recently added first.
+     * (Swap the orderBy for a real "trending" metric like order_count once you track it.)
      */
     private function getTrendingProducts(): array
     {
-        return [
-            [
-                'name' => 'Minimalist Canvas Sneakers',
-                'category' => "Women's Apparel",
-                'price' => 899,
-                'original_price' => 1199,
-                'rating' => 4.6,
-                'reviews' => 128,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Sneakers',
-            ],
-            [
-                'name' => 'Wireless Earbuds Pro',
-                'category' => 'Electronics and Gadgets',
-                'price' => 1299,
-                'original_price' => null,
-                'rating' => 4.8,
-                'reviews' => 342,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Earbuds',
-            ],
-            [
-                'name' => 'Everyday Tote Bag',
-                'category' => "Women's Apparel",
-                'price' => 599,
-                'original_price' => 799,
-                'rating' => 4.5,
-                'reviews' => 96,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Tote+Bag',
-            ],
-            [
-                'name' => 'Smart Fitness Watch',
-                'category' => 'Electronics and Gadgets',
-                'price' => 1799,
-                'original_price' => null,
-                'rating' => 4.7,
-                'reviews' => 210,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Fitness+Watch',
-            ],
-        ];
+        return $this->activeProductsQuery()
+            ->latest()
+            ->take(4)
+            ->get()
+            ->map(fn ($product) => $this->formatProduct($product))
+            ->toArray();
+    }
+
+
+    /**
+     * Recommended products.
+     * (Simple placeholder logic: random active products.
+     * Later you can base this on buyer's order/category history.)
+     */
+    private function getRecommendedProducts(): array
+    {
+        return $this->activeProductsQuery()
+            ->inRandomOrder()
+            ->take(5)
+            ->get()
+            ->map(fn ($product) => $this->formatProduct($product))
+            ->toArray();
+    }
+
+
+    /**
+     * Deal products — products that currently have a discount.
+     */
+    private function getDealProducts(): array
+    {
+        return $this->activeProductsQuery()
+            ->where('discount', '>', 0)
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn ($product) => $this->formatProduct($product))
+            ->toArray();
+    }
+
+
+    /**
+     * New arrivals — most recently added active products.
+     */
+    private function getNewArrivals(): array
+    {
+        return $this->activeProductsQuery()
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn ($product) => $this->formatProduct($product))
+            ->toArray();
+    }
+
+
+    /**
+     * Recently viewed products.
+     *
+     * NOTE: this requires tracking what the buyer actually viewed
+     * (e.g. a `product_views` table with buyer_id + product_id + viewed_at).
+     * Left as sample/fallback data for now — let me know if you want
+     * me to build the view-tracking table + logic.
+     */
+    private function getRecentlyViewed(): array
+    {
+        return $this->activeProductsQuery()
+            ->inRandomOrder()
+            ->take(5)
+            ->get()
+            ->map(fn ($product) => $this->formatProduct($product))
+            ->toArray();
     }
 
 
@@ -182,36 +230,26 @@ class DashboardController extends Controller
 
     /**
      * Buyer order summary.
+     *
+     * NOTE: still static — needs an Order model/table to compute
+     * real counts per status for the logged-in buyer.
      */
     private function getOrderSummary(): array
     {
         return [
-            [
-                'label' => 'To Pay',
-                'count' => 1,
-                'icon' => 'wallet',
-            ],
-            [
-                'label' => 'To Ship',
-                'count' => 2,
-                'icon' => 'package',
-            ],
-            [
-                'label' => 'To Receive',
-                'count' => 1,
-                'icon' => 'truck',
-            ],
-            [
-                'label' => 'Completed',
-                'count' => 5,
-                'icon' => 'circle-check',
-            ],
+            ['label' => 'To Pay', 'count' => 1, 'icon' => 'wallet'],
+            ['label' => 'To Ship', 'count' => 2, 'icon' => 'package'],
+            ['label' => 'To Receive', 'count' => 1, 'icon' => 'truck'],
+            ['label' => 'Completed', 'count' => 5, 'icon' => 'circle-check'],
         ];
     }
 
 
     /**
      * Current active order.
+     *
+     * NOTE: still static — needs an Order model/table to fetch the
+     * buyer's actual in-progress order.
      */
     private function getActiveOrder(): array
     {
@@ -222,257 +260,14 @@ class DashboardController extends Controller
             'quantity' => 1,
             'price' => 1299,
             'status' => 'In Transit',
-
             'image' => 'images/products/wireless-earbuds.jpg',
-
             'estimated_delivery' => 'September 2 - 3',
-
             'steps' => [
-                [
-                    'label' => 'Placed',
-                    'icon' => 'shopping-bag',
-                    'done' => true,
-                ],
-                [
-                    'label' => 'Confirmed',
-                    'icon' => 'circle-check',
-                    'done' => true,
-                ],
-                [
-                    'label' => 'Packed',
-                    'icon' => 'package',
-                    'done' => true,
-                ],
-                [
-                    'label' => 'Shipped',
-                    'icon' => 'truck',
-                    'done' => true,
-                ],
-                [
-                    'label' => 'Delivered',
-                    'icon' => 'house',
-                    'done' => false,
-                ],
-            ],
-        ];
-    }
-
-
-    /**
-     * Recently viewed products.
-     */
-    private function getRecentlyViewed(): array
-    {
-        return [
-            [
-                'name' => 'Minimalist Canvas Sneakers',
-                'category' => "Women's Apparel",
-                'price' => 899,
-                'original_price' => 1199,
-                'rating' => 4.6,
-                'reviews' => 128,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Sneakers',
-            ],
-            [
-                'name' => 'Wireless Earbuds Pro',
-                'category' => 'Electronics and Gadgets',
-                'price' => 1299,
-                'original_price' => null,
-                'rating' => 4.8,
-                'reviews' => 342,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Earbuds',
-            ],
-            [
-                'name' => 'Everyday Tote Bag',
-                'category' => "Women's Apparel",
-                'price' => 599,
-                'original_price' => 799,
-                'rating' => 4.5,
-                'reviews' => 96,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Tote+Bag',
-            ],
-            [
-                'name' => 'Smart Fitness Watch',
-                'category' => 'Electronics and Gadgets',
-                'price' => 1799,
-                'original_price' => null,
-                'rating' => 4.7,
-                'reviews' => 210,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Fitness+Watch',
-            ],
-            [
-                'name' => 'Classic Backpack',
-                'category' => 'Office and School Supplies',
-                'price' => 749,
-                'original_price' => 999,
-                'rating' => 4.4,
-                'reviews' => 82,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Backpack',
-            ],
-        ];
-    }
-
-
-    /**
-     * Recommended products.
-     */
-    private function getRecommendedProducts(): array
-    {
-        return [
-            [
-                'name' => 'Portable Bluetooth Speaker',
-                'category' => 'Electronics and Gadgets',
-                'price' => 999,
-                'original_price' => 1299,
-                'rating' => 4.7,
-                'reviews' => 183,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Speaker',
-            ],
-            [
-                'name' => 'Premium Water Bottle',
-                'category' => 'Sports and Outdoors',
-                'price' => 499,
-                'original_price' => null,
-                'rating' => 4.8,
-                'reviews' => 276,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Water+Bottle',
-            ],
-            [
-                'name' => 'Casual Everyday Shirt',
-                'category' => "Men's Apparel",
-                'price' => 699,
-                'original_price' => 899,
-                'rating' => 4.6,
-                'reviews' => 156,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Shirt',
-            ],
-            [
-                'name' => 'Desk Lamp Pro',
-                'category' => 'Furniture and Office Equipment',
-                'price' => 799,
-                'original_price' => 1099,
-                'rating' => 4.7,
-                'reviews' => 103,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Desk+Lamp',
-            ],
-            [
-                'name' => 'Wireless Charging Pad',
-                'category' => 'Electronics and Gadgets',
-                'price' => 599,
-                'original_price' => null,
-                'rating' => 4.5,
-                'reviews' => 221,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Wireless+Charger',
-            ],
-        ];
-    }
-
-
-    /**
-     * Deal products.
-     */
-    private function getDealProducts(): array
-    {
-        return [
-            [
-                'name' => 'Mechanical Keyboard',
-                'category' => 'Electronics and Gadgets',
-                'price' => 1499,
-                'original_price' => 1999,
-                'rating' => 4.8,
-                'reviews' => 315,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Keyboard',
-            ],
-            [
-                'name' => 'Running Shoes',
-                'category' => 'Sports and Outdoors',
-                'price' => 1199,
-                'original_price' => 1599,
-                'rating' => 4.6,
-                'reviews' => 208,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Running+Shoes',
-            ],
-            [
-                'name' => 'Smart LED Lamp',
-                'category' => 'Home and Garden',
-                'price' => 699,
-                'original_price' => 999,
-                'rating' => 4.5,
-                'reviews' => 151,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Smart+Lamp',
-            ],
-            [
-                'name' => 'Travel Backpack',
-                'category' => 'Sports and Outdoors',
-                'price' => 899,
-                'original_price' => 1299,
-                'rating' => 4.7,
-                'reviews' => 187,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Travel+Backpack',
-            ],
-            [
-                'name' => 'Digital Watch',
-                'category' => 'Jewelry and Watches',
-                'price' => 799,
-                'original_price' => 1199,
-                'rating' => 4.4,
-                'reviews' => 129,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Digital+Watch',
-            ],
-        ];
-    }
-
-
-    /**
-     * New arrival products.
-     */
-    private function getNewArrivals(): array
-    {
-        return [
-            [
-                'name' => 'Compact Wireless Mouse',
-                'category' => 'Electronics and Gadgets',
-                'price' => 499,
-                'original_price' => null,
-                'rating' => 4.7,
-                'reviews' => 74,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Wireless+Mouse',
-            ],
-            [
-                'name' => 'Minimalist Desk Organizer',
-                'category' => 'Office and School Supplies',
-                'price' => 399,
-                'original_price' => null,
-                'rating' => 4.6,
-                'reviews' => 63,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Desk+Organizer',
-            ],
-            [
-                'name' => 'Classic Wrist Watch',
-                'category' => 'Jewelry and Watches',
-                'price' => 1299,
-                'original_price' => null,
-                'rating' => 4.8,
-                'reviews' => 91,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Wrist+Watch',
-            ],
-            [
-                'name' => 'Portable Mini Fan',
-                'category' => 'Home and Garden',
-                'price' => 349,
-                'original_price' => null,
-                'rating' => 4.5,
-                'reviews' => 118,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Mini+Fan',
-            ],
-            [
-                'name' => 'Everyday Crossbody Bag',
-                'category' => "Women's Apparel",
-                'price' => 649,
-                'original_price' => null,
-                'rating' => 4.7,
-                'reviews' => 86,
-                'image' => 'https://placehold.co/500x375/F3F5F7/0F1B3D?text=Crossbody+Bag',
+                ['label' => 'Placed', 'icon' => 'shopping-bag', 'done' => true],
+                ['label' => 'Confirmed', 'icon' => 'circle-check', 'done' => true],
+                ['label' => 'Packed', 'icon' => 'package', 'done' => true],
+                ['label' => 'Shipped', 'icon' => 'truck', 'done' => true],
+                ['label' => 'Delivered', 'icon' => 'house', 'done' => false],
             ],
         ];
     }
