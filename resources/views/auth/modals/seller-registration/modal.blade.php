@@ -206,7 +206,7 @@ FILE STORAGE:
                            -bottom-24 -right-16
                            w-72 h-72
                            rounded-full
-                           bg-teal/[0.06]
+                           bg-teal/6
                            blur-3xl"
                 ></div>
 
@@ -262,7 +262,7 @@ FILE STORAGE:
                         <span
                             class="inline-flex items-center gap-1.5
                                    rounded-full
-                                   bg-white/[0.06]
+                                   bg-white/6
                                    border border-white/10
                                    px-3 py-1
                                    text-[10px] font-medium
@@ -305,7 +305,7 @@ FILE STORAGE:
                     {{-- Feature list --}}
                     <div class="mt-7 xl:mt-8 space-y-2.5">
 
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/6 border border-white/10 px-3.5 py-2.5">
 
                             <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
                                 <x-lucide-package class="w-4 h-4" />
@@ -318,7 +318,7 @@ FILE STORAGE:
 
                         </div>
 
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/6 border border-white/10 px-3.5 py-2.5">
 
                             <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
                                 <x-lucide-wallet class="w-4 h-4" />
@@ -331,7 +331,7 @@ FILE STORAGE:
 
                         </div>
 
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
+                        <div class="flex items-center gap-3 rounded-2xl bg-white/6 border border-white/10 px-3.5 py-2.5">
 
                             <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
                                 <x-lucide-shield-check class="w-4 h-4" />
@@ -509,31 +509,31 @@ FILE STORAGE:
                             style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto;"
                         >
 
-                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-semibold leading-tight text-navy" data-step-label="1">
+                            <p class="step-label max-w-16 mx-auto text-center text-[10px] sm:text-[11px] font-semibold leading-tight text-navy" data-step-label="1">
                                 Personal
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="2">
+                            <p class="step-label max-w-16 mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="2">
                                 Address
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="3">
+                            <p class="step-label max-w-16 mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="3">
                                 Business
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="4">
+                            <p class="step-label max-w-16 mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="4">
                                 Verification
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="5">
+                            <p class="step-label max-w-16 mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="5">
                                 Security
                             </p>
 
@@ -1593,7 +1593,7 @@ FILE STORAGE:
 ========================================================= --}}
 <div
     id="seller-file-preview-modal"
-    class="fixed inset-0 z-[140] hidden items-center justify-center p-4 sm:p-6"
+    class="fixed inset-0 z-140 hidden items-center justify-center p-4 sm:p-6"
     aria-hidden="true"
 >
     <button
