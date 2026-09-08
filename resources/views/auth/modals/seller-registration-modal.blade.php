@@ -20,6 +20,8 @@
     doing so causes layouts/app.blade.php to re-render itself
     from inside its own @include, which recurses forever and
     exhausts PHP's memory limit / execution time.
+    UI/UX PASS: improved modal spacing, larger tap targets, softer dialog
+    corners/shadow, wider content column, and more consistent field gaps.
 ========================================================= --}}
 
 {{--
@@ -89,7 +91,7 @@ FILE STORAGE:
 
 <div
     id="seller-registration-modal"
-    class="fixed inset-0 z-100 hidden items-stretch sm:items-center justify-center sm:p-6
+    class="fixed inset-0 z-100 hidden items-stretch sm:items-center justify-center sm:p-4 md:p-6
            opacity-0 transition-opacity duration-300 ease-out"
     aria-hidden="true"
 >
@@ -112,13 +114,13 @@ FILE STORAGE:
         class="relative z-10
                w-full h-full
                sm:h-auto
-               sm:max-h-[calc(100vh-3rem)]
-               sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl
+               sm:max-h-[calc(100vh-2rem)]
+               sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl
                overflow-y-auto
-               sm:rounded-2xl
+               sm:rounded-3xl
                bg-white
                border-0 sm:border sm:border-gray-border/70
-               shadow-xl shadow-navy/10
+               shadow-2xl shadow-navy/15
                opacity-0 scale-95 translate-y-3
                transition-all duration-300 ease-out"
     >
@@ -129,7 +131,7 @@ FILE STORAGE:
             data-seller-registration-modal-back
             aria-label="Back to account type"
             class="absolute top-4 left-4 z-20
-                   w-10 h-10
+                   w-11 h-11
                    rounded-full
                    bg-gray-bg
                    text-navy/45
@@ -149,7 +151,7 @@ FILE STORAGE:
             data-seller-registration-modal-close
             aria-label="Close seller registration"
             class="absolute top-4 right-4 z-20
-                   w-10 h-10
+                   w-11 h-11
                    rounded-full
                    bg-gray-bg
                    text-navy/45
@@ -184,8 +186,8 @@ FILE STORAGE:
                 class="relative hidden lg:flex
                        overflow-hidden
                        bg-navy
-                       px-6 xl:px-8
-                       py-10
+                       px-7 xl:px-10
+                       py-8 xl:py-10
                        items-center"
             >
 
@@ -380,11 +382,11 @@ FILE STORAGE:
             ================================================== --}}
             <div
                 class="bg-white
-                       px-4 sm:px-8 xl:px-10
-                       py-6 sm:py-8"
+                       px-5 sm:px-8 lg:px-10 xl:px-12
+                       py-6 sm:py-8 lg:py-10"
             >
 
-                <div id="seller-registration-panel" class="max-w-xl mx-auto">
+                <div id="seller-registration-panel" class="max-w-2xl mx-auto">
 
 
                     {{-- Mobile branding --}}
@@ -414,7 +416,7 @@ FILE STORAGE:
                     {{-- Header — copied from login-modal.blade.php's
                          icon + eyebrow + title treatment so all three
                          modals share the same "upper part". --}}
-                    <div class="mb-6">
+                    <div class="mb-7">
 
                         <div
                             class="w-11 h-11
@@ -427,7 +429,7 @@ FILE STORAGE:
                             <x-lucide-store class="w-5 h-5" />
                         </div>
 
-                        <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-1.5">
+                        <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-2">
                             SELLER REGISTRATION
                         </p>
 
@@ -445,7 +447,7 @@ FILE STORAGE:
                     {{-- =============================================
                         STEP PROGRESS BAR (5 steps)
                     ============================================== --}}
-                    <div class="mb-6">
+                    <div class="mb-7">
 
                         <div
                             class="grid items-center"
@@ -584,7 +586,7 @@ FILE STORAGE:
                         @csrf
                         <input type="hidden" name="account_type" value="seller">
 
-                        <div id="seller-step-viewport">
+                        <div id="seller-step-viewport" class="rounded-2xl bg-white">
 
 
                         {{-- =========================================
@@ -592,13 +594,13 @@ FILE STORAGE:
                         ========================================== --}}
                         <div data-step-panel="1">
 
-                            <div class="grid sm:grid-cols-2 gap-3.5">
+                            <div class="grid sm:grid-cols-2 gap-4">
 
 
                                 {{-- First Name --}}
                                 <div>
 
-                                    <label for="seller_first_name" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_first_name" class="block text-xs font-semibold text-navy mb-2">
                                         First Name
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -615,7 +617,7 @@ FILE STORAGE:
                                             required
                                             autocomplete="given-name"
                                             placeholder="Enter first name"
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
 
                                     </div>
@@ -628,7 +630,7 @@ FILE STORAGE:
                                 {{-- Last Name --}}
                                 <div>
 
-                                    <label for="seller_last_name" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_last_name" class="block text-xs font-semibold text-navy mb-2">
                                         Last Name
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -645,7 +647,7 @@ FILE STORAGE:
                                             required
                                             autocomplete="family-name"
                                             placeholder="Enter last name"
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
 
                                     </div>
@@ -658,7 +660,7 @@ FILE STORAGE:
                                 {{-- Middle Initial --}}
                                 <div>
 
-                                    <label for="seller_middle_initial" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_middle_initial" class="block text-xs font-semibold text-navy mb-2">
                                         Middle Initial
                                     </label>
 
@@ -669,7 +671,7 @@ FILE STORAGE:
                                         value="{{ old('middle_initial') }}"
                                         maxlength="2"
                                         placeholder="e.g. M."
-                                        class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                     >
 
                                     <p id="seller_middle_initial_error" class="hidden text-[11px] text-red-500 mt-1"></p>
@@ -680,7 +682,7 @@ FILE STORAGE:
                                 {{-- Sex --}}
                                 <div>
 
-                                    <label for="seller_sex" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_sex" class="block text-xs font-semibold text-navy mb-2">
                                         Sex
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -693,7 +695,7 @@ FILE STORAGE:
                                             id="seller_sex"
                                             name="sex"
                                             required
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
                                         >
                                             <option value="">Select sex</option>
                                             <option value="Male" @selected(old('sex') === 'Male')>Male</option>
@@ -712,7 +714,7 @@ FILE STORAGE:
                                 {{-- Email --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_email" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_email" class="block text-xs font-semibold text-navy mb-2">
                                         E-mail
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -729,7 +731,7 @@ FILE STORAGE:
                                             required
                                             autocomplete="email"
                                             placeholder="your@email.com"
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
 
                                     </div>
@@ -742,7 +744,7 @@ FILE STORAGE:
                                 {{-- Contact --}}
                                 <div>
 
-                                    <label for="seller_contact_no" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_contact_no" class="block text-xs font-semibold text-navy mb-2">
                                         Contact No.
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -760,7 +762,7 @@ FILE STORAGE:
                                             inputmode="numeric"
                                             maxlength="11"
                                             placeholder="09XXXXXXXXX"
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
 
                                     </div>
@@ -773,7 +775,7 @@ FILE STORAGE:
                                 {{-- Birthday + Age --}}
                                 <div>
 
-                                    <label for="seller_birthday" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_birthday" class="block text-xs font-semibold text-navy mb-2">
                                         Birthday
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -791,7 +793,7 @@ FILE STORAGE:
                                                 value="{{ old('birthday') }}"
                                                 max="{{ now()->format('Y-m-d') }}"
                                                 required
-                                                class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-2 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                                class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-2 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                             >
 
                                         </div>
@@ -803,7 +805,7 @@ FILE STORAGE:
                                             readonly
                                             aria-label="Age (auto-generated)"
                                             placeholder="Age"
-                                            class="w-16 shrink-0 min-h-11 rounded-xl border border-gray-border/70 bg-gray-bg px-2 text-center text-sm text-navy outline-none"
+                                            class="w-16 shrink-0 min-h-12 rounded-xl border border-gray-border/70 bg-gray-bg px-2 text-center text-sm text-navy outline-none"
                                         >
 
                                     </div>
@@ -820,7 +822,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step1-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -837,24 +839,24 @@ FILE STORAGE:
                         ========================================== --}}
                         <div data-step-panel="2" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-3.5">
+                            <div class="flex items-center gap-2 mb-4">
                                 <x-lucide-map-pin class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Address</p>
                             </div>
 
 
-                            <div id="seller-address-status" class="hidden mb-3.5 rounded-xl bg-teal-light/50 px-3.5 py-2 text-xs text-teal-dark">
+                            <div id="seller-address-status" class="hidden mb-4 rounded-xl bg-teal-light/50 px-3.5 py-2 text-xs text-teal-dark">
                                 Loading address information...
                             </div>
 
 
-                            <div class="grid sm:grid-cols-2 gap-3.5">
+                            <div class="grid sm:grid-cols-2 gap-4">
 
 
                                 {{-- Province --}}
                                 <div>
 
-                                    <label for="seller_province" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_province" class="block text-xs font-semibold text-navy mb-2">
                                         Province
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -867,7 +869,7 @@ FILE STORAGE:
                                             id="seller_province"
                                             name="province_code"
                                             required
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
                                         >
                                             <option value="">Select province</option>
                                         </select>
@@ -886,7 +888,7 @@ FILE STORAGE:
                                 {{-- City / Municipality --}}
                                 <div>
 
-                                    <label for="seller_municipality" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_municipality" class="block text-xs font-semibold text-navy mb-2">
                                         Municipality / City
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -900,7 +902,7 @@ FILE STORAGE:
                                             name="municipality_code"
                                             required
                                             disabled
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-9 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition appearance-none"
                                         >
                                             <option value="">Select municipality / city</option>
                                         </select>
@@ -919,7 +921,7 @@ FILE STORAGE:
                                 {{-- Barangay --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_barangay" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_barangay" class="block text-xs font-semibold text-navy mb-2">
                                         Barangay
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -933,7 +935,7 @@ FILE STORAGE:
                                             name="barangay_code"
                                             required
                                             disabled
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-9 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition appearance-none"
                                         >
                                             <option value="">Select barangay</option>
                                         </select>
@@ -952,7 +954,7 @@ FILE STORAGE:
                                 {{-- Street --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_street_address" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_street_address" class="block text-xs font-semibold text-navy mb-2">
                                         Street / House No. / Subdivision
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -963,7 +965,7 @@ FILE STORAGE:
                                         rows="2"
                                         required
                                         placeholder="House no., street, subdivision, building, etc."
-                                        class="w-full resize-none rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                        class="w-full resize-none rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                     >{{ old('street_address') }}</textarea>
 
                                     <p id="seller_street_address_error" class="hidden text-[11px] text-red-500 mt-1"></p>
@@ -978,7 +980,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step2-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -987,7 +989,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step2-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1004,17 +1006,17 @@ FILE STORAGE:
                         ========================================== --}}
                         <div data-step-panel="3" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-3.5">
+                            <div class="flex items-center gap-2 mb-4">
                                 <x-lucide-store class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Business Details</p>
                             </div>
 
-                            <div class="grid sm:grid-cols-2 gap-3.5">
+                            <div class="grid sm:grid-cols-2 gap-4">
 
                                 {{-- Business Name --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_business_name" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_business_name" class="block text-xs font-semibold text-navy mb-2">
                                         Business Name
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -1030,7 +1032,7 @@ FILE STORAGE:
                                             value="{{ old('business_name') }}"
                                             required
                                             placeholder="Enter your registered business name"
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
 
                                     </div>
@@ -1043,7 +1045,7 @@ FILE STORAGE:
                                 {{-- Line of Business / Category --}}
                                 <div class="sm:col-span-2">
 
-                                    <label for="seller_business_category" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_business_category" class="block text-xs font-semibold text-navy mb-2">
                                         Line of Business (Category)
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -1065,7 +1067,7 @@ FILE STORAGE:
                                             id="seller_business_category"
                                             name="business_category"
                                             required
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
                                         >
                                             <option value="">Select line of business</option>
 
@@ -1111,7 +1113,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step3-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1120,7 +1122,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step3-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1138,7 +1140,7 @@ FILE STORAGE:
                         <div data-step-panel="4" class="hidden">
 
                             {{-- Valid ID --}}
-                            <label for="seller_valid_id" class="block text-xs font-semibold text-navy mb-1.5">
+                            <label for="seller_valid_id" class="block text-xs font-semibold text-navy mb-2">
                                 Upload Valid ID
                                 <span class="text-red-500">*</span>
                             </label>
@@ -1182,7 +1184,7 @@ FILE STORAGE:
 
 
                             {{-- Business Permit --}}
-                            <label for="seller_business_permit" class="block text-xs font-semibold text-navy mb-1.5 mt-5">
+                            <label for="seller_business_permit" class="block text-xs font-semibold text-navy mb-2 mt-5">
                                 Upload Business Permit
                                 <span class="text-red-500">*</span>
                             </label>
@@ -1230,7 +1232,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step4-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1239,7 +1241,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step4-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -1256,11 +1258,11 @@ FILE STORAGE:
                         ========================================== --}}
                         <div data-step-panel="5" class="hidden">
 
-                            <div class="grid sm:grid-cols-2 gap-3.5">
+                            <div class="grid sm:grid-cols-2 gap-4">
 
                                 <div>
 
-                                    <label for="seller_password" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_password" class="block text-xs font-semibold text-navy mb-2">
                                         Password
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -1277,7 +1279,7 @@ FILE STORAGE:
                                             required
                                             autocomplete="new-password"
                                             placeholder="Minimum 8 characters"
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-11 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
 
                                         <button
@@ -1309,7 +1311,7 @@ FILE STORAGE:
 
                                 <div>
 
-                                    <label for="seller_password_confirmation" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="seller_password_confirmation" class="block text-xs font-semibold text-navy mb-2">
                                         Confirm Password
                                         <span class="text-red-500">*</span>
                                     </label>
@@ -1326,7 +1328,7 @@ FILE STORAGE:
                                             required
                                             autocomplete="new-password"
                                             placeholder="Re-enter password"
-                                            class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy outline-none placeholder:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
+                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-11 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
 
                                         <button
@@ -1360,7 +1362,7 @@ FILE STORAGE:
                             {{-- Password requirements checklist --}}
                             <div
                                 id="seller-password-requirements"
-                                class="mt-3.5 rounded-xl border border-gray-border/70 bg-gray-bg p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5"
+                                class="mt-4 rounded-xl border border-gray-border/70 bg-gray-bg p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5"
                             >
 
                                 <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="length">
@@ -1402,7 +1404,7 @@ FILE STORAGE:
                             </div>
 
                             {{-- Approval notice --}}
-                            <div class="mt-3.5 flex gap-3 rounded-xl border border-teal/15 bg-teal-light/35 p-3">
+                            <div class="mt-4 flex gap-3 rounded-xl border border-teal/15 bg-teal-light/35 p-3">
 
                                 <x-lucide-info class="w-4 h-4 text-teal-dark shrink-0 mt-0.5" />
 
@@ -1413,7 +1415,7 @@ FILE STORAGE:
                             </div>
 
                             {{-- Terms & Agreement --}}
-                            <div class="mt-3.5">
+                            <div class="mt-4">
 
                                 <label for="seller_terms" class="flex items-start gap-3 cursor-pointer group">
 
@@ -1445,7 +1447,7 @@ FILE STORAGE:
                                 <button
                                     type="button"
                                     id="seller-step5-back"
-                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition"
+                                    class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition"
                                 >
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
@@ -1453,7 +1455,7 @@ FILE STORAGE:
 
                                 <button
                                     type="submit"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Create Seller Account
                                     <x-lucide-arrow-right class="w-4 h-4" />

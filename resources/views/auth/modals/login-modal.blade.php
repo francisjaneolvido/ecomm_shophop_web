@@ -235,7 +235,7 @@
                                    rounded-xl
                                    border border-gray-border
                                    bg-white
-                                   pl-11 pr-4 py-3
+                                   pl-11 pr-12 py-3
                                    text-sm text-navy
                                    outline-none
                                    placeholder:text-navy/30
@@ -244,6 +244,54 @@
                                    focus:ring-4 focus:ring-teal/10
                                    transition"
                         >
+
+                        <button
+                            type="button"
+                            id="login-modal-toggle-password"
+                            aria-label="Show password"
+                            aria-pressed="false"
+                            class="absolute right-2 top-1/2
+                                   -translate-y-1/2
+                                   w-8 h-8
+                                   rounded-lg
+                                   flex items-center justify-center
+                                   text-navy/35
+                                   hover:text-teal-dark
+                                   hover:bg-gray-bg
+                                   focus:outline-none
+                                   focus:ring-4 focus:ring-teal/10
+                                   transition"
+                        >
+                            <svg
+                                class="login-password-icon-show w-4 h-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7Z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+
+                            <svg
+                                class="login-password-icon-hide hidden w-4 h-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 7 11 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                <path d="M6.61 6.61A13.53 13.53 0 0 0 1 11s4 7 11 7a9.26 9.26 0 0 0 5.39-1.61" />
+                                <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+                                <path d="M1 1l22 22" />
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -521,6 +569,30 @@
                     closeLoginModal();
                 }
             });
+
+
+            if (passwordInput && togglePassword) {
+                const showIcon = togglePassword.querySelector('.login-password-icon-show');
+                const hideIcon = togglePassword.querySelector('.login-password-icon-hide');
+
+                togglePassword.addEventListener('click', function () {
+                    const isHidden = passwordInput.type === 'password';
+
+                    passwordInput.type = isHidden ? 'text' : 'password';
+                    togglePassword.setAttribute('aria-pressed', isHidden ? 'true' : 'false');
+                    togglePassword.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+
+                    if (showIcon) {
+                        showIcon.classList.toggle('hidden', isHidden);
+                    }
+
+                    if (hideIcon) {
+                        hideIcon.classList.toggle('hidden', !isHidden);
+                    }
+
+                    passwordInput.focus();
+                });
+            }
 
 
             // Login form now submits for real to the backend — no more

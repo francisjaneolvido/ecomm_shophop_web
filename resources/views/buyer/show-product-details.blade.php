@@ -9,6 +9,38 @@
 
 @section('content')
 
+@php
+    /**
+     * Converts product image values into browser-ready URLs.
+     * Supports:
+     * - products/file.png
+     * - storage/products/file.png
+     * - /storage/products/file.png
+     * - images/products/file.jpg
+     * - full http/https URLs
+     */
+    $productImageUrl = function ($path) {
+        $path = trim((string) $path);
+
+        if ($path === '') {
+            return asset('images/products/placeholder.png');
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        $path = ltrim($path, '/');
+
+        if (str_starts_with($path, 'storage/') || str_starts_with($path, 'images/')) {
+            return asset($path);
+        }
+
+        return asset('storage/' . $path);
+    };
+@endphp
+
+
 {{-- =========================================================
     BUYER NAVBAR
 ========================================================= --}}
@@ -43,9 +75,10 @@
             <div>
                 <div class="relative aspect-square rounded-2xl overflow-hidden bg-gray-bg border border-gray-border">
                     <img
-                        src="{{ $product['image'] }}"
+                        src="{{ $productImageUrl($product['image'] ?? '') }}?v={{ $product['updated_at'] ?? time() }}"
                         alt="{{ $product['name'] }}"
-                        class="w-full h-full object-cover"
+                        class="w-full h-full object-contain bg-white"
+                        onerror="this.onerror=null; this.src='{{ asset('images/products/placeholder.png') }}'; console.error('Product image failed:', this.src);"
                     >
 
                     @if ($product['original_price'])
@@ -220,9 +253,10 @@
 
                     <a href="{{ route('buyer.product.show', $related['id']) }}" class="block relative aspect-4/3 bg-gray-bg overflow-hidden">
                         <img
-                            src="{{ $related['image'] }}"
+                            src="{{ $productImageUrl($related['image'] ?? '') }}?v={{ $related['updated_at'] ?? time() }}"
                             alt="{{ $related['name'] }}"
                             class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-300"
+                            onerror="this.onerror=null; this.src='{{ asset('images/products/placeholder.png') }}';"
                         >
 
                         @if ($related['original_price'])

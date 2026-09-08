@@ -29,6 +29,8 @@
     causes layouts/app.blade.php to re-render itself from inside its
     own @include, which recurses forever and exhausts PHP's memory
     limit / execution time.
+    UI/UX PASS: improved modal spacing, larger tap targets, softer dialog
+    corners/shadow, wider content column, and more consistent field gaps.
 ========================================================= --}}
 
 {{--
@@ -89,7 +91,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
 <div
     id="logistics-registration-modal"
-    class="fixed inset-0 z-100 hidden items-stretch sm:items-center justify-center sm:p-6
+    class="fixed inset-0 z-100 hidden items-stretch sm:items-center justify-center sm:p-4 md:p-6
            opacity-0 transition-opacity duration-300 ease-out"
     aria-hidden="true"
 >
@@ -112,13 +114,13 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
         class="relative z-10
                w-full h-full
                sm:h-auto
-               sm:max-h-[calc(100vh-3rem)]
-               sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl
+               sm:max-h-[calc(100vh-2rem)]
+               sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl
                overflow-y-auto
-               sm:rounded-2xl
+               sm:rounded-3xl
                bg-white
                border-0 sm:border sm:border-gray-border/70
-               shadow-xl shadow-navy/10
+               shadow-2xl shadow-navy/15
                opacity-0 scale-95 translate-y-3
                transition-all duration-300 ease-out"
     >
@@ -129,7 +131,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
             data-logistics-registration-modal-back
             aria-label="Back to account type"
             class="absolute top-4 left-4 z-20
-                   w-10 h-10
+                   w-11 h-11
                    rounded-full
                    bg-gray-bg
                    text-navy/45
@@ -149,7 +151,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
             data-logistics-registration-modal-close
             aria-label="Close logistics registration"
             class="absolute top-4 right-4 z-20
-                   w-10 h-10
+                   w-11 h-11
                    rounded-full
                    bg-gray-bg
                    text-navy/45
@@ -182,8 +184,8 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                 class="relative hidden lg:flex
                        overflow-hidden
                        bg-navy
-                       px-6 xl:px-8
-                       py-10
+                       px-7 xl:px-10
+                       py-8 xl:py-10
                        items-center"
             >
 
@@ -376,11 +378,11 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
             ================================================== --}}
             <div
                 class="bg-white
-                       px-4 sm:px-8 xl:px-10
-                       py-6 sm:py-8"
+                       px-5 sm:px-8 lg:px-10 xl:px-12
+                       py-6 sm:py-8 lg:py-10"
             >
 
-                <div id="logistics-registration-panel" class="max-w-xl mx-auto">
+                <div id="logistics-registration-panel" class="max-w-2xl mx-auto">
 
 
                     {{-- Mobile branding --}}
@@ -409,7 +411,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                     {{-- Header — copied from seller/login modal's
                          icon + eyebrow + title treatment. --}}
-                    <div class="mb-6">
+                    <div class="mb-7">
 
                         <div
                             class="w-11 h-11
@@ -422,7 +424,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                             <x-lucide-truck class="w-5 h-5" />
                         </div>
 
-                        <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-1.5">
+                        <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-2">
                             LOGISTICS REGISTRATION
                         </p>
 
@@ -524,7 +526,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         @csrf
                         <input type="hidden" name="account_type" value="logistics">
 
-                        <div id="logistics-step-viewport">
+                        <div id="logistics-step-viewport" class="rounded-2xl bg-white">
 
 
                         {{-- =========================================
@@ -532,7 +534,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         ========================================== --}}
                         <div data-step-panel="1">
 
-                            <div class="flex items-start gap-3 bg-teal-light/60 text-teal-dark text-xs rounded-xl px-3.5 py-2.5 mb-3.5">
+                            <div class="flex items-start gap-3 bg-teal-light/60 text-teal-dark text-xs rounded-xl px-3.5 py-2.5 mb-4">
                                 <x-lucide-info class="w-4 h-4 shrink-0 mt-0.5" />
                                 <span>Please read the Courier Terms &amp; Agreement in full. You'll need to
                                     scroll to the end before you can accept and continue.</span>
@@ -626,33 +628,33 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                     </span>
                                 </label>
 
-                                <div class="grid sm:grid-cols-2 gap-3.5">
+                                <div class="grid sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label for="logistics_agreement_rep_name" class="block text-xs font-semibold text-navy mb-1.5">
+                                        <label for="logistics_agreement_rep_name" class="block text-xs font-semibold text-navy mb-2">
                                             Authorized representative — full name <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
                                             <x-lucide-user class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                             <input type="text" name="agreement_rep_name" id="logistics_agreement_rep_name" value="{{ old('agreement_rep_name') }}" required
                                                    placeholder="Juan Dela Cruz"
-                                                   class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                                   class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                         </div>
                                         <p id="logistics_agreement_rep_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                     </div>
                                     <div>
-                                        <label for="logistics_agreement_date" class="block text-xs font-semibold text-navy mb-1.5">
+                                        <label for="logistics_agreement_date" class="block text-xs font-semibold text-navy mb-2">
                                             Date <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
                                             <x-lucide-calendar class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                             <input type="date" name="agreement_date" id="logistics_agreement_date" value="{{ old('agreement_date', now()->toDateString()) }}" required
-                                                   class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-2 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                                   class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-2 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                         </div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label for="logistics_agreement_signature" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_agreement_signature" class="block text-xs font-semibold text-navy mb-2">
                                         E-signature <span class="text-red-500">*</span>
                                     </label>
                                     <label for="logistics_agreement_signature"
@@ -679,7 +681,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 <button
                                     type="button"
                                     id="logistics-step1-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
+                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
                                 >
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
@@ -694,43 +696,43 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         ========================================== --}}
                         <div data-step-panel="2" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-3.5">
+                            <div class="flex items-center gap-2 mb-4">
                                 <x-lucide-building-2 class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Company Details</p>
                             </div>
 
-                            <div class="grid sm:grid-cols-2 gap-3.5">
+                            <div class="grid sm:grid-cols-2 gap-4">
 
                                 <div class="sm:col-span-2">
-                                    <label for="logistics_company_name" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_company_name" class="block text-xs font-semibold text-navy mb-2">
                                         Company / business name <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative">
                                         <x-lucide-store class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                         <input type="text" name="company_name" id="logistics_company_name" value="{{ old('company_name') }}" required
                                                placeholder="e.g. J&amp;T Express — Cavite Hub"
-                                               class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                               class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     </div>
                                     <p id="logistics_company_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
 
                                 <div>
-                                    <label for="logistics_business_registration_no" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_business_registration_no" class="block text-xs font-semibold text-navy mb-2">
                                         Business registration no. <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" name="business_registration_no" id="logistics_business_registration_no" value="{{ old('business_registration_no') }}" required
                                            placeholder="DTI / SEC / CDA number"
-                                           class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p id="logistics_business_registration_no_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
 
                                 <div>
-                                    <label for="logistics_line_of_business" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_line_of_business" class="block text-xs font-semibold text-navy mb-2">
                                         Line of business <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative">
                                         <select name="line_of_business" id="logistics_line_of_business" required
-                                                class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
+                                                class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
                                             <option value="">Select</option>
                                             <option value="motorcycle_courier" @selected(old('line_of_business') === 'motorcycle_courier')>Motorcycle courier</option>
                                             <option value="van_truck_freight" @selected(old('line_of_business') === 'van_truck_freight')>Van / truck freight</option>
@@ -743,21 +745,21 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </div>
 
                                 <div>
-                                    <label for="logistics_rep_last_name" class="block text-xs font-semibold text-navy mb-1.5">Authorized representative — last name</label>
+                                    <label for="logistics_rep_last_name" class="block text-xs font-semibold text-navy mb-2">Authorized representative — last name</label>
                                     <input type="text" name="rep_last_name" id="logistics_rep_last_name" value="{{ old('rep_last_name') }}"
-                                           class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p id="logistics_rep_last_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
                                 <div>
-                                    <label for="logistics_rep_first_name" class="block text-xs font-semibold text-navy mb-1.5">First name</label>
+                                    <label for="logistics_rep_first_name" class="block text-xs font-semibold text-navy mb-2">First name</label>
                                     <input type="text" name="rep_first_name" id="logistics_rep_first_name" value="{{ old('rep_first_name') }}"
-                                           class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p id="logistics_rep_first_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
 
                                 {{-- Representative ID + ID number --}}
                                 <div class="sm:col-span-2">
-                                    <label for="logistics_rep_valid_id" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_rep_valid_id" class="block text-xs font-semibold text-navy mb-2">
                                         Representative's valid ID <span class="text-red-500">*</span>
                                     </label>
                                     <label for="logistics_rep_valid_id"
@@ -780,21 +782,21 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                     <p id="logistics_rep_valid_id_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
                                 <div class="sm:col-span-2">
-                                    <label for="logistics_rep_id_number" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_rep_id_number" class="block text-xs font-semibold text-navy mb-2">
                                         ID number <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" name="rep_id_number" id="logistics_rep_id_number" value="{{ old('rep_id_number') }}" required
                                            placeholder="e.g. N01-23-456789"
-                                           class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p class="text-[11px] text-navy/40 mt-1">Letters and numbers only (hyphens okay) — matches the ID uploaded above.</p>
                                     <p id="logistics_rep_id_number_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
 
                                 <div>
-                                    <label for="logistics_rep_sex" class="block text-xs font-semibold text-navy mb-1.5">Sex <span class="text-red-500">*</span></label>
+                                    <label for="logistics_rep_sex" class="block text-xs font-semibold text-navy mb-2">Sex <span class="text-red-500">*</span></label>
                                     <div class="relative">
                                         <select name="rep_sex" id="logistics_rep_sex" required
-                                                class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 pr-9 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
+                                                class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
                                             <option value="">Select</option>
                                             <option value="male" @selected(old('rep_sex') === 'male')>Male</option>
                                             <option value="female" @selected(old('rep_sex') === 'female')>Female</option>
@@ -803,38 +805,38 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                     </div>
                                 </div>
                                 <div>
-                                    <label for="logistics_rep_birthday" class="block text-xs font-semibold text-navy mb-1.5">Birthday <span class="text-red-500">*</span></label>
+                                    <label for="logistics_rep_birthday" class="block text-xs font-semibold text-navy mb-2">Birthday <span class="text-red-500">*</span></label>
                                     <div class="relative">
                                         <x-lucide-calendar class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                         <input type="date" name="rep_birthday" id="logistics_rep_birthday" value="{{ old('rep_birthday') }}" required
-                                               class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-2 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                               class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-2 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label for="logistics_email" class="block text-xs font-semibold text-navy mb-1.5">E-mail <span class="text-red-500">*</span></label>
+                                    <label for="logistics_email" class="block text-xs font-semibold text-navy mb-2">E-mail <span class="text-red-500">*</span></label>
                                     <div class="relative">
                                         <x-lucide-mail class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                         <input type="email" name="email" id="logistics_email" value="{{ old('email') }}" required
                                                placeholder="ops@company.com"
-                                               class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                               class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     </div>
                                     <p id="logistics_email_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
                                 <div>
-                                    <label for="logistics_contact_no" class="block text-xs font-semibold text-navy mb-1.5">Contact no. <span class="text-red-500">*</span></label>
+                                    <label for="logistics_contact_no" class="block text-xs font-semibold text-navy mb-2">Contact no. <span class="text-red-500">*</span></label>
                                     <div class="relative">
                                         <x-lucide-phone class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                         <input type="tel" name="contact_no" id="logistics_contact_no" value="{{ old('contact_no') }}" required
                                                inputmode="tel" placeholder="+63"
-                                               class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-4 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                               class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     </div>
                                     <p id="logistics_contact_no_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
 
                                 {{-- Address cascade --}}
                                 <div class="sm:col-span-2">
-                                    <label class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label class="block text-xs font-semibold text-navy mb-2">
                                         Business address <span class="text-red-500">*</span>
                                     </label>
                                     <p class="text-[11px] text-navy/45 mb-2">
@@ -849,7 +851,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                             <label class="block text-[11px] font-semibold text-navy/50 mb-1">Region <span class="text-red-500">*</span></label>
                                             <div class="relative">
                                                 <select name="region" id="logistics_region" required
-                                                        class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
+                                                        class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 pr-9 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition appearance-none">
                                                     <option value="">Loading regions…</option>
                                                 </select>
                                                 <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
@@ -860,7 +862,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                             <label class="block text-[11px] font-semibold text-navy/50 mb-1">Province <span class="text-red-500">*</span></label>
                                             <div class="relative">
                                                 <select name="province" id="logistics_province" required disabled
-                                                        class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
+                                                        class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 pr-9 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition appearance-none">
                                                     <option value="">Select region first</option>
                                                 </select>
                                                 <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
@@ -873,7 +875,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                             <label class="block text-[11px] font-semibold text-navy/50 mb-1">City / Municipality <span class="text-red-500">*</span></label>
                                             <div class="relative">
                                                 <select name="municipality" id="logistics_municipality" required disabled
-                                                        class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
+                                                        class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 pr-9 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition appearance-none">
                                                     <option value="">Select province first</option>
                                                 </select>
                                                 <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
@@ -884,7 +886,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                             <label class="block text-[11px] font-semibold text-navy/50 mb-1">Barangay <span class="text-red-500">*</span></label>
                                             <div class="relative">
                                                 <select name="barangay" id="logistics_barangay" required disabled
-                                                        class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 pr-9 py-2.5 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/30 hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
+                                                        class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 pr-9 py-3 text-sm text-navy outline-none disabled:bg-gray-bg disabled:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition appearance-none">
                                                     <option value="">Select city/municipality first</option>
                                                 </select>
                                                 <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
@@ -895,19 +897,19 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </div>
 
                                 <div>
-                                    <label for="logistics_street_no" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_street_no" class="block text-xs font-semibold text-navy mb-2">
                                         Street no. / name <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" name="street_no" id="logistics_street_no" value="{{ old('street_no') }}" required
-                                           class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p id="logistics_street_no_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
                                 <div>
-                                    <label for="logistics_unit_no" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_unit_no" class="block text-xs font-semibold text-navy mb-2">
                                         Unit / house no. <span class="text-red-500">*</span>
                                     </label>
                                     <input type="text" name="unit_no" id="logistics_unit_no" value="{{ old('unit_no') }}" required
-                                           class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 py-2.5 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p id="logistics_unit_no_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
 
@@ -921,12 +923,12 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex items-center gap-3 mt-6">
                                 <button type="button" id="logistics-step2-back"
-                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition">
+                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition">
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
                                 </button>
                                 <button type="button" id="logistics-step2-next"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
@@ -962,12 +964,12 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex items-center gap-3 mt-4">
                                 <button type="button" id="logistics-step3-back"
-                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition">
+                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition">
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
                                 </button>
                                 <button type="button" id="logistics-step3-next"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
@@ -981,7 +983,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         ========================================== --}}
                         <div data-step-panel="4" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-3.5">
+                            <div class="flex items-center gap-2 mb-4">
                                 <x-lucide-shield-check class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Enter verification code</p>
                             </div>
@@ -993,17 +995,17 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex items-center justify-between gap-2 sm:gap-3" id="logistics-otp-boxes">
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-digit
-                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/70 bg-white text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/80 bg-white shadow-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-digit
-                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/70 bg-white text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/80 bg-white shadow-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-digit
-                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/70 bg-white text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/80 bg-white shadow-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-digit
-                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/70 bg-white text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/80 bg-white shadow-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-digit
-                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/70 bg-white text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/80 bg-white shadow-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                 <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" data-otp-digit
-                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/70 bg-white text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                    class="otp-box w-full aspect-square text-center text-lg sm:text-xl font-bold rounded-xl border border-gray-border/80 bg-white shadow-sm text-navy outline-none focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                             </div>
 
                             <input type="hidden" name="otp_code" id="logistics-otp-hidden" value="">
@@ -1022,12 +1024,12 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex items-center gap-3 mt-5">
                                 <button type="button" id="logistics-step4-back"
-                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition">
+                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition">
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
                                 </button>
                                 <button type="button" id="logistics-step4-next"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
@@ -1041,22 +1043,22 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         ========================================== --}}
                         <div data-step-panel="5" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-3.5">
+                            <div class="flex items-center gap-2 mb-4">
                                 <x-lucide-lock class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Create your login password</p>
                             </div>
 
-                            <div class="grid sm:grid-cols-2 gap-3.5">
+                            <div class="grid sm:grid-cols-2 gap-4">
 
                                 <div>
-                                    <label for="logistics_password" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_password" class="block text-xs font-semibold text-navy mb-2">
                                         Password <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative">
                                         <x-lucide-lock class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                         <input type="password" name="password" id="logistics_password" minlength="8" required
                                                autocomplete="new-password" placeholder="Minimum 8 characters"
-                                               class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                               class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-11 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                         <button type="button" id="logistics_toggle_password"
                                                 aria-label="Show password" aria-pressed="false"
                                                 class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-navy/35 hover:text-teal-dark hover:bg-gray-bg focus:outline-none focus:ring-4 focus:ring-teal/10 transition">
@@ -1082,14 +1084,14 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </div>
 
                                 <div>
-                                    <label for="logistics_password_confirmation" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_password_confirmation" class="block text-xs font-semibold text-navy mb-2">
                                         Confirm Password <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative">
                                         <x-lucide-lock class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                         <input type="password" name="password_confirmation" id="logistics_password_confirmation" minlength="8" required
                                                autocomplete="new-password" placeholder="Re-enter password"
-                                               class="w-full min-h-11 rounded-xl border border-gray-border/70 bg-white pl-11 pr-11 py-2.5 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                               class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-11 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                         <button type="button" id="logistics_toggle_password_confirmation"
                                                 aria-label="Show password" aria-pressed="false"
                                                 class="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-lg flex items-center justify-center text-navy/35 hover:text-teal-dark hover:bg-gray-bg focus:outline-none focus:ring-4 focus:ring-teal/10 transition">
@@ -1109,7 +1111,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                             </div>
 
                             <div id="logistics-password-requirements"
-                                 class="mt-3.5 rounded-xl border border-gray-border/70 bg-gray-bg p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
+                                 class="mt-4 rounded-xl border border-gray-border/70 bg-gray-bg p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5">
 
                                 <p class="req-item flex items-center gap-2 text-[10.5px] text-navy/40" data-req="length">
                                     <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0">
@@ -1140,12 +1142,12 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex items-center gap-3 mt-5">
                                 <button type="button" id="logistics-step5-back"
-                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition">
+                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition">
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
                                 </button>
                                 <button type="button" id="logistics-step5-next"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
@@ -1159,7 +1161,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         ========================================== --}}
                         <div data-step-panel="6" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-3.5">
+                            <div class="flex items-center gap-2 mb-4">
                                 <x-lucide-map class="w-4 h-4 text-teal-dark" />
                                 <p class="text-sm font-semibold text-navy">Coverage &amp; Documents</p>
                             </div>
@@ -1180,7 +1182,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex flex-col sm:flex-row gap-2">
                                 <select id="logistics-coverage-add-select"
-                                        class="flex-1 min-h-11 rounded-xl border border-gray-border/70 bg-white px-4 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
+                                        class="flex-1 min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <option value="">Loading provinces…</option>
                                 </select>
                                 <button type="button" id="logistics-coverage-add-btn"
@@ -1192,9 +1194,9 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 Add at least one coverage area before continuing.
                             </p>
 
-                            <div class="grid sm:grid-cols-2 gap-3.5 mt-5">
+                            <div class="grid sm:grid-cols-2 gap-4 mt-5">
                                 <div>
-                                    <label for="logistics_business_permit" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_business_permit" class="block text-xs font-semibold text-navy mb-2">
                                         Business permit <span class="text-red-500">*</span>
                                     </label>
                                     <label for="logistics_business_permit"
@@ -1212,7 +1214,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                     <p id="logistics_business_permit_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
                                 <div>
-                                    <label for="logistics_accreditation_docs" class="block text-xs font-semibold text-navy mb-1.5">
+                                    <label for="logistics_accreditation_docs" class="block text-xs font-semibold text-navy mb-2">
                                         Accreditation / franchise docs
                                     </label>
                                     <label for="logistics_accreditation_docs"
@@ -1232,12 +1234,12 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex items-center gap-3 mt-6">
                                 <button type="button" id="logistics-step6-back"
-                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition">
+                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition">
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
                                 </button>
                                 <button type="button" id="logistics-step6-next"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
                                     Next
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
@@ -1308,12 +1310,12 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div class="flex items-center gap-3 mt-5">
                                 <button type="button" id="logistics-step7-back"
-                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/70 text-navy text-sm font-semibold py-3 px-6 rounded-full hover:bg-gray-bg transition">
+                                        class="inline-flex items-center justify-center gap-2 border border-gray-border/80 text-navy text-sm font-semibold min-h-12 px-6 py-3 rounded-xl hover:bg-gray-bg transition">
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
                                 </button>
                                 <button type="submit"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold py-3 rounded-full shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
                                     Submit application
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
