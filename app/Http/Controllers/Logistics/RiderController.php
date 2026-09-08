@@ -155,7 +155,7 @@ class RiderController extends Controller
             ],
         ];
 
-        return view('logistics.riders.index', compact('applications', 'activeRiders'));
+        return view('logistics.riders', compact('applications', 'activeRiders'));
     }
 
     public function approve(Request $request, int $rider): RedirectResponse

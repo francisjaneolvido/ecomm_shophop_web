@@ -1,6 +1,6 @@
 {{-- resources/views/logistics/reports.blade.php --}}
 
-@extends('layouts.logistics')
+@extends('logistics.layouts')
 
 @section('title', 'Reports — ShopHop Logistics')
 

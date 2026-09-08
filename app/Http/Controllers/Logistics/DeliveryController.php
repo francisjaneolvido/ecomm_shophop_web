@@ -43,7 +43,7 @@ class DeliveryController extends Controller
             ],
         ];
 
-        return view('logistics.deliveries.board', compact('columns'));
+        return view('logistics.delivery-board', compact('columns'));
     }
 
     public function assign(Request $request, string $delivery): RedirectResponse

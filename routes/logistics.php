@@ -131,8 +131,13 @@ Route::prefix('logistics-partner')
             'index'
         ])->name('reports.index');
 
-        Route::get('/reports/export', [
+        Route::get('/reports/export/pdf', [
             ReportController::class,
-            'export'
-        ])->name('reports.export');
+            'exportPdf'
+        ])->name('reports.export.pdf');
+
+        Route::get('/reports/riders/{rider}/export/pdf', [
+            ReportController::class,
+            'exportRiderPdf'
+        ])->name('reports.riders.export.pdf');
     });
