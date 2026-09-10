@@ -1,6 +1,6 @@
 {{-- Path: resources/views/partials/footer.blade.php --}}
 
-<footer class="bg-[#F0EFED] text-navy">
+<footer class="bg-[#ebeef0] text-navy">
 
     {{-- =====================================================
         MAIN FOOTER
