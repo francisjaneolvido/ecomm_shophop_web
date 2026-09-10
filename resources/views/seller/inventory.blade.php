@@ -7,176 +7,14 @@
 @php
     /*
     |--------------------------------------------------------------------------
-    | FRONTEND-ONLY DEMO DATA
+    | REAL DATA
     |--------------------------------------------------------------------------
-    | Temporary hardcoded inventory data. No Product/Voucher model or
-    | InventoryController query is required for this Blade to render.
-    | Replace this block with controller-provided data when the backend is ready.
+    | $products, $vouchers, $categories, and $defaultLowStockThreshold are
+    | all passed in from InventoryController@index. No hardcoded demo data
+    | here anymore — this pulls straight from the database.
     */
 
-    $defaultLowStockThreshold = 10;
-
-    $categories = collect([
-        'Electronics',
-        'Home & Living',
-        'Fashion',
-        'Beauty & Personal Care',
-        'Food & Beverages',
-    ]);
-
-    $products = collect([
-        (object) [
-            'id' => 1,
-            'name' => 'Wireless Bluetooth Mouse',
-            'sku' => 'MOUSE-BT-001',
-            'category' => 'Electronics',
-            'price' => 799.00,
-            'discount' => 10,
-            'stock' => 42,
-            'low_stock_threshold' => 10,
-            'has_variants' => false,
-            'description' => 'Compact wireless mouse with silent clicks and adjustable DPI.',
-            'image' => null,
-            'status' => 'active',
-            'created_at' => now()->subHours(3),
-            'images' => collect([]),
-            'variants' => collect([]),
-        ],
-        (object) [
-            'id' => 2,
-            'name' => 'Minimalist Canvas Tote Bag',
-            'sku' => 'TOTE-CNV-002',
-            'category' => 'Fashion',
-            'price' => 449.00,
-            'discount' => 0,
-            'stock' => 7,
-            'low_stock_threshold' => 10,
-            'has_variants' => false,
-            'description' => 'Everyday canvas tote with reinforced handles and inner pocket.',
-            'image' => null,
-            'status' => 'active',
-            'created_at' => now()->subDay(),
-            'images' => collect([]),
-            'variants' => collect([]),
-        ],
-        (object) [
-            'id' => 3,
-            'name' => 'Insulated Travel Tumbler',
-            'sku' => 'TUMBLER-003',
-            'category' => 'Home & Living',
-            'price' => 599.00,
-            'discount' => 15,
-            'stock' => 0,
-            'low_stock_threshold' => 8,
-            'has_variants' => false,
-            'description' => 'Double-wall insulated tumbler for hot and cold drinks.',
-            'image' => null,
-            'status' => 'active',
-            'created_at' => now()->subDays(2),
-            'images' => collect([]),
-            'variants' => collect([]),
-        ],
-        (object) [
-            'id' => 4,
-            'name' => 'Classic Oversized Shirt',
-            'sku' => 'SHIRT-OVR-004',
-            'category' => 'Fashion',
-            'price' => 699.00,
-            'discount' => 5,
-            'stock' => 31,
-            'low_stock_threshold' => 10,
-            'has_variants' => true,
-            'description' => 'Relaxed oversized shirt available in multiple sizes.',
-            'image' => null,
-            'status' => 'active',
-            'created_at' => now()->subDays(4),
-            'images' => collect([]),
-            'variants' => collect([
-                (object) ['id' => 41, 'name' => 'Black / Small', 'sku' => 'SHIRT-BLK-S', 'price' => 699.00, 'stock' => 8, 'status' => 'active'],
-                (object) ['id' => 42, 'name' => 'Black / Medium', 'sku' => 'SHIRT-BLK-M', 'price' => 699.00, 'stock' => 13, 'status' => 'active'],
-                (object) ['id' => 43, 'name' => 'Black / Large', 'sku' => 'SHIRT-BLK-L', 'price' => 699.00, 'stock' => 10, 'status' => 'active'],
-            ]),
-        ],
-        (object) [
-            'id' => 5,
-            'name' => 'Daily Glow Face Serum',
-            'sku' => 'SERUM-005',
-            'category' => 'Beauty & Personal Care',
-            'price' => 549.00,
-            'discount' => 0,
-            'stock' => 18,
-            'low_stock_threshold' => 5,
-            'has_variants' => false,
-            'description' => 'Lightweight daily facial serum for a fresh, hydrated look.',
-            'image' => null,
-            'status' => 'active',
-            'created_at' => now()->subDays(6),
-            'images' => collect([]),
-            'variants' => collect([]),
-        ],
-        (object) [
-            'id' => 6,
-            'name' => 'Portable Mini Fan',
-            'sku' => 'FAN-MINI-006',
-            'category' => 'Electronics',
-            'price' => 399.00,
-            'discount' => 0,
-            'stock' => 14,
-            'low_stock_threshold' => 5,
-            'has_variants' => false,
-            'description' => 'Archived sample product for the inventory demo.',
-            'image' => null,
-            'status' => 'archived',
-            'created_at' => now()->subDays(12),
-            'images' => collect([]),
-            'variants' => collect([]),
-        ],
-    ]);
-
-    $vouchers = collect([
-        (object) [
-            'id' => 1,
-            'name' => 'Welcome Discount',
-            'code' => 'WELCOME10',
-            'type' => 'percent',
-            'value' => 10,
-            'min_order_amount' => 500,
-            'usage_limit' => 100,
-            'used_count' => 28,
-            'starts_at' => now()->subDays(7),
-            'ends_at' => now()->addDays(30),
-            'status' => 'active',
-            'products' => collect([]),
-        ],
-        (object) [
-            'id' => 2,
-            'name' => 'Fashion Payday Sale',
-            'code' => 'PAYDAY150',
-            'type' => 'fixed',
-            'value' => 150,
-            'min_order_amount' => 1200,
-            'usage_limit' => 50,
-            'used_count' => 11,
-            'starts_at' => now()->subDay(),
-            'ends_at' => now()->addDays(5),
-            'status' => 'active',
-            'products' => $products->whereIn('id', [2, 4])->values(),
-        ],
-        (object) [
-            'id' => 3,
-            'name' => 'Old Store Promo',
-            'code' => 'SAVE50',
-            'type' => 'fixed',
-            'value' => 50,
-            'min_order_amount' => 300,
-            'usage_limit' => null,
-            'used_count' => 64,
-            'starts_at' => now()->subMonths(2),
-            'ends_at' => now()->subMonth(),
-            'status' => 'inactive',
-            'products' => collect([]),
-        ],
-    ]);
+    $archiveActionTemplate = route('seller.inventory.products.archive', ['product' => '__ID__']);
 
     $activeProducts = $products->where('status', 'active');
     $archivedProducts = $products->where('status', 'archived');
@@ -352,11 +190,6 @@
                 <p class="text-xs text-navy/45 mt-1 max-w-2xl">
                     Manage products, variants, images, pricing, stock, and seller vouchers.
                 </p>
-
-                <div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-yellow/20 px-2.5 py-1 text-xs font-bold text-amber-700">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    FRONTEND DEMO · HARDCODED DATA
-                </div>
             </div>
 
             <div class="flex flex-wrap items-center gap-2">
@@ -857,12 +690,11 @@
 
                                             <form
                                                 method="POST"
-                                                action="#"
-                                                data-demo-form
-                                                data-demo-action="stock"
+                                                action="{{ route('seller.inventory.products.stock', $product->id) }}"
                                                 class="quick-stock-form inline-flex items-center gap-1"
                                             >
                                                 @csrf
+                                                @method('PATCH')
 
                                                 <button
                                                     type="button"
@@ -1170,11 +1002,10 @@
 
                                             <form
                                                 method="POST"
-                                                action="#"
-                                                data-demo-form
-                                                data-demo-action="voucher-toggle"
+                                                action="{{ route('seller.inventory.vouchers.toggle', $voucher->id) }}"
                                             >
                                                 @csrf
+                                                @method('PATCH')
 
                                                 <button
                                                     type="submit"
@@ -1187,10 +1018,8 @@
 
                                             <form
                                                 method="POST"
-                                                action="#"
-                                                data-demo-form
-                                                data-demo-action="voucher-delete"
-                                                
+                                                action="{{ route('seller.inventory.vouchers.destroy', $voucher->id) }}"
+                                                onsubmit="return confirm('Delete this voucher? This cannot be undone.');"
                                             >
                                                 @csrf
                                                 @method('DELETE')
@@ -1276,9 +1105,7 @@
         <form
             id="productForm"
             method="POST"
-            action="#"
-            data-demo-form
-            data-demo-action="product"
+            action="{{ route('seller.inventory.products.store') }}"
             enctype="multipart/form-data"
             class="flex-1 overflow-y-auto content-scrollbar"
         >
@@ -1745,8 +1572,9 @@
             </button>
 
 
-            <form id="archiveForm" method="POST" action="#" data-demo-form data-demo-action="archive">
+            <form id="archiveForm" method="POST" action="#">
                 @csrf
+                @method('PATCH')
 
                 <button
                     type="submit"
@@ -1810,9 +1638,7 @@
 
         <form
             method="POST"
-            action="#"
-            data-demo-form
-            data-demo-action="voucher"
+            action="{{ route('seller.inventory.vouchers.store') }}"
             id="voucherForm"
             class="flex-1 overflow-y-auto content-scrollbar"
         >
@@ -2802,7 +2628,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const archiveModalIcon =
         document.getElementById('archiveModalIcon');
 
-    const archiveUrlTemplate = "#";
+    const archiveUrlTemplate = "{{ $archiveActionTemplate }}";
 
 
     function openArchiveModal(
@@ -3464,41 +3290,6 @@ document.addEventListener('DOMContentLoaded', function () {
             'click',
             closeVoucherModal
         );
-
-
-    /* =========================================================
-       FRONTEND-ONLY DEMO SUBMITS
-    ========================================================= */
-    document
-        .querySelectorAll('[data-demo-form]')
-        .forEach(function (form) {
-            form.addEventListener('submit', function (event) {
-                event.preventDefault();
-
-                const action = form.dataset.demoAction || 'action';
-
-                if (action === 'stock') {
-                    const save = form.querySelector('[data-stock-save]');
-                    if (save) save.hidden = true;
-                }
-
-                if (action === 'product') {
-                    closeProductModal();
-                }
-
-                if (action === 'voucher') {
-                    closeVoucherModal();
-                }
-
-                if (action === 'archive') {
-                    closeArchiveModal();
-                }
-
-                window.alert(
-                    'Demo only muna — frontend is hardcoded. The backend team can connect this action later.'
-                );
-            });
-        });
 
 
     /* =========================================================
