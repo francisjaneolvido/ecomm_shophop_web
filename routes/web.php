@@ -38,7 +38,7 @@ Route::post('/seller/register', [SellerRegistrationController::class, 'store'])
     ->name('seller.register.store');
 
 Route::get('/login', function () {
-    return view('auth.login');
+    return redirect()->route('home')->with('open_modal', 'login');
 })->name('login');
 
 Route::post('/login', [LoginController::class, 'store'])

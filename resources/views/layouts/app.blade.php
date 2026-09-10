@@ -125,12 +125,19 @@
          (e.g. /register redirecting home with open_modal = 'account-type'),
          fire the matching open event once the page has loaded. --}}
     @if (session('open_modal') === 'account-type')
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                document.dispatchEvent(new CustomEvent('shophop:open-account-type-modal'));
-            });
-        </script>
-    @endif
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.dispatchEvent(new CustomEvent('shophop:open-account-type-modal'));
+        });
+    </script>
+
+@elseif (session('open_modal') === 'login')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.dispatchEvent(new CustomEvent('shophop:open-login-modal'));
+        });
+    </script>
+@endif
 
 
 </body>
