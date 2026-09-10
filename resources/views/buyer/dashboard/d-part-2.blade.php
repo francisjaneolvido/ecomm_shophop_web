@@ -23,7 +23,7 @@
 {{-- =========================================================
     SHOP BY CATEGORY
 ========================================================= --}}
-<section id="categories" class="py-8 sm:py-10 bg-gray-bg">
+<section id="categories" class="py-10 sm:py-12 bg-gray-bg">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="flex items-end justify-between gap-4 mb-4 sm:mb-5">
@@ -47,7 +47,7 @@
         </div>
 
 
-        <div class="relative" data-category-slider>
+        <div class="relative buyer-reveal" data-category-slider>
 
             <button
                 type="button"
@@ -107,14 +107,14 @@
                     <a
                         href="#"
                         class="group relative overflow-hidden
-                               min-h-32 sm:min-h-36
-                               rounded-xl bg-white
+                               min-h-34 sm:min-h-38
+                               rounded-2xl bg-white
                                border border-gray-border
                                px-3 py-4 text-center
                                flex flex-col items-center justify-center
                                hover:border-teal/35
-                               hover:-translate-y-0.5
-                               hover:shadow-md
+                               hover:-translate-y-1
+                               hover:shadow-lg
                                snap-start
                                transition-all duration-200"
                     >
@@ -194,14 +194,14 @@
 {{-- =========================================================
     VOUCHERS
 ========================================================= --}}
-<section id="vouchers" class="py-8 sm:py-10 bg-white">
+<section id="vouchers" class="py-10 sm:py-12 bg-white">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div
-            class="relative overflow-hidden
-                   bg-[#E9F8F4]
+            class="relative overflow-hidden buyer-reveal
+                   bg-[#EAF9F5]
                    border border-teal/10
-                   rounded-2xl
+                   rounded-3xl
                    px-4 sm:px-6 lg:px-7
                    py-5 sm:py-6"
         >
@@ -235,9 +235,9 @@
                     <a
                         href="{{ Route::has('buyer.profile') ? route('buyer.profile') : '#' }}"
                         class="inline-flex items-center justify-center gap-1.5
-                               bg-navy hover:bg-navy/90
+                               bg-teal hover:bg-teal-dark
                                text-white text-xs font-semibold
-                               px-4 py-2 rounded-lg
+                               px-4 py-2.5 rounded-xl
                                transition shrink-0"
                     >
                         View Vouchers
@@ -300,7 +300,7 @@
 {{-- =========================================================
     DEALS FOR YOU
 ========================================================= --}}
-<section id="deals" class="py-8 sm:py-10 bg-gray-bg">
+<section id="deals" class="py-10 sm:py-12 bg-gray-bg">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="flex items-end justify-between gap-4 mb-4 sm:mb-5">
@@ -333,17 +333,17 @@
         <div
             class="grid grid-cols-2 md:grid-cols-3
                    lg:grid-cols-4 xl:grid-cols-5
-                   gap-3 sm:gap-4"
+                   gap-3 sm:gap-4 buyer-stagger"
         >
             @forelse ($dealProducts as $product)
 
                 <article
                     class="group bg-white
-                           rounded-xl overflow-hidden
+                           rounded-2xl overflow-hidden
                            border border-gray-border
                            hover:border-teal/35
-                           hover:shadow-lg
-                           transition-all duration-200"
+                           hover:shadow-xl hover:-translate-y-1
+                           transition-all duration-300"
                 >
                     <div class="relative aspect-4/3 bg-white overflow-hidden">
                         <a
@@ -432,7 +432,7 @@
                                    bg-teal hover:bg-teal-dark
                                    text-white
                                    text-[10px] sm:text-xs font-semibold
-                                   py-2 rounded-lg
+                                   py-2.5 rounded-xl
                                    flex items-center justify-center gap-1.5
                                    transition"
                         >
@@ -455,7 +455,7 @@
 {{-- =========================================================
     NEW ARRIVALS
 ========================================================= --}}
-<section id="new-arrivals" class="py-8 sm:py-10 bg-white">
+<section id="new-arrivals" class="py-10 sm:py-12 bg-white">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div class="flex items-end justify-between gap-4 mb-4 sm:mb-5">
@@ -488,17 +488,17 @@
         <div
             class="grid grid-cols-2 md:grid-cols-3
                    lg:grid-cols-4 xl:grid-cols-5
-                   gap-3 sm:gap-4"
+                   gap-3 sm:gap-4 buyer-stagger"
         >
             @forelse ($newArrivals as $product)
 
                 <article
                     class="group bg-white
-                           rounded-xl overflow-hidden
+                           rounded-2xl overflow-hidden
                            border border-gray-border
                            hover:border-teal/35
-                           hover:shadow-lg
-                           transition-all duration-200"
+                           hover:shadow-xl hover:-translate-y-1
+                           transition-all duration-300"
                 >
                     <div class="relative aspect-4/3 bg-gray-bg overflow-hidden">
                         <a
@@ -579,7 +579,7 @@
                                    bg-teal hover:bg-teal-dark
                                    text-white
                                    text-[10px] sm:text-xs font-semibold
-                                   py-2 rounded-lg
+                                   py-2.5 rounded-xl
                                    flex items-center justify-center gap-1.5
                                    transition"
                         >
@@ -600,95 +600,89 @@
 
 
 {{-- =========================================================
-    BUYER SHORTCUT CTA
+    BUYER SHORTCUT CTA — SHOPHOP LIGHT
 ========================================================= --}}
-<section class="pb-8 sm:pb-10 bg-white">
+<section class="pb-10 sm:pb-12 bg-white">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div
-            class="relative overflow-hidden
-                   rounded-2xl bg-navy
-                   px-4 sm:px-6 lg:px-7
-                   py-5 sm:py-6"
+            class="relative overflow-hidden buyer-reveal
+                   rounded-3xl
+                   bg-[#EAF9F5]
+                   border border-teal/10
+                   px-5 sm:px-7 lg:px-8
+                   py-6 sm:py-7
+                   shadow-lg shadow-navy/5"
         >
-            <div class="pointer-events-none absolute -right-20 -top-24 w-56 h-56 bg-teal/10 rounded-full"></div>
+            <div class="pointer-events-none absolute -right-20 -top-24 w-56 h-56 bg-teal/10 rounded-full blur-sm"></div>
+            <div class="pointer-events-none absolute -left-16 -bottom-20 w-48 h-48 bg-white/70 rounded-full"></div>
 
-            <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div class="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+
                 <div>
-                    <p class="text-[10px] sm:text-xs font-semibold text-teal tracking-[0.14em] uppercase">
+                    <p class="text-[10px] sm:text-xs font-semibold text-teal-dark tracking-[0.14em] uppercase">
                         Your ShopHop
                     </p>
 
-                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-white mt-1">
+                    <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-navy mt-1">
                         Everything you need, one hop away.
                     </h2>
 
-                    <p class="text-xs sm:text-sm text-white/45 mt-1.5 max-w-xl">
+                    <p class="text-xs sm:text-sm text-navy/50 mt-1.5 max-w-xl">
                         Manage orders, favorites, vouchers, and your account from one place.
                     </p>
                 </div>
 
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 shrink-0">
 
-                <div class="grid grid-cols-4 gap-2 shrink-0">
-                    <a
-                        href="#my-orders"
-                        class="group flex flex-col items-center justify-center
-                               min-w-18 sm:min-w-20
-                               bg-white/10 hover:bg-white/15
-                               border border-white/10
-                               rounded-xl px-2.5 py-2.5
-                               text-white transition"
-                    >
-                        <x-lucide-package class="w-4 h-4 text-teal" />
-                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">
-                            Orders
-                        </span>
+                    <a href="#my-orders"
+                       class="group flex flex-col items-center justify-center min-w-20
+                              bg-white hover:bg-white
+                              border border-white
+                              rounded-2xl px-3 py-3
+                              text-navy shadow-sm
+                              hover:-translate-y-1 hover:shadow-lg
+                              transition-all duration-300">
+                        <x-lucide-package class="w-4 h-4 text-teal-dark" />
+                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">Orders</span>
                     </a>
 
-                    <a
-                        href="#"
-                        class="group flex flex-col items-center justify-center
-                               min-w-18 sm:min-w-20
-                               bg-white/10 hover:bg-white/15
-                               border border-white/10
-                               rounded-xl px-2.5 py-2.5
-                               text-white transition"
-                    >
-                        <x-lucide-heart class="w-4 h-4 text-teal" />
-                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">
-                            Wishlist
-                        </span>
+                    <a href="#"
+                       class="group flex flex-col items-center justify-center min-w-20
+                              bg-white hover:bg-white
+                              border border-white
+                              rounded-2xl px-3 py-3
+                              text-navy shadow-sm
+                              hover:-translate-y-1 hover:shadow-lg
+                              transition-all duration-300">
+                        <x-lucide-heart class="w-4 h-4 text-teal-dark" />
+                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">Wishlist</span>
                     </a>
 
-                    <a
-                        href="#vouchers"
-                        class="group flex flex-col items-center justify-center
-                               min-w-18 sm:min-w-20
-                               bg-white/10 hover:bg-white/15
-                               border border-white/10
-                               rounded-xl px-2.5 py-2.5
-                               text-white transition"
-                    >
-                        <x-lucide-ticket class="w-4 h-4 text-teal" />
-                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">
-                            Vouchers
-                        </span>
+                    <a href="#vouchers"
+                       class="group flex flex-col items-center justify-center min-w-20
+                              bg-white hover:bg-white
+                              border border-white
+                              rounded-2xl px-3 py-3
+                              text-navy shadow-sm
+                              hover:-translate-y-1 hover:shadow-lg
+                              transition-all duration-300">
+                        <x-lucide-ticket class="w-4 h-4 text-teal-dark" />
+                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">Vouchers</span>
                     </a>
 
-                    <a
-                        href="{{ Route::has('buyer.profile') ? route('buyer.profile') : '#' }}"
-                        class="group flex flex-col items-center justify-center
-                               min-w-18 sm:min-w-20
-                               bg-white/10 hover:bg-white/15
-                               border border-white/10
-                               rounded-xl px-2.5 py-2.5
-                               text-white transition"
-                    >
-                        <x-lucide-settings class="w-4 h-4 text-teal" />
-                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">
-                            Account
-                        </span>
+                    <a href="{{ Route::has('buyer.profile') ? route('buyer.profile') : '#' }}"
+                       class="group flex flex-col items-center justify-center min-w-20
+                              bg-white hover:bg-white
+                              border border-white
+                              rounded-2xl px-3 py-3
+                              text-navy shadow-sm
+                              hover:-translate-y-1 hover:shadow-lg
+                              transition-all duration-300">
+                        <x-lucide-settings class="w-4 h-4 text-teal-dark" />
+                        <span class="text-[9px] sm:text-[10px] font-semibold mt-1.5">Account</span>
                     </a>
+
                 </div>
             </div>
         </div>

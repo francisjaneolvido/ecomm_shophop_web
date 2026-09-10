@@ -38,11 +38,35 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Product Details
+        | Product Details — TEMPORARY UI PREVIEW
         |--------------------------------------------------------------------------
         |
-        | Route name resolves to 'buyer.product.show' dahil sa
-        | group-level name('buyer.') prefix sa itaas.
+        | Temporary route ito para makita muna ang hardcoded
+        | Show Product UI kahit walang existing product sa database.
+        |
+        | URL:
+        | http://127.0.0.1:8000/buyer/product-preview
+        |
+        */
+
+        Route::get('/product-preview', function () {
+            return view('buyer.product.show-product-details');
+        })->name('product.preview');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Product Details — Actual Product Route
+        |--------------------------------------------------------------------------
+        |
+        | Ito ang actual product details route.
+        |
+        | Example:
+        | /buyer/product/1
+        |
+        | Route name:
+        | buyer.product.show
+        |
         */
 
         Route::get('/product/{product}', [

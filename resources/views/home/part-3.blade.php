@@ -1,76 +1,108 @@
 {{-- =========================================================
-    NEW ARRIVALS
+    NEW ARRIVALS — PREMIUM EDITORIAL SECTION
 ========================================================= --}}
 <section
     id="new-arrivals"
-    class="py-12 sm:py-16 lg:py-20 bg-gray-bg"
+    class="relative overflow-hidden py-12 sm:py-16 lg:py-18 bg-gray-bg"
 >
 
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
+    {{-- Soft background accents --}}
+    <div class="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-teal/7 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-28 -left-28 w-72 h-72 rounded-full bg-navy/4 blur-3xl"></div>
 
+    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Header --}}
-        <div class="text-center max-w-xl mx-auto mb-8 sm:mb-10">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7 sm:mb-9 reveal-up">
 
-            <p
-                class="text-teal-dark
-                       text-xs sm:text-sm
-                       font-semibold
-                       mb-2
-                       tracking-wide"
+            <div class="max-w-xl">
+
+                <p
+                    class="text-teal-dark
+                           text-xs sm:text-sm
+                           font-semibold
+                           mb-2
+                           tracking-wide"
+                >
+                    JUST IN
+                </p>
+
+                <h2 class="text-navy">
+                    New Arrivals
+                </h2>
+
+                <p class="text-sm sm:text-base text-navy/55 mt-2">
+                    Fresh products and exciting finds added to ShopHop.
+                </p>
+
+            </div>
+
+
+            <a
+                href="#trending"
+                class="group inline-flex items-center gap-2
+                       text-sm font-semibold
+                       text-teal-dark
+                       hover:text-navy
+                       transition-colors duration-300"
             >
-                JUST IN
-            </p>
+                View latest products
 
-
-            <h2 class="text-navy">
-                New Arrivals
-            </h2>
-
-
-            <p class="text-sm sm:text-base text-navy/55 mt-2">
-                Fresh products and exciting finds added to ShopHop.
-            </p>
+                <x-lucide-arrow-right
+                    class="w-4 h-4
+                           transition-transform duration-300
+                           group-hover:translate-x-1"
+                />
+            </a>
 
         </div>
 
 
 
-        {{-- Main card --}}
+        {{-- Feature Card --}}
         <div
-            class="bg-white
-                   rounded-2xl sm:rounded-3xl
+            class="relative overflow-hidden
+                   bg-white
+                   rounded-3xl
                    border border-gray-border
-                   p-5 sm:p-8 lg:p-12"
+                   shadow-sm shadow-navy/5
+                   reveal-up"
+            style="--reveal-delay: 80ms;"
         >
 
-            <div class="grid lg:grid-cols-2 gap-8 sm:gap-10 items-center">
+            <div class="grid lg:grid-cols-[0.88fr_1.12fr] min-h-[430px] lg:min-h-[500px]">
 
 
-                {{-- Content --}}
-                <div>
+                {{-- =================================================
+                    LEFT CONTENT
+                ================================================== --}}
+                <div
+                    class="relative z-10
+                           flex flex-col justify-center
+                           px-6 sm:px-8 lg:px-10 xl:px-12
+                           py-9 sm:py-11 lg:py-12"
+                >
 
                     <span
-                        class="inline-block
+                        class="inline-flex items-center gap-2
+                               w-fit
                                bg-teal-light
                                text-teal-dark
-                               text-xs font-semibold
-                               px-3 py-1.5
+                               text-[10px] sm:text-xs font-semibold
+                               px-3.5 py-2
                                rounded-full
-                               mb-4 sm:mb-5"
+                               mb-5"
                     >
+                        <span class="w-1.5 h-1.5 rounded-full bg-teal"></span>
                         NEW THIS WEEK
                     </span>
 
 
-                    <h2 class="text-navy">
-
+                    <h2 class="text-navy max-w-md">
                         Find something
-
-                        <span class="text-teal">
+                        <span class="block text-teal">
                             you'll love.
                         </span>
-
                     </h2>
 
 
@@ -86,61 +118,165 @@
                     </p>
 
 
+                    {{-- Mini benefits --}}
+                    <div class="flex flex-wrap gap-x-5 gap-y-3 mt-6">
+
+                        <div class="flex items-center gap-2 text-xs sm:text-sm text-navy/55">
+                            <span class="w-7 h-7 rounded-full bg-teal-light flex items-center justify-center">
+                                <x-lucide-sparkles class="w-3.5 h-3.5 text-teal-dark" />
+                            </span>
+                            Fresh picks
+                        </div>
+
+                        <div class="flex items-center gap-2 text-xs sm:text-sm text-navy/55">
+                            <span class="w-7 h-7 rounded-full bg-teal-light flex items-center justify-center">
+                                <x-lucide-package-check class="w-3.5 h-3.5 text-teal-dark" />
+                            </span>
+                            Just added
+                        </div>
+
+                    </div>
+
+
                     <a
                         href="#trending"
-                        class="inline-flex items-center gap-2
-                               mt-5 sm:mt-6
+                        class="group inline-flex items-center justify-center gap-2
+                               w-fit
+                               mt-7
+                               bg-navy hover:bg-[#172750]
+                               text-white
                                text-sm font-semibold
-                               text-teal-dark
-                               hover:text-navy
-                               transition"
+                               px-5 sm:px-6
+                               py-3 sm:py-3.5
+                               rounded-full
+                               shadow-lg shadow-navy/10
+                               hover:-translate-y-0.5
+                               transition-all duration-300"
                     >
-
                         Discover new arrivals
 
-                        <x-lucide-arrow-right class="w-4 h-4" />
-
+                        <x-lucide-arrow-right
+                            class="w-4 h-4
+                                   transition-transform duration-300
+                                   group-hover:translate-x-1"
+                        />
                     </a>
 
                 </div>
 
 
 
-                {{-- Images --}}
-                <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                {{-- =================================================
+                    RIGHT PRODUCT COLLAGE
+                ================================================== --}}
+                <div class="relative min-h-[360px] sm:min-h-[420px] lg:min-h-full bg-[#EEF8F5] overflow-hidden">
+
+                    {{-- Decorative shapes --}}
+                    <div class="absolute -top-16 -right-16 w-52 h-52 rounded-full bg-teal/10 blur-2xl"></div>
+                    <div class="absolute -bottom-20 -left-12 w-44 h-44 rounded-full bg-white/70 blur-xl"></div>
 
 
-                    <div class="aspect-square rounded-2xl overflow-hidden bg-gray-bg">
-
+                    {{-- Main earbuds image --}}
+                    <div
+                        class="absolute
+                               left-[7%] top-[9%]
+                               w-[58%]
+                               aspect-[1/1.05]
+                               rounded-[1.6rem] sm:rounded-[2rem]
+                               overflow-hidden
+                               bg-white
+                               border border-white
+                               shadow-[0_22px_60px_rgba(15,27,61,0.12)]
+                               new-arrival-float"
+                    >
                         <img
                             src="{{ asset('images/hero/earbuds.jpg') }}"
                             alt="New earbuds"
                             class="w-full h-full
                                    object-cover
-                                   hover:scale-105
-                                   transition-transform duration-500"
+                                   transition-transform duration-700
+                                   hover:scale-105"
                         >
-
                     </div>
 
 
+                    {{-- Watch image --}}
                     <div
-                        class="aspect-square
-                               rounded-2xl
+                        class="absolute
+                               right-[7%] bottom-[8%]
+                               w-[47%]
+                               aspect-square
+                               rounded-[1.4rem] sm:rounded-[1.8rem]
                                overflow-hidden
-                               bg-gray-bg
-                               mt-5 sm:mt-8"
+                               bg-white
+                               border border-white
+                               shadow-[0_20px_50px_rgba(15,27,61,0.12)]
+                               new-arrival-float new-arrival-delay"
                     >
-
                         <img
                             src="{{ asset('images/hero/watch.jpg') }}"
                             alt="New fitness watch"
                             class="w-full h-full
                                    object-cover
-                                   hover:scale-105
-                                   transition-transform duration-500"
+                                   transition-transform duration-700
+                                   hover:scale-105"
                         >
+                    </div>
 
+
+                    {{-- Floating label --}}
+                    <div
+                        class="absolute
+                               z-20
+                               right-[5%] top-[10%]
+                               bg-white/95 backdrop-blur
+                               rounded-2xl
+                               px-3.5 py-3
+                               shadow-lg shadow-navy/10
+                               border border-white
+                               new-arrival-chip"
+                    >
+                        <div class="flex items-center gap-2.5">
+
+                            <span
+                                class="w-9 h-9
+                                       rounded-xl
+                                       bg-teal-light
+                                       flex items-center justify-center"
+                            >
+                                <x-lucide-trending-up class="w-4 h-4 text-teal-dark" />
+                            </span>
+
+                            <div>
+                                <p class="text-[9px] sm:text-[10px] text-navy/40">
+                                    Fresh drop
+                                </p>
+
+                                <p class="text-[10px] sm:text-xs font-semibold text-navy mt-0.5">
+                                    This Week
+                                </p>
+                            </div>
+
+                        </div>
+                    </div>
+
+
+                    {{-- Small badge --}}
+                    <div
+                        class="absolute
+                               z-20
+                               left-[5%] bottom-[7%]
+                               inline-flex items-center gap-1.5
+                               bg-navy
+                               text-white
+                               text-[9px] sm:text-[10px]
+                               font-semibold
+                               px-3 py-2
+                               rounded-full
+                               shadow-lg shadow-navy/15"
+                    >
+                        <x-lucide-zap class="w-3 h-3 text-teal" />
+                        TRENDING NOW
                     </div>
 
                 </div>
@@ -156,55 +292,72 @@
 
 
 {{-- =========================================================
-    FINAL CTA
+    FINAL CTA — LIGHT / HIGH-CONTRAST
 ========================================================= --}}
-<section class="py-12 sm:py-16 lg:py-20 bg-white">
+<section class="py-12 sm:py-16 lg:py-18 bg-white">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div
             class="relative
                    overflow-hidden
-                   rounded-2xl sm:rounded-3xl
-                   bg-[#E9F8F4]
-                   px-5 sm:px-8 lg:px-16
+                   rounded-3xl
+                   bg-[#EAF9F5]
+                   border border-teal/10
+                   px-5 sm:px-8 lg:px-14
                    py-10 sm:py-12 lg:py-14
-                   text-center"
+                   text-center
+                   shadow-lg shadow-navy/5
+                   reveal-up"
         >
-
 
             {{-- Decorations --}}
             <div
-                class="absolute
-                       -left-20 -top-20
-                       w-40 sm:w-48
-                       h-40 sm:h-48
+                class="pointer-events-none
+                       absolute -left-20 -top-20
+                       w-48 h-48
                        rounded-full
-                       bg-teal/10"
+                       bg-teal/12
+                       blur-sm"
             ></div>
 
             <div
-                class="absolute
-                       -right-20 -bottom-20
-                       w-40 sm:w-48
-                       h-40 sm:h-48
+                class="pointer-events-none
+                       absolute -right-20 -bottom-20
+                       w-48 h-48
                        rounded-full
-                       bg-teal/10"
+                       bg-navy/5"
             ></div>
 
+            <div
+                class="pointer-events-none
+                       absolute left-1/2 top-1/2
+                       -translate-x-1/2 -translate-y-1/2
+                       w-80 h-32
+                       rounded-full
+                       bg-white/50
+                       blur-3xl"
+            ></div>
 
 
             <div class="relative max-w-2xl mx-auto">
 
-                <p
-                    class="text-teal-dark
-                           text-xs sm:text-sm
+                <div
+                    class="inline-flex items-center gap-2
+                           bg-white/80
+                           border border-teal/15
+                           text-teal-dark
+                           text-[10px] sm:text-xs
                            font-semibold
-                           mb-3
-                           tracking-wide"
+                           tracking-wide
+                           px-3.5 py-2
+                           rounded-full
+                           mb-4
+                           shadow-sm"
                 >
+                    <x-lucide-shopping-bag class="w-3.5 h-3.5" />
                     SHOPHOP
-                </p>
+                </div>
 
 
                 <h2 class="text-navy">
@@ -212,7 +365,12 @@
                 </h2>
 
 
-                <p class="text-sm sm:text-base text-navy/55 mt-3 mb-6 sm:mb-7">
+                <p
+                    class="text-sm sm:text-base
+                           text-navy/55
+                           mt-3
+                           mb-6 sm:mb-7"
+                >
                     Discover your next favorite product today.
                 </p>
 
@@ -220,7 +378,7 @@
                 <a
                     href="#trending"
                     data-login-required
-                    class="inline-flex
+                    class="group inline-flex
                            items-center justify-center gap-2
                            bg-teal
                            hover:bg-teal-dark
@@ -231,13 +389,16 @@
                            rounded-full
                            transition-all duration-300
                            hover:-translate-y-0.5
+                           hover:shadow-xl
                            shadow-lg shadow-teal/20"
                 >
-
                     Start Shopping
 
-                    <x-lucide-arrow-right class="w-4 h-4" />
-
+                    <x-lucide-arrow-right
+                        class="w-4 h-4
+                               transition-transform duration-300
+                               group-hover:translate-x-1"
+                    />
                 </a>
 
             </div>
@@ -250,26 +411,21 @@
 
 
 {{-- =========================================================
-    HERO / CATEGORY ANIMATIONS
-    (Login modal has moved to resources/views/auth/modals/login-modal.blade.php
-    — include it once in your layout instead of here.)
+    LANDING PAGE ANIMATIONS
+    Hero animation styles now live with the redesigned hero.
+    Keep category slideshow + section animations here.
 ========================================================= --}}
 @push('styles')
 <style>
-    @keyframes shopHopFloat {
-        0%, 100% {
-            transform: translateY(0);
-        }
 
-        50% {
-            transform: translateY(-10px);
-        }
-    }
+    /* =================================
+       CATEGORY BACKGROUND SLIDESHOW
+    ================================= */
 
     @keyframes categorySlideshow {
         0% {
             opacity: 0;
-            transform: scale(1.03);
+            transform: scale(1.035);
         }
 
         4% {
@@ -302,28 +458,129 @@
         animation: categorySlideshow 12s ease-in-out infinite;
     }
 
-    .hero-main-product {
-        animation: shopHopFloat 5s ease-in-out infinite;
+
+    /* =================================
+       NEW ARRIVALS FLOATING VISUALS
+    ================================= */
+
+    @keyframes newArrivalFloat {
+        0%, 100% {
+            transform: translateY(0) rotate(0);
+        }
+
+        50% {
+            transform: translateY(-8px) rotate(.5deg);
+        }
     }
 
-    .hero-floating-card {
-        animation: shopHopFloat 4s ease-in-out infinite;
+    @keyframes newArrivalChip {
+        0%, 100% {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(-5px);
+        }
     }
 
-    .hero-delay {
-        animation-delay: 1.5s;
+    .new-arrival-float {
+        animation: newArrivalFloat 5.5s ease-in-out infinite;
     }
+
+    .new-arrival-delay {
+        animation-delay: 1.2s;
+    }
+
+    .new-arrival-chip {
+        animation: newArrivalChip 4.4s ease-in-out infinite;
+    }
+
+
+    /* =================================
+       SCROLL REVEAL
+    ================================= */
+
+    .reveal-up {
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+            opacity .65s ease var(--reveal-delay, 0ms),
+            transform .65s cubic-bezier(.22, 1, .36, 1) var(--reveal-delay, 0ms);
+    }
+
+    .reveal-up.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+
+    /* =================================
+       REDUCED MOTION
+    ================================= */
 
     @media (prefers-reduced-motion: reduce) {
-        .hero-main-product,
-        .hero-floating-card,
-        .category-slide {
-            animation: none;
+
+        .category-slide,
+        .new-arrival-float,
+        .new-arrival-chip {
+            animation: none !important;
         }
 
         .category-slide:first-child {
             opacity: 1;
         }
+
+        .reveal-up {
+            opacity: 1;
+            transform: none;
+            transition: none;
+        }
     }
+
 </style>
+@endpush
+
+
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const revealItems = document.querySelectorAll('.reveal-up');
+
+        if (!revealItems.length) {
+            return;
+        }
+
+        if (
+            window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ) {
+            revealItems.forEach(function (item) {
+                item.classList.add('is-visible');
+            });
+
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            },
+            {
+                threshold: 0.12
+            }
+        );
+
+        revealItems.forEach(function (item) {
+            observer.observe(item);
+        });
+
+    });
+</script>
 @endpush

@@ -101,6 +101,62 @@
     }
 
 
+
+
+    /* =========================================================
+       BUYER DASHBOARD MOTION / MICRO-INTERACTIONS
+    ========================================================= */
+
+    @keyframes buyerPingSoft {
+        75%, 100% {
+            transform: scale(2.1);
+            opacity: 0;
+        }
+    }
+
+    .buyer-ping {
+        animation: buyerPingSoft 2s cubic-bezier(0, 0, .2, 1) infinite;
+    }
+
+    .buyer-reveal {
+        opacity: 0;
+        transform: translateY(18px);
+        transition:
+            opacity .65s ease var(--buyer-delay, 0ms),
+            transform .65s cubic-bezier(.22, 1, .36, 1) var(--buyer-delay, 0ms);
+    }
+
+    .buyer-reveal.is-visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .buyer-stagger > * {
+        opacity: 0;
+        transform: translateY(14px);
+        transition:
+            opacity .55s ease,
+            transform .55s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .buyer-stagger.is-visible > * {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .buyer-stagger.is-visible > *:nth-child(2) { transition-delay: 45ms; }
+    .buyer-stagger.is-visible > *:nth-child(3) { transition-delay: 90ms; }
+    .buyer-stagger.is-visible > *:nth-child(4) { transition-delay: 135ms; }
+    .buyer-stagger.is-visible > *:nth-child(5) { transition-delay: 180ms; }
+    .buyer-stagger.is-visible > *:nth-child(6) { transition-delay: 225ms; }
+    .buyer-stagger.is-visible > *:nth-child(7) { transition-delay: 270ms; }
+    .buyer-stagger.is-visible > *:nth-child(8) { transition-delay: 315ms; }
+
+    .buyer-card {
+        will-change: transform;
+    }
+
+
     @media (prefers-reduced-motion: reduce) {
 
         .category-slide {
@@ -109,6 +165,17 @@
 
         .category-slide:first-child {
             opacity: 1;
+        }
+
+        .buyer-reveal,
+        .buyer-stagger > * {
+            opacity: 1 !important;
+            transform: none !important;
+            transition: none !important;
+        }
+
+        .buyer-ping {
+            animation: none !important;
         }
 
     }
@@ -253,6 +320,48 @@ document.addEventListener('DOMContentLoaded', function () {
             updateButtons();
 
         });
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | BUYER DASHBOARD REVEALS
+    |--------------------------------------------------------------------------
+    */
+
+    const motionReduced =
+        window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const revealTargets = document.querySelectorAll('.buyer-reveal, .buyer-stagger');
+
+    if (motionReduced) {
+        revealTargets.forEach(function (item) {
+            item.classList.add('is-visible');
+        });
+    } else if ('IntersectionObserver' in window) {
+        const revealObserver = new IntersectionObserver(
+            function (entries) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        revealObserver.unobserve(entry.target);
+                    }
+                });
+            },
+            {
+                threshold: 0.12,
+                rootMargin: '0px 0px -24px 0px'
+            }
+        );
+
+        revealTargets.forEach(function (item) {
+            revealObserver.observe(item);
+        });
+    } else {
+        revealTargets.forEach(function (item) {
+            item.classList.add('is-visible');
+        });
+    }
 
 });
 </script>
