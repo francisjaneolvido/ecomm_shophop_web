@@ -221,13 +221,6 @@
         <div class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-4">
 
             <div class="min-w-0">
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="w-2 h-2 rounded-full bg-teal animate-pulse"></span>
-
-                    <p class="text-[12px] uppercase tracking-[0.18em] font-bold text-teal-dark">
-                        ShopHop Seller
-                    </p>
-                </div>
 
                 <div class="flex flex-wrap items-center gap-2.5">
                     <h1 class="text-xl sm:text-2xl font-bold text-navy">

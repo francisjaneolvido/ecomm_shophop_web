@@ -14,7 +14,7 @@
     | Your backend teammate can later replace this collection with:
     | - real conversations/messages
     | - unread counts
-    | - buyer online status
+    | - buyer/admin online status
     | - order/product relationships
     | - attachments
     | - typing indicators / realtime messaging
@@ -25,6 +25,7 @@
         [
             'id' => 1,
             'name' => 'Maricel Santos',
+            'role' => 'buyer',
             'initials' => 'MS',
             'avatar' => null,
             'online' => true,
@@ -33,6 +34,7 @@
             'time' => '10:24 AM',
             'unread' => 2,
             'pinned' => true,
+            'archived' => false,
             'order' => [
                 'id' => 'ORD-10231',
                 'status' => 'OUT_FOR_DELIVERY',
@@ -68,6 +70,7 @@
         [
             'id' => 2,
             'name' => 'Jonas Villareal',
+            'role' => 'buyer',
             'initials' => 'JV',
             'avatar' => null,
             'online' => false,
@@ -76,6 +79,7 @@
             'time' => 'Yesterday',
             'unread' => 0,
             'pinned' => false,
+            'archived' => true,
             'order' => [
                 'id' => 'ORD-10224',
                 'status' => 'COMPLETED',
@@ -111,6 +115,7 @@
         [
             'id' => 3,
             'name' => 'Ella Marasigan',
+            'role' => 'buyer',
             'initials' => 'EM',
             'avatar' => null,
             'online' => false,
@@ -119,6 +124,7 @@
             'time' => '2 days ago',
             'unread' => 0,
             'pinned' => false,
+            'archived' => false,
             'order' => [
                 'id' => 'ORD-10218',
                 'status' => 'READY_FOR_PICKUP',
@@ -154,6 +160,7 @@
         [
             'id' => 4,
             'name' => 'Anna Reyes',
+            'role' => 'buyer',
             'initials' => 'AR',
             'avatar' => null,
             'online' => true,
@@ -162,6 +169,7 @@
             'time' => '3 days ago',
             'unread' => 1,
             'pinned' => false,
+            'archived' => false,
             'order' => [
                 'id' => 'ORD-10198',
                 'status' => 'COMPLETED',
@@ -187,11 +195,52 @@
                 ],
             ],
         ],
+
+        [
+            'id' => 5,
+            'name' => 'ShopHop Admin',
+            'role' => 'admin',
+            'initials' => 'AD',
+            'avatar' => null,
+            'online' => true,
+            'last_seen' => 'Online now',
+            'last_message' => 'Na-approve na po namin ang inyong compliance documents.',
+            'time' => '5 days ago',
+            'unread' => 1,
+            'pinned' => true,
+            'archived' => false,
+            'order' => [
+                'id' => 'SEL-00456',
+                'status' => 'COMPLETED',
+                'total' => 0,
+                'delivery_area' => 'ShopHop Platform Support',
+                'product' => 'Seller Compliance Review',
+                'variant' => 'Documents Verification',
+                'qty' => 1,
+                'image' => 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=240&q=80',
+            ],
+            'messages' => [
+                [
+                    'from' => 'admin',
+                    'text' => 'Hi Seller! Nakita namin ang inyong submitted compliance documents.',
+                    'time' => '5 days ago, 2:10 PM',
+                    'status' => null,
+                ],
+                [
+                    'from' => 'admin',
+                    'text' => 'Na-approve na po namin ang inyong compliance documents.',
+                    'time' => '5 days ago, 2:20 PM',
+                    'status' => null,
+                ],
+            ],
+        ],
     ]);
 
     $totalUnread = $conversations->sum('unread');
     $unreadConversations = $conversations->where('unread', '>', 0)->count();
     $onlineCount = $conversations->where('online', true)->count();
+    $activeCount = $conversations->where('archived', false)->count();
+    $archivedCount = $conversations->where('archived', true)->count();
 
     $statusClasses = [
         'PLACED' => 'bg-coral/10 text-coral',
@@ -245,6 +294,27 @@
         border-color: #0F2C3F;
     }
 
+    .role-badge-buyer {
+        background: rgba(74, 168, 224, .12);
+        color: #2E7BB0;
+    }
+
+    .role-badge-admin {
+        background: rgba(255, 122, 89, .12);
+        color: #E15C3E;
+    }
+
+    .chat-view-tab-active {
+        background: #ffffff;
+        color: #0F2C3F;
+        box-shadow: 0 1px 3px rgba(15, 44, 63, .12);
+    }
+
+    #threadOptionsMenu[hidden],
+    #chatArchiveConfirm[hidden] {
+        display: none !important;
+    }
+
     @media (max-width: 767px) {
         #sellerChat {
             height: calc(100vh - 120px);
@@ -278,7 +348,7 @@
                     <span class="w-2 h-2 rounded-full bg-teal"></span>
 
                     <p class="text-[10px] uppercase tracking-[0.18em] font-bold text-teal-dark">
-                        Buyer Messaging
+                        Buyer &amp; Platform Messaging
                     </p>
                 </div>
 
@@ -289,8 +359,8 @@
 
 
                 <p class="text-xs sm:text-sm text-navy/45 mt-1 max-w-2xl">
-                    Answer buyer questions, discuss order concerns, and keep conversations
-                    connected to the correct order.
+                    Answer buyer questions, discuss order concerns, coordinate with ShopHop
+                    Admin, and keep conversations connected to the correct order.
                 </p>
 
             </div>
@@ -331,36 +401,10 @@
             class="w-full md:w-80 xl:w-96 shrink-0 border-r border-gray-border flex flex-col"
         >
 
-            {{-- List header --}}
-            <div class="p-3 border-b border-gray-border">
+            {{-- List header — diretso na sa search bar, tulad ng admin chat --}}
+            <div class="p-4 border-b border-gray-border space-y-3">
 
-                <div class="flex items-center justify-between gap-3">
-
-                    <div>
-
-                        <p class="text-sm font-bold text-navy">
-                            Conversations
-                        </p>
-
-                        <p class="text-[10px] text-navy/35 mt-0.5">
-                            {{ $conversations->count() }} total · {{ $unreadConversations }} unread
-                        </p>
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        id="chatClearSearch"
-                        class="text-[10px] font-semibold text-navy/35 hover:text-teal-dark transition"
-                    >
-                        Clear
-                    </button>
-
-                </div>
-
-
-                <div class="relative mt-3">
+                <div class="relative">
 
                     <x-lucide-search class="w-4 h-4 text-navy/30 absolute left-3 top-1/2 -translate-y-1/2" />
 
@@ -368,18 +412,53 @@
                         type="text"
                         id="chatSearchInput"
                         placeholder="Search buyer, order or message..."
-                        class="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-border text-xs text-navy placeholder:text-navy/30 focus:outline-none focus:border-teal/50"
+                        class="w-full pl-9 pr-4 py-2 text-sm rounded-xl bg-gray-bg border border-transparent text-navy placeholder:text-navy/30 focus:bg-white focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20 transition"
                     >
 
                 </div>
 
 
-                <div class="flex items-center gap-1 mt-2 overflow-x-auto">
+                {{-- Active / Archived view tabs --}}
+                <div class="flex items-center gap-1 p-1 rounded-xl bg-gray-bg text-sm font-medium">
+
+                    <button
+                        type="button"
+                        data-chat-view="active"
+                        class="chat-view-tab chat-view-tab-active flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg transition"
+                    >
+                        Active
+                        <span
+                            id="activeViewCount"
+                            class="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-coral text-white text-[10px] font-bold"
+                        >
+                            {{ $activeCount }}
+                        </span>
+                    </button>
+
+
+                    <button
+                        type="button"
+                        data-chat-view="archived"
+                        class="chat-view-tab flex-1 inline-flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-navy/45 transition"
+                    >
+                        Archived
+                        <span
+                            id="archivedViewCount"
+                            class="inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-navy/10 text-navy/50 text-[10px] font-bold"
+                        >
+                            {{ $archivedCount }}
+                        </span>
+                    </button>
+
+                </div>
+
+
+                <div class="flex items-center gap-1 text-xs">
 
                     <button
                         type="button"
                         data-chat-filter="all"
-                        class="chat-filter chat-filter-active h-8 px-3 rounded-lg border border-transparent text-[11px] font-semibold whitespace-nowrap transition"
+                        class="chat-filter chat-filter-active px-2.5 py-1 rounded-full border border-transparent font-semibold whitespace-nowrap transition"
                     >
                         All
                     </button>
@@ -388,7 +467,7 @@
                     <button
                         type="button"
                         data-chat-filter="unread"
-                        class="chat-filter h-8 px-3 rounded-lg border border-transparent text-[11px] font-semibold text-navy/45 hover:bg-gray-bg whitespace-nowrap transition"
+                        class="chat-filter px-2.5 py-1 rounded-full border border-transparent font-semibold text-navy/45 hover:bg-gray-bg whitespace-nowrap transition"
                     >
                         Unread
                     </button>
@@ -396,19 +475,28 @@
 
                     <button
                         type="button"
-                        data-chat-filter="online"
-                        class="chat-filter h-8 px-3 rounded-lg border border-transparent text-[11px] font-semibold text-navy/45 hover:bg-gray-bg whitespace-nowrap transition"
+                        data-chat-filter="pinned"
+                        class="chat-filter px-2.5 py-1 rounded-full border border-transparent font-semibold text-navy/45 hover:bg-gray-bg whitespace-nowrap transition"
                     >
-                        Online
+                        Pinned
                     </button>
 
 
                     <button
                         type="button"
-                        data-chat-filter="pinned"
-                        class="chat-filter h-8 px-3 rounded-lg border border-transparent text-[11px] font-semibold text-navy/45 hover:bg-gray-bg whitespace-nowrap transition"
+                        data-chat-filter="buyer"
+                        class="chat-filter px-2.5 py-1 rounded-full border border-transparent font-semibold text-navy/45 hover:bg-gray-bg whitespace-nowrap transition"
                     >
-                        Pinned
+                        Buyers
+                    </button>
+
+
+                    <button
+                        type="button"
+                        data-chat-filter="admin"
+                        class="chat-filter px-2.5 py-1 rounded-full border border-transparent font-semibold text-navy/45 hover:bg-gray-bg whitespace-nowrap transition"
+                    >
+                        Admin
                     </button>
 
                 </div>
@@ -427,6 +515,7 @@
                     @php
                         $searchText = strtolower(
                             $conversation['name'] . ' ' .
+                            ($conversation['role'] ?? '') . ' ' .
                             $conversation['last_message'] . ' ' .
                             ($conversation['order']['id'] ?? '') . ' ' .
                             ($conversation['order']['product'] ?? '')
@@ -439,23 +528,51 @@
                     @endphp
 
 
-                    <button
-                        type="button"
+                    <div
                         data-conversation-trigger
+                        role="button"
+                        tabindex="0"
                         data-conversation-id="{{ $conversation['id'] }}"
                         data-unread="{{ $conversation['unread'] > 0 ? '1' : '0' }}"
                         data-online="{{ $conversation['online'] ? '1' : '0' }}"
                         data-pinned="{{ $conversation['pinned'] ? '1' : '0' }}"
+                        data-archived="{{ ($conversation['archived'] ?? false) ? '1' : '0' }}"
+                        data-role="{{ $conversation['role'] ?? 'buyer' }}"
                         data-search="{{ $searchText }}"
                         data-conversation='{{ $conversationJson }}'
-                        class="conversation-row w-full flex items-start gap-3 px-3 py-3.5 border-b border-gray-border/60 text-left hover:bg-gray-bg/60 transition
+                        class="conversation-row group relative w-full flex items-start gap-3 px-4 py-3 pr-14 border-b border-gray-border/60 text-left hover:bg-gray-bg/60 transition cursor-pointer
                             {{ $index === 0 ? 'conversation-active' : '' }}"
                     >
+
+                        {{-- Hover actions: mark as unread / archive --}}
+                        <div class="hidden group-hover:flex items-center gap-1 absolute top-2.5 right-2.5 bg-white rounded-lg shadow border border-gray-border p-0.5 z-10">
+
+                            <button
+                                type="button"
+                                title="Mark as unread"
+                                onclick="toggleRowUnread(this, event)"
+                                class="p-1.5 rounded-md hover:bg-gray-bg text-navy/40"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" /></svg>
+                            </button>
+
+                            <button
+                                type="button"
+                                title="Archive"
+                                onclick="toggleRowArchive(this, event)"
+                                class="p-1.5 rounded-md hover:bg-gray-bg text-navy/40"
+                            >
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 8h14M5 8a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v2a2 2 0 01-2 2M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8M10 12h4" />
+                                </svg>
+                            </button>
+
+                        </div>
 
                         {{-- Avatar --}}
                         <div class="relative shrink-0">
 
-                            <div class="w-10 h-10 rounded-full bg-navy/10 text-navy flex items-center justify-center text-[11px] font-bold overflow-hidden">
+                            <div class="w-10 h-10 rounded-full bg-navy/10 text-navy flex items-center justify-center text-xs font-bold overflow-hidden">
 
                                 @if (!empty($conversation['avatar']))
 
@@ -489,16 +606,23 @@
 
                                 <div class="min-w-0 flex items-center gap-1.5">
 
-                                    <p class="text-xs font-semibold text-navy truncate">
+                                    <p class="text-sm font-semibold text-navy truncate">
                                         {{ $conversation['name'] }}
                                     </p>
 
 
-                                    @if ($conversation['pinned'])
+                                    <span
+                                        class="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide
+                                            {{ ($conversation['role'] ?? 'buyer') === 'admin' ? 'role-badge-admin' : 'role-badge-buyer' }}"
+                                    >
+                                        {{ $conversation['role'] ?? 'buyer' }}
+                                    </span>
 
-                                        <x-lucide-pin class="w-3 h-3 text-navy/25 shrink-0" />
 
-                                    @endif
+                                    <x-lucide-pin
+                                        data-row-pin-icon
+                                        class="w-3 h-3 text-navy/25 shrink-0 {{ $conversation['pinned'] ? '' : 'hidden' }}"
+                                    />
 
                                 </div>
 
@@ -510,11 +634,11 @@
                             </div>
 
 
-                            <div class="flex items-center justify-between gap-2 mt-1">
+                            <div class="flex items-center justify-between gap-2 mt-0.5">
 
                                 <p
                                     data-row-last-message
-                                    class="text-[11px] {{ $conversation['unread'] > 0 ? 'font-semibold text-navy/70' : 'text-navy/45' }} truncate"
+                                    class="text-xs {{ $conversation['unread'] > 0 ? 'font-semibold text-navy/70' : 'text-navy/45' }} truncate"
                                 >
                                     {{ $conversation['last_message'] }}
                                 </p>
@@ -536,23 +660,15 @@
 
                             @if (!empty($conversation['order']))
 
-                                <div class="mt-1.5 flex items-center gap-1.5">
-
-                                    <x-lucide-package class="w-3 h-3 text-navy/25 shrink-0" />
-
-                                    <span class="text-[9px] font-semibold text-navy/30 truncate">
-                                        {{ $conversation['order']['id'] }}
-                                        ·
-                                        {{ $conversation['order']['product'] }}
-                                    </span>
-
-                                </div>
+                                <p class="text-[10px] text-navy/40 mt-1">
+                                    Order #{{ $conversation['order']['id'] }}
+                                </p>
 
                             @endif
 
                         </div>
 
-                    </button>
+                    </div>
 
                 @endforeach
 
@@ -591,9 +707,9 @@
         >
 
             {{-- Thread header --}}
-            <div class="flex items-center justify-between gap-3 px-3 sm:px-4 py-3 border-b border-gray-border">
+            <div class="flex items-center justify-between gap-3 px-3 sm:px-5 py-3.5 border-b border-gray-border">
 
-                <div class="flex items-center gap-2.5 min-w-0">
+                <div class="flex items-center gap-3 min-w-0">
 
                     <button
                         type="button"
@@ -608,7 +724,7 @@
 
                         <div
                             id="threadAvatar"
-                            class="w-9 h-9 rounded-full bg-navy/10 text-navy flex items-center justify-center text-[11px] font-bold"
+                            class="w-9 h-9 rounded-full bg-navy/10 text-navy flex items-center justify-center text-xs font-bold"
                         ></div>
 
                         <span
@@ -622,14 +738,23 @@
 
                     <div class="min-w-0">
 
-                        <p
-                            id="threadName"
-                            class="text-xs sm:text-sm font-bold text-navy truncate"
-                        ></p>
+                        <div class="flex items-center gap-1.5">
+
+                            <p
+                                id="threadName"
+                                class="text-sm font-semibold text-navy truncate"
+                            ></p>
+
+                            <span
+                                id="threadRoleBadge"
+                                class="shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide"
+                            ></span>
+
+                        </div>
 
                         <p
                             id="threadPresence"
-                            class="text-[10px] text-navy/35 mt-0.5"
+                            class="text-xs text-teal-dark mt-0.5"
                         ></p>
 
                     </div>
@@ -642,20 +767,101 @@
                     <button
                         type="button"
                         id="openOrderContext"
-                        class="inline-flex items-center gap-1.5 h-8 px-2.5 rounded-lg border border-gray-border text-[10px] font-semibold text-navy/50 hover:bg-gray-bg hover:text-navy transition"
+                        title="View related order"
+                        class="p-2 rounded-lg hover:bg-gray-bg text-navy/50"
                     >
-                        <x-lucide-package-search class="w-3.5 h-3.5" />
-                        <span class="hidden sm:inline">Order Details</span>
+                        <x-lucide-package-search class="w-4 h-4" />
+                    </button>
+
+
+                    <button
+                        type="button"
+                        id="threadMuteBtn"
+                        title="Mute notifications"
+                        class="p-2 rounded-lg hover:bg-gray-bg text-navy/50"
+                    >
+                        <svg id="threadMuteIconOn" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <svg id="threadMuteIconOff" class="w-4 h-4 hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.143 17.082a24.248 24.248 0 003.844.148m-3.844-.148a23.856 23.856 0 01-5.455-1.31 8.964 8.964 0 002.3-5.542m3.155 6.852a3 3 0 005.667 1.97m1.965-2.277L21 21m-4.225-4.225a23.81 23.81 0 003.536-1.003A8.967 8.967 0 0118 9.75V9A6 6 0 006.53 6.53m10.245 10.245L6.53 6.53M3 3l3.53 3.53" />
+                        </svg>
                     </button>
 
 
                     <button
                         type="button"
                         id="toggleChatInfo"
-                        class="w-8 h-8 rounded-lg flex items-center justify-center text-navy/40 hover:bg-gray-bg hover:text-navy transition"
+                        title="Conversation info"
+                        class="p-2 rounded-lg hover:bg-gray-bg text-navy/50"
                     >
                         <x-lucide-info class="w-4 h-4" />
                     </button>
+
+
+                    {{-- Thread options (archive / block / report) --}}
+                    <div class="relative">
+
+                        <button
+                            type="button"
+                            id="toggleThreadOptions"
+                            title="More options"
+                            class="p-2 rounded-lg hover:bg-gray-bg text-navy/50"
+                            aria-label="More conversation options"
+                            aria-expanded="false"
+                        >
+                            <x-lucide-ellipsis class="w-4 h-4" />
+                        </button>
+
+
+                        <div
+                            id="threadOptionsMenu"
+                            hidden
+                            class="hidden absolute right-0 mt-1 w-48 bg-white border border-gray-border rounded-xl shadow-lg py-1 z-10 text-sm"
+                        >
+
+                            <button
+                                type="button"
+                                id="threadPinAction"
+                                class="w-full text-left px-3 py-2 hover:bg-gray-bg text-navy/70 flex items-center gap-2"
+                            >
+                                <x-lucide-pin class="w-4 h-4 text-navy/40" />
+                                <span id="threadPinActionLabel">Pin conversation</span>
+                            </button>
+
+
+                            <button
+                                type="button"
+                                id="threadArchiveAction"
+                                class="w-full text-left px-3 py-2 hover:bg-gray-bg text-navy/70 flex items-center gap-2"
+                            >
+                                <x-lucide-archive class="w-4 h-4 text-navy/40" />
+                                <span id="threadArchiveActionLabel">Archive conversation</span>
+                            </button>
+
+
+                            <button
+                                type="button"
+                                id="threadBlockAction"
+                                class="w-full text-left px-3 py-2 hover:bg-gray-bg text-navy/70 flex items-center gap-2"
+                            >
+                                <x-lucide-lock class="w-4 h-4 text-navy/40" />
+                                Block user
+                            </button>
+
+
+                            <button
+                                type="button"
+                                id="threadReportAction"
+                                class="w-full text-left px-3 py-2 hover:bg-red-50 text-coral flex items-center gap-2"
+                            >
+                                <x-lucide-circle-alert class="w-4 h-4" />
+                                Report / Flag chat
+                            </button>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
@@ -691,7 +897,7 @@
 
                             <p
                                 id="threadOrderId"
-                                class="text-[11px] font-bold text-navy"
+                                class="text-xs font-bold text-navy"
                             ></p>
 
                             <span
@@ -704,7 +910,7 @@
 
                         <p
                             id="threadOrderProduct"
-                            class="text-[10px] text-navy/40 mt-0.5 truncate"
+                            class="text-[11px] text-navy/40 mt-0.5 truncate"
                         ></p>
 
                     </div>
@@ -712,7 +918,7 @@
 
                     <p
                         id="threadOrderTotal"
-                        class="text-xs font-bold text-navy shrink-0"
+                        class="text-sm font-bold text-navy shrink-0"
                     ></p>
 
                 </div>
@@ -723,12 +929,12 @@
             {{-- Messages --}}
             <div
                 id="threadMessages"
-                class="flex-1 overflow-y-auto chat-scrollbar px-3 sm:px-4 py-4 space-y-3 bg-white"
+                class="flex-1 overflow-y-auto chat-scrollbar px-3 sm:px-5 py-4 space-y-4 bg-white"
             ></div>
 
 
             {{-- Quick replies --}}
-            <div class="px-3 sm:px-4 pt-2 border-t border-gray-border bg-white">
+            <div class="px-3 sm:px-5 pt-2 border-t border-gray-border bg-white">
 
                 <div
                     id="quickReplies"
@@ -745,7 +951,7 @@
                         <button
                             type="button"
                             data-quick-reply="{{ $quickReply }}"
-                            class="h-8 px-3 rounded-full border border-gray-border bg-white text-[10px] font-semibold text-navy/50 hover:border-teal/30 hover:text-teal-dark whitespace-nowrap transition"
+                            class="shrink-0 text-xs px-3 py-1.5 rounded-full border border-gray-border bg-white font-semibold text-navy/50 hover:border-teal/30 hover:text-teal-dark whitespace-nowrap transition"
                         >
                             {{ $quickReply }}
                         </button>
@@ -760,7 +966,7 @@
             {{-- Composer --}}
             <form
                 id="chatSendForm"
-                class="px-3 sm:px-4 py-3 border-t border-gray-border bg-white"
+                class="px-3 sm:px-5 py-3 border-t border-gray-border bg-white"
             >
 
                 <div class="flex items-end gap-2">
@@ -768,8 +974,8 @@
                     <button
                         type="button"
                         id="demoAttachButton"
-                        class="w-9 h-9 rounded-lg border border-gray-border text-navy/40 flex items-center justify-center hover:bg-gray-bg hover:text-navy shrink-0 transition"
-                        title="Attach file"
+                        title="Attach file / image"
+                        class="p-2.5 rounded-xl text-navy/40 hover:bg-gray-bg shrink-0 transition"
                     >
                         <x-lucide-paperclip class="w-4 h-4" />
                     </button>
@@ -782,13 +988,13 @@
                             rows="1"
                             maxlength="1000"
                             placeholder="Type a message..."
-                            class="w-full min-h-9 max-h-28 px-3 py-2 pr-12 rounded-xl border border-gray-border text-xs text-navy placeholder:text-navy/30 resize-none focus:outline-none focus:border-teal/50"
+                            class="w-full min-h-10 max-h-28 px-4 py-2.5 pr-12 rounded-xl bg-gray-bg border border-transparent text-sm text-navy placeholder:text-navy/30 resize-none focus:bg-white focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/20 transition"
                         ></textarea>
 
 
                         <span
                             id="messageCharacterCount"
-                            class="absolute right-2.5 bottom-2 text-[9px] text-navy/20"
+                            class="absolute right-3 bottom-2.5 text-[10px] text-navy/20"
                         >
                             0
                         </span>
@@ -800,15 +1006,15 @@
                         type="submit"
                         id="chatSendButton"
                         disabled
-                        class="w-9 h-9 rounded-lg bg-navy hover:bg-navy/90 text-white flex items-center justify-center shrink-0 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        class="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-teal-dark hover:opacity-90 shrink-0 transition disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                        <x-lucide-send class="w-4 h-4" />
+                        Send
                     </button>
 
                 </div>
 
 
-                <p class="text-[9px] text-navy/25 mt-1.5 ml-11">
+                <p class="text-[10px] text-navy/25 mt-1.5 ml-12">
                     Enter to send · Shift + Enter for a new line
                 </p>
 
@@ -828,7 +1034,7 @@
 
             <div class="flex items-center justify-between px-4 py-3 border-b border-gray-border">
 
-                <p class="text-xs font-bold text-navy">
+                <p class="text-sm font-bold text-navy">
                     Conversation Info
                 </p>
 
@@ -846,7 +1052,7 @@
 
             <div class="flex-1 overflow-y-auto chat-scrollbar p-4 space-y-5">
 
-                {{-- Buyer --}}
+                {{-- Contact --}}
                 <div class="text-center">
 
                     <div
@@ -861,9 +1067,15 @@
                     ></p>
 
 
+                    <span
+                        id="infoRoleBadge"
+                        class="inline-block mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide"
+                    ></span>
+
+
                     <p
                         id="infoPresence"
-                        class="text-[10px] text-navy/35 mt-0.5"
+                        class="text-xs text-navy/35 mt-1"
                     ></p>
 
                 </div>
@@ -901,17 +1113,17 @@
 
                                 <p
                                     id="infoOrderId"
-                                    class="text-[11px] font-bold text-navy"
+                                    class="text-xs font-bold text-navy"
                                 ></p>
 
                                 <p
                                     id="infoProductName"
-                                    class="text-[10px] text-navy/45 mt-0.5 truncate"
+                                    class="text-[11px] text-navy/45 mt-0.5 truncate"
                                 ></p>
 
                                 <p
                                     id="infoOrderArea"
-                                    class="text-[9px] text-navy/30 mt-0.5 truncate"
+                                    class="text-[10px] text-navy/30 mt-0.5 truncate"
                                 ></p>
 
                             </div>
@@ -928,7 +1140,7 @@
 
                             <span
                                 id="infoOrderTotal"
-                                class="text-[11px] font-bold text-navy"
+                                class="text-xs font-bold text-navy"
                             ></span>
 
                         </div>
@@ -950,7 +1162,7 @@
 
                         <div class="rounded-lg bg-gray-bg p-2.5">
 
-                            <p class="text-[10px] text-navy/50 leading-relaxed">
+                            <p class="text-[11px] text-navy/50 leading-relaxed">
                                 Keep order updates clear and avoid promising exact courier delivery times unless confirmed.
                             </p>
 
@@ -959,7 +1171,7 @@
 
                         <div class="rounded-lg bg-gray-bg p-2.5">
 
-                            <p class="text-[10px] text-navy/50 leading-relaxed">
+                            <p class="text-[11px] text-navy/50 leading-relaxed">
                                 For damaged-item concerns, acknowledge the issue and keep the order reference visible.
                             </p>
 
@@ -1005,7 +1217,7 @@
 
                 <p
                     id="modalOrderId"
-                    class="text-[11px] text-navy/40 mt-0.5"
+                    class="text-xs text-navy/40 mt-0.5"
                 ></p>
 
             </div>
@@ -1047,12 +1259,12 @@
 
                     <p
                         id="modalVariant"
-                        class="text-[11px] text-navy/45 mt-1"
+                        class="text-xs text-navy/45 mt-1"
                     ></p>
 
                     <p
                         id="modalQuantity"
-                        class="text-[10px] text-navy/35 mt-0.5"
+                        class="text-[11px] text-navy/35 mt-0.5"
                     ></p>
 
                 </div>
@@ -1064,7 +1276,7 @@
 
                 <div class="rounded-xl bg-gray-bg p-3">
 
-                    <p class="text-[10px] text-navy/35">
+                    <p class="text-[11px] text-navy/35">
                         Order Status
                     </p>
 
@@ -1078,7 +1290,7 @@
 
                 <div class="rounded-xl bg-gray-bg p-3">
 
-                    <p class="text-[10px] text-navy/35">
+                    <p class="text-[11px] text-navy/35">
                         Order Total
                     </p>
 
@@ -1094,7 +1306,7 @@
 
             <div class="rounded-xl border border-gray-border p-3">
 
-                <p class="text-[10px] text-navy/35">
+                <p class="text-[11px] text-navy/35">
                     Delivery Area
                 </p>
 
@@ -1136,7 +1348,7 @@
 
             <p
                 id="chatToastMessage"
-                class="text-[11px] text-navy/45 mt-0.5"
+                class="text-xs text-navy/45 mt-0.5"
             ></p>
 
         </div>
@@ -1199,6 +1411,42 @@ document.addEventListener('DOMContentLoaded', function () {
     const threadOnlineDot =
         document.getElementById('threadOnlineDot');
 
+    const threadRoleBadge =
+        document.getElementById('threadRoleBadge');
+
+
+    const activeViewCount =
+        document.getElementById('activeViewCount');
+
+    const archivedViewCount =
+        document.getElementById('archivedViewCount');
+
+
+    const toggleThreadOptions =
+        document.getElementById('toggleThreadOptions');
+
+    const threadOptionsMenu =
+        document.getElementById('threadOptionsMenu');
+
+    const threadPinAction =
+        document.getElementById('threadPinAction');
+
+    const threadPinActionLabel =
+        document.getElementById('threadPinActionLabel');
+
+
+    const threadArchiveAction =
+        document.getElementById('threadArchiveAction');
+
+    const threadArchiveActionLabel =
+        document.getElementById('threadArchiveActionLabel');
+
+    const threadBlockAction =
+        document.getElementById('threadBlockAction');
+
+    const threadReportAction =
+        document.getElementById('threadReportAction');
+
 
     const searchInput =
         document.getElementById('chatSearchInput');
@@ -1220,6 +1468,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const orderModal =
         document.getElementById('chatOrderModal');
 
+    const openOrderContextBtn =
+        document.getElementById('openOrderContext');
+
+    const threadMuteBtn =
+        document.getElementById('threadMuteBtn');
+
+    const threadMuteIconOn =
+        document.getElementById('threadMuteIconOn');
+
+    const threadMuteIconOff =
+        document.getElementById('threadMuteIconOff');
+
 
     const toast =
         document.getElementById('chatToast');
@@ -1233,6 +1493,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let activeFilter =
         'all';
+
+    let activeView =
+        'active';
 
     let toastTimer =
         null;
@@ -1255,6 +1518,14 @@ document.addEventListener('DOMContentLoaded', function () {
             conversation =>
                 Number(conversation.id) === Number(id)
         );
+    }
+
+
+    function roleBadgeClass(role) {
+
+        return role === 'admin'
+            ? 'role-badge-admin'
+            : 'role-badge-buyer';
     }
 
 
@@ -1369,6 +1640,165 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    /* ---------------------------------------------------------
+       ROW HOVER ACTIONS (mark as unread / archive)
+       Same behavior as admin chat's per-row hover icons.
+    --------------------------------------------------------- */
+    function toggleRowUnread(el, event) {
+
+        event.stopPropagation();
+
+
+        const row =
+            el.closest('[data-conversation-trigger]');
+
+
+        if (!row) {
+            return;
+        }
+
+
+        const id =
+            Number(row.dataset.conversationId);
+
+        const convo =
+            getConversation(id);
+
+
+        if (!convo) {
+            return;
+        }
+
+
+        const isUnread =
+            row.dataset.unread === '1';
+
+
+        if (isUnread) {
+
+            markConversationRead(id);
+
+
+            showToast('Marked as read.');
+
+        } else {
+
+            convo.unread =
+                Math.max(convo.unread || 0, 1);
+
+
+            row.dataset.unread =
+                '1';
+
+
+            const lastMessage =
+                row.querySelector('[data-row-last-message]');
+
+
+            if (lastMessage) {
+
+                lastMessage.classList.remove(
+                    'text-navy/45'
+                );
+
+
+                lastMessage.classList.add(
+                    'font-semibold',
+                    'text-navy/70'
+                );
+            }
+
+
+            let badge =
+                row.querySelector('[data-row-unread]');
+
+
+            if (!badge) {
+
+                badge =
+                    document.createElement('span');
+
+
+                badge.setAttribute(
+                    'data-row-unread',
+                    ''
+                );
+
+
+                badge.className =
+                    'text-[9px] font-bold bg-coral text-white min-w-4 h-4 px-1 rounded-full flex items-center justify-center shrink-0';
+
+
+                lastMessage?.parentElement?.appendChild(
+                    badge
+                );
+            }
+
+
+            badge.textContent =
+                convo.unread;
+
+
+            showToast('Marked as unread.');
+        }
+
+
+        applyConversationFilters();
+    }
+
+
+    function toggleRowArchive(el, event) {
+
+        event.stopPropagation();
+
+
+        const row =
+            el.closest('[data-conversation-trigger]');
+
+
+        if (!row) {
+            return;
+        }
+
+
+        const id =
+            Number(row.dataset.conversationId);
+
+        const convo =
+            getConversation(id);
+
+
+        if (!convo) {
+            return;
+        }
+
+
+        convo.archived =
+            !convo.archived;
+
+
+        row.dataset.archived =
+            convo.archived ? '1' : '0';
+
+
+        if (activeId === id) {
+            updateThreadArchiveLabel();
+        }
+
+
+        refreshViewCounts();
+
+        applyConversationFilters();
+
+
+        showToast(
+            convo.archived
+                ? 'Conversation archived.'
+                : 'Conversation moved back to Active.'
+        );
+    }
+
+
     function renderMessage(message) {
 
         const bubble =
@@ -1401,10 +1831,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     ${isSeller ? 'bg-navy text-white' : 'bg-gray-bg text-navy'}
                     rounded-2xl
                     ${isSeller ? 'rounded-br-md' : 'rounded-bl-md'}
-                    px-3 py-2.5
+                    px-4 py-2.5
                 ">
 
-                    <p class="text-xs leading-relaxed whitespace-pre-wrap break-words"></p>
+                    <p class="text-sm leading-relaxed whitespace-pre-wrap break-words"></p>
 
                 </div>
 
@@ -1413,14 +1843,14 @@ document.addEventListener('DOMContentLoaded', function () {
                     ${isSeller ? 'justify-end' : 'justify-start'}
                 ">
 
-                    <span class="text-[9px] text-navy/30">
+                    <span class="text-[10px] text-navy/30">
                         ${message.time || ''}
                     </span>
 
                     ${
                         statusText
                             ? `
-                                <span class="text-[9px] text-navy/25">
+                                <span class="text-[10px] text-navy/25">
                                     · ${statusText}
                                 </span>
                             `
@@ -1485,12 +1915,21 @@ document.addEventListener('DOMContentLoaded', function () {
                 .toUpperCase();
 
 
+        threadRoleBadge.textContent =
+            convo.role || 'buyer';
+
+
+        threadRoleBadge.className =
+            'shrink-0 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ' +
+            roleBadgeClass(convo.role);
+
+
         threadPresence.textContent =
             convo.last_seen || '';
 
 
         threadPresence.className =
-            'text-[10px] mt-0.5 ' +
+            'text-xs mt-0.5 ' +
             (
                 convo.online
                     ? 'text-teal-dark'
@@ -1519,7 +1958,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         separator.innerHTML = `
             <div class="h-px bg-gray-border flex-1"></div>
-            <span class="text-[9px] font-semibold text-navy/25">
+            <span class="text-[10px] font-semibold text-navy/25">
                 Conversation
             </span>
             <div class="h-px bg-gray-border flex-1"></div>
@@ -1538,6 +1977,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
         updateOrderContext(
+            convo
+        );
+
+
+        updateMuteButton(
             convo
         );
 
@@ -1578,6 +2022,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function updateOrderContext(convo) {
 
+        if (openOrderContextBtn) {
+
+            openOrderContextBtn.hidden =
+                convo.role === 'admin';
+        }
+
         const order =
             convo.order || {};
 
@@ -1611,7 +2061,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document
             .getElementById('threadOrderTotal')
             .textContent =
-                money(order.total);
+                order.total
+                    ? money(order.total)
+                    : '—';
 
 
         const image =
@@ -1641,6 +2093,58 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    function updateMuteButton(convo) {
+
+        const isMuted =
+            !!convo?.muted;
+
+        threadMuteIconOn?.classList.toggle(
+            'hidden',
+            isMuted
+        );
+
+        threadMuteIconOff?.classList.toggle(
+            'hidden',
+            !isMuted
+        );
+
+        threadMuteBtn?.classList.toggle(
+            'text-coral',
+            isMuted
+        );
+
+        threadMuteBtn?.classList.toggle(
+            'text-navy/50',
+            !isMuted
+        );
+    }
+
+
+    threadMuteBtn?.addEventListener(
+        'click',
+        function () {
+
+            const convo =
+                getConversation(activeId);
+
+            if (!convo) {
+                return;
+            }
+
+            convo.muted =
+                !convo.muted;
+
+            updateMuteButton(convo);
+
+            showToast(
+                convo.muted
+                    ? 'Notifications muted for this conversation.'
+                    : 'Notifications unmuted.'
+            );
+        }
+    );
+
+
     function updateInfoPanel(convo) {
 
         const order =
@@ -1659,6 +2163,19 @@ document.addEventListener('DOMContentLoaded', function () {
             .getElementById('infoName')
             .textContent =
                 convo.name || '';
+
+
+        const infoRoleBadge =
+            document.getElementById('infoRoleBadge');
+
+
+        infoRoleBadge.textContent =
+            convo.role || 'buyer';
+
+
+        infoRoleBadge.className =
+            'inline-block mt-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wide ' +
+            roleBadgeClass(convo.role);
 
 
         document
@@ -1693,7 +2210,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document
             .getElementById('infoOrderTotal')
             .textContent =
-                money(order.total);
+                order.total
+                    ? money(order.total)
+                    : '—';
 
 
         setStatusBadge(
@@ -1723,6 +2242,44 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ---------------------------------------------------------
        CONVERSATION FILTERS
     --------------------------------------------------------- */
+    function refreshViewCounts() {
+
+        const activeCount =
+            rows.filter(
+                row => row.dataset.archived !== '1'
+            ).length;
+
+
+        const archivedCount =
+            rows.filter(
+                row => row.dataset.archived === '1'
+            ).length;
+
+
+        if (activeViewCount) {
+            activeViewCount.textContent =
+                activeCount;
+        }
+
+
+        if (archivedViewCount) {
+            archivedViewCount.textContent =
+                archivedCount;
+        }
+    }
+
+
+    function rowMatchesView(row) {
+
+        if (activeView === 'archived') {
+            return row.dataset.archived === '1';
+        }
+
+
+        return row.dataset.archived !== '1';
+    }
+
+
     function rowMatchesFilter(row) {
 
         if (
@@ -1740,16 +2297,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
         if (
-            activeFilter === 'online'
+            activeFilter === 'pinned'
         ) {
-            return row.dataset.online === '1';
+            return row.dataset.pinned === '1';
         }
 
 
         if (
-            activeFilter === 'pinned'
+            activeFilter === 'buyer'
         ) {
-            return row.dataset.pinned === '1';
+            return row.dataset.role === 'buyer';
+        }
+
+
+        if (
+            activeFilter === 'admin'
+        ) {
+            return row.dataset.role === 'admin';
         }
 
 
@@ -1771,6 +2335,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         rows.forEach(function (row) {
 
+            const viewMatch =
+                rowMatchesView(row);
+
+
             const filterMatch =
                 rowMatchesFilter(row);
 
@@ -1782,6 +2350,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
             const show =
+                viewMatch &&
                 filterMatch &&
                 searchMatch;
 
@@ -1846,30 +2415,49 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
 
+    document
+        .querySelectorAll('[data-chat-view]')
+        .forEach(function (button) {
+
+            button.addEventListener(
+                'click',
+                function () {
+
+                    activeView =
+                        button.dataset.chatView || 'active';
+
+
+                    document
+                        .querySelectorAll('[data-chat-view]')
+                        .forEach(function (viewButton) {
+
+                            const isActiveTab =
+                                viewButton.dataset.chatView === activeView;
+
+
+                            viewButton.classList.toggle(
+                                'chat-view-tab-active',
+                                isActiveTab
+                            );
+
+
+                            viewButton.classList.toggle(
+                                'text-navy/45',
+                                !isActiveTab
+                            );
+                        });
+
+
+                    applyConversationFilters();
+                }
+            );
+        });
+
+
     searchInput?.addEventListener(
         'input',
         applyConversationFilters
     );
-
-
-    document
-        .getElementById('chatClearSearch')
-        ?.addEventListener(
-            'click',
-            function () {
-
-                activeFilter =
-                    'all';
-
-
-                if (searchInput) {
-                    searchInput.value = '';
-                }
-
-
-                applyConversationFilters();
-            }
-        );
 
 
     /* ---------------------------------------------------------
@@ -1884,6 +2472,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 renderThread(
                     Number(button.dataset.conversationId)
                 );
+            }
+        );
+
+
+        button.addEventListener(
+            'keydown',
+            function (event) {
+
+                if (event.key === 'Enter' || event.key === ' ') {
+
+                    event.preventDefault();
+
+
+                    renderThread(
+                        Number(button.dataset.conversationId)
+                    );
+                }
             }
         );
     });
@@ -2122,6 +2727,288 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     /* ---------------------------------------------------------
+       THREAD OPTIONS MENU (archive / block / report)
+       Pinagsama/tinugma na ang behavior dito sa admin chat:
+       may confirm() dialog bago mag-block/report, tapos toast.
+    --------------------------------------------------------- */
+    function closeThreadOptionsMenu() {
+
+        if (!threadOptionsMenu) {
+            return;
+        }
+
+
+        threadOptionsMenu.hidden =
+            true;
+
+
+        toggleThreadOptions?.setAttribute(
+            'aria-expanded',
+            'false'
+        );
+    }
+
+
+    function updateThreadArchiveLabel() {
+
+        if (
+            !threadArchiveActionLabel ||
+            activeId === null
+        ) {
+            return;
+        }
+
+
+        const convo =
+            getConversation(activeId);
+
+
+        threadArchiveActionLabel.textContent =
+            convo?.archived
+                ? 'Unarchive conversation'
+                : 'Archive conversation';
+    }
+
+
+    function updateThreadPinLabel() {
+
+        if (
+            !threadPinActionLabel ||
+            activeId === null
+        ) {
+            return;
+        }
+
+
+        const convo =
+            getConversation(activeId);
+
+
+        threadPinActionLabel.textContent =
+            convo?.pinned
+                ? 'Unpin conversation'
+                : 'Pin conversation';
+    }
+
+
+    toggleThreadOptions?.addEventListener(
+        'click',
+        function (event) {
+
+            event.stopPropagation();
+
+
+            const willOpen =
+                threadOptionsMenu?.hidden;
+
+
+            closeThreadOptionsMenu();
+
+
+            if (threadOptionsMenu && willOpen) {
+
+                updateThreadArchiveLabel();
+
+                updateThreadPinLabel();
+
+
+                threadOptionsMenu.hidden =
+                    false;
+
+
+                toggleThreadOptions.setAttribute(
+                    'aria-expanded',
+                    'true'
+                );
+            }
+        }
+    );
+
+
+    document.addEventListener(
+        'click',
+        function (event) {
+
+            if (
+                threadOptionsMenu &&
+                !threadOptionsMenu.hidden &&
+                !threadOptionsMenu.contains(event.target) &&
+                !toggleThreadOptions?.contains(event.target)
+            ) {
+                closeThreadOptionsMenu();
+            }
+        }
+    );
+
+
+    threadPinAction?.addEventListener(
+        'click',
+        function () {
+
+            const convo =
+                getConversation(activeId);
+
+
+            if (!convo) {
+                return;
+            }
+
+
+            convo.pinned =
+                !convo.pinned;
+
+
+            const row =
+                rows.find(
+                    item =>
+                        Number(item.dataset.conversationId) === activeId
+                );
+
+
+            if (row) {
+
+                row.dataset.pinned =
+                    convo.pinned ? '1' : '0';
+
+
+                const pinIcon =
+                    row.querySelector('[data-row-pin-icon]');
+
+
+                pinIcon?.classList.toggle(
+                    'hidden',
+                    !convo.pinned
+                );
+            }
+
+
+            closeThreadOptionsMenu();
+
+
+            applyConversationFilters();
+
+
+            showToast(
+                convo.pinned
+                    ? 'Conversation pinned.'
+                    : 'Conversation unpinned.'
+            );
+        }
+    );
+
+
+    threadArchiveAction?.addEventListener(
+        'click',
+        function () {
+
+            const convo =
+                getConversation(activeId);
+
+
+            if (!convo) {
+                return;
+            }
+
+
+            convo.archived =
+                !convo.archived;
+
+
+            const row =
+                rows.find(
+                    item =>
+                        Number(item.dataset.conversationId) === activeId
+                );
+
+
+            if (row) {
+
+                row.dataset.archived =
+                    convo.archived ? '1' : '0';
+            }
+
+
+            closeThreadOptionsMenu();
+
+
+            refreshViewCounts();
+
+
+            applyConversationFilters();
+
+
+            showToast(
+                convo.archived
+                    ? 'Conversation archived.'
+                    : 'Conversation moved back to Active.'
+            );
+        }
+    );
+
+
+    threadBlockAction?.addEventListener(
+        'click',
+        function () {
+
+            const convo =
+                getConversation(activeId);
+
+
+            const name =
+                convo?.name || 'this user';
+
+
+            closeThreadOptionsMenu();
+
+
+            if (
+                confirm(
+                    'Sigurado ka bang gusto mong i-block si ' +
+                    name +
+                    '? Hindi na sila makakapag-send ng message sa iyo.'
+                )
+            ) {
+
+                showToast(
+                    name + ' has been blocked (demo only).'
+                );
+            }
+        }
+    );
+
+
+    threadReportAction?.addEventListener(
+        'click',
+        function () {
+
+            const convo =
+                getConversation(activeId);
+
+
+            const name =
+                convo?.name || 'this conversation';
+
+
+            closeThreadOptionsMenu();
+
+
+            if (
+                confirm(
+                    'I-report ang conversation na ito kay ' +
+                    name +
+                    ' para sa review ng ShopHop Admin team?'
+                )
+            ) {
+
+                showToast(
+                    'Reported to ShopHop Admin for review (demo only).'
+                );
+            }
+        }
+    );
+
+
+    /* ---------------------------------------------------------
        ORDER MODAL
     --------------------------------------------------------- */
     function openOrderModal() {
@@ -2167,7 +3054,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document
             .getElementById('modalOrderTotal')
             .textContent =
-                money(order.total);
+                order.total
+                    ? money(order.total)
+                    : '—';
 
 
         document
@@ -2208,8 +3097,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    document
-        .getElementById('openOrderContext')
+    openOrderContextBtn
         ?.addEventListener(
             'click',
             openOrderModal
@@ -2282,6 +3170,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 document.body.style.overflow =
                     '';
+
+
+                return;
+            }
+
+
+            if (
+                event.key === 'Escape' &&
+                threadOptionsMenu &&
+                !threadOptionsMenu.hidden
+            ) {
+
+                closeThreadOptionsMenu();
             }
         }
     );
@@ -2290,6 +3191,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ---------------------------------------------------------
        INITIAL STATE
     --------------------------------------------------------- */
+    refreshViewCounts();
     applyConversationFilters();
     refreshComposer();
 

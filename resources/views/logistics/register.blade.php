@@ -44,10 +44,6 @@
     <div class="absolute -top-28 -right-28 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-teal/10"></div>
 
     <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
-        <div class="inline-flex items-center gap-2 bg-teal-light text-teal-dark px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-5 sm:mb-6">
-            <span class="w-2 h-2 rounded-full bg-teal"></span>
-            Partner with ShopHop
-        </div>
 
         <h1 class="text-navy mb-4">
             Deliver for <span class="text-teal">Every Seller</span> on ShopHop.

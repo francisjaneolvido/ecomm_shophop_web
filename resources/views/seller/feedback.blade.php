@@ -197,14 +197,6 @@
 
             <div class="min-w-0">
 
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="w-2 h-2 rounded-full bg-teal"></span>
-
-                    <p class="text-[10px] uppercase tracking-[0.18em] font-bold text-teal-dark">
-                        Buyer Reviews
-                    </p>
-                </div>
-
 
                 <h1 class="text-xl sm:text-2xl font-bold text-navy tracking-tight">
                     Customer Feedback
