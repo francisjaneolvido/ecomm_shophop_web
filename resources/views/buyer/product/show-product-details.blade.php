@@ -292,14 +292,27 @@
                     </div>
 
                     <div class="grid sm:grid-cols-2 gap-3 mt-6">
-                        <button class="h-12 rounded-xl border border-teal bg-teal-light/60 text-teal-dark font-semibold text-sm flex items-center justify-center gap-2 hover:bg-teal-light transition">
+                        {{-- TEMPORARY: dapat AJAX/form submit ito papunta sa
+                             isang real "add to cart" endpoint (session or DB).
+                             Stays on the current page once wired up; wala pang
+                             backend kaya button lang muna ito. --}}
+                        <button type="button"
+                                data-add-to-cart="{{ $product['id'] }}"
+                                class="h-12 rounded-xl border border-teal bg-teal-light/60 text-teal-dark font-semibold text-sm flex items-center justify-center gap-2 hover:bg-teal-light transition">
                             <x-lucide-shopping-cart class="w-4 h-4" />
                             Add to Cart
                         </button>
-                        <button class="h-12 rounded-xl bg-teal hover:bg-teal-dark text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition">
+
+                        {{-- TEMPORARY: Buy Now goes through the cart now (not a
+                             direct checkout page anymore). ?buy_now={id} tells
+                             the cart page to pre-select only this item — this
+                             is a stand-in until add-to-cart writes to a real
+                             session/DB cart and the cart page reads from there. --}}
+                        <a href="{{ url('/buyer/cart') }}?buy_now={{ $product['id'] }}&qty=1"
+                           class="h-12 rounded-xl bg-teal hover:bg-teal-dark text-white font-semibold text-sm flex items-center justify-center gap-2 shadow-sm transition">
                             Buy Now
                             <x-lucide-arrow-right class="w-4 h-4" />
-                        </button>
+                        </a>
                     </div>
 
                     <div class="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-gray-border">
