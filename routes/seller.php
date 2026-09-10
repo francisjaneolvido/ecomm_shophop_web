@@ -33,22 +33,22 @@ Route::prefix('seller')
             ->name('inventory');
 
         Route::post('/inventory', [InventoryController::class, 'store'])
-            ->name('inventory.store');
+            ->name('inventory.products.store');
 
-        Route::post(
+        Route::patch(
             '/inventory/{product}/stock',
             [InventoryController::class, 'updateStock']
-        )->name('inventory.stock');
+        )->name('inventory.products.stock');
 
-        Route::post(
+        Route::patch(
             '/inventory/variants/{variant}/stock',
             [InventoryController::class, 'updateVariantStock']
-        )->name('inventory.variant.stock');
+        )->name('inventory.products.variants.stock');
 
-        Route::post(
+        Route::patch(
             '/inventory/{product}/archive',
             [InventoryController::class, 'archive']
-        )->name('inventory.archive');
+        )->name('inventory.products.archive');
 
 
         /*
@@ -62,7 +62,7 @@ Route::prefix('seller')
             [InventoryController::class, 'storeVoucher']
         )->name('inventory.vouchers.store');
 
-        Route::post(
+        Route::patch(
             '/inventory/vouchers/{voucher}/toggle',
             [InventoryController::class, 'toggleVoucher']
         )->name('inventory.vouchers.toggle');
