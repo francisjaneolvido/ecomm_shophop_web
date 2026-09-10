@@ -219,6 +219,17 @@
     .handover-check {
         accent-color: #2ECFA6;
     }
+
+    /* Click-to-copy affordance for order numbers */
+    #sellerCourier [data-copy-order-id] {
+        cursor: pointer;
+    }
+
+    #sellerCourier [data-copy-order-id]:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 3px;
+    }
 </style>
 
 
@@ -443,7 +454,11 @@
 
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <p class="text-sm font-bold text-navy">
+                                    <p
+                                        class="text-sm font-bold text-navy"
+                                        data-copy-order-id
+                                        data-order-id="{{ $order['id'] }}"
+                                    >
                                         {{ $order['id'] }}
                                     </p>
 
@@ -765,7 +780,7 @@
                     Parcel Details
                 </p>
 
-                <p id="parcelOrderId" class="text-[11px] text-navy/40 mt-0.5"></p>
+                <p id="parcelOrderId" class="text-[11px] text-navy/40 mt-0.5" data-copy-order-id></p>
             </div>
 
             <button
@@ -1276,6 +1291,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('parcelOrderId').textContent =
             order.id + ' · ' + String(order.pickup_status || '').replaceAll('_', ' ');
 
+        document.getElementById('parcelOrderId').dataset.orderId = order.id || '';
+
         document.getElementById('parcelBuyer').textContent = order.buyer || '';
         document.getElementById('parcelArea').textContent = order.delivery_area || '';
         document.getElementById('parcelAddress').textContent = order.address || '';
@@ -1558,6 +1575,31 @@ document.addEventListener('DOMContentLoaded', function () {
         );
 
         applyFilters();
+    });
+
+
+    /* ---------------------------------------------------------
+       COPY ORDER ID (silent, no toast/feedback)
+    --------------------------------------------------------- */
+    document.addEventListener('click', function (event) {
+        const target = event.target.closest('[data-copy-order-id]');
+        if (!target) return;
+
+        const orderId = target.dataset.orderId || target.textContent.trim();
+        if (!orderId) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(orderId).catch(function () {});
+        } else {
+            const temp = document.createElement('textarea');
+            temp.value = orderId;
+            temp.style.position = 'fixed';
+            temp.style.opacity = '0';
+            document.body.appendChild(temp);
+            temp.select();
+            try { document.execCommand('copy'); } catch (error) {}
+            document.body.removeChild(temp);
+        }
     });
 
 

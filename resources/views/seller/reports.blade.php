@@ -9,7 +9,6 @@
     |--------------------------------------------------------------------------
     | FRONTEND-ONLY DEMO DATA
     |--------------------------------------------------------------------------
-    | This page is intentionally hardcoded for UI/UX development.
     |
     | Your backend teammate can later replace these values with controller data
     | and connect real date filtering, order/product aggregation, commissions,
@@ -261,6 +260,17 @@
         .report-no-print {
             display: none !important;
         }
+    }
+
+    /* Click-to-copy affordance for order numbers */
+    #sellerReports [data-copy-order-id] {
+        cursor: pointer;
+    }
+
+    #sellerReports [data-copy-order-id]:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 3px;
     }
 </style>
 
@@ -1306,7 +1316,11 @@
 
                                 <td class="px-4 py-3">
 
-                                    <p class="text-xs font-semibold text-navy">
+                                    <p
+                                        class="text-xs font-semibold text-navy"
+                                        data-copy-order-id
+                                        data-order-id="{{ $transaction['order_id'] }}"
+                                    >
                                         {{ $transaction['order_id'] }}
                                     </p>
 
@@ -1859,6 +1873,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
         });
+
+
+    /* ---------------------------------------------------------
+       COPY ORDER ID (silent, no toast/feedback)
+    --------------------------------------------------------- */
+    document.addEventListener('click', function (event) {
+        const target = event.target.closest('[data-copy-order-id]');
+        if (!target) return;
+
+        const orderId = target.dataset.orderId || target.textContent.trim();
+        if (!orderId) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(orderId).catch(function () {});
+        } else {
+            const temp = document.createElement('textarea');
+            temp.value = orderId;
+            temp.style.position = 'fixed';
+            temp.style.opacity = '0';
+            document.body.appendChild(temp);
+            temp.select();
+            try { document.execCommand('copy'); } catch (error) {}
+            document.body.removeChild(temp);
+        }
+    });
 
 
     /* ---------------------------------------------------------

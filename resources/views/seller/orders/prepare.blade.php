@@ -157,6 +157,19 @@
     .label-checkbox {
         accent-color: #2ECFA6;
     }
+
+    /* Click-to-copy affordance for order numbers */
+    #sellerPrepareOrders [data-copy-order-id],
+    #orderDetailsModal [data-copy-order-id] {
+        cursor: pointer;
+    }
+
+    #sellerPrepareOrders [data-copy-order-id]:hover,
+    #orderDetailsModal [data-copy-order-id]:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 3px;
+    }
 </style>
 
 
@@ -333,7 +346,11 @@
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap items-center gap-2">
-                                    <p class="text-sm font-bold text-navy">
+                                    <p
+                                        class="text-sm font-bold text-navy"
+                                        data-copy-order-id="{{ $order['id'] }}"
+                                        title="Click to copy order number"
+                                    >
                                         {{ $order['id'] }}
                                     </p>
 
@@ -606,7 +623,12 @@
                 <p class="text-base font-bold text-navy">
                     Order Review
                 </p>
-                <p class="text-[11px] text-navy/40 mt-0.5" id="detailsOrderId"></p>
+                <p
+                    class="text-[11px] text-navy/40 mt-0.5"
+                    id="detailsOrderId"
+                    data-copy-order-id=""
+                    title="Click to copy order number"
+                ></p>
             </div>
 
             <button
@@ -938,6 +960,39 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /* ---------------------------------------------------------
+       CLICK-TO-COPY ORDER NUMBER (silent, no toast/feedback)
+    --------------------------------------------------------- */
+    function copyOrderId(text) {
+        if (!text) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () {});
+            return;
+        }
+
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+
+        try {
+            document.execCommand('copy');
+        } catch (e) {}
+
+        document.body.removeChild(temp);
+    }
+
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('[data-copy-order-id]');
+        if (!trigger) return;
+
+        copyOrderId(trigger.getAttribute('data-copy-order-id'));
+    });
+
     function refreshCard(card) {
         const checkboxes = Array.from(card.querySelectorAll('[data-pack-checkbox]'));
         const labelCheckbox = card.querySelector('[data-label-checkbox]');
@@ -1076,6 +1131,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         document.getElementById('detailsOrderId').textContent =
             order.id + ' · ' + String(order.status || '').replaceAll('_', ' ');
+
+        document.getElementById('detailsOrderId').setAttribute('data-copy-order-id', order.id || '');
 
         document.getElementById('detailsBuyer').textContent = order.buyer || '';
         document.getElementById('detailsPayment').textContent =

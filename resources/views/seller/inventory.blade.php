@@ -246,6 +246,17 @@
 
 
 <style>
+    /* Click-to-copy affordance for SKU / voucher code */
+    #sellerInventory [data-copy-text] {
+        cursor: pointer;
+    }
+
+    #sellerInventory [data-copy-text]:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 3px;
+    }
+
     #sellerInventory .inventory-card {
         transition:
             transform .16s ease,
@@ -797,9 +808,17 @@
 
                                     {{-- SKU --}}
                                     <td class="px-4 py-3">
-                                        <span class="text-xs font-medium text-navy/45">
-                                            {{ $product->sku ?: '—' }}
-                                        </span>
+                                        @if ($product->sku)
+                                            <span
+                                                class="text-xs font-medium text-navy/45"
+                                                data-copy-text="{{ $product->sku }}"
+                                                title="Click to copy SKU"
+                                            >
+                                                {{ $product->sku }}
+                                            </span>
+                                        @else
+                                            <span class="text-xs font-medium text-navy/45">—</span>
+                                        @endif
                                     </td>
 
 
@@ -1075,7 +1094,11 @@
                                             {{ $voucher->name }}
                                         </p>
 
-                                        <p class="text-[10px] font-bold text-teal-dark mt-0.5">
+                                        <p
+                                            class="text-[10px] font-bold text-teal-dark mt-0.5"
+                                            data-copy-text="{{ $voucher->code }}"
+                                            title="Click to copy voucher code"
+                                        >
                                             {{ $voucher->code }}
                                         </p>
                                     </td>
@@ -2001,6 +2024,37 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    /* Click-to-copy (silent, no toast/feedback) */
+    function copyToClipboard(text) {
+        if (!text) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () {});
+            return;
+        }
+
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+
+        try {
+            document.execCommand('copy');
+        } catch (e) {}
+
+        document.body.removeChild(temp);
+    }
+
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('[data-copy-text]');
+        if (!trigger) return;
+
+        copyToClipboard(trigger.getAttribute('data-copy-text'));
+    });
 
     const currencyFormatter = new Intl.NumberFormat(
         'en-PH',

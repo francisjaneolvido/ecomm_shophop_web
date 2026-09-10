@@ -344,15 +344,6 @@
 
             <div class="min-w-0">
 
-                <div class="flex items-center gap-2 mb-2">
-                    <span class="w-2 h-2 rounded-full bg-teal"></span>
-
-                    <p class="text-[10px] uppercase tracking-[0.18em] font-bold text-teal-dark">
-                        Buyer &amp; Platform Messaging
-                    </p>
-                </div>
-
-
                 <h1 class="text-xl sm:text-2xl font-bold text-navy tracking-tight">
                     Chat
                 </h1>
@@ -546,6 +537,12 @@
 
                         {{-- Hover actions: mark as unread / archive --}}
                         <div class="hidden group-hover:flex items-center gap-1 absolute top-2.5 right-2.5 bg-white rounded-lg shadow border border-gray-border p-0.5 z-10">
+                            <button type="button" title="Pin conversation" onclick="toggleRowPin(this, event)" class="p-1.5 rounded-md hover:bg-slate-100 text-slate-400">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a5 5 0 00-5 5c0 4 5 10 5 10s5-6 5-10a5 5 0 00-5-5z" />
+                                    <circle cx="12" cy="7" r="2" />
+                                </svg>
+                            </button>
 
                             <button
                                 type="button"

@@ -387,6 +387,17 @@
     .timeline-line:last-child::before {
         display: none;
     }
+
+    /* Click-to-copy affordance for order numbers */
+    #sellerConfirmDelivery [data-copy-order-id] {
+        cursor: pointer;
+    }
+
+    #sellerConfirmDelivery [data-copy-order-id]:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 3px;
+    }
 </style>
 
 
@@ -675,7 +686,11 @@
 
                                 <div class="flex flex-wrap items-center gap-2">
 
-                                    <p class="text-sm font-bold text-navy">
+                                    <p
+                                        class="text-sm font-bold text-navy"
+                                        data-copy-order-id
+                                        data-order-id="{{ $order['id'] }}"
+                                    >
                                         {{ $order['id'] }}
                                     </p>
 
@@ -1112,7 +1127,7 @@
                     Delivery Tracking
                 </p>
 
-                <p id="detailsOrderId" class="text-[11px] text-navy/40 mt-0.5"></p>
+                <p id="detailsOrderId" class="text-[11px] text-navy/40 mt-0.5" data-copy-order-id></p>
 
             </div>
 
@@ -1937,6 +1952,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 String(activeOrder.status || '')
                     .replaceAll('_', ' ');
 
+        document
+            .getElementById('detailsOrderId')
+            .dataset.orderId =
+                activeOrder.id || '';
+
 
         document
             .getElementById('detailsBuyer')
@@ -2289,6 +2309,31 @@ document.addEventListener('DOMContentLoaded', function () {
                 setBodyLock(false);
             });
         });
+
+
+    /* ---------------------------------------------------------
+       COPY ORDER ID (silent, no toast/feedback)
+    --------------------------------------------------------- */
+    document.addEventListener('click', function (event) {
+        const target = event.target.closest('[data-copy-order-id]');
+        if (!target) return;
+
+        const orderId = target.dataset.orderId || target.textContent.trim();
+        if (!orderId) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(orderId).catch(function () {});
+        } else {
+            const temp = document.createElement('textarea');
+            temp.value = orderId;
+            temp.style.position = 'fixed';
+            temp.style.opacity = '0';
+            document.body.appendChild(temp);
+            temp.select();
+            try { document.execCommand('copy'); } catch (error) {}
+            document.body.removeChild(temp);
+        }
+    });
 
 
     /* ---------------------------------------------------------

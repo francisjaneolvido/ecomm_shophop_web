@@ -212,6 +212,21 @@
     ];
 @endphp
 
+
+<style>
+    /* Click-to-copy affordance for order numbers */
+    #sellerDashboard [data-copy-order-id] {
+        cursor: pointer;
+    }
+
+    #sellerDashboard [data-copy-order-id]:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 3px;
+    }
+</style>
+
+
 <div id="sellerDashboard" class="space-y-5">
 
     {{-- =========================================================
@@ -653,9 +668,19 @@
 
                                 <tr class="hover:bg-gray-bg/50 transition">
                                     <td class="px-5 py-3.5">
-                                        <p class="text-[12px] font-semibold text-navy">
-                                            #{{ $order['id'] ?? '----' }}
-                                        </p>
+                                        @if (! empty($order['id']))
+                                            <p
+                                                class="text-[12px] font-semibold text-navy"
+                                                data-copy-order-id="{{ $order['id'] }}"
+                                                title="Click to copy order number"
+                                            >
+                                                #{{ $order['id'] }}
+                                            </p>
+                                        @else
+                                            <p class="text-[12px] font-semibold text-navy">
+                                                #----
+                                            </p>
+                                        @endif
 
                                         <p class="text-[10px] text-navy/30 mt-0.5">
                                             {{ $order['placed_at'] ?? $order['created_at'] ?? '' }}
@@ -1313,5 +1338,45 @@
     </section>
 
 </div>
+
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* Click-to-copy order number (silent, no toast/feedback) */
+    function copyOrderId(text) {
+        if (!text) return;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () {});
+            return;
+        }
+
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        temp.style.position = 'fixed';
+        temp.style.opacity = '0';
+        document.body.appendChild(temp);
+        temp.focus();
+        temp.select();
+
+        try {
+            document.execCommand('copy');
+        } catch (e) {}
+
+        document.body.removeChild(temp);
+    }
+
+    document.addEventListener('click', function (event) {
+        const trigger = event.target.closest('[data-copy-order-id]');
+        if (!trigger) return;
+
+        copyOrderId(trigger.getAttribute('data-copy-order-id'));
+    });
+
+});
+</script>
+@endpush
 
 @endsection

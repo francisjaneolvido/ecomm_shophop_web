@@ -190,6 +190,19 @@
     #demoToast[hidden] {
         display: none !important;
     }
+
+    /* Click-to-copy affordance for order numbers */
+    #sellerOrderNotifications [data-copy-order-id],
+    #orderDetailsModal [data-copy-order-id] {
+        cursor: pointer;
+    }
+
+    #sellerOrderNotifications [data-copy-order-id]:hover,
+    #orderDetailsModal [data-copy-order-id]:hover {
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 3px;
+    }
 </style>
 
 <div id="sellerOrderNotifications" class="space-y-5">
@@ -329,7 +342,13 @@
                                         </span>
                                     @endif
 
-                                    <p class="text-sm font-bold text-navy">
+                                    <p
+                                        class="text-sm font-bold text-navy"
+                                        data-copy-order-id="{{ $order['id'] }}"
+                                        role="button"
+                                        tabindex="0"
+                                        title="Click to copy order number"
+                                    >
                                         {{ $order['id'] }}
                                     </p>
 
@@ -499,7 +518,14 @@
             <div>
                 <div class="flex flex-wrap items-center gap-2">
                     <h2 class="text-base font-bold text-navy">
-                        Order <span id="detailsOrderId"></span>
+                        Order
+                        <span
+                            id="detailsOrderId"
+                            data-copy-order-id
+                            role="button"
+                            tabindex="0"
+                            title="Click to copy order number"
+                        ></span>
                     </h2>
                     <span id="detailsStatus" class="px-2 py-1 rounded-full bg-coral/10 text-coral text-[10px] font-bold"></span>
                 </div>
@@ -767,6 +793,55 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 3200);
     }
 
+    // ---------------------------------------------------------------
+    // Click-to-copy order numbers (silent — no toast/feedback)
+    // ---------------------------------------------------------------
+    function copyText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+
+        // Fallback for older browsers / non-HTTPS contexts.
+        return new Promise(function (resolve, reject) {
+            try {
+                const helper = document.createElement('textarea');
+                helper.value = text;
+                helper.style.position = 'fixed';
+                helper.style.opacity = '0';
+                document.body.appendChild(helper);
+                helper.focus();
+                helper.select();
+                document.execCommand('copy');
+                document.body.removeChild(helper);
+                resolve();
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+
+    function bindCopyOrderId(el) {
+        function handleCopy() {
+            const value = el.getAttribute('data-copy-order-id') || el.textContent.trim();
+            if (!value) return;
+            copyText(value).catch(function () {
+                // Silent fail — no toast per current requirement.
+            });
+        }
+
+        el.addEventListener('click', handleCopy);
+        el.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleCopy();
+            }
+        });
+    }
+
+    function initCopyOrderIds() {
+        document.querySelectorAll('[data-copy-order-id]').forEach(bindCopyOrderId);
+    }
+
     function updateTabCounts() {
         const newCount = orders.filter(order => order.status === 'PLACED').length;
         const reviewedCount = orders.filter(order => order.status !== 'PLACED').length;
@@ -868,7 +943,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         state.currentDetailsId = id;
 
-        document.getElementById('detailsOrderId').textContent = order.id;
+        const detailsOrderIdEl = document.getElementById('detailsOrderId');
+        detailsOrderIdEl.textContent = order.id;
+        detailsOrderIdEl.setAttribute('data-copy-order-id', order.id);
+
         document.getElementById('detailsStatus').textContent = order.status;
         document.getElementById('detailsPlacedAt').textContent = `Placed ${order.placed_at}`;
         document.getElementById('detailsBuyer').textContent = order.buyer;
@@ -1086,6 +1164,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    initCopyOrderIds();
     refreshCards();
 });
 </script>
