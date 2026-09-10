@@ -1,12 +1,12 @@
 {{-- =========================================================
     HERO SECTION — MAJOR REDESIGN
 ========================================================= --}}
-<section class="relative overflow-hidden bg-[linear-gradient(135deg,#F7FAFC_0%,#F3F8F7_45%,#EEF8F5_100%)]">
+<section class="relative overflow-hidden bg-[linear-gradient(135deg,#F7FAFC_0%,#F3F8F7_45%,#EEF8F5_100%)]" data-parallax-container>
 
     {{-- Ambient background --}}
     <div class="pointer-events-none absolute inset-0">
-        <div class="absolute -top-28 -right-20 w-80 h-80 sm:w-[28rem] sm:h-[28rem] rounded-full bg-teal/10 blur-3xl"></div>
-        <div class="absolute -bottom-36 -left-28 w-80 h-80 sm:w-[30rem] sm:h-[30rem] rounded-full bg-navy/5 blur-3xl"></div>
+        <div class="absolute -top-28 -right-20 w-80 h-80 sm:w-[28rem] sm:h-[28rem] rounded-full bg-teal/10 blur-3xl" data-parallax="18"></div>
+        <div class="absolute -bottom-36 -left-28 w-80 h-80 sm:w-[30rem] sm:h-[30rem] rounded-full bg-navy/5 blur-3xl" data-parallax="-14"></div>
 
         <div class="absolute inset-0 opacity-[0.28]"
              style="background-image:
@@ -23,11 +23,13 @@
             {{-- =================================================
                 LEFT CONTENT
             ================================================== --}}
-            <div class="max-w-xl hero-enter">
+            <div class="max-w-xl">
 
                 {{-- Original ShopHop badge --}}
                 <div
-                    class="inline-flex items-center gap-2
+                    style="--stagger-index: 0;"
+                    class="stagger-item
+                           inline-flex items-center gap-2
                            bg-teal-light text-teal-dark
                            px-3.5 sm:px-4 py-2
                            rounded-full
@@ -45,7 +47,10 @@
 
 
                 {{-- Keep official ShopHop tagline --}}
-                <h1 class="text-navy mb-4 sm:mb-5
+                <h1
+                    style="--stagger-index: 1;"
+                    class="stagger-item
+                           text-navy mb-4 sm:mb-5
                            text-[2.35rem] leading-[1.08]
                            sm:text-[2.9rem]
                            lg:text-[3.2rem]
@@ -63,7 +68,9 @@
 
                 {{-- Original supporting copy --}}
                 <p
-                    class="text-navy/65
+                    style="--stagger-index: 2;"
+                    class="stagger-item
+                           text-navy/65
                            text-sm sm:text-base lg:text-lg
                            leading-relaxed
                            max-w-lg
@@ -75,19 +82,18 @@
 
 
                 {{-- CTA Buttons --}}
-                <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div style="--stagger-index: 3;" class="stagger-item flex flex-col sm:flex-row gap-3 sm:gap-4">
 
                     <a
                         href="#trending"
-                        class="group inline-flex items-center justify-center gap-2
+                        class="group magnetic ripple-surface inline-flex items-center justify-center gap-2
                                bg-teal hover:bg-teal-dark
                                text-white
                                text-sm font-semibold
                                px-6 sm:px-7
                                py-3 sm:py-3.5
                                rounded-full
-                               transition-all duration-300
-                               hover:-translate-y-0.5
+                               transition-colors duration-300
                                hover:shadow-xl
                                shadow-lg shadow-teal/20"
                     >
@@ -104,7 +110,7 @@
                     {{-- Refined secondary CTA --}}
                     <a
                         href="#categories"
-                        class="group inline-flex items-center justify-center gap-2.5
+                        class="group magnetic ripple-surface inline-flex items-center justify-center gap-2.5
                                bg-white/80 hover:bg-white
                                border border-navy/12 hover:border-teal/35
                                text-navy hover:text-teal-dark
@@ -114,8 +120,7 @@
                                rounded-full
                                shadow-sm shadow-navy/5
                                hover:shadow-lg hover:shadow-navy/8
-                               hover:-translate-y-0.5
-                               transition-all duration-300"
+                               transition-colors duration-300"
                     >
                         <span
                             class="w-7 h-7 rounded-full
@@ -138,7 +143,9 @@
 
                 {{-- Original stats, visually refined only --}}
                 <div
-                    class="grid grid-cols-3
+                    style="--stagger-index: 4;"
+                    class="stagger-item
+                           grid grid-cols-3
                            gap-3 sm:gap-6
                            mt-9 sm:mt-11
                            pt-6 sm:pt-7
@@ -147,8 +154,8 @@
                 >
 
                     <div>
-                        <div class="text-xl sm:text-2xl font-bold text-navy">
-                            50K+
+                        <div class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
+                            <span data-count-to="50" data-count-suffix="K+">0K+</span>
                         </div>
 
                         <div class="text-[10px] sm:text-xs text-navy/50 mt-1">
@@ -158,8 +165,8 @@
 
 
                     <div class="border-l border-navy/10 pl-3 sm:pl-6">
-                        <div class="text-xl sm:text-2xl font-bold text-navy">
-                            2M+
+                        <div class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
+                            <span data-count-to="2" data-count-suffix="M+">0M+</span>
                         </div>
 
                         <div class="text-[10px] sm:text-xs text-navy/50 mt-1">
@@ -170,8 +177,8 @@
 
                     <div class="border-l border-navy/10 pl-3 sm:pl-6">
                         <div class="flex items-center gap-1.5">
-                            <span class="text-xl sm:text-2xl font-bold text-navy">
-                                4.9
+                            <span class="text-xl sm:text-2xl font-bold text-navy tabular-nums" data-count-to="4.9" data-count-decimals="1">
+                                0.0
                             </span>
                             <x-lucide-star class="w-3.5 h-3.5 text-amber-400 fill-current" />
                         </div>
@@ -585,7 +592,8 @@
 
                     <a
                         href="#"
-                        class="group relative overflow-hidden
+                        style="--stagger-index: {{ $loop->index % 7 }};"
+                        class="group tilt-card stagger-item relative overflow-hidden
                                min-h-46 sm:min-h-48
                                rounded-2xl bg-gray-bg
                                px-4 py-5 text-center
@@ -593,10 +601,8 @@
                                border border-transparent
                                hover:border-teal/30
                                hover:bg-teal-light
-                               hover:-translate-y-1
                                hover:shadow-lg
-                               snap-start
-                               transition-all duration-300"
+                               snap-start"
                     >
                         @if ($imageCount > 0)
                             <div class="absolute inset-0 z-0">
@@ -707,4 +713,3 @@
         });
     });
 </script>
-

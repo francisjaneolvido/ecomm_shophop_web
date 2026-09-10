@@ -140,7 +140,7 @@
 
                     <a
                         href="#trending"
-                        class="group inline-flex items-center justify-center gap-2
+                        class="group magnetic ripple-surface inline-flex items-center justify-center gap-2
                                w-fit
                                mt-7
                                bg-navy hover:bg-[#172750]
@@ -150,8 +150,7 @@
                                py-3 sm:py-3.5
                                rounded-full
                                shadow-lg shadow-navy/10
-                               hover:-translate-y-0.5
-                               transition-all duration-300"
+                               transition-colors duration-300"
                     >
                         Discover new arrivals
 
@@ -299,6 +298,7 @@
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div
+            data-parallax-container
             class="relative
                    overflow-hidden
                    rounded-3xl
@@ -313,6 +313,7 @@
 
             {{-- Decorations --}}
             <div
+                data-parallax="16"
                 class="pointer-events-none
                        absolute -left-20 -top-20
                        w-48 h-48
@@ -322,6 +323,7 @@
             ></div>
 
             <div
+                data-parallax="-12"
                 class="pointer-events-none
                        absolute -right-20 -bottom-20
                        w-48 h-48
@@ -378,7 +380,7 @@
                 <a
                     href="#trending"
                     data-login-required
-                    class="group inline-flex
+                    class="group magnetic ripple-surface inline-flex
                            items-center justify-center gap-2
                            bg-teal
                            hover:bg-teal-dark
@@ -387,8 +389,7 @@
                            px-6 sm:px-7
                            py-3 sm:py-3.5
                            rounded-full
-                           transition-all duration-300
-                           hover:-translate-y-0.5
+                           transition-colors duration-300
                            hover:shadow-xl
                            shadow-lg shadow-teal/20"
                 >
@@ -546,39 +547,205 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        const revealItems = document.querySelectorAll('.reveal-up');
+        const prefersReducedMotion = window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-        if (!revealItems.length) {
+        /* =================================
+           SCROLL REVEAL (single fades + staggered groups)
+        ================================= */
+        const revealItems = document.querySelectorAll('.reveal-up, .stagger-item');
+
+        if (revealItems.length) {
+            if (prefersReducedMotion) {
+                revealItems.forEach(function (item) {
+                    item.classList.add('is-visible');
+                });
+            } else {
+                const revealObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('is-visible');
+                            revealObserver.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.12 });
+
+                revealItems.forEach(function (item) {
+                    revealObserver.observe(item);
+                });
+            }
+        }
+
+        /* =================================
+           ANIMATED STAT COUNTERS
+        ================================= */
+        const countTargets = document.querySelectorAll('[data-count-to]');
+
+        if (countTargets.length) {
+            countTargets.forEach(function (el) {
+                const target = parseFloat(el.dataset.countTo);
+                const suffix = el.dataset.countSuffix || '';
+                const decimals = el.dataset.countDecimals ? parseInt(el.dataset.countDecimals, 10) : 0;
+                const duration = 1400;
+
+                if (prefersReducedMotion) {
+                    el.textContent = (decimals ? target.toFixed(decimals) : Math.round(target)) + suffix;
+                    return;
+                }
+
+                const countObserver = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        if (!entry.isIntersecting) return;
+                        countObserver.unobserve(entry.target);
+
+                        const start = performance.now();
+
+                        function tick(now) {
+                            const progress = Math.min((now - start) / duration, 1);
+                            const eased = 1 - Math.pow(1 - progress, 3);
+                            const current = target * eased;
+
+                            el.textContent = (decimals ? current.toFixed(decimals) : Math.round(current)) + suffix;
+
+                            if (progress < 1) {
+                                requestAnimationFrame(tick);
+                            }
+                        }
+
+                        requestAnimationFrame(tick);
+                    });
+                }, { threshold: 0.4 });
+
+                countObserver.observe(el);
+            });
+        }
+
+        /* =================================
+           DEAL COUNTDOWN
+        ================================= */
+        document.querySelectorAll('[data-countdown]').forEach(function (el) {
+            function update() {
+                const now = new Date();
+                const end = new Date(now);
+                end.setHours(24, 0, 0, 0);
+
+                const diff = Math.max(0, end - now);
+                const h = String(Math.floor(diff / 3.6e6)).padStart(2, '0');
+                const m = String(Math.floor((diff % 3.6e6) / 6e4)).padStart(2, '0');
+                const s = String(Math.floor((diff % 6e4) / 1000)).padStart(2, '0');
+
+                el.textContent = h + ':' + m + ':' + s;
+            }
+
+            update();
+            setInterval(update, 1000);
+        });
+
+        /* =================================
+           WISHLIST HEART POP
+        ================================= */
+        document.querySelectorAll('.wishlist-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const wished = btn.getAttribute('data-wished') === 'true';
+                btn.setAttribute('data-wished', String(!wished));
+
+                if (prefersReducedMotion) return;
+
+                btn.classList.remove('heart-pop');
+                void btn.offsetWidth; // restart the animation
+                btn.classList.add('heart-pop');
+            });
+        });
+
+        /* =================================
+           RIPPLE PRESS FEEDBACK
+        ================================= */
+        document.querySelectorAll('.ripple-surface').forEach(function (surface) {
+            surface.addEventListener('click', function (e) {
+                if (prefersReducedMotion) return;
+
+                const rect = surface.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                const ripple = document.createElement('span');
+
+                ripple.className = 'ripple';
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+
+                surface.appendChild(ripple);
+                ripple.addEventListener('animationend', function () {
+                    ripple.remove();
+                });
+            });
+        });
+
+        if (prefersReducedMotion) {
             return;
         }
 
-        if (
-            window.matchMedia &&
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches
-        ) {
-            revealItems.forEach(function (item) {
-                item.classList.add('is-visible');
+        /* =================================
+           MAGNETIC BUTTONS
+        ================================= */
+        document.querySelectorAll('.magnetic').forEach(function (btn) {
+            btn.addEventListener('mousemove', function (e) {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left - rect.width / 2;
+                const y = e.clientY - rect.top - rect.height / 2;
+
+                btn.style.transform = 'translate(' + (x * 0.18) + 'px, ' + (y * 0.35) + 'px)';
             });
 
-            return;
-        }
+            btn.addEventListener('mouseleave', function () {
+                btn.style.transform = '';
+            });
+        });
 
-        const observer = new IntersectionObserver(
-            function (entries) {
-                entries.forEach(function (entry) {
-                    if (entry.isIntersecting) {
-                        entry.target.classList.add('is-visible');
-                        observer.unobserve(entry.target);
-                    }
+        /* =================================
+           TILT CARDS (category tiles)
+        ================================= */
+        document.querySelectorAll('.tilt-card').forEach(function (card) {
+            card.addEventListener('mousemove', function (e) {
+                const rect = card.getBoundingClientRect();
+                const px = (e.clientX - rect.left) / rect.width;
+                const py = (e.clientY - rect.top) / rect.height;
+                const rotateX = (0.5 - py) * 10;
+                const rotateY = (px - 0.5) * 12;
+
+                card.style.transform = 'perspective(700px) rotateX(' + rotateX + 'deg) rotateY(' + rotateY + 'deg) translateY(-4px)';
+            });
+
+            card.addEventListener('mouseleave', function () {
+                card.style.transform = '';
+            });
+        });
+
+        /* =================================
+           BACKGROUND PARALLAX LAYERS
+           (safe on elements with no other
+           transform-based positioning)
+        ================================= */
+        document.querySelectorAll('[data-parallax-container]').forEach(function (container) {
+            const layers = container.querySelectorAll('[data-parallax]');
+
+            if (!layers.length) return;
+
+            container.addEventListener('mousemove', function (e) {
+                const rect = container.getBoundingClientRect();
+                const px = (e.clientX - rect.left) / rect.width - 0.5;
+                const py = (e.clientY - rect.top) / rect.height - 0.5;
+
+                layers.forEach(function (layer) {
+                    const speed = parseFloat(layer.dataset.parallax) || 10;
+                    layer.style.transform = 'translate(' + (px * speed) + 'px, ' + (py * speed) + 'px)';
                 });
-            },
-            {
-                threshold: 0.12
-            }
-        );
+            });
 
-        revealItems.forEach(function (item) {
-            observer.observe(item);
+            container.addEventListener('mouseleave', function () {
+                layers.forEach(function (layer) {
+                    layer.style.transform = '';
+                });
+            });
         });
 
     });

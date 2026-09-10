@@ -24,20 +24,34 @@
                 {{-- LEFT CONTENT --}}
                 <div class="relative z-10 px-6 sm:px-8 lg:px-10 xl:px-12 py-9 sm:py-11 lg:py-12">
 
-                    <span
-                        class="inline-flex items-center gap-2
-                               bg-teal-light
-                               text-teal-dark
-                               border border-teal/10
-                               px-3.5 py-2
-                               rounded-full
-                               text-[10px] sm:text-xs
-                               font-semibold tracking-wide
-                               mb-5"
-                    >
-                        <x-lucide-badge-percent class="w-3.5 h-3.5" />
-                        SHOPHOP DEALS
-                    </span>
+                    <div class="flex flex-wrap items-center gap-2 mb-5">
+                        <span
+                            class="inline-flex items-center gap-2
+                                   bg-teal-light
+                                   text-teal-dark
+                                   border border-teal/10
+                                   px-3.5 py-2
+                                   rounded-full
+                                   text-[10px] sm:text-xs
+                                   font-semibold tracking-wide"
+                        >
+                            <x-lucide-badge-percent class="w-3.5 h-3.5" />
+                            SHOPHOP DEALS
+                        </span>
+
+                        <span
+                            class="inline-flex items-center gap-1.5
+                                   bg-navy text-white
+                                   px-3.5 py-2
+                                   rounded-full
+                                   text-[10px] sm:text-xs
+                                   font-semibold tracking-wide"
+                        >
+                            <x-lucide-clock class="w-3.5 h-3.5 text-teal" />
+                            Refreshes in
+                            <span data-countdown class="tabular-nums text-teal">00:00:00</span>
+                        </span>
+                    </div>
 
 
                     <h2
@@ -85,7 +99,7 @@
 
                     <a
                         href="#trending"
-                        class="group inline-flex
+                        class="group magnetic ripple-surface inline-flex
                                items-center justify-center gap-2
                                mt-7 sm:mt-8
                                bg-teal hover:bg-teal-dark
@@ -94,9 +108,8 @@
                                px-6 py-3.5
                                rounded-full
                                shadow-lg shadow-teal/20
-                               hover:-translate-y-0.5
                                hover:shadow-xl
-                               transition-all duration-300"
+                               transition-colors duration-300"
                     >
                         Explore Deals
 
@@ -123,16 +136,17 @@
                     <div class="relative grid grid-cols-2 gap-3 sm:gap-4 w-full">
 
                         <div
-                            class="group bg-white/90
+                            style="--stagger-index: 0;"
+                            class="group stagger-item bg-white/90
                                    rounded-2xl
                                    p-4 sm:p-5
                                    border border-white
                                    shadow-sm shadow-navy/5
                                    hover:-translate-y-1
                                    hover:shadow-lg
-                                   transition-all duration-300"
+                                   transition-[transform,box-shadow] duration-300"
                         >
-                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
                                 <x-lucide-tag class="w-5 h-5 text-teal-dark" />
                             </div>
 
@@ -147,16 +161,17 @@
 
 
                         <div
-                            class="group bg-white/90
+                            style="--stagger-index: 1;"
+                            class="group stagger-item bg-white/90
                                    rounded-2xl
                                    p-4 sm:p-5
                                    border border-white
                                    shadow-sm shadow-navy/5
                                    hover:-translate-y-1
                                    hover:shadow-lg
-                                   transition-all duration-300"
+                                   transition-[transform,box-shadow] duration-300"
                         >
-                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
                                 <x-lucide-truck class="w-5 h-5 text-teal-dark" />
                             </div>
 
@@ -171,16 +186,17 @@
 
 
                         <div
-                            class="group bg-white/90
+                            style="--stagger-index: 2;"
+                            class="group stagger-item bg-white/90
                                    rounded-2xl
                                    p-4 sm:p-5
                                    border border-white
                                    shadow-sm shadow-navy/5
                                    hover:-translate-y-1
                                    hover:shadow-lg
-                                   transition-all duration-300"
+                                   transition-[transform,box-shadow] duration-300"
                         >
-                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
                                 <x-lucide-shield-check class="w-5 h-5 text-teal-dark" />
                             </div>
 
@@ -195,16 +211,17 @@
 
 
                         <div
-                            class="group bg-white/90
+                            style="--stagger-index: 3;"
+                            class="group stagger-item bg-white/90
                                    rounded-2xl
                                    p-4 sm:p-5
                                    border border-white
                                    shadow-sm shadow-navy/5
                                    hover:-translate-y-1
                                    hover:shadow-lg
-                                   transition-all duration-300"
+                                   transition-[transform,box-shadow] duration-300"
                         >
-                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4">
+                            <div class="w-10 h-10 rounded-xl bg-teal-light flex items-center justify-center mb-4 transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-6">
                                 <x-lucide-headphones class="w-5 h-5 text-teal-dark" />
                             </div>
 
@@ -247,7 +264,7 @@
             </a>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4 reveal-up" style="--reveal-delay: 80ms;">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5 sm:gap-4">
             @php
                 /*
                  * Landing-page fallback:
@@ -315,7 +332,10 @@
             @endphp
 
             @foreach ($trendingDisplayProducts as $product)
-                <article class="group bg-white rounded-2xl overflow-hidden border border-gray-border hover:border-teal/25 hover:-translate-y-1 hover:shadow-xl hover:shadow-navy/8 transition-all duration-300">
+                <article
+                    style="--stagger-index: {{ $loop->index % 5 }};"
+                    class="group stagger-item bg-white rounded-2xl overflow-hidden border border-gray-border hover:border-teal/25 hover:-translate-y-1 hover:shadow-xl hover:shadow-navy/8 transition-[transform,box-shadow,border-color] duration-300"
+                >
                     <div class="relative aspect-[1/0.82] bg-gray-bg overflow-hidden">
                         <img
                             src="{{ str_starts_with($product['image'], 'http') ? $product['image'] : asset('images/' . $product['image']) }}"
@@ -327,9 +347,18 @@
                             <span class="absolute top-2 left-2 bg-teal text-white text-[9px] font-bold px-2.5 py-1 rounded-full shadow-sm">SALE</span>
                         @endif
 
-                        <button type="button" data-login-required class="absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-navy hover:text-teal-dark hover:scale-110 shadow-sm transition-all duration-200" title="Add to wishlist" aria-label="Add {{ $product['name'] }} to wishlist">
+                        <button type="button" data-login-required data-wished="false" class="wishlist-btn absolute top-2 right-2 w-8 h-8 rounded-full bg-white/95 backdrop-blur flex items-center justify-center text-navy hover:text-teal-dark hover:scale-110 shadow-sm transition-all duration-200" title="Add to wishlist" aria-label="Add {{ $product['name'] }} to wishlist">
                             <x-lucide-heart class="w-3.5 h-3.5" />
                         </button>
+
+                        {{-- Quick view — slides up on hover --}}
+                        <a
+                            href="#"
+                            class="quick-view-bar absolute inset-x-0 bottom-0 flex items-center justify-center gap-1.5 bg-navy/90 backdrop-blur text-white text-[10px] sm:text-[11px] font-semibold py-2"
+                        >
+                            <x-lucide-eye class="w-3.5 h-3.5" />
+                            Quick View
+                        </a>
                     </div>
 
                     <div class="p-3 sm:p-3.5 lg:p-3.5">
@@ -349,7 +378,7 @@
                             @endif
                         </div>
 
-                        <button type="button" data-login-required class="w-full flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-[10px] sm:text-xs font-semibold py-2 sm:py-2.5 rounded-xl transition-all duration-300 hover:shadow-md active:scale-[0.98]">
+                        <button type="button" data-login-required class="ripple-surface w-full flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-[10px] sm:text-xs font-semibold py-2 sm:py-2.5 rounded-xl transition-all duration-300 hover:shadow-md active:scale-[0.98]">
                             <x-lucide-shopping-cart class="w-3.5 h-3.5" />
                             Add to Cart
                         </button>
@@ -359,4 +388,3 @@
         </div>
     </div>
 </section>
-
