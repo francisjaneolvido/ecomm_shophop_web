@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Buyer\ShowProductDetails_Controller as BuyerProductController;
+use App\Http\Controllers\Buyer\CategoryController as BuyerCategoryController;
 
 
 /*
@@ -38,6 +39,34 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
+        | Categories — Browse page (sidebar + filters + product grid)
+        |--------------------------------------------------------------------------
+        |
+        | "All Categories" index (used by the breadcrumb's first link),
+        | then the actual category browse page.
+        |
+        | Example:
+        | /buyer/category/electronics-and-gadgets
+        |
+        | Route names:
+        | buyer.category.index
+        | buyer.category.show
+        |
+        */
+
+        Route::get('/categories', [
+            BuyerCategoryController::class,
+            'index'
+        ])->name('category.index');
+
+        Route::get('/category/{category}', [
+            BuyerCategoryController::class,
+            'show'
+        ])->name('category.show');
+
+
+        /*
+        |--------------------------------------------------------------------------
         | Product Details — TEMPORARY UI PREVIEW
         |--------------------------------------------------------------------------
         |
@@ -59,8 +88,6 @@ Route::prefix('buyer')
         | Product Details — Actual Product Route
         |--------------------------------------------------------------------------
         |
-        | Ito ang actual product details route.
-        |
         | Example:
         | /buyer/product/1
         |
@@ -81,16 +108,7 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         |
         | LAHAT ng pagbili — Buy Now man o Add to Cart — ay dumadaan
-        | dito muna. Wala nang direct/"quick" checkout path.
-        |
-        | Flow:
-        | 1. Product page → "Add to Cart" o "Buy Now" → parehong
-        |    nagta-trigger ng add-to-cart, tapos redirect papunta dito.
-        | 2. Kapag galing sa "Buy Now", yung kakabili lang na item ang
-        |    naka-preselect (checked) sa cart, para hindi na kailangan
-        |    pang i-check pa ulit ng buyer.
-        | 3. Buyer pipili (checkbox) kung anong item(s) talaga ang
-        |    ic-checkout, tapos pindutin ang "Proceed to Checkout".
+        | dito muna.
         |
         | URL:
         | http://127.0.0.1:8000/buyer/cart
@@ -104,22 +122,10 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Checkout — CART (single entry point na ngayon)
+        | Checkout — CART
         |--------------------------------------------------------------------------
         |
-        | Ito na ang TANGING checkout page, dating tinatawag na
-        | "cart/multi-seller checkout" lang. Ngayon, kahit isang item
-        | lang (galing Buy Now), dito pa rin dumadaan — basta't
-        | naka-group-by-shop ang layout nito.
-        |
-        | Binabasa nito (sa production) ang mga naka-select (checked)
-        | na item mula sa cart page, karaniwan bilang array ng
-        | cart item IDs (hal. ?items[]=1&items[]=3), bago i-render.
-        |
-        | NOTE: Yung dati nating place-order.blade.php (single-item
-        | "Buy Now direct checkout" page) ay hindi na ginagamit sa
-        | flow na ito. Panatilihin na lang ito sa codebase bilang
-        | reference/backup, pero wala nang route na tumuturo dito.
+        | Single checkout entry point for selected cart items.
         |
         | URL:
         | http://127.0.0.1:8000/buyer/cart/checkout
@@ -133,23 +139,79 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Checkout — Place Order (form submission)
+        | Checkout — Place Order
         |--------------------------------------------------------------------------
         |
-        | TEMPORARY closure lang muna. Ito yung tatamaan ng submit
-        | button sa cart-checkout.blade.php (parehong Buy Now at
-        | normal na cart checkout, dahil iisa na lang ang checkout
-        | page).
-        |
-        | I-palitan natin ‘to ng tunay na controller
-        | (app/Http/Controllers/Buyer/CheckoutController.php)
-        | kapag ready na ang order/payment logic.
+        | TEMPORARY closure lang muna.
+        | Palitan ng CheckoutController kapag ready na ang backend.
         |
         */
 
         Route::post('/checkout/place-order', function () {
-            return back()->with('status', 'Order placed (demo — no backend yet).');
+            return back()->with(
+                'status',
+                'Order placed (demo — no backend yet).'
+            );
         })->name('checkout.place');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | My Orders
+        |--------------------------------------------------------------------------
+        |
+        | Buyer order history / order tracking page.
+        |
+        | URL:
+        | http://127.0.0.1:8000/buyer/orders
+        |
+        | Route name:
+        | buyer.orders
+        |
+        */
+
+        Route::get('/orders', function () {
+            return view('buyer.orders.index');
+        })->name('orders');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Order Reports — FUTURE BACKEND
+        |--------------------------------------------------------------------------
+        |
+        | Hindi pa kailangan sa current frontend preview.
+        | Kapag may real order_reports table/controller na, pwede itong
+        | palitan ng BuyerOrderReportController.
+        |
+        */
+
+        // Route::post('/orders/{order}/report', function ($order) {
+        //     return back()->with(
+        //         'status',
+        //         'Report submitted (demo — no backend yet).'
+        //     );
+        // })->name('orders.report');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Messages
+        |--------------------------------------------------------------------------
+        |
+        | Buyer conversations with sellers and ShopHop Support.
+        |
+        | URL:
+        | http://127.0.0.1:8000/buyer/messages
+        |
+        | Route name:
+        | buyer.messages
+        |
+        */
+
+        Route::get('/messages', function () {
+            return view('buyer.messages.index');
+        })->name('messages');
 
 
         /*

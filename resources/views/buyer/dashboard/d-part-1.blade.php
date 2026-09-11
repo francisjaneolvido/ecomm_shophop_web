@@ -9,44 +9,44 @@
     <div class="pointer-events-none absolute -top-28 -right-20 w-80 h-80 rounded-full bg-teal/10 blur-3xl"></div>
     <div class="pointer-events-none absolute -bottom-32 -left-24 w-72 h-72 rounded-full bg-navy/5 blur-3xl"></div>
 
-    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-11">
+    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-6 lg:py-6">
 
-        <div class="grid lg:grid-cols-[minmax(0,1fr)_auto] gap-6 lg:gap-8 lg:items-center">
+        <div class="grid lg:grid-cols-[minmax(0,1fr)_auto] gap-4 lg:gap-6 lg:items-center">
 
             {{-- WELCOME --}}
             <div class="min-w-0 buyer-reveal">
 
-                <div class="inline-flex items-center gap-2 bg-white/85 backdrop-blur border border-teal/10 px-3.5 py-2 rounded-full shadow-sm mb-4">
+                <div class="inline-flex items-center gap-1.5 bg-white/90 backdrop-blur border border-teal/10 px-3 py-1.5 rounded-full shadow-sm mb-3">
                     <span class="relative flex w-2 h-2">
                         <span class="absolute inline-flex h-full w-full rounded-full bg-teal opacity-30 buyer-ping"></span>
                         <span class="relative inline-flex w-2 h-2 rounded-full bg-teal"></span>
                     </span>
-                    <span class="text-[11px] sm:text-xs font-semibold text-teal-dark">
+                    <span class="text-[10px] sm:text-[11px] font-semibold text-teal-dark">
                         Welcome back
                     </span>
                 </div>
 
-                <h1 class="text-navy text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight tracking-tight">
+                <p role="heading" aria-level="1" class="text-navy text-[26px] sm:text-[30px] lg:text-[34px] font-bold leading-[1.08] tracking-tight">
                     Hello,
                     <span class="text-teal">{{ $buyerName }}!</span>
-                </h1>
+                </p>
 
-                <p class="text-xs sm:text-sm text-navy/55 mt-2.5 max-w-xl leading-relaxed">
+                <p class="text-[10.5px] sm:text-[11.5px] text-navy/50 mt-1.5 max-w-xl leading-relaxed">
                     Track your orders, discover new finds, and continue shopping right where you left off.
                 </p>
 
-                <div class="flex flex-wrap gap-2.5 mt-5">
+                <div class="flex flex-wrap gap-2 mt-4">
                     <a
                         href="#my-orders"
                         class="group inline-flex items-center justify-center gap-2
                                bg-teal hover:bg-teal-dark
-                               text-white text-xs sm:text-sm font-semibold
-                               px-4.5 py-2.5 rounded-xl
+                               text-white text-[11px] sm:text-[11.5px] font-semibold
+                               px-3.5 py-2 rounded-lg
                                shadow-sm shadow-teal/10 hover:shadow-md
                                hover:-translate-y-0.5
                                transition-all duration-300"
                     >
-                        <x-lucide-package class="w-4 h-4" />
+                        <x-lucide-package class="w-3.5 h-3.5" />
                         View Orders
                     </a>
 
@@ -56,8 +56,8 @@
                                bg-white/90 border border-gray-border
                                text-navy hover:text-teal-dark
                                hover:border-teal/30 hover:bg-white
-                               text-xs sm:text-sm font-semibold
-                               px-4.5 py-2.5 rounded-xl
+                               text-[11px] sm:text-[11.5px] font-semibold
+                               px-3.5 py-2 rounded-lg
                                hover:-translate-y-0.5
                                transition-all duration-300"
                     >
@@ -69,52 +69,52 @@
             </div>
 
             {{-- QUICK ACCOUNT SUMMARY --}}
-            <div class="grid grid-cols-3 gap-2.5 sm:gap-3 w-full lg:w-auto buyer-reveal" style="--buyer-delay: 90ms;">
+            <div class="grid grid-cols-3 gap-2 sm:gap-2.5 w-full lg:w-auto buyer-reveal" style="--buyer-delay: 90ms;">
 
                 <a href="#"
-                   class="group min-w-0 lg:w-35 bg-white/95 backdrop-blur border border-gray-border
-                          rounded-2xl px-3 py-3.5
-                          hover:border-teal/35 hover:shadow-lg hover:-translate-y-1
+                   class="group min-w-0 lg:w-32 bg-white/95 backdrop-blur border border-gray-border
+                          rounded-xl px-2.5 py-2.5
+                          hover:border-teal/35 hover:shadow-md hover:-translate-y-0.5
                           transition-all duration-300">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white group-hover:scale-105 transition-all duration-300">
-                            <x-lucide-heart class="w-4 h-4" />
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white transition-all duration-300">
+                            <x-lucide-heart class="w-3.5 h-3.5" />
                         </div>
                         <div class="min-w-0">
-                            <p class="text-lg font-bold leading-none text-navy">2</p>
-                            <p class="text-[10px] sm:text-[11px] text-navy/45 mt-1 truncate">Wishlist</p>
+                            <p class="text-base font-bold leading-none text-navy">2</p>
+                            <p class="text-[9px] sm:text-[10px] text-navy/45 mt-0.5 truncate">Wishlist</p>
                         </div>
                     </div>
                 </a>
 
                 <a href="#"
-                   class="group min-w-0 lg:w-35 bg-white/95 backdrop-blur border border-gray-border
-                          rounded-2xl px-3 py-3.5
-                          hover:border-teal/35 hover:shadow-lg hover:-translate-y-1
+                   class="group min-w-0 lg:w-32 bg-white/95 backdrop-blur border border-gray-border
+                          rounded-xl px-2.5 py-2.5
+                          hover:border-teal/35 hover:shadow-md hover:-translate-y-0.5
                           transition-all duration-300">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white group-hover:scale-105 transition-all duration-300">
-                            <x-lucide-shopping-cart class="w-4 h-4" />
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white transition-all duration-300">
+                            <x-lucide-shopping-cart class="w-3.5 h-3.5" />
                         </div>
                         <div class="min-w-0">
-                            <p class="text-lg font-bold leading-none text-navy">3</p>
-                            <p class="text-[10px] sm:text-[11px] text-navy/45 mt-1 truncate">Cart</p>
+                            <p class="text-base font-bold leading-none text-navy">3</p>
+                            <p class="text-[9px] sm:text-[10px] text-navy/45 mt-0.5 truncate">Cart</p>
                         </div>
                     </div>
                 </a>
 
                 <a href="#vouchers"
-                   class="group min-w-0 lg:w-35 bg-white/95 backdrop-blur border border-gray-border
-                          rounded-2xl px-3 py-3.5
-                          hover:border-teal/35 hover:shadow-lg hover:-translate-y-1
+                   class="group min-w-0 lg:w-32 bg-white/95 backdrop-blur border border-gray-border
+                          rounded-xl px-2.5 py-2.5
+                          hover:border-teal/35 hover:shadow-md hover:-translate-y-0.5
                           transition-all duration-300">
-                    <div class="flex items-center gap-2.5">
-                        <div class="w-9 h-9 rounded-xl bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white group-hover:scale-105 transition-all duration-300">
-                            <x-lucide-ticket class="w-4 h-4" />
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white transition-all duration-300">
+                            <x-lucide-ticket class="w-3.5 h-3.5" />
                         </div>
                         <div class="min-w-0">
-                            <p class="text-lg font-bold leading-none text-navy">{{ count($vouchers) }}</p>
-                            <p class="text-[10px] sm:text-[11px] text-navy/45 mt-1 truncate">Vouchers</p>
+                            <p class="text-base font-bold leading-none text-navy">{{ count($vouchers) }}</p>
+                            <p class="text-[9px] sm:text-[10px] text-navy/45 mt-0.5 truncate">Vouchers</p>
                         </div>
                     </div>
                 </a>
@@ -131,20 +131,20 @@
 {{-- =========================================================
     MY PURCHASES
 ========================================================= --}}
-<section id="my-orders" class="pt-9 sm:pt-11 pb-6 sm:pb-7 bg-white">
+<section id="my-orders" class="scroll-mt-20 pt-6 sm:pt-7 pb-4 sm:pb-5 bg-white">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- HEADER --}}
-        <div class="flex items-end justify-between gap-4 mb-5 sm:mb-6 buyer-reveal">
+        <div class="flex items-end justify-between gap-3 mb-3 buyer-reveal">
             <div>
-                <p class="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] text-teal-dark mb-1">
+                <p class="text-[9px] sm:text-[10px] font-bold tracking-[0.12em] text-teal-dark mb-0.5">
                     MY SHOPPING
                 </p>
-                <h2 class="text-lg sm:text-xl font-bold text-navy tracking-tight">
+                <p role="heading" aria-level="2" class="text-[17px] sm:text-[19px] font-bold text-navy tracking-tight leading-tight">
                     My Purchases
-                </h2>
-                <p class="text-xs sm:text-sm text-navy/45 mt-1">
+                </p>
+                <p class="text-[10px] sm:text-[11px] text-navy/45 mt-0.5">
                     Check your order status at a glance.
                 </p>
             </div>
@@ -164,33 +164,33 @@
             @foreach ($orderSummary as $status)
                 <a
                     href="#"
-                    class="group buyer-card bg-white border border-gray-border rounded-2xl
-                           px-3.5 py-4 sm:px-4
+                    class="group buyer-card bg-white border border-gray-border rounded-xl
+                           px-3 py-3
                            hover:border-teal/35 hover:shadow-lg hover:-translate-y-1
                            transition-all duration-300"
                 >
-                    <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white transition">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0 group-hover:bg-teal group-hover:text-white transition">
                             <x-dynamic-component
                                 :component="'lucide-' . $status['icon']"
-                                class="w-4 h-4"
+                                class="w-3.5 h-3.5"
                             />
                         </div>
 
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center justify-between gap-2">
-                                <p class="text-xs sm:text-sm font-semibold text-navy truncate">
+                                <p class="text-[11px] sm:text-xs font-semibold text-navy truncate">
                                     {{ $status['label'] }}
                                 </p>
 
                                 @if ($status['count'] > 0)
-                                    <span class="min-w-5 h-5 px-1.5 rounded-full bg-teal text-white text-[10px] font-bold flex items-center justify-center shrink-0">
+                                    <span class="min-w-4.5 h-4.5 px-1 rounded-full bg-teal text-white text-[9px] font-bold flex items-center justify-center shrink-0">
                                         {{ $status['count'] }}
                                     </span>
                                 @endif
                             </div>
 
-                            <p class="text-[10px] sm:text-[11px] text-navy/40 mt-0.5">
+                            <p class="text-[9px] sm:text-[10px] text-navy/40 mt-0.5">
                                 {{ $status['count'] }} {{ $status['count'] === 1 ? 'order' : 'orders' }}
                             </p>
                         </div>
@@ -208,18 +208,18 @@
 {{-- =========================================================
     CURRENT DELIVERY / TRACKING — LIGHT SHOPHOP REFINEMENT
 ========================================================= --}}
-<section class="pb-10 sm:pb-12 bg-white">
+<section class="pb-6 sm:pb-7 bg-white">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         <div
             class="relative overflow-hidden
-                   rounded-3xl
+                   rounded-2xl
                    bg-white
                    border border-gray-border
-                   shadow-lg shadow-navy/5
-                   px-4 sm:px-5 lg:px-6
-                   py-4 sm:py-5
+                   shadow-sm shadow-navy/5
+                   px-3.5 sm:px-4 lg:px-5
+                   py-3.5 sm:py-4
                    buyer-reveal"
         >
 
@@ -231,13 +231,13 @@
             <div class="relative">
 
                 {{-- ORDER SUMMARY --}}
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-6">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-5">
 
-                    <div class="flex items-center gap-3.5 min-w-0">
+                    <div class="flex items-center gap-3 min-w-0">
 
                         <div
-                            class="w-16 h-16 sm:w-18 sm:h-18
-                                   rounded-2xl overflow-hidden
+                            class="w-14 h-14 sm:w-16 sm:h-16
+                                   rounded-xl overflow-hidden
                                    bg-gray-bg
                                    border border-gray-border
                                    shrink-0"
@@ -256,7 +256,7 @@
 
                                 <span
                                     class="inline-flex items-center gap-1.5
-                                           px-2.5 py-1
+                                           px-2 py-0.5
                                            bg-teal-light
                                            border border-teal/10
                                            rounded-full
@@ -274,11 +274,11 @@
                             </div>
 
 
-                            <h3 class="font-semibold text-sm sm:text-base text-navy mt-1.5 truncate">
+                            <p role="heading" aria-level="3" class="font-semibold text-[13px] sm:text-sm text-navy mt-1 truncate">
                                 {{ $activeOrder['product_name'] }}
-                            </h3>
+                            </p>
 
-                            <p class="text-[10px] sm:text-xs text-navy/45 mt-0.5 truncate">
+                            <p class="text-[9.5px] sm:text-[10.5px] text-navy/45 mt-0.5 truncate">
                                 {{ $activeOrder['variant'] }}
                                 · Qty {{ $activeOrder['quantity'] }}
                                 · ₱{{ number_format($activeOrder['price']) }}
@@ -289,7 +289,7 @@
                     </div>
 
 
-                    <div class="flex items-center justify-between md:justify-end gap-4 shrink-0">
+                    <div class="flex items-center justify-between md:justify-end gap-3 shrink-0">
 
                         <div class="md:text-right">
                             <p class="text-[9px] uppercase tracking-[0.12em] text-navy/35">
@@ -305,10 +305,10 @@
                         <a
                             href="#"
                             class="group inline-flex items-center justify-center gap-1.5
-                                   h-9 px-3.5
-                                   rounded-xl
+                                   h-8 px-3
+                                   rounded-lg
                                    bg-teal hover:bg-teal-dark
-                                   text-[11px] font-semibold text-white
+                                   text-[10.5px] font-semibold text-white
                                    shadow-sm hover:shadow-md
                                    hover:-translate-y-0.5
                                    transition-all duration-300"
@@ -328,7 +328,7 @@
 
 
                 {{-- TRACKING --}}
-                <div class="mt-4 sm:mt-5 pt-4 border-t border-gray-border">
+                <div class="mt-3 sm:mt-4 pt-3 border-t border-gray-border/80">
 
                     <div class="grid grid-cols-5">
 
@@ -340,7 +340,7 @@
                                     <div
                                         class="absolute
                                                left-1/2 top-3.5
-                                               w-full h-[2px]
+                                               w-full h-0.5
                                                {{ $step['done'] ? 'bg-teal' : 'bg-gray-border' }}"
                                     ></div>
                                 @endif
@@ -393,19 +393,19 @@
 {{-- =========================================================
     RECENTLY VIEWED
 ========================================================= --}}
-<section class="py-10 sm:py-12 bg-gray-bg border-y border-gray-border/60">
+<section class="py-6 sm:py-7 bg-gray-bg border-y border-gray-border/60">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="flex items-end justify-between gap-4 mb-4 sm:mb-5">
+        <div class="flex items-end justify-between gap-4 mb-3 sm:mb-4">
             <div>
-                <p class="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] text-teal-dark mb-1">
+                <p class="text-[9px] sm:text-[10px] font-bold tracking-[0.12em] text-teal-dark mb-0.5">
                     PICK UP WHERE YOU LEFT OFF
                 </p>
-                <h2 class="text-lg sm:text-xl font-bold text-navy tracking-tight">
+                <p role="heading" aria-level="2" class="text-[16px] sm:text-[18px] font-bold text-navy tracking-tight leading-tight">
                     Recently Viewed
-                </h2>
-                <p class="text-xs sm:text-sm text-navy/45 mt-1">
+                </p>
+                <p class="text-[10px] sm:text-[11px] text-navy/45 mt-0.5">
                     Products you've checked recently.
                 </p>
             </div>
@@ -414,7 +414,7 @@
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 buyer-stagger">
 
             @foreach ($recentlyViewed as $product)
-                <article class="group buyer-card bg-white rounded-2xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <article class="group buyer-card bg-white rounded-xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
 
                     <div class="relative aspect-4/3 bg-white overflow-hidden">
                         <a
@@ -445,19 +445,19 @@
                         </button>
                     </div>
 
-                    <div class="p-3 sm:p-3.5">
+                    <div class="p-2.5 sm:p-3">
                         <p class="text-[9px] sm:text-[10px] text-navy/40 truncate">
                             {{ $product['category'] }}
                         </p>
 
-                        <h3 class="text-xs sm:text-sm font-semibold text-navy mt-0.5 truncate" title="{{ $product['name'] }}">
+                        <p role="heading" aria-level="3" class="text-[10.5px] sm:text-[11.5px] font-semibold text-navy mt-0.5 truncate" title="{{ $product['name'] }}">
                             <a
                                 href="{{ route('buyer.product.show', $product['id']) }}"
                                 class="hover:text-teal-dark transition"
                             >
                                 {{ $product['name'] }}
                             </a>
-                        </h3>
+                        </p>
 
                         <div class="flex items-center gap-1.5 mt-1.5 min-w-0">
                             <span class="text-amber-400 text-[8px] sm:text-[9px] tracking-tight shrink-0">★★★★★</span>
@@ -467,7 +467,7 @@
                         </div>
 
                         <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mt-2">
-                            <span class="text-sm font-bold text-navy">
+                            <span class="text-xs sm:text-sm font-bold text-navy">
                                 ₱{{ number_format($product['price']) }}
                             </span>
 
@@ -480,7 +480,7 @@
 
                         <button
                             type="button"
-                            class="w-full mt-2.5 flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-[10px] sm:text-[11px] font-semibold py-2.5 rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-300"
+                            class="w-full mt-2 flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-[9.5px] sm:text-[10.5px] font-semibold py-2 rounded-lg shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-300"
                         >
                             <x-lucide-shopping-cart class="w-3.5 h-3.5" />
                             Add to Cart
@@ -500,19 +500,19 @@
 {{-- =========================================================
     RECOMMENDED FOR YOU
 ========================================================= --}}
-<section id="recommended" class="py-10 sm:py-12 bg-white">
+<section id="recommended" class="scroll-mt-20 py-6 sm:py-7 bg-white">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="flex items-end justify-between gap-4 mb-4 sm:mb-5">
+        <div class="flex items-end justify-between gap-4 mb-3 sm:mb-4">
             <div>
-                <p class="text-[10px] sm:text-[11px] font-bold tracking-[0.14em] text-teal-dark mb-1">
+                <p class="text-[9px] sm:text-[10px] font-bold tracking-[0.12em] text-teal-dark mb-0.5">
                     JUST FOR YOU
                 </p>
-                <h2 class="text-lg sm:text-xl font-bold text-navy tracking-tight">
+                <p role="heading" aria-level="2" class="text-[16px] sm:text-[18px] font-bold text-navy tracking-tight leading-tight">
                     Recommended For You
-                </h2>
-                <p class="text-xs sm:text-sm text-navy/45 mt-1">
+                </p>
+                <p class="text-[10px] sm:text-[11px] text-navy/45 mt-0.5">
                     Suggestions based on your shopping activity.
                 </p>
             </div>
@@ -529,7 +529,7 @@
         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-4 buyer-stagger">
 
             @foreach ($recommendedProducts as $product)
-                <article class="group buyer-card bg-white rounded-2xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <article class="group buyer-card bg-white rounded-xl overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-md hover:-translate-y-0.5 transition-all duration-300">
 
                     <div class="relative aspect-4/3 bg-gray-bg overflow-hidden">
                         <a
@@ -560,19 +560,19 @@
                         </button>
                     </div>
 
-                    <div class="p-3 sm:p-3.5">
+                    <div class="p-2.5 sm:p-3">
                         <p class="text-[9px] sm:text-[10px] text-navy/40 truncate">
                             {{ $product['category'] }}
                         </p>
 
-                        <h3 class="text-xs sm:text-sm font-semibold text-navy mt-0.5 truncate" title="{{ $product['name'] }}">
+                        <p role="heading" aria-level="3" class="text-[10.5px] sm:text-[11.5px] font-semibold text-navy mt-0.5 truncate" title="{{ $product['name'] }}">
                             <a
                                 href="{{ route('buyer.product.show', $product['id']) }}"
                                 class="hover:text-teal-dark transition"
                             >
                                 {{ $product['name'] }}
                             </a>
-                        </h3>
+                        </p>
 
                         <div class="flex items-center gap-1.5 mt-1.5 min-w-0">
                             <span class="text-amber-400 text-[8px] sm:text-[9px] tracking-tight shrink-0">★★★★★</span>
@@ -582,7 +582,7 @@
                         </div>
 
                         <div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 mt-2">
-                            <span class="text-sm font-bold text-navy">
+                            <span class="text-xs sm:text-sm font-bold text-navy">
                                 ₱{{ number_format($product['price']) }}
                             </span>
 
@@ -595,7 +595,7 @@
 
                         <button
                             type="button"
-                            class="w-full mt-2.5 flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-[10px] sm:text-[11px] font-semibold py-2.5 rounded-xl shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-300"
+                            class="w-full mt-2 flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-[9.5px] sm:text-[10.5px] font-semibold py-2 rounded-lg shadow-sm hover:shadow-md active:scale-[0.98] transition-all duration-300"
                         >
                             <x-lucide-shopping-cart class="w-3.5 h-3.5" />
                             Add to Cart

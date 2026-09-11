@@ -73,15 +73,6 @@
         to   { opacity: 1; transform: translateY(0); }
     }
 
-    #logistics-registration-dialog {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-
-    #logistics-registration-dialog::-webkit-scrollbar {
-        display: none;
-    }
-
     #logistics-terms-scroll { scrollbar-width: thin; scrollbar-color: #99cfc9 transparent; }
     #logistics-terms-scroll::-webkit-scrollbar { width: 6px; }
     #logistics-terms-scroll::-webkit-scrollbar-thumb { background-color: #99cfc9; border-radius: 999px; }

@@ -352,15 +352,221 @@ img {
 }
 
 
+/* ================================
+   MOVING PHOTOS — KEN BURNS SYSTEM
+   Slow, ambient zoom/pan on product &
+   lifestyle imagery. Built to sit
+   inside an `overflow-hidden` parent;
+   pauses/settles on hover so shoppers
+   can actually see the product.
+================================ */
+
+@keyframes kbZoomPan {
+    0% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: scale(1.1) translate3d(-1.5%, -1%, 0);
+    }
+
+    100% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
+}
+
+@keyframes kbZoomPanReverse {
+    0% {
+        transform: scale(1.1) translate3d(1.5%, 1%, 0);
+    }
+
+    50% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
+
+    100% {
+        transform: scale(1.1) translate3d(1.5%, 1%, 0);
+    }
+}
+
+.kb-photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform;
+    animation: kbZoomPan 16s var(--ease-smooth) infinite;
+    transition: animation-duration .4s ease;
+}
+
+.kb-photo-alt {
+    animation-name: kbZoomPanReverse;
+    animation-duration: 19s;
+}
+
+.kb-photo-slow {
+    animation-duration: 24s;
+}
+
+/* Hover: settle + gently accelerate so detail is easy to inspect */
+.group:hover .kb-photo,
+.kb-photo:hover {
+    animation-duration: 6s;
+}
+
+/* Crossfading photo stacks (category tiles, editorial collages) */
+.kb-stack {
+    position: absolute;
+    inset: 0;
+}
+
+.kb-stack img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    animation-name: kbCrossfade, kbZoomPan;
+    animation-timing-function: ease-in-out, var(--ease-smooth);
+    animation-iteration-count: infinite, infinite;
+}
+
+@keyframes kbCrossfade {
+    0%, 4% { opacity: 0; }
+    8%, 21% { opacity: 1; }
+    25%, 100% { opacity: 0; }
+}
+
+
+/* ================================
+   PREMIUM SHEEN SWEEP
+   A refined light-sweep used on
+   primary CTAs and feature badges
+   for a more elevated, rebranded feel.
+================================ */
+
+.sheen {
+    position: relative;
+    overflow: hidden;
+}
+
+.sheen::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(115deg, transparent, rgba(255, 255, 255, .35), transparent);
+    transform: skewX(-18deg);
+    transition: left .85s var(--ease-out);
+}
+
+.sheen:hover::after {
+    left: 130%;
+}
+
+
+/* ================================
+   BRAND GLASS SURFACES
+   Reusable glass / gradient-mesh
+   surfaces used across redesigned
+   sections, built from the existing
+   navy + teal brand tokens.
+================================ */
+
+.glass-panel {
+    background: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, .6);
+}
+
+.mesh-teal-navy {
+    background:
+        radial-gradient(120% 140% at 0% 0%, rgba(33, 195, 166, .16) 0%, transparent 55%),
+        radial-gradient(120% 140% at 100% 100%, rgba(15, 27, 61, .10) 0%, transparent 55%),
+        var(--color-gray-bg);
+}
+
+.photo-scrim-b {
+    background: linear-gradient(to top, rgba(15, 27, 61, .82) 0%, rgba(15, 27, 61, .22) 55%, transparent 100%);
+}
+
+
+/* ================================
+   BUYER AREA — SHARED MOTION
+   Scroll-reveal + stagger utilities
+   used across the buyer dashboard
+   and category browse pages.
+================================ */
+
+@keyframes buyerPingSoft {
+    75%, 100% {
+        transform: scale(2.1);
+        opacity: 0;
+    }
+}
+
+.buyer-ping {
+    animation: buyerPingSoft 2s cubic-bezier(0, 0, .2, 1) infinite;
+}
+
+.buyer-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+        opacity .65s ease var(--buyer-delay, 0ms),
+        transform .65s cubic-bezier(.22, 1, .36, 1) var(--buyer-delay, 0ms);
+}
+
+.buyer-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.buyer-stagger > * {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+        opacity .55s ease,
+        transform .55s cubic-bezier(.22, 1, .36, 1);
+}
+
+.buyer-stagger.is-visible > * {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.buyer-stagger.is-visible > *:nth-child(2) { transition-delay: 45ms; }
+.buyer-stagger.is-visible > *:nth-child(3) { transition-delay: 90ms; }
+.buyer-stagger.is-visible > *:nth-child(4) { transition-delay: 135ms; }
+.buyer-stagger.is-visible > *:nth-child(5) { transition-delay: 180ms; }
+.buyer-stagger.is-visible > *:nth-child(6) { transition-delay: 225ms; }
+.buyer-stagger.is-visible > *:nth-child(7) { transition-delay: 270ms; }
+.buyer-stagger.is-visible > *:nth-child(8) { transition-delay: 315ms; }
+
+.buyer-card {
+    will-change: transform;
+}
+
+
 @media (prefers-reduced-motion: reduce) {
 
     .magnetic,
     .tilt-card,
     [data-parallax],
-    .heart-pop {
+    .heart-pop,
+    .kb-photo,
+    .kb-stack img {
         transition: none !important;
         animation: none !important;
         transform: none !important;
+    }
+
+    .kb-stack img:first-child {
+        opacity: 1;
     }
 
     .stagger-item {
@@ -371,5 +577,20 @@ img {
 
     .quick-view-bar {
         transform: translateY(0);
+    }
+
+    .sheen::after {
+        display: none;
+    }
+
+    .buyer-reveal,
+    .buyer-stagger > * {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .buyer-ping {
+        animation: none !important;
     }
 }

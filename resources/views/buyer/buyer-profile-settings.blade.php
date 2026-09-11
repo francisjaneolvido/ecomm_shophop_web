@@ -1,11 +1,10 @@
 {{--
     resources/views/buyer/buyer-profile-settings.blade.php
 
-    Buyer Account Settings — full version.
-    Tabs: Profile Info, Address Book, Allergens & Diet, Security,
+    Buyer Account Center — streamlined version.
+    Sections: Profile Info, Address Book, Allergens & Diet, Security,
     Privacy & Account, Vouchers, Chats, Activity Log, Notifications,
-    Language & Region, Switch Account, Become a Seller, Help Center.
-    Plus Log Out.
+    Help Center, plus a direct My Orders shortcut and Log Out.
 
     NOTE ON ROUTES: most action URLs below are plain "#" with a
     "TODO: route(...)" comment — wala ka pa kasing backend routes/
@@ -145,7 +144,7 @@
     $sampleChats = [
         ['seller' => 'TechHub PH', 'message' => 'Your order has been shipped na po!', 'time' => '2h ago', 'unread' => 2],
         ['seller' => 'Cavite Pet Supplies', 'message' => 'Thank you for your order!', 'time' => '1d ago', 'unread' => 0],
-        ['seller' => 'ShopHop Support', 'message' => 'We\'ve refunded your cancelled item.', 'time' => '3d ago', 'unread' => 0],
+        ['seller' => 'ShopHop Support', 'message' => 'We reviewed your recent support report.', 'time' => '3d ago', 'unread' => 0],
     ];
 
     $activeVoucherCount = collect($sampleVouchers)
@@ -160,11 +159,6 @@
         ['action' => 'Changed password', 'detail' => 'Security settings updated', 'time' => 'Aug 20, 2026'],
         ['action' => 'Redeemed voucher', 'detail' => 'SHOP100 applied to Order #10234', 'time' => 'Aug 18, 2026'],
         ['action' => 'Added address', 'detail' => 'New address "Work" saved', 'time' => 'Aug 15, 2026'],
-    ];
-
-    $linkedAccounts = [
-        ['id' => 1, 'name' => $user->first_name ?? 'Yesel Ann Alegre', 'email' => $user->email ?? 'buyer@shophop.com', 'type' => 'Buyer', 'active' => true],
-        ['id' => 2, 'name' => 'Yesel Store PH', 'email' => 'yeselstore@shophop.com', 'type' => 'Seller', 'active' => false],
     ];
 
     $twoFactorEnabled = (bool) ($user->two_factor_enabled ?? false);
@@ -188,28 +182,29 @@
 
 @include('buyer.partials.navbar-buyer')
 
-<section id="settings-main" class="settings-shell bg-gray-bg min-h-screen py-5 sm:py-7 lg:py-8 scroll-mt-20">
+<section id="settings-main" class="settings-shell bg-gray-bg min-h-screen py-4 sm:py-5 lg:py-6 scroll-mt-20">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Page heading / account overview --}}
-        <div class="relative overflow-hidden bg-white border border-gray-border rounded-2xl shadow-sm mb-5 sm:mb-6">
+        <div class="relative overflow-hidden bg-white border border-gray-border rounded-2xl shadow-sm mb-4 sm:mb-5">
             <div class="pointer-events-none absolute -top-20 -right-14 w-56 h-56 rounded-full bg-teal/10"></div>
             <div class="pointer-events-none absolute -bottom-24 left-1/3 w-48 h-48 rounded-full bg-navy/5"></div>
 
-            <div class="relative p-4 sm:p-5 lg:p-6">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+            <div class="relative p-4 sm:p-5">
+                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div class="min-w-0">
                         <div class="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold text-teal-dark uppercase tracking-[0.16em]">
                             <span class="w-1.5 h-1.5 rounded-full bg-teal"></span>
                             Buyer Account Center
                         </div>
 
-                        <h1 class="text-navy text-2xl sm:text-[28px] lg:text-3xl font-bold leading-tight mt-1.5">
-                            Account Settings
-                        </h1>
+                        <p role="heading" aria-level="1"
+                           class="text-navy text-[22px] sm:text-[24px] font-bold leading-tight tracking-[-0.02em] mt-1">
+                            Account Center
+                        </p>
 
-                        <p class="text-xs sm:text-sm text-navy/50 mt-1.5 max-w-2xl leading-relaxed">
-                            Keep your personal information, delivery details, security, shopping preferences, and account activity in one place.
+                        <p class="text-[11px] sm:text-[12px] text-navy/50 mt-1.5 max-w-2xl leading-relaxed">
+                            Manage your profile, delivery addresses, security, vouchers, messages, notifications, and support in one place.
                         </p>
                     </div>
 
@@ -229,16 +224,29 @@
                             </span>
                         </div>
 
-                        <a
-                            href="{{ Route::has('buyer.dashboard') ? route('buyer.dashboard') : '#' }}"
-                            class="inline-flex items-center justify-center gap-1.5
-                                   text-xs font-semibold text-navy/65 hover:text-teal-dark
-                                   bg-white hover:bg-teal-light/30 border border-gray-border hover:border-teal/30
-                                   rounded-xl px-3.5 py-2.5 transition-all"
-                        >
-                            <x-lucide-arrow-left class="w-3.5 h-3.5" />
-                            Back to Dashboard
-                        </a>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <a
+                                href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}"
+                                class="inline-flex items-center justify-center gap-1.5
+                                       text-[10.5px] font-semibold text-white
+                                       bg-teal hover:bg-teal-dark
+                                       rounded-xl px-3.5 py-2.5 transition-all"
+                            >
+                                <x-lucide-package class="w-3.5 h-3.5" />
+                                My Orders
+                            </a>
+
+                            <a
+                                href="{{ Route::has('buyer.dashboard') ? route('buyer.dashboard') : '#' }}"
+                                class="inline-flex items-center justify-center gap-1.5
+                                       text-[10.5px] font-semibold text-navy/65 hover:text-teal-dark
+                                       bg-white hover:bg-teal-light/30 border border-gray-border hover:border-teal/30
+                                       rounded-xl px-3.5 py-2.5 transition-all"
+                            >
+                                <x-lucide-arrow-left class="w-3.5 h-3.5" />
+                                Dashboard
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -246,6 +254,30 @@
 
         {{-- Compact mobile navigation --}}
         <div class="lg:hidden sticky top-16 z-40 bg-white/95 backdrop-blur border border-gray-border rounded-xl p-3 mb-4 shadow-sm">
+
+            <div class="grid grid-cols-3 gap-2 mb-3">
+                <a href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}"
+                   class="h-9 rounded-lg bg-teal-light text-teal-dark text-[9px] font-semibold
+                          flex items-center justify-center gap-1.5 hover:bg-teal hover:text-white transition">
+                    <x-lucide-package class="w-3 h-3" />
+                    Orders
+                </a>
+
+                <a href="#vouchers"
+                   class="h-9 rounded-lg bg-gray-bg text-navy/55 text-[9px] font-semibold
+                          flex items-center justify-center gap-1.5 hover:bg-teal-light hover:text-teal-dark transition">
+                    <x-lucide-ticket class="w-3 h-3" />
+                    Vouchers
+                </a>
+
+                <a href="#notifications"
+                   class="h-9 rounded-lg bg-gray-bg text-navy/55 text-[9px] font-semibold
+                          flex items-center justify-center gap-1.5 hover:bg-teal-light hover:text-teal-dark transition">
+                    <x-lucide-bell class="w-3 h-3" />
+                    Alerts
+                </a>
+            </div>
+
             <label for="settingsMobileSelect" class="block text-[10px] font-bold text-navy/40 uppercase tracking-[0.12em] mb-1.5">
                 Settings section
             </label>
@@ -266,9 +298,6 @@
                     <option value="chats">Chats ({{ $unreadChatCount }})</option>
                     <option value="activity">Activity Log</option>
                     <option value="notifications">Notifications</option>
-                    <option value="language">Language & Region</option>
-                    <option value="switch-account">Switch Account</option>
-                    <option value="become-seller">Become a Seller</option>
                     <option value="help">Help Center</option>
                 </select>
 
@@ -276,114 +305,277 @@
             </div>
         </div>
 
-        <div class="grid lg:grid-cols-[240px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
+        <div class="grid lg:grid-cols-[252px_minmax(0,1fr)] gap-4 lg:gap-5 items-start">
 
             {{-- =========================================================
                 SIDEBAR NAV
             ========================================================= --}}
-            <aside class="settings-sidebar-scroll hidden lg:block bg-white rounded-2xl border border-gray-border shadow-sm p-2.5 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto">
+            <aside class="hidden lg:block lg:sticky lg:top-20">
 
-                <div class="flex items-center gap-2.5 px-2.5 py-2.5 mb-2 border-b border-gray-border">
-                    <img
-                        id="avatarPreviewMini"
-                        src="{{ $user->avatar_url ?? asset('images/avatar-placeholder.png') }}"
-                        alt="Your avatar"
-                        class="w-9 h-9 rounded-full object-cover border border-gray-border shrink-0"
-                    >
-                    <div class="min-w-0">
-                        <p class="text-[13px] font-semibold text-navy truncate">
-                            {{ $user->first_name ?? 'Buyer' }} {{ $user->last_name ?? '' }}
-                        </p>
-                        <p class="text-[11px] text-navy/45 truncate">
-                            {{ $user->email ?? '' }}
-                        </p>
-                        <span class="inline-flex mt-1 text-[8px] font-bold uppercase tracking-wide text-teal-dark bg-teal-light px-1.5 py-0.5 rounded">
-                            Buyer
-                        </span>
+                <div class="bg-white rounded-2xl border border-gray-border shadow-sm overflow-hidden">
+
+                    {{-- Buyer summary --}}
+                    <div class="p-3 border-b border-gray-border/80">
+
+                        <div class="flex items-center gap-3">
+
+                            @if (! empty($user->avatar_url))
+                                <img
+                                    id="avatarPreviewMini"
+                                    src="{{ $user->avatar_url }}"
+                                    alt="{{ $displayName }}"
+                                    class="w-11 h-11 rounded-full object-cover border border-gray-border shrink-0"
+                                >
+                            @else
+                                <span
+                                    id="avatarPreviewMini"
+                                    class="w-11 h-11 rounded-full bg-teal-light text-teal-dark
+                                           flex items-center justify-center text-[15px] font-bold
+                                           border border-teal/10 shrink-0"
+                                >
+                                    {{ strtoupper(substr($user->first_name ?? 'B', 0, 1)) }}
+                                </span>
+                            @endif
+
+                            <div class="min-w-0 flex-1">
+
+                                <div class="flex items-center gap-1.5 min-w-0">
+                                    <p class="text-[12.5px] font-bold text-navy truncate">
+                                        {{ $user->first_name ?? 'Buyer' }} {{ $user->last_name ?? '' }}
+                                    </p>
+
+                                    <span class="shrink-0 text-[7px] font-bold uppercase tracking-wide
+                                                 text-teal-dark bg-teal-light px-1.5 py-0.5 rounded">
+                                        Buyer
+                                    </span>
+                                </div>
+
+                                <p class="text-[9.5px] text-navy/40 truncate mt-0.5">
+                                    {{ $user->email ?? 'Buyer account' }}
+                                </p>
+
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            data-tab-btn="profile"
+                            class="settings-tab-btn mt-3 w-full h-8 rounded-lg
+                                   bg-gray-bg hover:bg-teal-light/50
+                                   text-[9.5px] font-semibold text-navy/55 hover:text-teal-dark
+                                   flex items-center justify-center gap-1.5 transition"
+                        >
+                            <x-lucide-pencil class="w-3 h-3" />
+                            Edit Profile
+                        </button>
+
                     </div>
+
+
+                    {{-- Navigation --}}
+                    <nav data-settings-nav class="p-2.5">
+
+                        <p class="text-[8px] font-bold text-navy/30 uppercase tracking-[0.16em]
+                                  px-2.5 pt-1 pb-1.5">
+                            Account
+                        </p>
+
+                        <div class="space-y-0.5">
+
+                            <button
+                                type="button"
+                                data-tab-btn="profile"
+                                class="settings-tab-btn group w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       bg-teal text-white text-[11px] font-semibold
+                                       transition-colors duration-200"
+                            >
+                                <x-lucide-user class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Profile Info</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                data-tab-btn="address"
+                                class="settings-tab-btn group w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-map-pin class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Address Book</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                data-tab-btn="allergens"
+                                class="settings-tab-btn group w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-shield-alert class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Allergens & Diet</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                data-tab-btn="security"
+                                class="settings-tab-btn group w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-lock class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Security</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                data-tab-btn="privacy"
+                                class="settings-tab-btn group w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-shield class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Privacy & Account</span>
+                            </button>
+
+                        </div>
+
+
+                        <div class="my-2.5 border-t border-gray-border/75"></div>
+
+                        <p class="text-[8px] font-bold text-navy/30 uppercase tracking-[0.16em]
+                                  px-2.5 pb-1.5">
+                            Shopping
+                        </p>
+
+                        <div class="space-y-0.5">
+
+                            <a
+                                href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}"
+                                class="w-full h-9 px-2.5 rounded-lg flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-package class="w-3.5 h-3.5 shrink-0" />
+                                <span class="flex-1 text-left truncate">My Orders</span>
+                            </a>
+
+                            <button
+                                type="button"
+                                data-tab-btn="vouchers"
+                                class="settings-tab-btn w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-ticket class="w-3.5 h-3.5 shrink-0" />
+                                <span class="flex-1 text-left truncate">Vouchers</span>
+
+                                @if ($activeVoucherCount > 0)
+                                    <span class="min-w-4.5 h-4.5 px-1 rounded-full bg-teal-light
+                                                 text-teal-dark text-[7px] font-bold
+                                                 flex items-center justify-center shrink-0">
+                                        {{ $activeVoucherCount }}
+                                    </span>
+                                @endif
+                            </button>
+
+                            <button
+                                type="button"
+                                data-tab-btn="chats"
+                                class="settings-tab-btn w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-message-circle class="w-3.5 h-3.5 shrink-0" />
+                                <span class="flex-1 text-left truncate">Chats</span>
+
+                                @if ($unreadChatCount > 0)
+                                    <span class="min-w-4.5 h-4.5 px-1 rounded-full bg-teal
+                                                 text-white text-[7px] font-bold
+                                                 flex items-center justify-center shrink-0">
+                                        {{ $unreadChatCount }}
+                                    </span>
+                                @endif
+                            </button>
+
+                            <button
+                                type="button"
+                                data-tab-btn="activity"
+                                class="settings-tab-btn w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-history class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Activity Log</span>
+                            </button>
+
+                        </div>
+
+
+                        <div class="my-2.5 border-t border-gray-border/75"></div>
+
+                        <p class="text-[8px] font-bold text-navy/30 uppercase tracking-[0.16em]
+                                  px-2.5 pb-1.5">
+                            Support
+                        </p>
+
+                        <div class="space-y-0.5">
+
+                            <button
+                                type="button"
+                                data-tab-btn="notifications"
+                                class="settings-tab-btn w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-bell class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Notifications</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                data-tab-btn="help"
+                                class="settings-tab-btn w-full h-9 px-2.5 rounded-lg
+                                       flex items-center gap-2.5
+                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
+                                       text-[11px] font-medium transition-colors duration-200"
+                            >
+                                <x-lucide-help-circle class="w-3.5 h-3.5 shrink-0" />
+                                <span class="truncate">Help Center</span>
+                            </button>
+
+                        </div>
+
+                    </nav>
+
+
+                    {{-- Logout --}}
+                    <div class="p-2.5 pt-0">
+
+                        <button
+                            type="button"
+                            data-confirm-action="logout"
+                            class="w-full h-9 rounded-lg border border-red-100 bg-red-50/50
+                                   flex items-center gap-2.5 px-2.5
+                                   text-[10.5px] font-semibold text-red-500
+                                   hover:bg-red-50 transition-colors duration-200"
+                        >
+                            <x-lucide-log-out class="w-3.5 h-3.5 shrink-0" />
+                            Log Out
+                        </button>
+
+                    </div>
+
                 </div>
 
-                <nav
-                    data-settings-nav
-                    class="flex flex-col gap-0.5"
-                >
-                    <p class="hidden lg:block text-[9px] font-bold text-navy/35 uppercase tracking-[0.14em] px-2.5 pt-2 pb-1">Account</p>
-                    <button type="button" data-tab-btn="profile"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-white bg-teal transition-colors duration-200">
-                        <x-lucide-user class="w-3.5 h-3.5" /> Profile Info
-                    </button>
-                    <button type="button" data-tab-btn="address"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-map-pin class="w-4 h-4" /> Address Book
-                    </button>
-                    <button type="button" data-tab-btn="allergens"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-shield-alert class="w-4 h-4" /> Allergens & Diet
-                    </button>
-                    <button type="button" data-tab-btn="security"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-lock class="w-4 h-4" /> Security
-                    </button>
-                    <button type="button" data-tab-btn="privacy"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-shield class="w-4 h-4" /> Privacy & Account
-                    </button>
-
-                    <p class="hidden lg:block text-[9px] font-bold text-navy/35 uppercase tracking-[0.14em] px-2.5 pt-3 pb-1">Shopping</p>
-                    <button type="button" data-tab-btn="vouchers"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-ticket class="w-4 h-4" />
-                        <span class="flex-1 text-left">Vouchers</span>
-                        @if ($activeVoucherCount > 0)
-                            <span class="min-w-5 h-5 px-1.5 rounded-md bg-teal-light text-teal-dark text-[9px] font-bold flex items-center justify-center">
-                                {{ $activeVoucherCount }}
-                            </span>
-                        @endif
-                    </button>
-                    <button type="button" data-tab-btn="chats"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-message-circle class="w-4 h-4" />
-                        <span class="flex-1 text-left">Chats</span>
-                        @if ($unreadChatCount > 0)
-                            <span class="min-w-5 h-5 px-1.5 rounded-md bg-teal text-white text-[9px] font-bold flex items-center justify-center">
-                                {{ $unreadChatCount }}
-                            </span>
-                        @endif
-                    </button>
-                    <button type="button" data-tab-btn="activity"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-history class="w-4 h-4" /> Activity Log
-                    </button>
-
-                    <p class="hidden lg:block text-[9px] font-bold text-navy/35 uppercase tracking-[0.14em] px-2.5 pt-3 pb-1">Preferences</p>
-                    <button type="button" data-tab-btn="notifications"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-bell class="w-4 h-4" /> Notifications
-                    </button>
-                    <button type="button" data-tab-btn="language"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-globe class="w-4 h-4" /> Language & Region
-                    </button>
-
-                    <p class="hidden lg:block text-[9px] font-bold text-navy/35 uppercase tracking-[0.14em] px-2.5 pt-3 pb-1">More</p>
-                    <button type="button" data-tab-btn="switch-account"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-repeat class="w-4 h-4" /> Switch Account
-                    </button>
-                    <button type="button" data-tab-btn="become-seller"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-store class="w-4 h-4" /> Become a Seller
-                    </button>
-                    <button type="button" data-tab-btn="help"
-                        class="settings-tab-btn flex items-center gap-2 shrink-0 w-full px-2.5 py-2 rounded-lg text-[12px] font-semibold text-navy/70 hover:bg-gray-bg transition-colors duration-200">
-                        <x-lucide-help-circle class="w-4 h-4" /> Help Center
-                    </button>
-                </nav>
-
-                <button type="button" data-confirm-action="logout"
-                    class="w-full mt-2 pt-2.5 border-t border-gray-border flex items-center gap-2 px-2.5 py-2 rounded-lg text-[12px] font-semibold text-red-500 hover:bg-red-50 transition-colors duration-200">
-                    <x-lucide-log-out class="w-4 h-4" /> Log Out
-                </button>
             </aside>
 
             {{-- =========================================================
@@ -561,7 +753,7 @@
                                 </p>
                             </div>
                             <button type="button" id="addAddressBtn"
-                                class="inline-flex items-center gap-1.5 bg-navy hover:bg-navy/90 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors duration-200 shrink-0">
+                                class="inline-flex items-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors duration-200 shrink-0">
                                 <x-lucide-plus class="w-4 h-4" /> Add New Address
                             </button>
                         </div>
@@ -655,7 +847,7 @@
                                     <input id="customAllergenInput" type="text" placeholder="e.g. Mangoes, MSG, Food dye..."
                                         class="flex-1 px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                                     <button type="button" id="addCustomAllergenBtn"
-                                        class="inline-flex items-center gap-1.5 bg-navy hover:bg-navy/90 text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
+                                        class="inline-flex items-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
                                         <x-lucide-plus class="w-4 h-4" /> Add
                                     </button>
                                 </div>
@@ -958,136 +1150,72 @@
                 </div>
 
                 {{-- =====================================================
-                    LANGUAGE & REGION TAB
-                ===================================================== --}}
-                <div data-tab-content="language" class="settings-panel hidden">
-                    <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
-
-                        <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Language & Region</h2>
-                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Set how ShopHop displays content for you.</p>
-
-                        <form method="POST" action="{{ Route::has('buyer.settings.language.update') ? route('buyer.settings.language.update') : '#' }}" class="space-y-4 max-w-md">
-                            @csrf
-                            @method('PATCH')
-
-                            <div>
-                                <label class="block text-xs font-semibold text-navy/70 mb-1.5">Language</label>
-                                <select name="language"
-                                    class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                                    <option value="en" {{ ($user->language ?? 'en') === 'en' ? 'selected' : '' }}>English</option>
-                                    <option value="fil" {{ ($user->language ?? '') === 'fil' ? 'selected' : '' }}>Filipino</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-navy/70 mb-1.5">Currency</label>
-                                <input type="text" value="₱ Philippine Peso" disabled
-                                    class="w-full px-3 py-2 rounded-lg border border-gray-border bg-gray-bg text-sm text-navy/50">
-                            </div>
-
-                            <div class="flex justify-end pt-2">
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
-                                    Save
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                {{-- =====================================================
-                    SWITCH ACCOUNT TAB
-                ===================================================== --}}
-                <div data-tab-content="switch-account" class="settings-panel hidden">
-                    <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
-
-                        <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Switch Account</h2>
-                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Accounts linked to this device.</p>
-
-                        <div class="space-y-3">
-                            @foreach ($linkedAccounts as $account)
-                                <div class="flex items-center justify-between gap-3 border rounded-xl p-3.5 {{ $account['active'] ? 'border-teal bg-teal-light/30' : 'border-gray-border' }}">
-                                    <div class="flex items-center gap-3 min-w-0">
-                                        <div class="w-10 h-10 rounded-full bg-navy text-white flex items-center justify-center text-sm font-bold shrink-0">
-                                            {{ strtoupper(substr($account['name'], 0, 1)) }}
-                                        </div>
-                                        <div class="min-w-0">
-                                            <p class="text-sm font-semibold text-navy truncate">{{ $account['name'] }}</p>
-                                            <p class="text-xs text-navy/50 truncate">{{ $account['email'] }} &middot; {{ $account['type'] }}</p>
-                                        </div>
-                                    </div>
-
-                                    @if ($account['active'])
-                                        <span class="inline-flex items-center gap-1 text-xs font-semibold text-teal-dark shrink-0">
-                                            <x-lucide-badge-check class="w-4 h-4" /> Active
-                                        </span>
-                                    @else
-                                        <button type="button"
-                                            data-confirm-action="switch-account"
-                                            data-confirm-message="Switch to &quot;{{ $account['name'] }}&quot;? You'll be logged out of your current session."
-                                            class="text-xs sm:text-sm font-semibold text-navy border border-navy px-3.5 py-1.5 rounded-lg hover:bg-navy hover:text-white transition-colors duration-200 shrink-0">
-                                            Switch
-                                        </button>
-                                    @endif
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <button type="button" class="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-teal-dark hover:text-teal">
-                            <x-lucide-plus class="w-4 h-4" /> Add Another Account
-                        </button>
-                    </div>
-                </div>
-
-                {{-- =====================================================
-                    BECOME A SELLER TAB
-                ===================================================== --}}
-                <div data-tab-content="become-seller" class="settings-panel hidden">
-                    <div class="relative overflow-hidden bg-navy rounded-xl border border-navy shadow-sm p-5 sm:p-6 text-center sm:text-left">
-                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-                            <div class="w-12 h-12 rounded-xl bg-white/10 text-teal flex items-center justify-center shrink-0">
-                                <x-lucide-store class="w-6 h-6" />
-                            </div>
-                            <div>
-                                <h2 class="text-white text-lg sm:text-xl font-bold mb-1">Turn Your Passion Into Profit</h2>
-                                <p class="text-xs sm:text-sm text-white/55 max-w-lg">
-                                    Start selling on ShopHop and reach buyers all over the country.
-                                    Your buyer account stays active — you'll just get a Seller Center too.
-                                </p>
-                                <button type="button" data-confirm-action="become-seller"
-                                    class="mt-4 inline-flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
-                                    Get Started <x-lucide-store class="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- =====================================================
                     HELP CENTER TAB
                 ===================================================== --}}
                 <div data-tab-content="help" class="settings-panel hidden">
                     <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
 
-                        <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Help Center</h2>
-                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Get support or learn more about ShopHop.</p>
+                        <div class="mb-4">
+                            <p role="heading" aria-level="2" class="text-[17px] sm:text-[18px] font-bold text-navy">
+                                Help Center
+                            </p>
+                            <p class="text-[11px] sm:text-[12px] text-navy/50 mt-1">
+                                Get help with orders, account access, payments, delivery, or reports.
+                            </p>
+                        </div>
 
-                        <div class="divide-y divide-gray-border">
+                        <div class="grid sm:grid-cols-3 gap-3 mb-5">
+                            <a href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}"
+                               class="rounded-xl border border-gray-border p-3.5 hover:border-teal/30 hover:bg-teal-light/20 transition">
+                                <span class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
+                                    <x-lucide-package class="w-4 h-4" />
+                                </span>
+                                <p class="text-[11px] font-bold text-navy mt-2.5">Order Help</p>
+                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
+                                    Track an order or report a delivered-order issue.
+                                </p>
+                            </a>
+
+                            <a href="#chats"
+                               class="rounded-xl border border-gray-border p-3.5 hover:border-teal/30 hover:bg-teal-light/20 transition">
+                                <span class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
+                                    <x-lucide-message-circle class="w-4 h-4" />
+                                </span>
+                                <p class="text-[11px] font-bold text-navy mt-2.5">Contact Support</p>
+                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
+                                    Continue a conversation with ShopHop support.
+                                </p>
+                            </a>
+
+                            <a href="#security"
+                               class="rounded-xl border border-gray-border p-3.5 hover:border-teal/30 hover:bg-teal-light/20 transition">
+                                <span class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
+                                    <x-lucide-lock class="w-4 h-4" />
+                                </span>
+                                <p class="text-[11px] font-bold text-navy mt-2.5">Account Security</p>
+                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
+                                    Password, login, and account-protection help.
+                                </p>
+                            </a>
+                        </div>
+
+                        <div class="divide-y divide-gray-border border-t border-gray-border">
                             @foreach ([
                                 'Frequently Asked Questions',
-                                'Contact Support',
-                                'Report a Problem',
+                                'Report a Technical Problem',
                                 'Terms of Service',
                                 'Privacy Policy',
                             ] as $link)
-                                <a href="#" class="flex items-center justify-between py-3 text-sm text-navy hover:text-teal-dark hover:pl-1 transition-all">
+                                <a href="#"
+                                   class="flex items-center justify-between py-3 text-[11px] text-navy/65
+                                          hover:text-teal-dark hover:pl-1 transition-all">
                                     {{ $link }}
-                                    <x-lucide-chevron-right class="w-4 h-4 text-navy/30" />
+                                    <x-lucide-chevron-right class="w-3.5 h-3.5 text-navy/25" />
                                 </a>
                             @endforeach
                         </div>
 
-                        <p class="text-xs text-navy/35 mt-6">ShopHop v1.0.0</p>
+                        <p class="text-[9px] text-navy/30 mt-5">ShopHop v1.0.0</p>
                     </div>
                 </div>
 
@@ -1761,30 +1889,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Submit a real DELETE request when the address route exists.
             },
         },
-
-        'switch-account': {
-            title: 'Switch Account',
-            message:
-                'Switch to this account? Your current session will end.',
-            confirmLabel: 'Switch',
-            danger: false,
-            onConfirm: function () {
-                // TODO: redirect to the real switch-account route.
-                window.location.href = '#';
-            },
         },
-
-        'become-seller': {
-            title: 'Become a Seller',
-            message:
-                'Continue to Seller Registration. ' +
-                'Your buyer account will stay active.',
-            confirmLabel: 'Continue',
-            danger: false,
-            onConfirm: function () {
-                // TODO: redirect to the real seller registration route.
-                window.location.href = '#';
-            },
         },
     };
 

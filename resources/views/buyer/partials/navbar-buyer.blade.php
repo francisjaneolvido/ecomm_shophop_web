@@ -52,14 +52,18 @@
                 <a href="{{ route('buyer.dashboard') }}#new-arrivals" class="px-3.5 py-2 rounded-lg hover:bg-gray-bg hover:text-teal-dark transition whitespace-nowrap">New Arrivals</a>
             </nav>
 
+            {{-- SEARCH — icon-only submit button instead of a text button --}}
             <div class="hidden md:flex flex-1 max-w-80 ml-auto">
-                <form action="#" method="GET" class="flex items-center w-full h-9 bg-gray-bg rounded-full px-1">
+                <form action="#" method="GET" class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1">
                     <div class="flex items-center gap-2 px-3 flex-1 min-w-0">
                         <x-lucide-search class="w-4 h-4 text-navy/35 shrink-0" />
                         <input type="text" name="search" placeholder="Search products"
                                class="bg-transparent border-0 outline-none focus:ring-0 w-full min-w-0 p-0 text-[12px] text-navy placeholder:text-navy/35">
                     </div>
-                    <button type="submit" class="hidden lg:inline-flex items-center justify-center h-7 bg-teal hover:bg-teal-dark text-white text-[11px] font-semibold px-4 rounded-full transition">Search</button>
+                    <button type="submit" aria-label="Search"
+                            class="inline-flex items-center justify-center w-7 h-7 shrink-0 bg-teal hover:bg-teal-dark text-white rounded-full transition">
+                        <x-lucide-search class="w-3.5 h-3.5" />
+                    </button>
                 </form>
             </div>
 
@@ -72,7 +76,7 @@
                     <span class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-teal text-white text-[7px] font-bold">2</span>
                 </a>
 
-                {{-- CART — now points to the real cart route --}}
+                {{-- CART — points to the real cart route --}}
                 <a href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" title="Shopping Cart" aria-label="Shopping Cart"
                    class="relative w-8 h-8 flex items-center justify-center rounded-full text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                     <x-lucide-shopping-cart class="w-4.5 h-4.5" />
@@ -158,13 +162,14 @@
                                 <x-lucide-user class="w-4 h-4" />
                                 <span>Account Management</span>
                             </a>
-                            <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-navy hover:bg-gray-bg hover:text-teal-dark transition">
+                            <a href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                                 <x-lucide-package class="w-4 h-4" />
                                 My Orders
                             </a>
-                            <a href="#" class="flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-navy hover:bg-gray-bg hover:text-teal-dark transition">
+                            <a href="{{ Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                                 <x-lucide-message-circle class="w-4 h-4" />
-                                Messages
+                                <span class="flex-1">Messages</span>
+                                <span class="min-w-4 h-4 px-1 rounded-full bg-teal text-white text-[7px] font-bold flex items-center justify-center">3</span>
                             </a>
                             <div class="my-1.5 border-t border-gray-border"></div>
                             <a href="{{ Route::has('logout') ? route('logout') : '#' }}"
@@ -184,15 +189,18 @@
             </div>
         </div>
 
-        {{-- MOBILE SEARCH --}}
+        {{-- MOBILE SEARCH — icon-only submit button --}}
         <div class="md:hidden pb-3">
-            <form action="#" method="GET" class="flex items-center w-full h-9 bg-gray-bg rounded-full px-1">
+            <form action="#" method="GET" class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1">
                 <div class="flex items-center gap-2 px-3 flex-1 min-w-0">
                     <x-lucide-search class="w-4 h-4 text-navy/35 shrink-0" />
                     <input type="text" name="search" placeholder="Search products"
                            class="bg-transparent border-0 outline-none focus:ring-0 w-full min-w-0 p-0 text-[12px] text-navy placeholder:text-navy/35">
                 </div>
-                <button type="submit" class="h-7 bg-teal hover:bg-teal-dark text-white text-[11px] font-semibold px-4 rounded-full transition">Search</button>
+                <button type="submit" aria-label="Search"
+                        class="inline-flex items-center justify-center w-7 h-7 shrink-0 bg-teal hover:bg-teal-dark text-white rounded-full transition">
+                    <x-lucide-search class="w-3.5 h-3.5" />
+                </button>
             </form>
         </div>
 
@@ -211,7 +219,7 @@
                     Wishlist
                 </a>
 
-                {{-- CART — now points to the real cart route --}}
+                {{-- CART — points to the real cart route --}}
                 <a href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
                     <x-lucide-shopping-cart class="w-4 h-4" />
                     Shopping Cart
@@ -225,14 +233,15 @@
                     @endif
                 </a>
 
-                <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
+                <a href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
                     <x-lucide-package class="w-4 h-4" />
                     My Orders
                 </a>
 
-                <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
+                <a href="{{ Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
                     <x-lucide-message-circle class="w-4 h-4" />
                     Messages
+                    <span class="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-teal text-white text-[9px] font-bold flex items-center justify-center">3</span>
                 </a>
 
                 <a href="{{ Route::has('buyer.profile') ? route('buyer.profile') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">

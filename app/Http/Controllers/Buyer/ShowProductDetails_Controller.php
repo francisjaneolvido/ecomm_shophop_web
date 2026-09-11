@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
-use App\Models\Seller\Product;
+use App\Models\Seller\Manage_inventory\Product;
 
 class ShowProductDetails_Controller extends Controller
 {

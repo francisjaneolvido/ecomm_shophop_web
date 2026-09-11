@@ -29,8 +29,6 @@
 
 
             {{-- DESKTOP NAVIGATION --}}
-            {{-- FIX: added ml-2 so it doesn't sit flush against the logo
-                 even when the outer gap gets squeezed at smaller xl widths --}}
             <nav class="hidden xl:flex items-center gap-1 text-[12px] text-navy shrink-0 ml-2">
 
                 <a
@@ -64,13 +62,13 @@
             </nav>
 
 
-            {{-- SEARCH --}}
+            {{-- SEARCH — icon-only submit button instead of a text button --}}
             <div class="hidden md:flex flex-1 max-w-80 ml-auto">
 
                 <form
                     action="#"
                     method="GET"
-                    class="flex items-center w-full h-9 bg-gray-bg rounded-full px-1"
+                    class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1"
                 >
 
                     <div class="flex items-center gap-2 px-3 flex-1 min-w-0">
@@ -93,12 +91,13 @@
 
                     <button
                         type="submit"
-                        class="hidden lg:inline-flex items-center justify-center
-                               h-7 bg-teal hover:bg-teal-dark
-                               text-white text-[11px] font-semibold
-                               px-4 rounded-full transition"
+                        aria-label="Search"
+                        class="inline-flex items-center justify-center
+                               w-7 h-7 shrink-0
+                               bg-teal hover:bg-teal-dark
+                               text-white rounded-full transition"
                     >
-                        Search
+                        <x-lucide-search class="w-3.5 h-3.5" />
                     </button>
 
                 </form>
@@ -109,83 +108,73 @@
             {{-- ACTIONS --}}
             <div class="ml-auto md:ml-0 flex items-center gap-1.5 shrink-0">
 
-                {{-- WISHLIST --}}
+                {{-- WISHLIST — prompts login (data-login-required, same
+                     hook used on the landing page's product cards) --}}
                 <a
                     href="#"
+                    data-login-required
                     title="Wishlist"
+                    aria-label="Wishlist"
                     class="hidden sm:flex relative w-8 h-8 items-center justify-center
                            rounded-full text-navy
                            hover:bg-gray-bg hover:text-teal-dark transition"
                 >
                     <x-lucide-heart class="w-4.5 h-4.5" />
-
-                    <span
-                        class="absolute -top-0.5 -right-0.5
-                               min-w-3.5 h-3.5 px-1
-                               flex items-center justify-center
-                               rounded-full bg-teal
-                               text-white text-[7px] font-bold"
-                    >
-                        2
-                    </span>
                 </a>
 
 
-                {{-- CART --}}
+                {{-- CART — prompts login --}}
                 <a
                     href="#"
+                    data-login-required
                     title="Shopping Cart"
+                    aria-label="Shopping Cart"
                     class="relative w-8 h-8 flex items-center justify-center
                            rounded-full text-navy
                            hover:bg-gray-bg hover:text-teal-dark transition"
                 >
                     <x-lucide-shopping-cart class="w-4.5 h-4.5" />
-
-                    <span
-                        class="absolute -top-0.5 -right-0.5
-                               min-w-3.5 h-3.5 px-1
-                               flex items-center justify-center
-                               rounded-full bg-teal
-                               text-white text-[7px] font-bold"
-                    >
-                        3
-                    </span>
                 </a>
 
 
-                {{-- ACCOUNT --}}
-<a
-    href="{{ route('login') }}"
-    title="Account"
-    class="hidden sm:flex w-8 h-8 items-center justify-center
-           rounded-full text-navy
-           hover:bg-gray-bg hover:text-teal-dark transition"
->
-    <x-lucide-user class="w-4.5 h-4.5" />
-</a>
+                {{-- ACCOUNT — quick sign-in for returning visitors --}}
+                <a
+                    href="{{ route('login') }}"
+                    title="Sign In"
+                    aria-label="Sign In"
+                    class="hidden sm:flex w-8 h-8 items-center justify-center
+                           rounded-full text-navy
+                           hover:bg-gray-bg hover:text-teal-dark transition"
+                >
+                    <x-lucide-user class="w-4.5 h-4.5" />
+                </a>
 
 
-{{-- DIVIDER --}}
-<div class="hidden xl:block h-5 w-px bg-gray-border mx-1"></div>
+                {{-- DIVIDER --}}
+                <div class="hidden xl:block h-5 w-px bg-gray-border mx-1"></div>
 
 
-{{-- LOG IN --}}
-<a
-    href="{{ route('register') }}"
-    class="hidden xl:inline-flex items-center justify-center
-           bg-teal hover:bg-teal-dark
-           text-white text-[11px] font-semibold
-           px-3.5 py-2 rounded-full
-           transition whitespace-nowrap"
->
-    Log In
-</a>
+                {{-- SIGN UP — this is the account.register route, so the
+                     label now matches what it actually does (the icon
+                     above already covers returning-user sign-in). --}}
+                <a
+                    href="{{ route('register') }}"
+                    class="hidden xl:inline-flex items-center justify-center
+                           bg-teal hover:bg-teal-dark
+                           text-white text-[11px] font-semibold
+                           px-3.5 py-2 rounded-full
+                           transition whitespace-nowrap"
+                >
+                    Sign Up
+                </a>
 
 
                 {{-- MOBILE MENU --}}
                 <button
                     type="button"
+                    data-mobile-menu-toggle
                     aria-label="Open navigation menu"
+                    aria-expanded="false"
                     class="xl:hidden w-8 h-8 flex items-center justify-center
                            rounded-full text-navy
                            hover:bg-gray-bg hover:text-teal-dark transition"
@@ -204,7 +193,7 @@
             <form
                 action="#"
                 method="GET"
-                class="flex items-center w-full h-9 bg-gray-bg rounded-full px-1"
+                class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1"
             >
 
                 <div class="flex items-center gap-2 px-3 flex-1 min-w-0">
@@ -227,17 +216,76 @@
 
                 <button
                     type="submit"
-                    class="h-7 bg-teal hover:bg-teal-dark
-                           text-white text-[11px] font-semibold
-                           px-4 rounded-full transition"
+                    aria-label="Search"
+                    class="inline-flex items-center justify-center
+                           w-7 h-7 shrink-0
+                           bg-teal hover:bg-teal-dark
+                           text-white rounded-full transition"
                 >
-                    Search
+                    <x-lucide-search class="w-3.5 h-3.5" />
                 </button>
 
             </form>
 
         </div>
 
+
+        {{-- MOBILE NAVIGATION --}}
+        <div data-mobile-menu-panel class="hidden xl:hidden pb-4 border-t border-gray-border pt-3">
+            <nav class="flex flex-col gap-1 text-[13px] text-navy">
+                <a href="{{ route('home') }}" class="px-3 py-2.5 rounded-lg bg-teal/15 text-teal-dark font-medium">Home</a>
+                <a href="{{ route('home') }}#categories" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Categories</a>
+                <a href="{{ route('home') }}#deals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Deals</a>
+                <a href="{{ route('home') }}#new-arrivals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">New Arrivals</a>
+
+                <div class="my-2 border-t border-gray-border"></div>
+
+                <a href="#" data-login-required class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
+                    <x-lucide-heart class="w-4 h-4" />
+                    Wishlist
+                </a>
+
+                <a href="#" data-login-required class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
+                    <x-lucide-shopping-cart class="w-4 h-4" />
+                    Shopping Cart
+                </a>
+
+                <div class="my-2 border-t border-gray-border"></div>
+
+                <a href="{{ route('login') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-gray-border text-navy font-semibold justify-center">
+                    <x-lucide-log-in class="w-4 h-4" />
+                    Sign In
+                </a>
+
+                <a href="{{ route('register') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-teal hover:bg-teal-dark text-white font-semibold justify-center transition">
+                    <x-lucide-user-plus class="w-4 h-4" />
+                    Sign Up
+                </a>
+            </nav>
+        </div>
+
     </div>
 
 </header>
+
+{{-- =============================================================
+    NAVBAR SCRIPTS
+============================================================= --}}
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const mobileToggle = document.querySelector('[data-mobile-menu-toggle]');
+    const mobilePanel = document.querySelector('[data-mobile-menu-panel]');
+
+    if (mobileToggle && mobilePanel) {
+        mobileToggle.addEventListener('click', function () {
+            const isHidden = mobilePanel.classList.contains('hidden');
+            mobilePanel.classList.toggle('hidden', !isHidden);
+            mobileToggle.setAttribute('aria-expanded', String(isHidden));
+        });
+    }
+
+});
+</script>
+@endpush

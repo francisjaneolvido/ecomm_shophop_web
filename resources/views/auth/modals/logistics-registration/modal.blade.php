@@ -101,7 +101,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
         data-logistics-registration-modal-close
         aria-label="Close logistics registration"
         class="absolute inset-0 w-full h-full
-               bg-navy/35 backdrop-blur-[2px]
+               bg-navy/45 backdrop-blur-[5px]
                cursor-default"
     ></button>
 
@@ -117,10 +117,10 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                sm:max-h-[calc(100vh-2rem)]
                sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl
                overflow-y-auto
-               sm:rounded-3xl
+               sm:rounded-4xl
                bg-white
-               border-0 sm:border sm:border-gray-border/70
-               shadow-2xl shadow-navy/15
+               border-0 sm:border sm:border-white/80
+               shadow-2xl shadow-navy/25
                opacity-0 scale-95 translate-y-3
                transition-all duration-300 ease-out"
     >
@@ -133,14 +133,16 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
             class="absolute top-4 left-4 z-20
                    w-11 h-11
                    rounded-full
-                   bg-gray-bg
-                   text-navy/45
+                   bg-white/90 backdrop-blur
+                   border border-gray-border/70
+                   shadow-sm shadow-navy/10
+                   text-navy/55
                    flex items-center justify-center
-                   hover:bg-teal-light
-                   hover:text-teal-dark
+                   hover:bg-teal-light hover:border-teal/20
+                   hover:text-teal-dark hover:-translate-y-0.5
                    focus:outline-none
                    focus:ring-4 focus:ring-teal/15
-                   transition"
+                   transition-all duration-200"
         >
             <x-lucide-arrow-left class="w-4 h-4" />
         </button>
@@ -153,20 +155,22 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
             class="absolute top-4 right-4 z-20
                    w-11 h-11
                    rounded-full
-                   bg-gray-bg
-                   text-navy/45
+                   bg-white/90 backdrop-blur
+                   border border-gray-border/70
+                   shadow-sm shadow-navy/10
+                   text-navy/55
                    flex items-center justify-center
-                   hover:bg-teal-light
-                   hover:text-teal-dark
+                   hover:bg-teal-light hover:border-teal/20
+                   hover:text-teal-dark hover:-translate-y-0.5
                    focus:outline-none
                    focus:ring-4 focus:ring-teal/15
-                   transition"
+                   transition-all duration-200"
         >
             <x-lucide-x class="w-4 h-4" />
         </button>
 
         {{-- Accent --}}
-        <div class="hidden sm:block h-1.5 bg-teal"></div>
+        <div class="hidden sm:block h-1.5 bg-linear-to-r from-teal/70 via-teal to-teal-dark"></div>
 
         <p id="logistics-registration-modal-title" class="sr-only">Logistics Partner Registration</p>
 
@@ -177,212 +181,34 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
         <div class="grid lg:grid-cols-[3fr_7fr]">
 
 
-            {{-- =================================================
-                LEFT ARTISTIC PANEL (30%)
-            ================================================== --}}
-            <div
-                class="relative hidden lg:flex
-                       overflow-hidden
-                       bg-navy
-                       px-7 xl:px-10
-                       py-8 xl:py-10
-                       items-center"
-            >
-
-                <div
-                    class="pointer-events-none absolute
-                           -top-20 -left-20
-                           w-64 h-64
-                           rounded-full
-                           bg-teal/15
-                           blur-3xl"
-                ></div>
-
-                <div
-                    class="pointer-events-none absolute
-                           -bottom-24 -right-16
-                           w-72 h-72
-                           rounded-full
-                           bg-teal/[0.06]
-                           blur-3xl"
-                ></div>
-
-                <div
-                    class="pointer-events-none absolute
-                           top-[16%] right-[14%]
-                           w-16 h-16
-                           rounded-full
-                           border border-white/10"
-                ></div>
-
-                <div
-                    class="pointer-events-none absolute
-                           bottom-[14%] left-[12%]
-                           w-12 h-12
-                           rounded-full
-                           border border-teal/30"
-                ></div>
-
-
-                <div class="relative z-10 w-full mx-auto">
-
-                    {{-- Logo --}}
-                    <div class="flex items-center gap-3">
-
-                        <div class="w-16 h-16 flex items-center justify-center shrink-0">
-                            <img
-                                src="{{ asset('images/logo.png') }}"
-                                alt="ShopHop"
-                                class="w-16 h-16 object-contain"
-                            >
-                        </div>
-
-                        <div class="min-w-0">
-
-                            <p class="text-white text-lg font-bold leading-none">
-                                ShopHop
-                            </p>
-
-                            <p class="text-teal text-[8px] tracking-[0.22em] mt-2">
-                                HOP IN. SHOP MORE.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- Main content --}}
-                    <div class="mt-3 xl:mt-4">
-
-                        <span
-                            class="inline-flex items-center gap-1.5
-                                   rounded-full
-                                   bg-white/[0.06]
-                                   border border-white/10
-                                   px-3 py-1
-                                   text-[10px] font-medium
-                                   text-teal"
-                        >
-                            <x-lucide-truck class="w-3 h-3" />
-
-                            PARTNER WITH SHOPHOP
-                        </span>
-
-
-                        <h1
-                            class="mt-4
-                                   text-white
-                                   text-2xl xl:text-3xl
-                                   font-extrabold
-                                   leading-[1.1]"
-                        >
-                            <span class="text-white">Deliver for</span>
-                            <span class="block text-teal">
-                                Every Seller.
-                            </span>
-                        </h1>
-
-
-                        <p
-                            class="mt-3
-                                   text-white/55
-                                   text-[13px]
-                                   leading-relaxed"
-                        >
-                            Register your fleet as an accredited Logistics Partner
-                            and manage every pickup, delivery, and payout from your
-                            own console.
-                        </p>
-
-                    </div>
-
-
-                    {{-- Feature list --}}
-                    <div class="mt-7 xl:mt-8 space-y-2.5">
-
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
-
-                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
-                                <x-lucide-map class="w-4 h-4" />
-                            </div>
-
-                            <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Pick Your Coverage</p>
-                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Serve the areas you know</p>
-                            </div>
-
-                        </div>
-
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
-
-                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
-                                <x-lucide-wallet class="w-4 h-4" />
-                            </div>
-
-                            <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Fast Payouts</p>
-                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Bi-monthly payout cycle</p>
-                            </div>
-
-                        </div>
-
-                        <div class="flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-2.5">
-
-                            <div class="shrink-0 w-8 h-8 rounded-lg bg-teal-light flex items-center justify-center text-teal-dark">
-                                <x-lucide-shield-check class="w-4 h-4" />
-                            </div>
-
-                            <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Verified &amp; Trusted</p>
-                                <p class="text-white/45 text-[10px] mt-0.5 leading-tight">Admin-approved partners</p>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- Trust stats row --}}
-                    <div class="mt-7 xl:mt-8 flex items-center gap-4 xl:gap-5">
-
-                        <div>
-                            <p class="text-white text-base xl:text-lg font-extrabold">500+</p>
-                            <p class="text-white/45 text-[9.5px] mt-1">Partner Fleets</p>
-                        </div>
-
-                        <div class="w-px h-7 bg-white/10"></div>
-
-                        <div>
-                            <p class="text-white text-base xl:text-lg font-extrabold">80+</p>
-                            <p class="text-white/45 text-[9.5px] mt-1">Cities Covered</p>
-                        </div>
-
-                        <div class="w-px h-7 bg-white/10"></div>
-
-                        <div>
-                            <p class="text-white text-base xl:text-lg font-extrabold">4.7<span class="text-teal">★</span></p>
-                            <p class="text-white/45 text-[9.5px] mt-1">Rating</p>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
+            @include('auth.modals.shared.registration-side-panel', [
+                'roleIcon' => 'lucide-truck',
+                'eyebrow' => 'PARTNER WITH SHOPHOP',
+                'title' => 'Deliver more.',
+                'highlight' => 'Reach farther.',
+                'description' => 'Register your fleet as a logistics partner and manage coverage, deliveries, documents, and payouts in one place.',
+                'features' => [
+                    ['icon' => 'lucide-map', 'title' => 'Choose Your Coverage', 'description' => 'Serve the cities and areas you know best'],
+                    ['icon' => 'lucide-route', 'title' => 'Manage Deliveries', 'description' => 'Keep pickups and delivery work organized'],
+                    ['icon' => 'lucide-shield-check', 'title' => 'Verified Partnership', 'description' => 'Operate as an approved ShopHop partner'],
+                ],
+                'stats' => [
+                    ['value' => '500+', 'label' => 'Partner Fleets'],
+                    ['value' => '80+', 'label' => 'Cities Covered'],
+                    ['value' => '4.7', 'label' => 'Rating', 'star' => true],
+                ],
+            ])
 
             {{-- =================================================
                 RIGHT REGISTRATION PANEL (70%)
             ================================================== --}}
             <div
-                class="bg-white
+                class="bg-linear-to-b from-white via-white to-gray-bg/30
                        px-5 sm:px-8 lg:px-10 xl:px-12
                        py-6 sm:py-8 lg:py-10"
             >
 
-                <div id="logistics-registration-panel" class="max-w-2xl mx-auto">
+                <div id="logistics-registration-panel" class="max-w-2xl mx-auto lg:py-1">
 
 
                     {{-- Mobile branding --}}
@@ -445,7 +271,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                     <div class="mb-6 overflow-x-auto">
 
                         <div
-                            class="grid items-center min-w-[560px] sm:min-w-0"
+                            class="grid items-center min-w-140 sm:min-w-0"
                             style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto;"
                         >
                             @foreach (['Terms', 'Company', 'Verify', 'Code', 'Password', 'Coverage', 'Review'] as $i => $label)
@@ -463,7 +289,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         </div>
 
                         <div
-                            class="grid mt-2 min-w-[560px] sm:min-w-0"
+                            class="grid mt-2 min-w-140 sm:min-w-0"
                             style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto;"
                         >
                             @foreach (['Terms', 'Company', 'Verify', 'Code', 'Password', 'Coverage', 'Review'] as $i => $label)
@@ -471,7 +297,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                     <div></div>
                                 @endif
                                 <p
-                                    class="step-label max-w-[64px] mx-auto text-center text-[10px] sm:text-[11px] leading-tight {{ $i === 0 ? 'text-navy font-semibold' : 'text-navy/30 font-medium' }}"
+                                    class="step-label max-w-16 mx-auto text-center text-[10px] sm:text-[11px] leading-tight {{ $i === 0 ? 'text-navy font-semibold' : 'text-navy/30 font-medium' }}"
                                     data-step-label="{{ $i + 1 }}"
                                 >
                                     {{ $label }}
@@ -551,7 +377,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             <div id="logistics-terms-scroll-wrap" class="relative">
                                 <div id="logistics-terms-scroll"
-                                     class="h-56 sm:h-64 overflow-y-auto border border-gray-border/70 rounded-2xl p-4 sm:p-5 bg-gray-bg/40 space-y-4 text-xs text-navy/75 leading-relaxed">
+                                     class="h-40 sm:h-44 overflow-y-auto border border-gray-border/70 rounded-2xl p-4 sm:p-5 bg-gray-bg/40 space-y-4 text-xs text-navy/75 leading-relaxed">
 
                                     <div>
                                         <h4 class="text-navy font-bold mb-1">1. Partnership Terms</h4>
@@ -717,7 +543,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </div>
                             </div>
 
-                            <p id="logistics-step1-error" class="hidden text-xs text-red-500 font-medium mt-3 flex items-center gap-1.5">
+                            <p id="logistics-step1-error" class="hidden text-xs text-red-500 font-medium mt-3 items-center gap-1.5">
                                 <x-lucide-alert-triangle class="w-3.5 h-3.5" />
                                 Please read the agreement, then check the box and complete your name, date, and signature upload to continue.
                             </p>
@@ -1005,7 +831,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                             </div>
 
-                            <p id="logistics-step2-error" class="hidden text-xs text-red-500 font-medium mt-3 flex items-center gap-1.5">
+                            <p id="logistics-step2-error" class="text-xs text-red-500 font-medium mt-3 flex items-center gap-1.5">
                                 <x-lucide-alert-triangle class="w-3.5 h-3.5" />
                                 Please complete all required fields correctly — including your full business
                                 address and representative ID — before continuing.
@@ -1535,7 +1361,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 ========================================================= --}}
 <div
     id="logistics-file-preview-modal"
-    class="fixed inset-0 z-[140] hidden items-center justify-center p-4 sm:p-6"
+    class="fixed inset-0 z-140 hidden items-center justify-center p-4 sm:p-6"
     aria-hidden="true"
 >
     <button

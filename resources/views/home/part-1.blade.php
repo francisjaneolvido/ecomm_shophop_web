@@ -5,8 +5,8 @@
 
     {{-- Ambient background --}}
     <div class="pointer-events-none absolute inset-0">
-        <div class="absolute -top-28 -right-20 w-80 h-80 sm:w-[28rem] sm:h-[28rem] rounded-full bg-teal/10 blur-3xl" data-parallax="18"></div>
-        <div class="absolute -bottom-36 -left-28 w-80 h-80 sm:w-[30rem] sm:h-[30rem] rounded-full bg-navy/5 blur-3xl" data-parallax="-14"></div>
+        <div class="absolute -top-28 -right-20 w-80 h-80 sm:w-md sm:h-112 rounded-full bg-teal/10 blur-3xl" data-parallax="18"></div>
+        <div class="absolute -bottom-36 -left-28 w-80 h-80 sm:w-120 sm:h-120 rounded-full bg-navy/5 blur-3xl" data-parallax="-14"></div>
 
         <div class="absolute inset-0 opacity-[0.28]"
              style="background-image:
@@ -16,9 +16,9 @@
         </div>
     </div>
 
-    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-18">
+    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10 lg:py-12">
 
-        <div class="grid lg:grid-cols-[0.92fr_1.08fr] gap-10 lg:gap-14 xl:gap-18 items-center">
+        <div class="grid lg:grid-cols-[0.92fr_1.08fr] gap-7 lg:gap-10 xl:gap-12 items-center">
 
             {{-- =================================================
                 LEFT CONTENT
@@ -31,10 +31,10 @@
                     class="stagger-item
                            inline-flex items-center gap-2
                            bg-teal-light text-teal-dark
-                           px-3.5 sm:px-4 py-2
+                           px-3 py-1.5
                            rounded-full
-                           text-xs sm:text-sm font-medium
-                           mb-5 sm:mb-6
+                           text-[10.5px] sm:text-xs font-medium
+                           mb-4
                            shadow-sm shadow-teal/5"
                 >
                     <span class="relative flex w-2 h-2">
@@ -47,14 +47,16 @@
 
 
                 {{-- Keep official ShopHop tagline --}}
-                <h1
+                <p
+                    role="heading"
+                    aria-level="1"
                     style="--stagger-index: 1;"
                     class="stagger-item
-                           text-navy mb-4 sm:mb-5
-                           text-[2.35rem] leading-[1.08]
-                           sm:text-[2.9rem]
-                           lg:text-[3.2rem]
-                           xl:text-[3.45rem]
+                           text-navy mb-3 sm:mb-4
+                           text-[2rem] leading-[1.08]
+                           sm:text-[2.4rem]
+                           lg:text-[2.65rem]
+                           xl:text-[2.9rem]
                            font-bold tracking-[-0.035em]">
 
                     Everything You Love,
@@ -63,18 +65,18 @@
                         Just a Hop Away.
                     </span>
 
-                </h1>
+                </p>
 
 
                 {{-- Original supporting copy --}}
                 <p
                     style="--stagger-index: 2;"
                     class="stagger-item
-                           text-navy/65
-                           text-sm sm:text-base lg:text-lg
+                           text-navy/60
+                           text-[12px] sm:text-sm lg:text-[15px]
                            leading-relaxed
                            max-w-lg
-                           mb-7 sm:mb-8"
+                           mb-5 sm:mb-6"
                 >
                     Discover everyday essentials, trending finds,
                     and products you'll love — all in one place.
@@ -82,17 +84,17 @@
 
 
                 {{-- CTA Buttons --}}
-                <div style="--stagger-index: 3;" class="stagger-item flex flex-col sm:flex-row gap-3 sm:gap-4">
+                <div style="--stagger-index: 3;" class="stagger-item flex flex-col sm:flex-row gap-2.5 sm:gap-3">
 
                     <a
                         href="#trending"
                         class="group magnetic ripple-surface inline-flex items-center justify-center gap-2
                                bg-teal hover:bg-teal-dark
                                text-white
-                               text-sm font-semibold
-                               px-6 sm:px-7
-                               py-3 sm:py-3.5
-                               rounded-full
+                               text-xs sm:text-[13px] font-semibold
+                               px-5 sm:px-6
+                               py-2.5 sm:py-3
+                               rounded-xl
                                transition-colors duration-300
                                hover:shadow-xl
                                shadow-lg shadow-teal/20"
@@ -114,16 +116,16 @@
                                bg-white/80 hover:bg-white
                                border border-navy/12 hover:border-teal/35
                                text-navy hover:text-teal-dark
-                               text-sm font-semibold
-                               px-5 sm:px-6
-                               py-3 sm:py-3.5
-                               rounded-full
+                               text-xs sm:text-[13px] font-semibold
+                               px-4.5 sm:px-5
+                               py-2.5 sm:py-3
+                               rounded-xl
                                shadow-sm shadow-navy/5
                                hover:shadow-lg hover:shadow-navy/8
                                transition-colors duration-300"
                     >
                         <span
-                            class="w-7 h-7 rounded-full
+                            class="w-6 h-6 rounded-lg
                                    bg-teal-light
                                    flex items-center justify-center
                                    text-teal-dark
@@ -132,7 +134,7 @@
                                    group-hover:rotate-6
                                    transition-all duration-300"
                         >
-                            <x-lucide-grid-2x2 class="w-3.5 h-3.5" />
+                            <x-lucide-grid-2x2 class="w-3 h-3" />
                         </span>
 
                         Explore Categories
@@ -146,44 +148,44 @@
                     style="--stagger-index: 4;"
                     class="stagger-item
                            grid grid-cols-3
-                           gap-3 sm:gap-6
-                           mt-9 sm:mt-11
-                           pt-6 sm:pt-7
+                           gap-3 sm:gap-5
+                           mt-7 sm:mt-8
+                           pt-4 sm:pt-5
                            border-t border-navy/10
                            max-w-xl"
                 >
 
                     <div>
-                        <div class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
+                        <div class="text-lg sm:text-xl font-bold text-navy tabular-nums">
                             <span data-count-to="50" data-count-suffix="K+">0K+</span>
                         </div>
 
-                        <div class="text-[10px] sm:text-xs text-navy/50 mt-1">
+                        <div class="text-[9.5px] sm:text-[10.5px] text-navy/50 mt-1">
                             Products
                         </div>
                     </div>
 
 
-                    <div class="border-l border-navy/10 pl-3 sm:pl-6">
-                        <div class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
+                    <div class="border-l border-navy/10 pl-3 sm:pl-5">
+                        <div class="text-lg sm:text-xl font-bold text-navy tabular-nums">
                             <span data-count-to="2" data-count-suffix="M+">0M+</span>
                         </div>
 
-                        <div class="text-[10px] sm:text-xs text-navy/50 mt-1">
+                        <div class="text-[9.5px] sm:text-[10.5px] text-navy/50 mt-1">
                             Happy Shoppers
                         </div>
                     </div>
 
 
-                    <div class="border-l border-navy/10 pl-3 sm:pl-6">
+                    <div class="border-l border-navy/10 pl-3 sm:pl-5">
                         <div class="flex items-center gap-1.5">
-                            <span class="text-xl sm:text-2xl font-bold text-navy tabular-nums" data-count-to="4.9" data-count-decimals="1">
+                            <span class="text-lg sm:text-xl font-bold text-navy tabular-nums" data-count-to="4.9" data-count-decimals="1">
                                 0.0
                             </span>
                             <x-lucide-star class="w-3.5 h-3.5 text-amber-400 fill-current" />
                         </div>
 
-                        <div class="text-[10px] sm:text-xs text-navy/50 mt-1">
+                        <div class="text-[9.5px] sm:text-[10.5px] text-navy/50 mt-1">
                             App Rating
                         </div>
                     </div>
@@ -196,7 +198,7 @@
             {{-- =================================================
                 RIGHT PRODUCT SHOWCASE
             ================================================== --}}
-            <div class="relative min-h-[390px] sm:min-h-[500px] lg:min-h-[540px] xl:min-h-[590px] hero-enter hero-enter-delay">
+            <div class="relative min-h-82.5 sm:min-h-102.5 lg:min-h-112.5 xlxl:min-h-122.5ero-enter hero-enter-delay">
 
                 {{-- Main showcase glow --}}
                 <div class="absolute left-1/2 top-1/2
@@ -210,18 +212,18 @@
                 <div class="absolute left-1/2 top-1/2
                             -translate-x-1/2 -translate-y-1/2
                             w-[82%] h-[78%]
-                            rounded-[2rem] sm:rounded-[2.5rem]
+                            rounded-4xl sm:rounded-[2.5rem]
                             bg-white/50 backdrop-blur-xl
                             border border-white
                             shadow-[0_30px_80px_rgba(15,27,61,0.10)]
-                            rotate-[-3deg]">
+                            -rotate-3">
                 </div>
 
                 {{-- Main product card --}}
                 <div class="absolute z-20
                             left-1/2 top-1/2
                             -translate-x-1/2 -translate-y-1/2
-                            w-[68%] max-w-[410px]
+                            w-[66%] max-w-90
                             aspect-[0.92]
                             rounded-[1.75rem] sm:rounded-[2.25rem]
                             bg-white
@@ -239,7 +241,7 @@
                     >
 
                     <div class="absolute inset-x-0 bottom-0
-                                bg-gradient-to-t from-navy/75 via-navy/25 to-transparent
+                                bg-linear-to-t from-navy/75 via-navy/25 to-transparent
                                 p-4 sm:p-5 pt-16">
                         <div class="flex items-end justify-between gap-3">
                             <div>
@@ -267,7 +269,7 @@
                 <div class="absolute z-30
                             left-0 sm:left-3 lg:left-0
                             top-5 sm:top-10 lg:top-12
-                            w-32 sm:w-40 lg:w-44
+                            w-28 sm:w-34 lg:w-38
                             rounded-2xl sm:rounded-3xl
                             bg-white/95 backdrop-blur
                             border border-white
@@ -279,7 +281,7 @@
                         <img
                             src="{{ asset('images/hero/earbuds.jpg') }}"
                             alt="Wireless earbuds"
-                            class="w-full h-24 sm:h-28 lg:h-30 object-cover"
+                            class="w-full h-20 sm:h-24 lg:h-26 object-cover"
                         >
 
                         <span class="absolute top-2 left-2
@@ -292,7 +294,7 @@
                         </span>
                     </div>
 
-                    <div class="px-3 py-3">
+                    <div class="px-2.5 py-2.5">
                         <p class="text-[10px] sm:text-xs font-semibold text-navy truncate">
                             Earbuds Pro
                         </p>
@@ -311,7 +313,7 @@
                 <div class="absolute z-30
                             right-0 sm:right-3 lg:right-0
                             bottom-4 sm:bottom-7 lg:bottom-10
-                            w-32 sm:w-40 lg:w-44
+                            w-28 sm:w-34 lg:w-38
                             rounded-2xl sm:rounded-3xl
                             bg-white/95 backdrop-blur
                             border border-white
@@ -322,10 +324,10 @@
                     <img
                         src="{{ asset('images/hero/watch.jpg') }}"
                         alt="Fitness watch"
-                        class="w-full h-24 sm:h-28 lg:h-30 object-cover"
+                        class="w-full h-20 sm:h-24 lg:h-26 object-cover"
                     >
 
-                    <div class="px-3 py-3">
+                    <div class="px-2.5 py-2.5">
                         <p class="text-[10px] sm:text-xs font-semibold text-navy truncate">
                             Fitness Watch
                         </p>
@@ -341,7 +343,7 @@
                 <div class="absolute z-40
                             right-[3%] sm:right-[8%] lg:right-[5%]
                             top-[8%] sm:top-[11%]
-                            w-16 h-16 sm:w-[4.6rem] sm:h-[4.6rem]
+                            w-14 h-14 sm:w-16 sm:h-16
                             rounded-full
                             bg-navy text-white
                             flex flex-col items-center justify-center
@@ -349,7 +351,7 @@
                             hero-badge-pop">
 
                     <span class="text-[7px] sm:text-[8px] font-semibold tracking-wider">UP TO</span>
-                    <span class="text-base sm:text-lg leading-none font-black text-teal mt-0.5">50%</span>
+                    <span class="text-sm sm:text-base leading-none font-black text-teal mt-0.5">50%</span>
                     <span class="text-[7px] sm:text-[8px] font-semibold tracking-wider mt-0.5">OFF</span>
                 </div>
 
@@ -360,15 +362,15 @@
                             bottom-[5%] sm:bottom-[8%]
                             inline-flex items-center gap-2
                             bg-white/95 backdrop-blur
-                            px-3.5 py-2.5
-                            rounded-full
+                            px-3 py-2
+                            rounded-xl
                             shadow-lg shadow-navy/10
                             border border-white
                             hero-chip-enter">
 
-                    <span class="w-8 h-8 rounded-full bg-teal-light
+                    <span class="w-7 h-7 rounded-lg bg-teal-light
                                  flex items-center justify-center">
-                        <x-lucide-shield-check class="w-4 h-4 text-teal-dark" />
+                        <x-lucide-shield-check class="w-3.5 h-3.5 text-teal-dark" />
                     </span>
 
                     <div>
@@ -525,19 +527,19 @@
     ];
 @endphp
 
-<section id="categories" class="py-12 sm:py-16 lg:py-20 bg-white">
+<section id="categories" class="py-8 sm:py-10 lg:py-12 bg-white">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="mb-6 sm:mb-8">
-            <p class="text-teal-dark text-xs sm:text-sm font-semibold mb-2 tracking-wide">
+        <div class="mb-4 sm:mb-5">
+            <p class="text-teal-dark text-[10px] sm:text-[11px] font-semibold mb-1.5 tracking-[0.12em]">
                 EXPLORE
             </p>
 
-            <h2 class="text-navy">
+            <p role="heading" aria-level="2" class="text-[20px] sm:text-[22px] lg:text-[24px] leading-tight font-bold text-navy">
                 Shop by Category
-            </h2>
+            </p>
 
-            <p class="text-sm sm:text-base text-navy/55 mt-2">
+            <p class="text-[11px] sm:text-xs text-navy/50 mt-1.5">
                 Find what you need, faster.
             </p>
         </div>
@@ -550,18 +552,18 @@
                 aria-label="Previous categories"
                 class="hidden absolute left-0 top-1/2
                        -translate-x-1/2 -translate-y-1/2
-                       z-20 w-10 h-10 sm:w-11 sm:h-11
+                       z-20 w-8 h-8 sm:w-9 sm:h-9
                        rounded-full bg-white border border-gray-border
                        shadow-lg items-center justify-center
                        text-navy hover:text-teal-dark hover:scale-110
                        transition-all duration-200"
             >
-                <x-lucide-chevron-left class="w-5 h-5" />
+                <x-lucide-chevron-left class="w-4 h-4" />
             </button>
 
             <div
                 data-category-track
-                class="grid grid-flow-col gap-4
+                class="grid grid-flow-col gap-3
                        overflow-x-auto scroll-smooth
                        snap-x snap-mandatory
                        scrollbar-none
@@ -594,9 +596,9 @@
                         href="#"
                         style="--stagger-index: {{ $loop->index % 7 }};"
                         class="group tilt-card stagger-item relative overflow-hidden
-                               min-h-46 sm:min-h-48
-                               rounded-2xl bg-gray-bg
-                               px-4 py-5 text-center
+                               min-h-38 sm:min-h-40
+                               rounded-xl bg-gray-bg
+                               px-3 py-4 text-center
                                flex flex-col items-center justify-center
                                border border-transparent
                                hover:border-teal/30
@@ -624,7 +626,7 @@
 
                         <div
                             class="relative z-10
-                                   w-16 h-16 rounded-2xl bg-white/90
+                                   w-12 h-12 rounded-xl bg-white/90
                                    flex items-center justify-center
                                    text-teal-dark shadow-sm
                                    group-hover:bg-teal
@@ -634,14 +636,14 @@
                         >
                             <x-dynamic-component
                                 :component="'lucide-' . $category['icon']"
-                                class="w-7 h-7"
+                                class="w-5 h-5"
                             />
                              
                         </div>
 
                         <span
-                            class="relative z-10 block mt-4
-                                   text-xs sm:text-sm
+                            class="relative z-10 block mt-3
+                                   text-[10.5px] sm:text-[11.5px]
                                    font-semibold text-navy
                                    leading-snug"
                         >
@@ -657,13 +659,13 @@
                 aria-label="Next categories"
                 class="absolute right-0 top-1/2
                        translate-x-1/2 -translate-y-1/2
-                       z-20 w-10 h-10 sm:w-11 sm:h-11
+                       z-20 w-8 h-8 sm:w-9 sm:h-9
                        rounded-full bg-white border border-gray-border
                        shadow-lg flex items-center justify-center
                        text-navy hover:text-teal-dark hover:scale-110
                        transition-all duration-200"
             >
-                <x-lucide-chevron-right class="w-5 h-5" />
+                <x-lucide-chevron-right class="w-4 h-4" />
             </button>
 
         </div>

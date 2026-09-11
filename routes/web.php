@@ -69,3 +69,8 @@ Route::get('/create-account', function () {
 
 // Route::get('/deals', [HomeController::class, 'deals'])
 //     ->name('deals');
+
+
+Route::get('/buyer/store/{slug?}', function ($slug = null) {
+    return view('buyer.store.show');
+})->name('buyer.store.show');

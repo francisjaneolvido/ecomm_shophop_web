@@ -60,9 +60,9 @@
                w-full h-full
                sm:h-auto
                sm:max-h-[calc(100vh-2rem)]
-               sm:max-w-5xl lg:max-w-6xl xl:max-w-6xl
+               sm:max-w-5xl lg:max-w-6xl xl:max-w-7xl
                overflow-y-auto
-               sm:rounded-[2rem]
+               sm:rounded-4xl
                bg-white
                border-0 sm:border sm:border-white/80
                shadow-2xl shadow-navy/25
@@ -115,218 +115,38 @@
         </button>
 
         {{-- Accent — matches login-modal --}}
-        <div class="hidden sm:block h-1.5 bg-gradient-to-r from-teal/70 via-teal to-teal-dark"></div>
+        <div class="hidden sm:block h-1.5 bg-linear-to-r from-teal/70 via-teal to-teal-dark"></div>
 
 
         {{-- =====================================================
             SPLIT CONTENT — 30 / 70
         ====================================================== --}}
-        <div class="grid lg:grid-cols-[2.8fr_7.2fr]">
+        <div class="grid lg:grid-cols-[3fr_7fr]">
 
 
-            {{-- =================================================
-                LEFT ARTISTIC PANEL (30%)
-            ================================================== --}}
-            <div
-                class="relative hidden lg:flex
-                       overflow-hidden
-                       bg-navy
-                       px-8 xl:px-10
-                       py-10 xl:py-12
-                       items-center"
-            >
-
-                {{-- Background decorations --}}
-                <div
-                    class="pointer-events-none absolute
-                           -top-20 -left-20
-                           w-64 h-64
-                           rounded-full
-                           bg-teal/20
-                           blur-3xl"
-                ></div>
-
-                <div
-                    class="pointer-events-none absolute
-                           -bottom-24 -right-16
-                           w-72 h-72
-                           rounded-full
-                           bg-teal/[0.10]
-                           blur-3xl"
-                ></div>
-
-                <div
-                    class="pointer-events-none absolute
-                           top-[16%] right-[14%]
-                           w-16 h-16
-                           rounded-full
-                           border border-white/10"
-                ></div>
-
-                <div
-                    class="pointer-events-none absolute
-                           bottom-[14%] left-[12%]
-                           w-12 h-12
-                           rounded-full
-                           border border-teal/30"
-                ></div>
-
-
-                <div class="relative z-10 w-full mx-auto">
-
-
-                    {{-- Logo --}}
-                    <div class="flex items-center gap-3">
-
-                        <div class="w-14 h-14 rounded-2xl bg-white/[0.06] border border-white/10 flex items-center justify-center shrink-0">
-                            <img
-                                src="{{ asset('images/logo.png') }}"
-                                alt="ShopHop"
-                                class="w-12 h-12 object-contain"
-                            >
-                        </div>
-
-                        <div class="min-w-0">
-
-                            <p class="text-white text-xl font-extrabold leading-none tracking-tight">
-                                ShopHop
-                            </p>
-
-                            <p class="text-teal text-[8px] font-semibold tracking-[0.24em] mt-1.5">
-                                HOP IN. SHOP MORE.
-                            </p>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- Main content --}}
-                    <div class="mt-7">
-
-                        <span
-                            class="inline-flex items-center gap-1.5
-                                   rounded-full
-                                   bg-white/[0.06]
-                                   border border-white/10
-                                   px-3 py-1.5
-                                   text-[10px] font-medium
-                                   text-teal"
-                        >
-                            <x-lucide-shopping-bag class="w-3 h-3" />
-
-                            JOIN AS A BUYER
-                        </span>
-
-
-                        <h1
-                            class="mt-3
-                                   text-white
-                                   text-3xl xl:text-[2rem]
-                                   font-extrabold tracking-tight
-                                   leading-[1.1]"
-                        >
-                            <span class="text-white">Shop more.</span>
-                            <span class="block text-teal">
-                                Discover more.
-                            </span>
-                        </h1>
-
-
-                        <p
-                            class="mt-3
-                                   text-white/60
-                                   text-[12.5px]
-                                   leading-relaxed"
-                        >
-                            Create your buyer account and start exploring
-                            thousands of products from trusted sellers
-                            across ShopHop.
-                        </p>
-
-                    </div>
-
-
-                    {{-- Feature list --}}
-                    <div class="mt-7 space-y-2.5">
-
-                        <div class="group flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-3 backdrop-blur-sm hover:bg-white/[0.09] transition">
-
-                            <div class="shrink-0 w-9 h-9 rounded-xl bg-teal-light flex items-center justify-center text-teal-dark shadow-sm">
-                                <x-lucide-shopping-bag class="w-4 h-4" />
-                            </div>
-
-                            <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Thousands of Products</p>
-                                <p class="text-white/45 text-[10px] mt-1 leading-tight">From trusted local sellers</p>
-                            </div>
-
-                        </div>
-
-                        <div class="group flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-3 backdrop-blur-sm hover:bg-white/[0.09] transition">
-
-                            <div class="shrink-0 w-9 h-9 rounded-xl bg-teal-light flex items-center justify-center text-teal-dark shadow-sm">
-                                <x-lucide-shield-check class="w-4 h-4" />
-                            </div>
-
-                            <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Secure Checkout</p>
-                                <p class="text-white/45 text-[10px] mt-1 leading-tight">Your payments, always protected</p>
-                            </div>
-
-                        </div>
-
-                        <div class="group flex items-center gap-3 rounded-2xl bg-white/[0.06] border border-white/10 px-3.5 py-3 backdrop-blur-sm hover:bg-white/[0.09] transition">
-
-                            <div class="shrink-0 w-9 h-9 rounded-xl bg-teal-light flex items-center justify-center text-teal-dark shadow-sm">
-                                <x-lucide-truck class="w-4 h-4" />
-                            </div>
-
-                            <div class="min-w-0">
-                                <p class="text-white text-[11.5px] font-semibold leading-tight">Fast Delivery</p>
-                                <p class="text-white/45 text-[10px] mt-1 leading-tight">Track every order in real time</p>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-
-                    {{-- Trust stats row --}}
-                    <div class="mt-7 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-3">
-
-                        <div>
-                            <p class="text-white text-base font-extrabold">50K+</p>
-                            <p class="text-white/40 text-[9px] mt-1 uppercase tracking-wide">Products</p>
-                        </div>
-
-                        <div class="w-px h-7 bg-white/10"></div>
-
-                        <div>
-                            <p class="text-white text-base font-extrabold">10K+</p>
-                            <p class="text-white/40 text-[9px] mt-1 uppercase tracking-wide">Sellers</p>
-                        </div>
-
-                        <div class="w-px h-7 bg-white/10"></div>
-
-                        <div>
-                            <p class="text-white text-base font-extrabold">4.8<span class="text-teal">★</span></p>
-                            <p class="text-white/40 text-[9px] mt-1 uppercase tracking-wide">Rating</p>
-                        </div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
+            @include('auth.modals.shared.registration-side-panel', [
+                'roleIcon' => 'lucide-shopping-bag',
+                'eyebrow' => 'JOIN AS A BUYER',
+                'title' => 'Shop more.',
+                'highlight' => 'Discover more.',
+                'description' => 'Create your buyer account and explore products from trusted sellers with a smoother, safer ShopHop experience.',
+                'features' => [
+                    ['icon' => 'lucide-shopping-bag', 'title' => 'Thousands of Products', 'description' => 'Discover items from trusted sellers'],
+                    ['icon' => 'lucide-shield-check', 'title' => 'Secure Checkout', 'description' => 'Protected payments from cart to checkout'],
+                    ['icon' => 'lucide-truck', 'title' => 'Trackable Delivery', 'description' => 'Follow your order from dispatch to door'],
+                ],
+                'stats' => [
+                    ['value' => '50K+', 'label' => 'Products'],
+                    ['value' => '10K+', 'label' => 'Sellers'],
+                    ['value' => '4.8', 'label' => 'Rating', 'star' => true],
+                ],
+            ])
 
             {{-- =================================================
                 RIGHT REGISTRATION PANEL (70%)
             ================================================== --}}
             <div
-                class="bg-gradient-to-b from-white via-white to-gray-bg/30
+                class="bg-linear-to-b from-white via-white to-gray-bg/30
                        px-5 sm:px-8 lg:px-10 xl:px-12
                        py-6 sm:py-8 lg:py-10"
             >
@@ -459,25 +279,25 @@
                             style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto;"
                         >
 
-                            <p class="step-label max-w-[72px] mx-auto text-center text-[10px] sm:text-[11px] font-semibold leading-tight text-navy" data-step-label="1">
+                            <p class="step-label max-w-18 mx-auto text-center text-[10px] sm:text-[11px] font-semibold leading-tight text-navy" data-step-label="1">
                                 Personal
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[72px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="2">
+                            <p class="step-label max-w-18 mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="2">
                                 Address
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[72px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="3">
+                            <p class="step-label max-w-18 mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="3">
                                 Verification
                             </p>
 
                             <div></div>
 
-                            <p class="step-label max-w-[72px] mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="4">
+                            <p class="step-label max-w-18 mx-auto text-center text-[10px] sm:text-[11px] font-medium leading-tight text-navy/30" data-step-label="4">
                                 Security
                             </p>
 
@@ -1356,7 +1176,7 @@
 ========================================================= --}}
 <div
     id="buyer-id-preview-modal"
-    class="fixed inset-0 z-[140] hidden items-center justify-center p-4 sm:p-6"
+    class="fixed inset-0 z-140 hidden items-center justify-center p-4 sm:p-6"
     aria-hidden="true"
 >
     <button

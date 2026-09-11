@@ -3,7 +3,7 @@
 ========================================================= --}}
 <section
     id="new-arrivals"
-    class="relative overflow-hidden py-12 sm:py-16 lg:py-18 bg-gray-bg"
+    class="relative overflow-hidden py-8 sm:py-10 lg:py-12 bg-gray-bg"
 >
 
     {{-- Soft background accents --}}
@@ -13,25 +13,25 @@
     <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Header --}}
-        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-7 sm:mb-9 reveal-up">
+        <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-4 sm:mb-5 reveal-up">
 
             <div class="max-w-xl">
 
                 <p
                     class="text-teal-dark
-                           text-xs sm:text-sm
+                           text-[10px] sm:text-[11px]
                            font-semibold
-                           mb-2
-                           tracking-wide"
+                           mb-1.5
+                           tracking-[0.12em]"
                 >
                     JUST IN
                 </p>
 
-                <h2 class="text-navy">
+                <p role="heading" aria-level="2" class="text-[20px] sm:text-[22px] lg:text-[24px] leading-tight font-bold text-navy">
                     New Arrivals
-                </h2>
+                </p>
 
-                <p class="text-sm sm:text-base text-navy/55 mt-2">
+                <p class="text-[11px] sm:text-xs text-navy/50 mt-1.5">
                     Fresh products and exciting finds added to ShopHop.
                 </p>
 
@@ -41,7 +41,7 @@
             <a
                 href="#trending"
                 class="group inline-flex items-center gap-2
-                       text-sm font-semibold
+                       text-[11px] sm:text-xs font-semibold
                        text-teal-dark
                        hover:text-navy
                        transition-colors duration-300"
@@ -63,14 +63,14 @@
         <div
             class="relative overflow-hidden
                    bg-white
-                   rounded-3xl
+                   rounded-2xl
                    border border-gray-border
                    shadow-sm shadow-navy/5
                    reveal-up"
             style="--reveal-delay: 80ms;"
         >
 
-            <div class="grid lg:grid-cols-[0.88fr_1.12fr] min-h-[430px] lg:min-h-[500px]">
+            <div class="grid lg:grid-cols-[0.88fr_1.12fr] min-h-90 lg:min-h-105">
 
 
                 {{-- =================================================
@@ -79,8 +79,8 @@
                 <div
                     class="relative z-10
                            flex flex-col justify-center
-                           px-6 sm:px-8 lg:px-10 xl:px-12
-                           py-9 sm:py-11 lg:py-12"
+                           px-5 sm:px-6 lg:px-8 xl:px-9
+                           py-6 sm:py-7 lg:py-8"
                 >
 
                     <span
@@ -88,28 +88,28 @@
                                w-fit
                                bg-teal-light
                                text-teal-dark
-                               text-[10px] sm:text-xs font-semibold
-                               px-3.5 py-2
+                               text-[9.5px] sm:text-[10.5px] font-semibold
+                               px-3 py-1.5
                                rounded-full
-                               mb-5"
+                               mb-4"
                     >
                         <span class="w-1.5 h-1.5 rounded-full bg-teal"></span>
                         NEW THIS WEEK
                     </span>
 
 
-                    <h2 class="text-navy max-w-md">
+                    <p role="heading" aria-level="2" class="text-[24px] sm:text-[28px] lg:text-[32px] leading-[1.12] tracking-[-0.02em] font-bold text-navy max-w-md">
                         Find something
                         <span class="block text-teal">
                             you'll love.
                         </span>
-                    </h2>
+                    </p>
 
 
                     <p
-                        class="text-sm sm:text-base
+                        class="text-[12px] sm:text-[13px] lg:text-sm
                                text-navy/55
-                               mt-4
+                               mt-3
                                leading-relaxed
                                max-w-lg"
                     >
@@ -119,18 +119,18 @@
 
 
                     {{-- Mini benefits --}}
-                    <div class="flex flex-wrap gap-x-5 gap-y-3 mt-6">
+                    <div class="flex flex-wrap gap-x-4 gap-y-2.5 mt-4 sm:mt-5">
 
-                        <div class="flex items-center gap-2 text-xs sm:text-sm text-navy/55">
-                            <span class="w-7 h-7 rounded-full bg-teal-light flex items-center justify-center">
-                                <x-lucide-sparkles class="w-3.5 h-3.5 text-teal-dark" />
+                        <div class="flex items-center gap-1.5 text-[10.5px] sm:text-xs text-navy/55">
+                            <span class="w-6 h-6 rounded-lg bg-teal-light flex items-center justify-center">
+                                <x-lucide-sparkles class="w-3 h-3 text-teal-dark" />
                             </span>
                             Fresh picks
                         </div>
 
-                        <div class="flex items-center gap-2 text-xs sm:text-sm text-navy/55">
-                            <span class="w-7 h-7 rounded-full bg-teal-light flex items-center justify-center">
-                                <x-lucide-package-check class="w-3.5 h-3.5 text-teal-dark" />
+                        <div class="flex items-center gap-1.5 text-[10.5px] sm:text-xs text-navy/55">
+                            <span class="w-6 h-6 rounded-lg bg-teal-light flex items-center justify-center">
+                                <x-lucide-package-check class="w-3 h-3 text-teal-dark" />
                             </span>
                             Just added
                         </div>
@@ -142,14 +142,14 @@
                         href="#trending"
                         class="group magnetic ripple-surface inline-flex items-center justify-center gap-2
                                w-fit
-                               mt-7
-                               bg-navy hover:bg-[#172750]
+                               mt-5 sm:mt-6
+                               bg-teal hover:bg-teal-dark
                                text-white
-                               text-sm font-semibold
+                               text-xs sm:text-[13px] font-semibold
                                px-5 sm:px-6
-                               py-3 sm:py-3.5
-                               rounded-full
-                               shadow-lg shadow-navy/10
+                               py-2.5 sm:py-3
+                               rounded-xl
+                               shadow-md shadow-teal/15
                                transition-colors duration-300"
                     >
                         Discover new arrivals
@@ -168,7 +168,7 @@
                 {{-- =================================================
                     RIGHT PRODUCT COLLAGE
                 ================================================== --}}
-                <div class="relative min-h-[360px] sm:min-h-[420px] lg:min-h-full bg-[#EEF8F5] overflow-hidden">
+                <div class="relative min-h-75 sm:min-h-87.5 lg:min-h-full bg-[#EEF8F5] overflow-hidden">
 
                     {{-- Decorative shapes --}}
                     <div class="absolute -top-16 -right-16 w-52 h-52 rounded-full bg-teal/10 blur-2xl"></div>
@@ -181,7 +181,7 @@
                                left-[7%] top-[9%]
                                w-[58%]
                                aspect-[1/1.05]
-                               rounded-[1.6rem] sm:rounded-[2rem]
+                               rounded-[1.6rem] sm:rounded-4xl
                                overflow-hidden
                                bg-white
                                border border-white
@@ -229,8 +229,8 @@
                                z-20
                                right-[5%] top-[10%]
                                bg-white/95 backdrop-blur
-                               rounded-2xl
-                               px-3.5 py-3
+                               rounded-xl
+                               px-3 py-2.5
                                shadow-lg shadow-navy/10
                                border border-white
                                new-arrival-chip"
@@ -238,12 +238,12 @@
                         <div class="flex items-center gap-2.5">
 
                             <span
-                                class="w-9 h-9
-                                       rounded-xl
+                                class="w-8 h-8
+                                       rounded-lg
                                        bg-teal-light
                                        flex items-center justify-center"
                             >
-                                <x-lucide-trending-up class="w-4 h-4 text-teal-dark" />
+                                <x-lucide-trending-up class="w-3.5 h-3.5 text-teal-dark" />
                             </span>
 
                             <div>
@@ -270,7 +270,7 @@
                                text-white
                                text-[9px] sm:text-[10px]
                                font-semibold
-                               px-3 py-2
+                               px-2.5 py-1.5
                                rounded-full
                                shadow-lg shadow-navy/15"
                     >
@@ -293,7 +293,7 @@
 {{-- =========================================================
     FINAL CTA — LIGHT / HIGH-CONTRAST
 ========================================================= --}}
-<section class="py-12 sm:py-16 lg:py-18 bg-white">
+<section class="py-8 sm:py-10 lg:py-12 bg-white">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -301,11 +301,11 @@
             data-parallax-container
             class="relative
                    overflow-hidden
-                   rounded-3xl
+                   rounded-2xl
                    bg-[#EAF9F5]
                    border border-teal/10
-                   px-5 sm:px-8 lg:px-14
-                   py-10 sm:py-12 lg:py-14
+                   px-5 sm:px-7 lg:px-10
+                   py-7 sm:py-8 lg:py-9
                    text-center
                    shadow-lg shadow-navy/5
                    reveal-up"
@@ -349,12 +349,12 @@
                            bg-white/80
                            border border-teal/15
                            text-teal-dark
-                           text-[10px] sm:text-xs
+                           text-[9.5px] sm:text-[10.5px]
                            font-semibold
-                           tracking-wide
-                           px-3.5 py-2
+                           tracking-[0.12em]
+                           px-3 py-1.5
                            rounded-full
-                           mb-4
+                           mb-3
                            shadow-sm"
                 >
                     <x-lucide-shopping-bag class="w-3.5 h-3.5" />
@@ -362,16 +362,16 @@
                 </div>
 
 
-                <h2 class="text-navy">
+                <p role="heading" aria-level="2" class="text-[22px] sm:text-[24px] lg:text-[26px] leading-tight font-bold text-navy">
                     Ready to Hop In?
-                </h2>
+                </p>
 
 
                 <p
-                    class="text-sm sm:text-base
+                    class="text-[12px] sm:text-[13px]
                            text-navy/55
-                           mt-3
-                           mb-6 sm:mb-7"
+                           mt-2
+                           mb-5 sm:mb-6"
                 >
                     Discover your next favorite product today.
                 </p>
@@ -385,10 +385,10 @@
                            bg-teal
                            hover:bg-teal-dark
                            text-white
-                           text-sm font-semibold
-                           px-6 sm:px-7
-                           py-3 sm:py-3.5
-                           rounded-full
+                           text-xs sm:text-[13px] font-semibold
+                           px-5 sm:px-6
+                           py-2.5 sm:py-3
+                           rounded-xl
                            transition-colors duration-300
                            hover:shadow-xl
                            shadow-lg shadow-teal/20"

@@ -1352,7 +1352,7 @@
 {{-- =========================================================
     REVIEW MEDIA MODAL
 ========================================================= --}}
-<div id="reviewMediaModal" hidden class="fixed inset-0 z-[55] flex items-center justify-center p-4">
+<div id="reviewMediaModal" hidden class="fixed inset-0 z-55 flex items-center justify-center p-4">
 
     <div data-close-review-media class="absolute inset-0 bg-navy/60"></div>
 
@@ -1394,7 +1394,7 @@
 <div
     id="feedbackToast"
     hidden
-    class="fixed right-4 bottom-4 z-[60] max-w-sm rounded-xl border border-teal/25 bg-white shadow-panel px-4 py-3"
+    class="fixed right-4 bottom-4 z-60 max-w-sm rounded-xl border border-teal/25 bg-white shadow-panel px-4 py-3"
 >
 
     <div class="flex items-start gap-3">
