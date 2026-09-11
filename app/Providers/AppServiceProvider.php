@@ -18,7 +18,8 @@ class AppServiceProvider extends ServiceProvider
      * Bootstrap any application services.
      */
     public function boot(): void
-    {
-        $this->loadMigrationsFrom(database_path('migrations/Seller/Manage_inventory'));
-    }
+{
+    $this->loadMigrationsFrom(database_path('migrations/Seller/Manage_inventory'));
+    $this->loadMigrationsFrom(database_path('migrations/Admin/account_registration'));
+}
 }
