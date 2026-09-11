@@ -25,6 +25,9 @@ Route::prefix('admin')
         Route::get('/registration', [AdminRegistrationController::class, 'index'])
             ->name('registrations');
 
+        Route::get('/registration/{user}', [AdminRegistrationController::class, 'show'])
+            ->name('registrations.show');
+
         Route::get('/users', [UserAccountController::class, 'index'])
             ->name('users');
 
