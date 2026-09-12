@@ -502,35 +502,87 @@ FILE STORAGE:
 
 
                                 {{-- Sex --}}
-                                <div>
+<div>
 
-                                    <label for="seller_sex" class="block text-xs font-semibold text-navy mb-2">
-                                        Sex
-                                        <span class="text-red-500">*</span>
-                                    </label>
+    <label
+        for="seller_sex"
+        class="block text-xs font-semibold text-navy mb-2"
+    >
+        Sex
+        <span class="text-red-500">*</span>
+    </label>
 
-                                    <div class="relative">
+    <div class="relative">
 
-                                        <x-lucide-users class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+        <x-lucide-users
+            class="pointer-events-none
+                   absolute left-4 top-1/2
+                   -translate-y-1/2
+                   w-4 h-4
+                   text-navy/30"
+        />
 
-                                        <select
-                                            id="seller_sex"
-                                            name="sex"
-                                            required
-                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
-                                        >
-                                            <option value="">Select sex</option>
-                                            <option value="Male" @selected(old('sex') === 'Male')>Male</option>
-                                            <option value="Female" @selected(old('sex') === 'Female')>Female</option>
-                                        </select>
+        <select
+            id="seller_sex"
+            name="sex"
+            required
+            class="w-full min-h-12
+                   rounded-xl
+                   border border-gray-border/80
+                   bg-white
+                   shadow-sm
+                   pl-11 pr-9 py-3
+                   text-sm text-navy
+                   outline-none
+                   hover:border-navy/20
+                   focus:border-teal
+                   focus:ring-4
+                   focus:ring-teal/10
+                   transition
+                   appearance-none"
+        >
+            <option value="">
+                Select sex
+            </option>
 
-                                        <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
+            <option
+                value="Male"
+                @selected(old('sex') === 'Male')
+            >
+                Male
+            </option>
 
-                                    </div>
+            <option
+                value="Female"
+                @selected(old('sex') === 'Female')
+            >
+                Female
+            </option>
 
-                                    <p id="seller_sex_error" class="hidden text-[11px] text-red-500 mt-1"></p>
+            <option
+                value="Prefer not to say"
+                @selected(old('sex') === 'Prefer not to say')
+            >
+                Prefer not to say
+            </option>
+        </select>
 
-                                </div>
+        <x-lucide-chevron-down
+            class="pointer-events-none
+                   absolute right-3.5 top-1/2
+                   -translate-y-1/2
+                   w-4 h-4
+                   text-navy/30"
+        />
+
+    </div>
+
+    <p
+        id="seller_sex_error"
+        class="hidden text-[11px] text-red-500 mt-1"
+    ></p>
+
+</div>
 
 
                                 {{-- Email --}}
@@ -893,29 +945,16 @@ FILE STORAGE:
                                         >
                                             <option value="">Select line of business</option>
 
-                                            @php
-                                                $placeholderCategories = [
-                                                    'Fashion & Apparel',
-                                                    'Electronics & Gadgets',
-                                                    'Health & Beauty',
-                                                    'Home & Living',
-                                                    'Groceries & Food',
-                                                    'Toys, Kids & Baby',
-                                                    'Sports & Outdoors',
-                                                    'Automotive',
-                                                    'Books, Hobbies & Stationery',
-                                                    'Pet Supplies',
-                                                    'Other',
-                                                ];
-                                            @endphp
+@foreach (config('shophop_categories', []) as $category)
 
-                                            @foreach ($placeholderCategories as $category)
+    <option
+        value="{{ $category['name'] }}"
+        @selected(old('business_category') === $category['name'])
+    >
+        {{ $category['name'] }}
+    </option>
 
-                                                <option value="{{ $category }}" @selected(old('business_category') === $category)>
-                                                    {{ $category }}
-                                                </option>
-
-                                            @endforeach
+@endforeach
 
                                         </select>
 

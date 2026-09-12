@@ -12,17 +12,20 @@ use App\Http\Controllers\Buyer\CategoryController as BuyerCategoryController;
 | Buyer Routes
 |--------------------------------------------------------------------------
 |
-| Buyer-specific pages.
-|
-| Auth muna disabled habang tine-test ang dashboard.
-| Kapag ready na ang login system, pwede nating idagdag:
-|
-| ->middleware(['auth'])
+| Requirements:
+| - logged in
+| - buyer account
+| - email verified
+| - administrator approved
 |
 */
 
 Route::prefix('buyer')
     ->name('buyer.')
+    ->middleware([
+        'auth',
+        'approved.role:buyer',
+    ])
     ->group(function () {
 
         /*
@@ -33,49 +36,31 @@ Route::prefix('buyer')
 
         Route::get('/dashboard', [
             BuyerDashboardController::class,
-            'index'
+            'index',
         ])->name('dashboard');
 
 
         /*
         |--------------------------------------------------------------------------
-        | Categories — Browse page (sidebar + filters + product grid)
+        | Categories
         |--------------------------------------------------------------------------
-        |
-        | "All Categories" index (used by the breadcrumb's first link),
-        | then the actual category browse page.
-        |
-        | Example:
-        | /buyer/category/electronics-and-gadgets
-        |
-        | Route names:
-        | buyer.category.index
-        | buyer.category.show
-        |
         */
 
         Route::get('/categories', [
             BuyerCategoryController::class,
-            'index'
+            'index',
         ])->name('category.index');
 
         Route::get('/category/{category}', [
             BuyerCategoryController::class,
-            'show'
+            'show',
         ])->name('category.show');
 
 
         /*
         |--------------------------------------------------------------------------
-        | Product Details — TEMPORARY UI PREVIEW
+        | Product Preview
         |--------------------------------------------------------------------------
-        |
-        | Temporary route ito para makita muna ang hardcoded
-        | Show Product UI kahit walang existing product sa database.
-        |
-        | URL:
-        | http://127.0.0.1:8000/buyer/product-preview
-        |
         */
 
         Route::get('/product-preview', function () {
@@ -85,20 +70,13 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Product Details — Actual Product Route
+        | Product Details
         |--------------------------------------------------------------------------
-        |
-        | Example:
-        | /buyer/product/1
-        |
-        | Route name:
-        | buyer.product.show
-        |
         */
 
         Route::get('/product/{product}', [
             BuyerProductController::class,
-            'show'
+            'show',
         ])->name('product.show');
 
 
@@ -106,13 +84,6 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         | Cart
         |--------------------------------------------------------------------------
-        |
-        | LAHAT ng pagbili — Buy Now man o Add to Cart — ay dumadaan
-        | dito muna.
-        |
-        | URL:
-        | http://127.0.0.1:8000/buyer/cart
-        |
         */
 
         Route::get('/cart', function () {
@@ -122,14 +93,8 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Checkout — CART
+        | Checkout
         |--------------------------------------------------------------------------
-        |
-        | Single checkout entry point for selected cart items.
-        |
-        | URL:
-        | http://127.0.0.1:8000/buyer/cart/checkout
-        |
         */
 
         Route::get('/cart/checkout', function () {
@@ -139,12 +104,8 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Checkout — Place Order
+        | Place Order
         |--------------------------------------------------------------------------
-        |
-        | TEMPORARY closure lang muna.
-        | Palitan ng CheckoutController kapag ready na ang backend.
-        |
         */
 
         Route::post('/checkout/place-order', function () {
@@ -159,15 +120,6 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         | My Orders
         |--------------------------------------------------------------------------
-        |
-        | Buyer order history / order tracking page.
-        |
-        | URL:
-        | http://127.0.0.1:8000/buyer/orders
-        |
-        | Route name:
-        | buyer.orders
-        |
         */
 
         Route::get('/orders', function () {
@@ -177,36 +129,8 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Order Reports — FUTURE BACKEND
-        |--------------------------------------------------------------------------
-        |
-        | Hindi pa kailangan sa current frontend preview.
-        | Kapag may real order_reports table/controller na, pwede itong
-        | palitan ng BuyerOrderReportController.
-        |
-        */
-
-        // Route::post('/orders/{order}/report', function ($order) {
-        //     return back()->with(
-        //         'status',
-        //         'Report submitted (demo — no backend yet).'
-        //     );
-        // })->name('orders.report');
-
-
-        /*
-        |--------------------------------------------------------------------------
         | Messages
         |--------------------------------------------------------------------------
-        |
-        | Buyer conversations with sellers and ShopHop Support.
-        |
-        | URL:
-        | http://127.0.0.1:8000/buyer/messages
-        |
-        | Route name:
-        | buyer.messages
-        |
         */
 
         Route::get('/messages', function () {
@@ -227,15 +151,8 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Buyer Settings
+        | Future Buyer Settings
         |--------------------------------------------------------------------------
-        |
-        | TEMPORARILY COMMENTED OUT.
-        |
-        | I-enable natin ito kapag nagawa na ang:
-        |
-        | app/Http/Controllers/Buyer/ProfileController.php
-        |
         */
 
         // Route::patch('/settings/profile', [

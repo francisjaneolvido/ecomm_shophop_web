@@ -9,6 +9,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\Auth\BuyerRegistrationController;
 use App\Http\Controllers\Auth\SellerRegistrationController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\BuyerEmailVerificationController;
 
 
 /*
@@ -74,3 +75,29 @@ Route::get('/create-account', function () {
 Route::get('/buyer/store/{slug?}', function ($slug = null) {
     return view('buyer.store.show');
 })->name('buyer.store.show');
+
+
+/*
+|--------------------------------------------------------------------------
+| Buyer Email Verification
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/buyer/verify-email', [
+    BuyerEmailVerificationController::class,
+    'show'
+])->name('buyer.verify-email.show');
+
+
+Route::post('/buyer/verify-email', [
+    BuyerEmailVerificationController::class,
+    'verify'
+])->name('buyer.verify-email.verify');
+
+
+Route::post('/buyer/verify-email/resend', [
+    BuyerEmailVerificationController::class,
+    'resend'
+])
+    ->middleware('throttle:6,1')
+    ->name('buyer.verify-email.resend');

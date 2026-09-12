@@ -6,7 +6,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
-use App\Http\Controllers\Admin\CommissionController;
+// use App\Http\Controllers\Admin\CommissionController;
 
 
 /*
@@ -58,8 +58,8 @@ Route::prefix('admin')
             return view('admin.commission');
         })->name('commission');
 
-        Route::get('/commissions/export-pdf', [CommissionController::class, 'exportPdf'])
-            ->name('commissions.export-pdf');
+        // Route::get('/commissions/export-pdf', [CommissionController::class, 'exportPdf'])
+//     ->name('commissions.export-pdf');
 
         Route::get('/reports', function () {
             return view('admin.reports');

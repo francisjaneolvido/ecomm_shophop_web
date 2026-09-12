@@ -172,11 +172,19 @@
                                 <span class="min-w-4 h-4 px-1 rounded-full bg-teal text-white text-[7px] font-bold flex items-center justify-center">3</span>
                             </a>
                             <div class="my-1.5 border-t border-gray-border"></div>
-                            <a href="{{ Route::has('logout') ? route('logout') : '#' }}"
-                               class="flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-red-600 hover:bg-red-50 transition">
-                                <x-lucide-log-out class="w-4 h-4" />
-                                Logout
-                            </a>
+                           <form method="POST" action="{{ route('logout') }}">
+    @csrf
+
+    <button
+        type="submit"
+        class="w-full flex items-center gap-2.5 px-4 py-2.5
+               text-[12px] text-red-600
+               hover:bg-red-50 transition text-left"
+    >
+        <x-lucide-log-out class="w-4 h-4" />
+        Logout
+    </button>
+</form>
                         </div>
                     </div>
                 </div>
@@ -249,10 +257,18 @@
                     Account Management
                 </a>
 
-                <a href="{{ Route::has('logout') ? route('logout') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50">
-                    <x-lucide-log-out class="w-4 h-4" />
-                    Logout
-                </a>
+                <form method="POST" action="{{ route('logout') }}">
+    @csrf
+
+    <button
+        type="submit"
+        class="w-full flex items-center gap-2.5 px-3 py-2.5
+               rounded-lg text-red-600 hover:bg-red-50 text-left"
+    >
+        <x-lucide-log-out class="w-4 h-4" />
+        Logout
+    </button>
+</form>
             </nav>
         </div>
     </div>

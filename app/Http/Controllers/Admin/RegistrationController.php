@@ -21,8 +21,46 @@ class RegistrationController extends Controller
         $sort = $request->get('sort', 'newest');
         $search = $request->get('search');
 
-        $base = User::with(['buyer', 'seller', 'logisticsPartner'])
-            ->whereIn('account_type', self::ROLES);
+        $base = User::with([
+        'buyer',
+        'seller',
+        'logisticsPartner',
+    ])
+    ->whereIn('account_type', self::ROLES)
+    ->where(function ($query) {
+
+        /*
+        |--------------------------------------------------------------------------
+        | Buyer / Seller
+        |--------------------------------------------------------------------------
+        |
+        | Huwag ipakita sa admin hangga't hindi verified ang email.
+        |
+        */
+
+        $query->where(function ($q) {
+            $q->whereIn('account_type', [
+                    'buyer',
+                    'seller',
+                ])
+                ->whereNotNull('email_verified_at');
+        })
+
+        /*
+        |--------------------------------------------------------------------------
+        | Logistics
+        |--------------------------------------------------------------------------
+        |
+        | Wala pa tayong real email OTP flow sa logistics,
+        | kaya visible muna sila normally.
+        |
+        */
+
+        ->orWhere(
+            'account_type',
+            'logistics'
+        );
+    });
 
         // Summary card counts — hango sa buong non-admin user set, hindi lang sa current filter
         $counts = [

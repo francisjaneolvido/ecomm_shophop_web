@@ -632,30 +632,39 @@
             </div>
 
 
-            <a
-                href="{{ route('seller.logout') }}"
-                class="sidebar-nav-link
-                       group
-                       flex items-center gap-3
-                       px-3 py-2.5 rounded-xl
-                       text-[12px] font-medium
-                       text-white/45
-                       hover:bg-red-400/10 hover:text-red-300
-                       transition"
-            >
-                <span
-                    class="w-8 h-8 rounded-lg
-                           flex items-center justify-center
-                           group-hover:bg-red-400/10
-                           transition"
-                >
-                    <x-lucide-log-out class="w-4 h-4" />
-                </span>
+            <form
+    method="POST"
+    action="{{ route('logout') }}"
+    class="w-full"
+>
+    @csrf
 
-                <span class="sidebar-expanded-only">
-                    Log Out
-                </span>
-            </a>
+    <button
+        type="submit"
+        class="sidebar-nav-link
+               group
+               w-full
+               flex items-center gap-3
+               px-3 py-2.5 rounded-xl
+               text-[12px] font-medium
+               text-white/45
+               hover:bg-red-400/10 hover:text-red-300
+               transition"
+    >
+        <span
+            class="w-8 h-8 rounded-lg
+                   flex items-center justify-center
+                   group-hover:bg-red-400/10
+                   transition"
+        >
+            <x-lucide-log-out class="w-4 h-4" />
+        </span>
+
+        <span class="sidebar-expanded-only">
+            Log Out
+        </span>
+    </button>
+</form>
 
         </div>
 
@@ -940,18 +949,27 @@
 
                         <div class="p-1.5 border-t border-gray-border">
 
-                            <a
-                                href="{{ route('seller.logout') }}"
-                                class="flex items-center gap-2.5
-                                       px-2.5 py-2 rounded-lg
-                                       text-[10px] font-medium text-red-500
-                                       hover:bg-red-50
-                                       transition"
-                            >
-                                <x-lucide-log-out class="w-3.5 h-3.5" />
-                                Log Out
-                            </a>
+                            <form
+    method="POST"
+    action="{{ route('logout') }}"
+    class="w-full"
+>
+    @csrf
 
+    <button
+        type="submit"
+        class="w-full
+               flex items-center gap-2.5
+               px-2.5 py-2 rounded-lg
+               text-[10px] font-medium text-red-500
+               hover:bg-red-50
+               transition
+               text-left"
+    >
+        <x-lucide-log-out class="w-3.5 h-3.5" />
+        Log Out
+    </button>
+</form>
                         </div>
                     </div>
 

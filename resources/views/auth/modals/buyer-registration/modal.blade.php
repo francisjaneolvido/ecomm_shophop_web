@@ -469,15 +469,25 @@
                                         <x-lucide-users class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 
                                         <select
-                                            id="buyer_sex"
-                                            name="sex"
-                                            required
-                                            class="w-full min-h-12 rounded-2xl border border-gray-border/80 bg-white shadow-sm shadow-navy/5 pl-11 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
-                                        >
-                                            <option value="">Select sex</option>
-                                            <option value="Male" @selected(old('sex') === 'Male')>Male</option>
-                                            <option value="Female" @selected(old('sex') === 'Female')>Female</option>
-                                        </select>
+    id="buyer_sex"
+    name="sex"
+    required
+    class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none"
+>
+    <option value="">Select sex</option>
+
+    <option value="Male" @selected(old('sex') === 'Male')>
+        Male
+    </option>
+
+    <option value="Female" @selected(old('sex') === 'Female')>
+        Female
+    </option>
+
+    <option value="Prefer not to say" @selected(old('sex') === 'Prefer not to say')>
+        Prefer not to say
+    </option>
+</select>
 
                                         <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
 

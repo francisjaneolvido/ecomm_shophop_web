@@ -5,6 +5,167 @@
     (e.g. from the account-type modal's "Sign in" link, or the
     registration modals).
 ========================================================= --}}
+
+@if (session('login_notice'))
+
+    @php
+        $loginNotice = session('login_notice');
+
+        $isError = ($loginNotice['type'] ?? 'warning') === 'error';
+    @endphp
+
+    <div
+        id="login-status-toast"
+        class="fixed top-5 right-5 z-9999
+               w-[calc(100%-2.5rem)] max-w-sm
+               overflow-hidden
+               rounded-2xl
+               border
+               bg-white
+               shadow-2xl shadow-navy/15
+               transition-all duration-300
+               {{ $isError ? 'border-red-200' : 'border-amber-200' }}"
+        role="status"
+        aria-live="polite"
+    >
+
+        <div class="flex items-start gap-3 p-4">
+
+            <div
+                class="flex h-10 w-10 shrink-0
+                       items-center justify-center
+                       rounded-xl
+                       {{ $isError
+                            ? 'bg-red-50 text-red-500'
+                            : 'bg-amber-50 text-amber-600' }}"
+            >
+
+                @if ($isError)
+
+                    <x-lucide-circle-alert
+                        class="h-5 w-5"
+                    />
+
+                @else
+
+                    <x-lucide-clock-3
+                        class="h-5 w-5"
+                    />
+
+                @endif
+
+            </div>
+
+
+            <div class="min-w-0 flex-1">
+
+                <p class="text-sm font-bold text-navy">
+                    {{ $loginNotice['title'] ?? 'Account Notice' }}
+                </p>
+
+                <p
+                    class="mt-1
+                           text-xs
+                           leading-relaxed
+                           text-navy/55"
+                >
+                    {{ $loginNotice['message'] ?? '' }}
+                </p>
+
+            </div>
+
+
+            <button
+                type="button"
+                id="login-status-toast-close"
+                aria-label="Close notification"
+                class="flex h-7 w-7 shrink-0
+                       items-center justify-center
+                       rounded-lg
+                       text-navy/30
+                       hover:bg-gray-bg
+                       hover:text-navy
+                       transition"
+            >
+                <x-lucide-x class="h-4 w-4" />
+            </button>
+
+        </div>
+
+
+        <div
+            id="login-status-toast-progress"
+            class="h-1
+                   {{ $isError ? 'bg-red-400' : 'bg-amber-400' }}"
+        ></div>
+
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            const toast =
+                document.getElementById('login-status-toast');
+
+            const closeButton =
+                document.getElementById('login-status-toast-close');
+
+            const progress =
+                document.getElementById('login-status-toast-progress');
+
+            if (!toast) {
+                return;
+            }
+
+            function closeToast() {
+
+                toast.classList.add(
+                    'opacity-0',
+                    'translate-x-4'
+                );
+
+                window.setTimeout(function () {
+                    toast.remove();
+                }, 300);
+
+            }
+
+            if (closeButton) {
+                closeButton.addEventListener(
+                    'click',
+                    closeToast
+                );
+            }
+
+            if (progress) {
+
+                progress.style.transition =
+                    'width 6s linear';
+
+                progress.style.width = '100%';
+
+                requestAnimationFrame(function () {
+
+                    requestAnimationFrame(function () {
+                        progress.style.width = '0%';
+                    });
+
+                });
+
+            }
+
+            window.setTimeout(
+                closeToast,
+                6000
+            );
+
+        });
+    </script>
+
+@endif
+
+
 <div
     id="login-modal"
     class="fixed inset-0 z-100 hidden items-end sm:items-center justify-center sm:p-6"
