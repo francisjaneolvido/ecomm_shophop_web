@@ -101,37 +101,6 @@
 @endphp
 
 
-{{-- =========================================================
-    PUBLIC SERVICE STRIP
-========================================================= --}}
-<section class="bg-white border-b border-gray-border/70">
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex gap-5 sm:gap-8 overflow-x-auto py-2.5 [&::-webkit-scrollbar]:hidden">
-
-            <span class="shrink-0 inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-navy/50">
-                <x-lucide-shield-check class="w-3.5 h-3.5 text-teal-dark" />
-                Buyer-friendly shopping
-            </span>
-
-            <span class="shrink-0 inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-navy/50">
-                <x-lucide-layout-grid class="w-3.5 h-3.5 text-teal-dark" />
-                Multi-category marketplace
-            </span>
-
-            <span class="shrink-0 inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-navy/50">
-                <x-lucide-badge-percent class="w-3.5 h-3.5 text-teal-dark" />
-                Deals and vouchers
-            </span>
-
-            <span class="shrink-0 inline-flex items-center gap-1.5 text-[9px] sm:text-[10px] font-medium text-navy/50">
-                <x-lucide-package-check class="w-3.5 h-3.5 text-teal-dark" />
-                Order tracking after checkout
-            </span>
-
-        </div>
-    </div>
-</section>
-
 
 {{-- =========================================================
     HERO — BRAND / PUBLIC DISCOVERY
@@ -247,7 +216,7 @@
             {{-- RIGHT: MARKETPLACE PHOTO MOSAIC --}}
             <div
                 style="--stagger-index: 2;"
-                class="stagger-item relative min-h-[390px] sm:min-h-[450px] lg:min-h-[490px]"
+                class="stagger-item relative min-h-97.5 sm:min-h-112.5 lg:min-h-122.5"
             >
                 <div class="absolute inset-[8%] rounded-[2.4rem] bg-teal/10 blur-3xl"></div>
 
@@ -258,7 +227,7 @@
                         class="w-full h-full object-cover"
                     >
 
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 bg-linear-to-t from-navy/80 via-transparent to-transparent"></div>
 
                     <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
                         <span class="inline-flex rounded-md {{ $landingHeroTiles[0]['accent'] }} px-2 py-1 text-[8px] font-bold text-white">
@@ -276,14 +245,14 @@
                 </div>
 
 
-                <div class="absolute right-[3%] top-[2%] w-[34%] h-[40%] overflow-hidden rounded-[1.5rem] border border-white bg-white shadow-[0_18px_46px_rgba(15,44,63,0.12)] landing-float-b">
+                <div class="absolute right-[3%] top-[2%] w-[34%] h-[40%] overflow-hidden rounded-3xl border border-white bg-white shadow-[0_18px_46px_rgba(15,44,63,0.12)] landing-float-b">
                     <img
                         src="{{ asset($landingHeroTiles[1]['image']) }}"
                         alt="{{ $landingHeroTiles[1]['label'] }}"
                         class="w-full h-full object-cover"
                     >
 
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy/75 via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 bg-linear-to-t from-navy/75 via-transparent to-transparent"></div>
 
                     <div class="absolute inset-x-0 bottom-0 p-3">
                         <p class="text-[11px] sm:text-[12px] font-bold text-white">
@@ -293,14 +262,14 @@
                 </div>
 
 
-                <div class="absolute left-[17%] bottom-[3%] w-[34%] h-[31%] overflow-hidden rounded-[1.5rem] border border-white bg-white shadow-[0_18px_46px_rgba(15,44,63,0.12)] landing-float-c">
+                <div class="absolute left-[17%] bottom-[3%] w-[34%] h-[31%] overflow-hidden rounded-3xl border border-white bg-white shadow-[0_18px_46px_rgba(15,44,63,0.12)] landing-float-c">
                     <img
                         src="{{ asset($landingHeroTiles[2]['image']) }}"
                         alt="{{ $landingHeroTiles[2]['label'] }}"
                         class="w-full h-full object-cover"
                     >
 
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy/75 via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 bg-linear-to-t from-navy/75 via-transparent to-transparent"></div>
 
                     <div class="absolute inset-x-0 bottom-0 p-3">
                         <p class="text-[11px] sm:text-[12px] font-bold text-white">
@@ -317,7 +286,7 @@
                         class="w-full h-full object-cover"
                     >
 
-                    <div class="absolute inset-0 bg-gradient-to-t from-navy/80 via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 bg-linear-to-t from-navy/80 via-transparent to-transparent"></div>
 
                     <div class="absolute inset-x-0 bottom-0 p-4">
                         <span class="inline-flex rounded-md bg-teal px-2 py-1 text-[8px] font-bold text-white">
@@ -450,7 +419,7 @@
                             </div>
                         @endif
 
-                        <div class="absolute inset-0 bg-gradient-to-t from-white via-white/82 to-white/30 group-hover:via-white/72 transition"></div>
+                        <div class="absolute inset-0 bg-linear-to-t from-white via-white/82 to-white/30 group-hover:via-white/72 transition"></div>
 
                         <div class="relative z-10 h-full min-h-31 sm:min-h-33 p-3 flex flex-col items-center justify-end text-center">
                             <span class="flex w-9 h-9 items-center justify-center rounded-xl bg-white text-teal-dark shadow-sm group-hover:bg-teal group-hover:text-white transition">

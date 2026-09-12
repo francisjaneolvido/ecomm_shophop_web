@@ -61,7 +61,7 @@
             {{-- FEATURE IMAGE --}}
             <a
                 href="#categories"
-                class="group relative min-h-[330px] sm:min-h-[390px] overflow-hidden rounded-2xl border border-gray-border bg-white reveal-up"
+                class="group relative min-h-82.5 sm:min-h-97.5 overflow-hidden rounded-2xl border border-gray-border bg-white reveal-up"
             >
                 <img
                     src="{{ asset($landingEditorial[0]['image']) }}"
@@ -69,12 +69,12 @@
                     class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-700"
                 >
 
-                <div class="absolute inset-0 bg-gradient-to-r from-navy/92 via-navy/52 to-navy/5"></div>
-                <div class="absolute inset-0 bg-gradient-to-t from-navy/35 via-transparent to-transparent"></div>
+                <div class="absolute inset-0 bg-linear-to-r from-navy/92 via-navy/52 to-navy/5"></div>
+                <div class="absolute inset-0 bg-linear-to-t from-navy/35 via-transparent to-transparent"></div>
 
-                <div class="relative z-10 h-full min-h-[330px] sm:min-h-[390px] p-5 sm:p-7 flex flex-col justify-end max-w-[72%]">
+                <div class="relative z-10 h-full min-h-82.5 sm:min-h-97.5 p-5 sm:p-7 flex flex-col justify-end max-w-[72%]">
 
-                    <span class="inline-flex w-fit rounded-md bg-teal px-2 py-1 text-[8px] font-bold tracking-[0.1em] text-white">
+                    <span class="inline-flex w-fit rounded-md bg-teal px-2 py-1 text-[8px] font-bold tracking-widest text-white">
                         {{ $landingEditorial[0]['label'] }}
                     </span>
 
@@ -101,7 +101,7 @@
                     <a
                         href="{{ $index === 0 ? '#trending' : '#categories' }}"
                         style="--reveal-delay: {{ ($index + 1) * 70 }}ms;"
-                        class="group relative min-h-[190px] overflow-hidden rounded-2xl border border-gray-border bg-white reveal-up"
+                        class="group relative min-h-47.5 overflow-hidden rounded-2xl border border-gray-border bg-white reveal-up"
                     >
                         <img
                             src="{{ asset($card['image']) }}"
@@ -109,7 +109,7 @@
                             class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-700"
                         >
 
-                        <div class="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/20 to-transparent"></div>
+                        <div class="absolute inset-0 bg-linear-to-t from-navy/90 via-navy/20 to-transparent"></div>
 
                         <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
                             <span class="text-[8px] font-bold tracking-[0.12em] text-teal">
@@ -129,157 +129,146 @@
 </section>
 
 
+
+
 {{-- =========================================================
-    LANDING-ONLY DISTINCTION: WHAT HAPPENS AFTER SIGN-IN
+    KEEP EXPLORING — LIGHT CATEGORY CTA
 ========================================================= --}}
-<section class="bg-white py-7 sm:py-8 lg:py-9 border-b border-gray-border/70">
+<section class="bg-white py-7 sm:py-8 lg:py-9">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="grid lg:grid-cols-[.82fr_1.18fr] gap-4 items-center">
-
-            <div class="reveal-up">
+        <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 mb-4 reveal-up">
+            <div>
                 <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.12em] text-teal-dark">
-                    ONE MARKETPLACE, DIFFERENT EXPERIENCES
+                    KEEP EXPLORING
                 </p>
 
-                <h2 class="mt-1 text-[22px] sm:text-[26px] lg:text-[29px] font-extrabold leading-[1.08] tracking-[-0.025em] text-navy">
-                    Browse publicly.
-                    <span class="block text-teal">
-                        Shop personally.
-                    </span>
+                <h2 class="mt-0.5 text-[20px] sm:text-[23px] lg:text-[26px] font-extrabold tracking-tight text-navy">
+                    Not sure where to start?
                 </h2>
 
-                <p class="mt-3 max-w-md text-[10px] sm:text-[11px] leading-relaxed text-navy/45">
-                    The landing page introduces ShopHop and helps anyone explore.
-                    After a buyer signs in, the experience shifts to orders, cart,
-                    wishlist, vouchers, recently viewed items, and personalized recommendations.
+                <p class="mt-1 text-[10px] sm:text-[11px] text-navy/45">
+                    Jump into a few ShopHop favorites and keep browsing from there.
                 </p>
-
-                <a
-                    href="#trending"
-                    data-login-required
-                    class="group ripple-surface mt-5 inline-flex items-center gap-2 rounded-xl bg-teal px-4 py-2.5 text-[10px] sm:text-[11px] font-bold text-white hover:bg-teal-dark transition"
-                >
-                    Sign In to Shop
-                    <x-lucide-log-in class="w-3.5 h-3.5" />
-                </a>
             </div>
 
-
-            <div class="grid sm:grid-cols-3 gap-2.5 buyer-stagger">
-
-                <div class="rounded-2xl border border-gray-border bg-gray-bg/70 p-4 sm:p-5">
-                    <span class="flex w-10 h-10 items-center justify-center rounded-xl bg-white text-teal-dark shadow-sm">
-                        <x-lucide-compass class="w-4.5 h-4.5" />
-                    </span>
-
-                    <p class="mt-3 text-[11px] sm:text-[12px] font-bold text-navy">
-                        Landing
-                    </p>
-
-                    <p class="mt-1 text-[8.5px] sm:text-[9.5px] leading-relaxed text-navy/40">
-                        Brand, categories, deals, trending products, and discovery.
-                    </p>
-                </div>
-
-
-                <div class="rounded-2xl border border-teal/20 bg-teal-light/45 p-4 sm:p-5">
-                    <span class="flex w-10 h-10 items-center justify-center rounded-xl bg-white text-teal-dark shadow-sm">
-                        <x-lucide-shopping-bag class="w-4.5 h-4.5" />
-                    </span>
-
-                    <p class="mt-3 text-[11px] sm:text-[12px] font-bold text-navy">
-                        Buyer
-                    </p>
-
-                    <p class="mt-1 text-[8.5px] sm:text-[9.5px] leading-relaxed text-navy/40">
-                        Personal orders, cart, wishlist, vouchers, history, and recommendations.
-                    </p>
-                </div>
-
-
-                <div class="rounded-2xl border border-gray-border bg-gray-bg/70 p-4 sm:p-5">
-                    <span class="flex w-10 h-10 items-center justify-center rounded-xl bg-white text-teal-dark shadow-sm">
-                        <x-lucide-store class="w-4.5 h-4.5" />
-                    </span>
-
-                    <p class="mt-3 text-[11px] sm:text-[12px] font-bold text-navy">
-                        Seller
-                    </p>
-
-                    <p class="mt-1 text-[8.5px] sm:text-[9.5px] leading-relaxed text-navy/40">
-                        Store management, inventory, orders, reports, and storefront tools.
-                    </p>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</section>
-
-
-{{-- =========================================================
-    FINAL CTA
-========================================================= --}}
-<section class="bg-gray-bg py-7 sm:py-8 lg:py-9">
-
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
-
-        <div
-            class="relative overflow-hidden rounded-3xl bg-navy p-6 sm:p-8 lg:p-10 reveal-up"
-            data-parallax-container
-        >
-            <img
-                src="{{ asset('images/category_icons_bg/electronics_gadgets/cctv.jpg') }}"
-                alt=""
-                class="absolute inset-y-0 right-0 hidden md:block w-[42%] h-full object-cover opacity-25"
+            <a
+                href="#categories"
+                class="hidden sm:inline-flex items-center gap-1.5 text-[10.5px] font-semibold text-teal-dark hover:text-navy transition"
             >
-
-            <div class="absolute inset-0 bg-gradient-to-r from-navy via-navy/95 to-navy/55"></div>
-
-            <div class="absolute -left-20 -top-20 w-52 h-52 rounded-full bg-teal/15 blur-2xl" data-parallax="12"></div>
-            <div class="absolute right-[26%] -bottom-24 w-56 h-56 rounded-full bg-sky/10 blur-2xl" data-parallax="-10"></div>
-
-
-            <div class="relative max-w-xl">
-
-                <span class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[8.5px] font-bold tracking-[0.12em] text-teal">
-                    <x-lucide-shopping-bag class="w-3 h-3" />
-                    SHOPHOP
-                </span>
-
-                <h2 class="mt-4 text-[24px] sm:text-[29px] lg:text-[32px] font-extrabold leading-[1.06] tracking-[-0.03em] text-white">
-                    Ready to find your next favorite?
-                </h2>
-
-                <p class="mt-2.5 max-w-lg text-[10px] sm:text-[11px] leading-relaxed text-white/55">
-                    Explore the marketplace now, then sign in when you are ready to save products, add to cart, and manage purchases.
-                </p>
-
-                <div class="mt-5 flex flex-wrap gap-2.5">
-
-                    <a
-                        href="#trending"
-                        data-login-required
-                        class="group ripple-surface inline-flex items-center gap-2 rounded-xl bg-teal px-4 py-2.5 text-[10px] sm:text-[11px] font-bold text-white hover:bg-teal-dark transition"
-                    >
-                        Sign In & Start Shopping
-                        <x-lucide-arrow-right class="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                    </a>
-
-                    <a
-                        href="#categories"
-                        class="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-[10px] sm:text-[11px] font-semibold text-white/80 hover:bg-white/15 hover:text-white transition"
-                    >
-                        Browse First
-                    </a>
-
-                </div>
-            </div>
+                View all categories
+                <x-lucide-arrow-right class="w-3.5 h-3.5" />
+            </a>
         </div>
+
+
+        <div class="grid md:grid-cols-3 gap-3">
+
+            <a
+                href="#trending"
+                class="group relative min-h-47.5 sm:min-h-55 overflow-hidden rounded-2xl border border-gray-border bg-gray-bg reveal-up"
+            >
+                <img
+                    src="{{ asset('images/category_icons_bg/electronics_gadgets/cctv.jpg') }}"
+                    alt="Electronics and smart home products"
+                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-700"
+                >
+
+                <div class="absolute inset-0 bg-linear-to-t from-navy/90 via-navy/20 to-transparent"></div>
+
+                <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <span class="inline-flex rounded-md bg-teal px-2 py-1 text-[8px] font-bold text-white">
+                        TECH PICKS
+                    </span>
+
+                    <p class="mt-2 text-[15px] sm:text-[17px] font-bold text-white">
+                        Electronics & Smart Home
+                    </p>
+
+                    <span class="mt-1.5 inline-flex items-center gap-1 text-[9px] font-semibold text-teal">
+                        Explore products
+                        <x-lucide-arrow-right class="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                    </span>
+                </div>
+            </a>
+
+
+            <a
+                href="#trending"
+                class="group relative min-h-47.5 sm:min-h-55 overflow-hidden rounded-2xl border border-gray-border bg-gray-bg reveal-up"
+                style="--reveal-delay: 70ms;"
+            >
+                <img
+                    src="{{ asset('images/category_icons_bg/food_gourmet/chips.jpg') }}"
+                    alt="Food and gourmet products"
+                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-700"
+                >
+
+                <div class="absolute inset-0 bg-linear-to-t from-navy/90 via-navy/20 to-transparent"></div>
+
+                <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <span class="inline-flex rounded-md bg-coral px-2 py-1 text-[8px] font-bold text-white">
+                        SNACK TIME
+                    </span>
+
+                    <p class="mt-2 text-[15px] sm:text-[17px] font-bold text-white">
+                        Food & Gourmet
+                    </p>
+
+                    <span class="mt-1.5 inline-flex items-center gap-1 text-[9px] font-semibold text-teal">
+                        Browse favorites
+                        <x-lucide-arrow-right class="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                    </span>
+                </div>
+            </a>
+
+
+            <a
+                href="#new-arrivals"
+                class="group relative min-h-47.5 sm:min-h-55 overflow-hidden rounded-2xl border border-gray-border bg-gray-bg reveal-up"
+                style="--reveal-delay: 140ms;"
+            >
+                <img
+                    src="{{ asset('images/category_icons_bg/furniture_office/tablelamps.jpg') }}"
+                    alt="Home and office products"
+                    class="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-700"
+                >
+
+                <div class="absolute inset-0 bg-linear-to-t from-navy/90 via-navy/20 to-transparent"></div>
+
+                <div class="absolute inset-x-0 bottom-0 p-4 sm:p-5">
+                    <span class="inline-flex rounded-md bg-sky px-2 py-1 text-[8px] font-bold text-white">
+                        HOME FINDS
+                    </span>
+
+                    <p class="mt-2 text-[15px] sm:text-[17px] font-bold text-white">
+                        Home & Office
+                    </p>
+
+                    <span class="mt-1.5 inline-flex items-center gap-1 text-[9px] font-semibold text-teal">
+                        See fresh finds
+                        <x-lucide-arrow-right class="w-3 h-3 transition-transform group-hover:translate-x-1" />
+                    </span>
+                </div>
+            </a>
+
+        </div>
+
+
+        <div class="mt-4 sm:hidden">
+            <a
+                href="#categories"
+                class="inline-flex items-center gap-1.5 text-[10px] font-semibold text-teal-dark"
+            >
+                View all categories
+                <x-lucide-arrow-right class="w-3.5 h-3.5" />
+            </a>
+        </div>
+
     </div>
 </section>
+
 
 
 {{-- =========================================================
