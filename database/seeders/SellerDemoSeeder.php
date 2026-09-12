@@ -2,13 +2,13 @@
 
 namespace Database\Seeders;
 
-use App\Models\Buyer;
+use App\Models\Seller;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
-class BuyerDemoSeeder extends Seeder
+class SellerDemoSeeder extends Seeder
 {
     public function run(): void
     {
@@ -16,28 +16,29 @@ class BuyerDemoSeeder extends Seeder
 
             $user = User::updateOrCreate(
                 [
-                    'email' => 'buyer@shophop.test',
+                    'email' => 'seller@shophop.test',
                 ],
                 [
-                    'password' => Hash::make('Buyer1234'),
+                    'password' => Hash::make('Seller1234'),
                     'email_verified_at' => now(),
-                    'account_type' => 'buyer',
+                    'account_type' => 'seller',
                     'status' => 'approved',
                 ]
             );
 
-            Buyer::updateOrCreate(
+            Seller::updateOrCreate(
                 [
                     'user_id' => $user->id,
                 ],
                 [
                     'first_name' => 'Demo',
-                    'last_name' => 'Buyer',
+                    'last_name' => 'Seller',
                     'middle_initial' => null,
-                    'sex' => 'Female',
 
-                    'contact_no' => '09123456789',
-                    'birthday' => '2002-05-15',
+                    'sex' => 'Male',
+
+                    'contact_no' => '09987654321',
+                    'birthday' => '1998-08-20',
 
                     'province_code' => '0434',
                     'province_name' => 'Laguna',
@@ -48,17 +49,16 @@ class BuyerDemoSeeder extends Seeder
                     'barangay_code' => '043405001',
                     'barangay_name' => 'Barangay 1',
 
-                    'street_address' => '123 Demo Street',
+                    'street_address' => '456 Seller Avenue',
 
-                    /*
-                    |--------------------------------------------------------------------------
-                    | Demo document
-                    |--------------------------------------------------------------------------
-                    | String path lang muna para ma-satisfy ang profile record.
-                    | Maaari natin palitan later ng real demo document.
-                    */
+                    'business_name' => 'ShopHop Demo Store',
 
-                    'valid_id_path' => 'seeders/demo-buyer-valid-id.jpg',
+                    'business_category' => 'Electronics and Gadgets',
+
+                    'valid_id_path' => 'seeders/demo-seller-valid-id.jpg',
+
+                    'business_permit_path' =>
+                        'seeders/demo-seller-business-permit.jpg',
                 ]
             );
         });
