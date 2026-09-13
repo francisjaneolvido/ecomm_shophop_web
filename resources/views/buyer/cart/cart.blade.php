@@ -3,117 +3,11 @@
 @extends('layouts.app')
 
 @php
-    /*
-    |--------------------------------------------------------------------------
-    | TEMPORARY PREVIEW DATA
-    |--------------------------------------------------------------------------
-    | Replace these arrays with session / DB cart data once your cart backend
-    | is connected. The UI + JS below already supports selection, quantity,
-    | bulk delete, vouchers, totals, and checkout query building.
-    */
-
-    $buyNowProductId = request()->query('buy_now');
-    $buyNowQty = max(1, (int) request()->query('qty', 1));
-
-    $cartGroups = collect([
-        [
-            'shop' => [
-                'id' => 1,
-                'name' => 'ShopHop Tech Store',
-                'response_rate' => '96%',
-                'preferred' => true,
-            ],
-            'items' => [
-                [
-                    'id' => 1,
-                    'name' => 'Wireless Earbuds Pro with ENC Noise Reduction & Charging Case',
-                    'image' => 'images/hero/earbuds.jpg',
-                    'variant' => 'Black, Earbuds Only',
-                    'price' => 1299,
-                    'original_price' => 1699,
-                    'qty' => 1,
-                    'stock' => 42,
-                ],
-                [
-                    'id' => 2,
-                    'name' => 'ShopHop Fitness Watch, Heart Rate & Sleep Tracking',
-                    'image' => 'images/hero/watch.jpg',
-                    'variant' => 'Midnight Black, 44mm',
-                    'price' => 2499,
-                    'original_price' => null,
-                    'qty' => 1,
-                    'stock' => 15,
-                ],
-            ],
-        ],
-        [
-            'shop' => [
-                'id' => 2,
-                'name' => 'StepUp Footwear PH',
-                'response_rate' => '89%',
-                'preferred' => false,
-            ],
-            'items' => [
-                [
-                    'id' => 3,
-                    'name' => 'Everyday Running Sneakers, Lightweight & Breathable',
-                    'image' => 'images/hero/sneaker.jpg',
-                    'variant' => 'White, Size 9',
-                    'price' => 1899,
-                    'original_price' => 2199,
-                    'qty' => 1,
-                    'stock' => 8,
-                ],
-            ],
-        ],
-    ]);
-
-    $vouchers = collect([
-        [
-            'code' => 'SHOPHOP100',
-            'title' => '₱100 Off',
-            'description' => 'Save ₱100 when you spend at least ₱1,000.',
-            'type' => 'fixed',
-            'value' => 100,
-            'min_spend' => 1000,
-            'max_discount' => null,
-        ],
-        [
-            'code' => 'WELCOME10',
-            'title' => '10% Off',
-            'description' => '10% off orders ₱500+, up to ₱200.',
-            'type' => 'percent',
-            'value' => 10,
-            'min_spend' => 500,
-            'max_discount' => 200,
-        ],
-        [
-            'code' => 'SAVE50',
-            'title' => '₱50 Off',
-            'description' => 'Save ₱50 when you spend at least ₱699.',
-            'type' => 'fixed',
-            'value' => 50,
-            'min_spend' => 699,
-            'max_discount' => null,
-        ],
-    ]);
-
-    // Buy Now preview: keep only the clicked item preselected and sync qty.
-    if ($buyNowProductId) {
-        $cartGroups = $cartGroups->map(function ($group) use ($buyNowProductId, $buyNowQty) {
-            $group['items'] = collect($group['items'])->map(function ($item) use ($buyNowProductId, $buyNowQty) {
-                if ((string) $item['id'] === (string) $buyNowProductId) {
-                    $item['qty'] = min($item['stock'], $buyNowQty);
-                }
-
-                return $item;
-            })->all();
-
-            return $group;
-        });
-    }
-
-    $cartItemCount = $cartGroups->sum(fn ($group) => count($group['items']));
+    // Data comes straight from CartController@index:
+    //   $cartGroups   -> session cart grouped by shop (line_key based)
+    //   $vouchers     -> static voucher list
+    //   $cartItemCount
+    //   $buyNowLineKey -> line_key of the item that came from "Buy Now", if any
 @endphp
 
 @section('title', 'My Cart - ShopHop')
@@ -198,7 +92,7 @@
 
                 {{-- Empty cart --}}
                 <div id="emptyCartState"
-                     class="hidden bg-white border border-gray-border rounded-2xl py-12 px-4 flex-col items-center text-center shadow-sm">
+                     class="{{ count($cartGroups) === 0 ? 'flex' : 'hidden' }} bg-white border border-gray-border rounded-2xl py-12 px-4 flex-col items-center text-center shadow-sm">
 
                     <div class="w-12 h-12 rounded-xl bg-teal-light text-teal-dark flex items-center justify-center mb-3">
                         <x-lucide-shopping-cart class="w-5 h-5" />
@@ -264,8 +158,8 @@
 
                             @foreach ($group['items'] as $item)
                                 @php
-                                    $isPreselected = $buyNowProductId
-                                        ? ((string) $item['id'] === (string) $buyNowProductId)
+                                    $isPreselected = $buyNowLineKey
+                                        ? ((string) $item['line_key'] === (string) $buyNowLineKey)
                                         : true;
 
                                     $discountPercent = $item['original_price']
@@ -274,7 +168,7 @@
                                 @endphp
 
                                 <article class="cart-item px-3.5 sm:px-4 py-3.5"
-                                         data-item-id="{{ $item['id'] }}"
+                                         data-line-key="{{ $item['line_key'] }}"
                                          data-shop="{{ $groupIndex }}"
                                          data-price="{{ $item['price'] }}"
                                          data-original-price="{{ $item['original_price'] ?? $item['price'] }}">
@@ -283,7 +177,7 @@
 
                                         <input type="checkbox"
                                                class="item-checkbox w-3.5 h-3.5 rounded accent-teal mt-1 shrink-0"
-                                               data-item-id="{{ $item['id'] }}"
+                                               data-line-key="{{ $item['line_key'] }}"
                                                data-shop="{{ $groupIndex }}"
                                                {{ $isPreselected ? 'checked' : '' }}>
 
@@ -356,7 +250,7 @@
                                                     class="item-delete-btn w-7 h-7 rounded-lg
                                                            text-navy/30 hover:text-red-500 hover:bg-red-50
                                                            flex items-center justify-center transition"
-                                                    data-item-id="{{ $item['id'] }}"
+                                                    data-line-key="{{ $item['line_key'] }}"
                                                     aria-label="Remove {{ $item['name'] }}">
                                                 <x-lucide-trash-2 class="w-3.5 h-3.5" />
                                             </button>
@@ -392,7 +286,7 @@
                                         <button type="button"
                                                 class="item-delete-btn inline-flex items-center gap-1 text-[9px] text-navy/35
                                                        hover:text-red-500 transition"
-                                                data-item-id="{{ $item['id'] }}">
+                                                data-line-key="{{ $item['line_key'] }}">
                                             <x-lucide-trash-2 class="w-3 h-3" />
                                             Remove
                                         </button>
@@ -410,6 +304,8 @@
 
             {{-- =================================================
                 RIGHT — VOUCHER + ORDER SUMMARY
+                (voucher list stays hardcoded, comes from
+                CartController@vouchers())
             ================================================== --}}
             <aside class="space-y-3 lg:sticky lg:top-4">
 
@@ -638,6 +534,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const cartToast = document.getElementById('cartToast');
 
+    // NOTE: assumes <meta name="csrf-token" content="{{ csrf_token() }}">
+    // is present in the shared layout head.
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+
+    const CART_UPDATE_URL_TEMPLATE = @json(route('buyer.cart.update', ['lineKey' => '__LINE_KEY__']));
+    const CART_REMOVE_URL_TEMPLATE = @json(route('buyer.cart.remove', ['lineKey' => '__LINE_KEY__']));
+    const CART_REMOVE_MANY_URL = @json(route('buyer.cart.removeMany'));
+
     let activeVoucher = null;
     let currentSubtotal = 0;
     let currentVoucherDiscount = 0;
@@ -661,6 +565,31 @@ document.addEventListener('DOMContentLoaded', function () {
             cartToast.classList.remove('translate-y-0', 'opacity-100');
             cartToast.classList.add('translate-y-6', 'opacity-0');
         }, 2200);
+    }
+
+
+    async function apiRequest(url, options = {}) {
+        try {
+            const response = await fetch(url, {
+                method: options.method || 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                body: options.body ? JSON.stringify(options.body) : undefined,
+            });
+
+            if (!response.ok) {
+                throw new Error('Request failed: ' + response.status);
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error(error);
+            showToast('Something went wrong. Please try again.');
+            return null;
+        }
     }
 
 
@@ -811,25 +740,38 @@ document.addEventListener('DOMContentLoaded', function () {
         const decreaseButtons = row.querySelectorAll('[data-qty-decrease]');
         const increaseButtons = row.querySelectorAll('[data-qty-increase]');
         const qtyInputs = row.querySelectorAll('[data-qty-input]');
+        const lineKey = row.dataset.lineKey;
+
+        function persistQty() {
+            const qty = getRowQty(row);
+            const url = CART_UPDATE_URL_TEMPLATE.replace('__LINE_KEY__', encodeURIComponent(lineKey));
+
+            apiRequest(url, {
+                method: 'PATCH',
+                body: { qty: qty },
+            });
+
+            recalc();
+        }
 
         decreaseButtons.forEach(function (button) {
             button.addEventListener('click', function () {
                 setRowQty(row, getRowQty(row) - 1);
-                recalc();
+                persistQty();
             });
         });
 
         increaseButtons.forEach(function (button) {
             button.addEventListener('click', function () {
                 setRowQty(row, getRowQty(row) + 1);
-                recalc();
+                persistQty();
             });
         });
 
         qtyInputs.forEach(function (input) {
             input.addEventListener('change', function () {
                 setRowQty(row, parseInt(input.value, 10) || 1);
-                recalc();
+                persistQty();
             });
         });
     }
@@ -837,20 +779,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function bindItemDelete(btn) {
         btn.addEventListener('click', function () {
-            const itemId = btn.dataset.itemId;
+            const lineKey = btn.dataset.lineKey;
 
             if (!confirm('Remove this item from your cart?')) return;
 
-            removeItem(itemId);
+            removeItem(lineKey);
             showToast('Item removed from cart.');
         });
     }
 
 
-    // Frontend preview only.
-    // TODO: send DELETE request to your real cart endpoint.
-    function removeItem(itemId) {
-        const row = document.querySelector('.cart-item[data-item-id="' + itemId + '"]');
+    function removeItem(lineKey) {
+        const row = document.querySelector('.cart-item[data-line-key="' + lineKey + '"]');
+        const url = CART_REMOVE_URL_TEMPLATE.replace('__LINE_KEY__', encodeURIComponent(lineKey));
+
+        apiRequest(url, {
+            method: 'DELETE',
+        });
 
         if (!row) return;
 
@@ -867,20 +812,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function deleteSelected() {
-        const selectedIds = Array.from(currentItemCheckboxes())
+        const selectedKeys = Array.from(currentItemCheckboxes())
             .filter(function (cb) { return cb.checked; })
-            .map(function (cb) { return cb.dataset.itemId; });
+            .map(function (cb) { return cb.dataset.lineKey; });
 
-        if (selectedIds.length === 0) return;
+        if (selectedKeys.length === 0) return;
 
-        const label = selectedIds.length === 1
+        const label = selectedKeys.length === 1
             ? 'this item'
-            : 'these ' + selectedIds.length + ' items';
+            : 'these ' + selectedKeys.length + ' items';
 
         if (!confirm('Remove ' + label + ' from your cart?')) return;
 
-        selectedIds.forEach(removeItem);
+        apiRequest(CART_REMOVE_MANY_URL, {
+            method: 'POST',
+            body: { keys: selectedKeys },
+        });
 
+        selectedKeys.forEach(function (lineKey) {
+            const row = document.querySelector('.cart-item[data-line-key="' + lineKey + '"]');
+            if (!row) return;
+
+            const group = row.closest('.cart-shop-group');
+            row.remove();
+
+            if (group && group.querySelectorAll('.cart-item').length === 0) {
+                group.remove();
+            }
+        });
+
+        recalc();
         showToast('Selected items removed.');
     }
 
@@ -970,10 +931,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
         selected.forEach(function (cb) {
             const row = cb.closest('.cart-item');
-            const itemId = cb.dataset.itemId;
+            const lineKey = cb.dataset.lineKey;
 
-            params.append('items[]', itemId);
-            params.append('qty[' + itemId + ']', getRowQty(row));
+            params.append('items[]', lineKey);
+            params.append('qty[' + lineKey + ']', getRowQty(row));
         });
 
         if (activeVoucher && currentVoucherDiscount > 0) {

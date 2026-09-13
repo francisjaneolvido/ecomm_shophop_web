@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Buyer\ShowProductDetails_Controller as BuyerProductController;
 use App\Http\Controllers\Buyer\CategoryController as BuyerCategoryController;
+use App\Http\Controllers\Buyer\CartController as BuyerCartController;
 
 
 /*
@@ -84,11 +85,39 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         | Cart
         |--------------------------------------------------------------------------
+        | Wired to CartController so the session cart (add/update/remove)
+        | actually persists and renders on /buyer/cart.
         */
 
-        Route::get('/cart', function () {
-            return view('buyer.cart.cart');
-        })->name('cart');
+        Route::get('/cart', [
+            BuyerCartController::class,
+            'index',
+        ])->name('cart');
+
+        Route::post('/cart/add', [
+            BuyerCartController::class,
+            'add',
+        ])->name('cart.add');
+
+        Route::patch('/cart/{lineKey}', [
+            BuyerCartController::class,
+            'update',
+        ])->name('cart.update');
+
+        Route::delete('/cart/{lineKey}', [
+            BuyerCartController::class,
+            'remove',
+        ])->name('cart.remove');
+
+        Route::post('/cart/remove-many', [
+            BuyerCartController::class,
+            'removeMany',
+        ])->name('cart.removeMany');
+
+        Route::get('/cart/count', [
+            BuyerCartController::class,
+            'count',
+        ])->name('cart.count');
 
 
         /*

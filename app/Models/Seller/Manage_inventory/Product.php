@@ -2,7 +2,10 @@
 
 namespace App\Models\Seller\Manage_inventory;
 
+use App\Models\Buyer\Order\OrderItem;
+use App\Models\Buyer\Review\Review;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -33,6 +36,11 @@ class Product extends Model
         'low_stock_threshold' => 'integer',
     ];
 
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Seller::class, 'seller_id');
+    }
+
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class);
@@ -46,5 +54,15 @@ class Product extends Model
     public function vouchers(): BelongsToMany
     {
         return $this->belongsToMany(Voucher::class, 'voucher_product');
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    public function orderItems(): HasMany
+    {
+        return $this->hasMany(OrderItem::class);
     }
 }

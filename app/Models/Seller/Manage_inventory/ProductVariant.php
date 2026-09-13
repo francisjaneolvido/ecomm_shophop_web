@@ -12,6 +12,7 @@ class ProductVariant extends Model
     protected $fillable = [
         'product_id',
         'name',
+        'attributes',
         'sku',
         'price',
         'stock',
@@ -19,6 +20,7 @@ class ProductVariant extends Model
     ];
 
     protected $casts = [
+        'attributes' => 'array',
         'price' => 'decimal:2',
         'stock' => 'integer',
     ];
