@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('product_variants', 'attributes')) {
+            return;
+        }
+
         Schema::table('product_variants', function (Blueprint $table) {
             $table->json('attributes')->nullable()->after('name');
         });

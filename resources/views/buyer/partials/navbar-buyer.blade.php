@@ -189,6 +189,8 @@
                     </div>
                 </div>
 
+                @include('partials.theme-toggle')
+
                 <button type="button" data-mobile-menu-toggle aria-label="Open navigation menu" aria-expanded="false"
                         class="xl:hidden w-8 h-8 flex items-center justify-center rounded-full text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                     <x-lucide-menu class="w-4.5 h-4.5" />
@@ -289,6 +291,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!toggle || !panel) return;
 
         let closeTimer = null;
+        let openedByToggle = false;
 
         function openMenu() {
             if (closeTimer) clearTimeout(closeTimer);
@@ -308,15 +311,22 @@ document.addEventListener('DOMContentLoaded', function () {
         function closeMenu() {
             panel.classList.add('hidden');
             toggle.setAttribute('aria-expanded', 'false');
+            openedByToggle = false;
         }
 
         function closeMenuDelayed() {
             closeTimer = setTimeout(function () { closeMenu(); }, 160);
         }
 
-        menu.addEventListener('mouseenter', openMenu);
+        menu.addEventListener('mouseenter', function () {
+            openedByToggle = false;
+            openMenu();
+        });
         menu.addEventListener('mouseleave', closeMenuDelayed);
-        menu.addEventListener('focusin', openMenu);
+        menu.addEventListener('focusin', function () {
+            openedByToggle = false;
+            openMenu();
+        });
         menu.addEventListener('focusout', function (event) {
             if (!menu.contains(event.relatedTarget)) closeMenuDelayed();
         });
@@ -324,7 +334,12 @@ document.addEventListener('DOMContentLoaded', function () {
         toggle.addEventListener('click', function (event) {
             event.stopPropagation();
             const isOpen = !panel.classList.contains('hidden');
-            if (isOpen) closeMenu(); else openMenu();
+            if (isOpen && openedByToggle) {
+                closeMenu();
+            } else {
+                openMenu();
+                openedByToggle = true;
+            }
         });
 
         panel.addEventListener('click', function (event) { event.stopPropagation(); });

@@ -1,4 +1,3 @@
-@push('scripts')
 <script>
     (function () {
 
@@ -57,11 +56,6 @@
 
             if (dialog) {
                 dialog.scrollTo({ top: 0 });
-            }
-
-            if (!provincesLoaded) {
-                provincesLoaded = true;
-                loadProvinces();
             }
 
             window.setTimeout(function () {
@@ -918,7 +912,14 @@
 
 
         document.getElementById('buyer-step1-next').addEventListener('click', function () {
-            if (validateStep1()) goToStep(2);
+            if (validateStep1()) {
+                // Performance: defer the remote province request until Step 2 is needed.
+                if (!provincesLoaded) {
+                    provincesLoaded = true;
+                    loadProvinces();
+                }
+                goToStep(2);
+            }
         });
 
         document.getElementById('buyer-step2-back').addEventListener('click', function () {
@@ -1187,4 +1188,3 @@
 
     })();
 </script>
-@endpush

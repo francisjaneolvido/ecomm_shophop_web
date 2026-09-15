@@ -1,4 +1,3 @@
-@push('scripts')
 <script>
     (function () {
 
@@ -54,11 +53,6 @@
 
                 });
             });
-
-            if (!addressLoaded) {
-                addressLoaded = true;
-                initRegions();
-            }
 
             window.setTimeout(function () {
                 const firstField = document.getElementById('logistics_agreement_rep_name');
@@ -1108,7 +1102,14 @@
         }
 
         document.getElementById('logistics-step1-next').addEventListener('click', function () {
-            if (validateStep1()) goToStep(2);
+            if (validateStep1()) {
+                // Performance: defer regional data until the address step is needed.
+                if (!addressLoaded) {
+                    addressLoaded = true;
+                    initRegions();
+                }
+                goToStep(2);
+            }
         });
 
         document.getElementById('logistics-step2-back').addEventListener('click', function () { goToStep(1); });
@@ -1462,4 +1463,3 @@
 
     })();
 </script>
-@endpush

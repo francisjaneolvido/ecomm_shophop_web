@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\AccountManagementController;
 
 Route::prefix('admin')
     ->name('admin.')
+    ->middleware(['auth', 'approved.role:admin'])
     ->group(function () {
 
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
@@ -85,7 +86,4 @@ Route::prefix('admin')
         Route::patch('/accounts/{admin}/enable', [AccountManagementController::class, 'enable'])
             ->name('accounts.enable');
 
-        Route::get('/logout', function () {
-            return redirect('/');
-        })->name('logout');
-    });
+});

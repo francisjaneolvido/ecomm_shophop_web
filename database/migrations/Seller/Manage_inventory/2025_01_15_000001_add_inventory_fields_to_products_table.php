@@ -8,6 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (! Schema::hasTable('products')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table) {
             $table->string('sku')->nullable()->unique()->after('name');
             $table->unsignedInteger('low_stock_threshold')->nullable()->after('stock');
@@ -17,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (! Schema::hasTable('products')) {
+            return;
+        }
+
         Schema::table('products', function (Blueprint $table) {
             $table->dropColumn(['sku', 'low_stock_threshold', 'has_variants']);
         });

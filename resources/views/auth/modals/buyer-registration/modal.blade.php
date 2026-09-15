@@ -56,7 +56,7 @@
         role="dialog"
         aria-modal="true"
         aria-labelledby="buyer-registration-modal-title"
-        class="relative z-10
+        class="shophop-registration-dialog relative z-10
                w-full h-full
                sm:h-auto
                sm:max-h-[calc(100vh-2rem)]
@@ -146,7 +146,7 @@
                 RIGHT REGISTRATION PANEL (70%)
             ================================================== --}}
             <div
-                class="bg-linear-to-b from-white via-white to-gray-bg/30
+                class="shophop-registration-form-panel bg-linear-to-b from-white via-white to-gray-bg/30
                        px-5 sm:px-8 lg:px-10 xl:px-12
                        py-6 sm:py-8 lg:py-10"
             >
@@ -1230,4 +1230,3 @@
         </div>
     </div>
 </div>
-

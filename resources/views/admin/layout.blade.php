@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    @include('partials.theme-head')
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Admin') - ShopHop Admin</title>
@@ -342,6 +344,8 @@
 
 <body class="bg-gray-bg text-navy antialiased">
 
+@includeWhen(app()->environment('local'), 'dev.account-switcher')
+
 <div
     id="adminShell"
     data-sidebar-collapsed="false"
@@ -625,17 +629,19 @@
             </div>
 
 
-            <a
-                href="{{ route('admin.logout') }}"
-                class="sidebar-nav-link
-                       group
-                       flex items-center gap-3
-                       px-3 py-2.5 rounded-xl
-                       text-[12px] font-medium
-                       text-white/45
-                       hover:bg-red-400/10 hover:text-red-300
-                       transition"
-            >
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="sidebar-nav-link
+                               group
+                               flex w-full items-center gap-3
+                               px-3 py-2.5 rounded-xl
+                               text-left text-[12px] font-medium
+                               text-white/45
+                               hover:bg-red-400/10 hover:text-red-300
+                               transition"
+                    >
                 <span
                     class="w-8 h-8 rounded-lg
                            flex items-center justify-center
@@ -648,7 +654,8 @@
                 <span class="sidebar-expanded-only">
                     Log Out
                 </span>
-            </a>
+                </button>
+            </form>
 
         </div>
 
@@ -724,6 +731,8 @@
 
 
             <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
+
+                @include('partials.theme-toggle')
 
                 {{-- Visit site --}}
                 <a
@@ -933,17 +942,20 @@
 
                         <div class="p-1.5 border-t border-gray-border">
 
-                            <a
-                                href="{{ route('admin.logout') }}"
-                                class="flex items-center gap-2.5
-                                       px-2.5 py-2 rounded-lg
-                                       text-[10px] font-medium text-red-500
-                                       hover:bg-red-50
-                                       transition"
-                            >
-                                <x-lucide-log-out class="w-3.5 h-3.5" />
-                                Log Out
-                            </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button
+                        type="submit"
+                        class="flex w-full items-center gap-2.5
+                               px-2.5 py-2 rounded-lg
+                               text-left text-[10px] font-medium text-red-500
+                               hover:bg-red-50
+                               transition"
+                    >
+                        <x-lucide-log-out class="w-3.5 h-3.5" />
+                        Log Out
+                    </button>
+                </form>
 
                         </div>
                     </div>

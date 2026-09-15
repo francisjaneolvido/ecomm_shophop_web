@@ -342,23 +342,14 @@
     }
 
     .landing-float-a {
-        animation: landingFloatA 6s ease-in-out infinite;
+        animation: landingFloatA 10s ease-in-out infinite;
     }
 
-    .landing-float-b {
-        animation: landingFloatB 5.2s ease-in-out infinite;
-    }
-
-    .landing-float-c {
-        animation: landingFloatC 5.8s ease-in-out infinite .6s;
-    }
-
-    .landing-float-d {
-        animation: landingFloatD 6.4s ease-in-out infinite .9s;
-    }
-
+    .landing-float-b,
+    .landing-float-c,
+    .landing-float-d,
     .landing-chip {
-        animation: landingChip 4.5s ease-in-out infinite;
+        animation: none;
     }
 
 
@@ -401,6 +392,17 @@
         animation-name: landingCategorySlide;
         animation-timing-function: ease-in-out;
         animation-iteration-count: infinite;
+    }
+
+    /* Performance: category photo slides created 70 perpetual animations.
+       Keep the first image visible; horizontal category navigation remains intact. */
+    .landing-category-slide {
+        animation: none;
+    }
+
+    .landing-category-slide:first-child {
+        opacity: 1;
+        transform: none;
     }
 
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Seller\Manage_inventory\Product;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -53,6 +54,12 @@ class DashboardController extends Controller
         return Product::query()
             ->where('status', 'active')
             ->where('stock', '>', 0);
+    }
+
+    private function productsTableIsAvailable(): bool
+    {
+        // The dashboard already has empty-state fallbacks when local demo data has no catalog.
+        return Schema::hasTable((new Product())->getTable());
     }
 
 
@@ -127,6 +134,10 @@ class DashboardController extends Controller
      */
     private function getTrendingProducts(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->latest()
             ->take(4)
@@ -143,6 +154,10 @@ class DashboardController extends Controller
      */
     private function getRecommendedProducts(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->inRandomOrder()
             ->take(5)
@@ -157,6 +172,10 @@ class DashboardController extends Controller
      */
     private function getDealProducts(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->where('discount', '>', 0)
             ->latest()
@@ -172,6 +191,10 @@ class DashboardController extends Controller
      */
     private function getNewArrivals(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->latest()
             ->take(5)
@@ -191,6 +214,10 @@ class DashboardController extends Controller
      */
     private function getRecentlyViewed(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->inRandomOrder()
             ->take(5)

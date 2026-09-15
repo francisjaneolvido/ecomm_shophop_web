@@ -10,6 +10,8 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    @include('partials.theme-head')
+
     <meta
         name="csrf-token"
         content="{{ csrf_token() }}"
@@ -361,6 +363,8 @@
 
 
 <body class="bg-gray-bg text-navy antialiased">
+
+@includeWhen(app()->environment('local'), 'dev.account-switcher')
 
 <div
     id="logisticsShell"
@@ -923,6 +927,8 @@
                        flex items-center
                        gap-2"
             >
+
+                @include('partials.theme-toggle')
 
                 {{-- Website --}}
                 

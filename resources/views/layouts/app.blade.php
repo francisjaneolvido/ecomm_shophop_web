@@ -11,8 +11,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    {{-- Matches navy brand color in mobile browser chrome / PWA task switcher --}}
-    <meta name="theme-color" content="#0B1B33">
+    @include('partials.theme-head')
 
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
 
@@ -58,6 +57,8 @@
 
 <body class="min-h-screen bg-white text-navy font-poppins antialiased selection:bg-teal/20 selection:text-navy">
 
+    @includeWhen(app()->environment('local'), 'dev.account-switcher')
+
 
     {{-- ========================================
         NAVBAR
@@ -102,9 +103,23 @@
 
     @include('auth.modals.login-modal')
     @include('auth.modals.account-type-modal')
-    @include('auth.modals.buyer-registration-modal')
-    @include('auth.modals.seller-registration-modal')
-    @include('auth.modals.logistics-registration-modal')
+    <div id="registration-modal-host"></div>
+    {{-- Performance: keep large registration DOM inert until the user selects a role. --}}
+    <template id="buyer-registration-template">@include('auth.modals.buyer-registration-modal')</template>
+    <template id="seller-registration-template">@include('auth.modals.seller-registration-modal')</template>
+    <template id="logistics-registration-template">@include('auth.modals.logistics-registration-modal')</template>
+    <script>
+        document.addEventListener('shophop:open-registration-modal', function (event) {
+            const type = event.detail && event.detail.type;
+            const host = document.getElementById('registration-modal-host');
+            const template = document.getElementById(type + '-registration-template');
+            if (!host || !template || document.getElementById(type + '-registration-modal')) return;
+    // Template scripts execute when their cloned fragment is inserted. Recreating
+    // them here registers modal handlers twice and duplicates address requests.
+    host.appendChild(template.content.cloneNode(true));
+            document.dispatchEvent(new CustomEvent('shophop:open-registration-modal', { detail: { type: type } }));
+        }, { capture: true });
+    </script>
 
 
     {{-- ========================================

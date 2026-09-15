@@ -111,7 +111,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
         role="dialog"
         aria-modal="true"
         aria-labelledby="logistics-registration-modal-title"
-        class="relative z-10
+        class="shophop-registration-dialog relative z-10
                w-full h-full
                sm:h-auto
                sm:max-h-[calc(100vh-2rem)]
@@ -203,7 +203,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                 RIGHT REGISTRATION PANEL (70%)
             ================================================== --}}
             <div
-                class="bg-linear-to-b from-white via-white to-gray-bg/30
+                class="shophop-registration-form-panel bg-linear-to-b from-white via-white to-gray-bg/30
                        px-5 sm:px-8 lg:px-10 xl:px-12
                        py-6 sm:py-8 lg:py-10"
             >
@@ -434,7 +434,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </div>
                                 <div id="logistics-terms-scroll-fade"
                                      class="pointer-events-none absolute left-1 right-2.5 bottom-1 h-8 rounded-b-2xl transition-opacity duration-200"
-                                     style="background: linear-gradient(to bottom, transparent, rgba(249,250,251,.95));"
+                                     style="background: linear-gradient(to bottom, transparent, var(--sh-page));"
                                 ></div>
                             </div>
 
@@ -1405,4 +1405,3 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
         </div>
     </div>
 </div>
-
