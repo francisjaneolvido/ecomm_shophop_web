@@ -33,6 +33,7 @@ html {
     scroll-behavior: smooth;
 }
 
+/* Keep same-document destinations clear of the sticky marketplace header. */
 #categories,
 #deals,
 #new-arrivals,
@@ -52,6 +53,7 @@ body {
     -moz-osx-font-smoothing: grayscale;
 }
 
+/* These legacy utility combinations need semantic surfaces outside the default light theme. */
 html:not([data-theme="light"]) .glass-panel {
     background: color-mix(in srgb, var(--sh-surface) 82%, transparent);
     border-color: var(--sh-border);

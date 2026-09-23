@@ -194,9 +194,96 @@
 
 @push('styles')
 <style>
-    /* Messages readability pass */
+    /* Isolate this approval-gated candidate; broader rules require evidence. */
+    .buyer-messages-prototype {
+        background:
+            radial-gradient(circle at 88% 6%, color-mix(in srgb, var(--sh-brand) 11%, transparent), transparent 26rem),
+            var(--sh-page);
+    }
+
+    .buyer-messages-prototype .messages-shell {
+        border-color: color-mix(in srgb, var(--sh-border) 88%, var(--sh-brand)) !important;
+        box-shadow: 0 24px 64px -38px color-mix(in srgb, var(--sh-text) 42%, transparent);
+    }
+
+    .buyer-messages-prototype #messageConversationList {
+        background: var(--sh-surface);
+    }
+
+    .buyer-messages-prototype #conversationRows {
+        scrollbar-gutter: stable;
+    }
+
+    .buyer-messages-prototype #messageConversationList .conversation-row {
+        position: relative;
+        min-height: 80px;
+        transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+    }
+
+    .buyer-messages-prototype #messageConversationList .conversation-row:hover {
+        background: color-mix(in srgb, var(--sh-brand) 6%, var(--sh-surface)) !important;
+    }
+
+    /* Selected state needs both a rail and semantic pressed state. */
+    .buyer-messages-prototype #messageConversationList .conversation-row[aria-pressed='true'] {
+        background: color-mix(in srgb, var(--sh-brand) 10%, var(--sh-surface)) !important;
+        box-shadow: inset 3px 0 0 var(--sh-brand);
+    }
+
+    .buyer-messages-prototype #messageConversationList .conversation-row:focus-visible {
+        outline-offset: -3px;
+        z-index: 1;
+    }
+
+    .buyer-messages-prototype .conversation-filter {
+        transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+    }
+
+    .buyer-messages-prototype .conversation-filter[aria-pressed='true'] {
+        background: var(--sh-brand) !important;
+        color: #fff !important;
+        box-shadow: 0 5px 12px -8px color-mix(in srgb, var(--sh-brand) 90%, transparent);
+    }
+
+    .buyer-messages-prototype .conversation-panel > :first-child {
+        background: color-mix(in srgb, var(--sh-surface) 96%, var(--sh-brand)) !important;
+    }
+
+    .buyer-messages-prototype .messages-scroll {
+        scroll-padding-block: 1rem;
+        background:
+            linear-gradient(to bottom, color-mix(in srgb, var(--sh-page) 90%, var(--sh-brand-soft)), var(--sh-page)) !important;
+    }
+
+    .buyer-messages-prototype .message-composer {
+        position: relative;
+        z-index: 1;
+        box-shadow: 0 -12px 28px -28px color-mix(in srgb, var(--sh-text) 65%, transparent);
+        transition: border-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    /* Primary task surface; keep composer focus local and unmistakable. */
+    .buyer-messages-prototype .message-composer:focus-within {
+        border-top-color: color-mix(in srgb, var(--sh-brand) 60%, var(--sh-border)) !important;
+        box-shadow: 0 -12px 28px -22px color-mix(in srgb, var(--sh-brand) 40%, transparent);
+    }
+
+    .buyer-messages-prototype .message-input:focus-visible,
+    .buyer-messages-prototype label:has(.message-attachment-input:focus-visible) {
+        border-color: var(--sh-brand) !important;
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--sh-brand) 14%, transparent);
+    }
+
+    .buyer-messages-prototype .message-attachment-preview {
+        background: color-mix(in srgb, var(--sh-surface) 94%, var(--sh-brand-soft)) !important;
+    }
+
+    .buyer-messages-prototype #conversationEmptyState {
+        background: color-mix(in srgb, var(--sh-page) 86%, var(--sh-brand-soft));
+    }
+
     #messageConversationList .conversation-row {
-        min-height: 76px;
+        min-height: 80px;
     }
 
     #messageConversationList,
@@ -214,7 +301,32 @@
 
     @media (max-width: 1023px) {
         #messageConversationList .conversation-row {
-            min-height: 72px;
+            min-height: 76px;
+        }
+
+        .buyer-messages-prototype .messages-shell {
+            width: 100%;
+            max-width: 100%;
+            box-shadow: 0 18px 48px -36px color-mix(in srgb, var(--sh-text) 48%, transparent);
+        }
+    }
+
+    @media (max-width: 1023px) and (min-height: 600px) {
+        /* The mobile detail inherits the intro stack; keep its composer above the fold. */
+        .buyer-messages-prototype .messages-shell:has(#messageChatArea:not(.hidden)) {
+            min-height: 0;
+        }
+
+        .buyer-messages-prototype .messages-shell:has(#messageChatArea:not(.hidden)) #messageChatArea,
+        .buyer-messages-prototype .messages-shell:has(#messageChatArea:not(.hidden)) .conversation-panel {
+            min-height: 0;
+            height: min(40.625rem, calc(100dvh - 18.75rem));
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .buyer-messages-prototype :where(.conversation-row, .conversation-filter, .message-composer) {
+            transition: none;
         }
     }
 </style>
@@ -256,7 +368,7 @@
 {{-- =========================================================
     MESSAGES
 ========================================================= --}}
-<section class="bg-gray-bg/75 min-h-[calc(100vh-90px)] py-4 sm:py-5">
+<section class="buyer-messages-prototype bg-gray-bg/75 min-h-[calc(100vh-90px)] py-4 sm:py-5">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
@@ -313,7 +425,7 @@
         {{-- =====================================================
             CHAT SHELL
         ====================================================== --}}
-        <div class="bg-white border border-gray-border rounded-2xl shadow-sm overflow-hidden
+        <div class="messages-shell bg-white border border-gray-border rounded-2xl shadow-sm overflow-hidden
                     min-h-162.5 lg:h-[calc(100vh-180px)] lg:min-h-155">
 
             <div class="grid lg:grid-cols-[340px_minmax(0,1fr)] h-full">
@@ -324,15 +436,15 @@
                 ================================================== --}}
                 <aside
                     id="messageConversationList"
-                    class="border-r border-gray-border/80 flex flex-col min-h-162.5 lg:min-h-0"
+                    class="border-r border-gray-border/80 flex flex-col min-w-0 min-h-162.5 lg:min-h-0"
                 >
 
                     {{-- Sidebar header --}}
-                    <div class="p-3 border-b border-gray-border/80">
+                    <div class="relative p-3 border-b border-gray-border/80">
 
-                        <div class="flex items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
 
-                            <div>
+                            <div class="min-w-0">
 
                                 <p class="text-[14px] font-bold text-navy">
                                     Inbox
@@ -345,10 +457,11 @@
                             </div>
 
 
+                            {{-- Keep Mark all read inside the narrow inbox header. --}}
                             <button
                                 type="button"
                                 id="markMessagesReadBtn"
-                                class="text-[9.5px] font-semibold text-teal-dark hover:text-navy transition"
+                                class="absolute right-3 top-3 shrink-0 whitespace-nowrap text-[9.5px] font-semibold text-teal-dark hover:text-navy transition"
                             >
                                 Mark all read
                             </button>
@@ -369,6 +482,7 @@
                                 id="conversationSearch"
                                 type="search"
                                 placeholder="Search seller or message..."
+                                aria-label="Search conversations"
                                 class="w-full h-9 rounded-xl bg-gray-bg/80 border border-gray-border
                                        pl-8.5 pr-3 text-[11px] text-navy
                                        placeholder:text-navy/30 outline-none
@@ -386,6 +500,7 @@
                                 class="conversation-filter h-7 px-2.5 rounded-lg bg-teal text-white
                                        text-[10px] font-semibold transition shrink-0"
                                 data-conversation-filter="all"
+                                aria-pressed="true"
                             >
                                 All
                             </button>
@@ -396,6 +511,7 @@
                                        bg-gray-bg text-navy/50 hover:text-teal-dark
                                        text-[10px] font-semibold transition shrink-0"
                                 data-conversation-filter="unread"
+                                aria-pressed="false"
                             >
                                 Unread
                             </button>
@@ -406,6 +522,7 @@
                                        bg-gray-bg text-navy/50 hover:text-teal-dark
                                        text-[10px] font-semibold transition shrink-0"
                                 data-conversation-filter="support"
+                                aria-pressed="false"
                             >
                                 Support
                             </button>
@@ -432,6 +549,8 @@
                                 data-conversation-id="{{ $conversation['id'] }}"
                                 data-conversation-type="{{ $conversation['type'] }}"
                                 data-conversation-unread="{{ $conversation['unread'] > 0 ? '1' : '0' }}"
+                                aria-pressed="{{ $index === 0 ? 'true' : 'false' }}"
+                                aria-controls="message-panel-{{ $conversation['id'] }}"
                                 data-conversation-search="{{ strtolower(
                                     $conversation['name'] . ' ' .
                                     $conversation['preview'] . ' ' .
@@ -582,6 +701,7 @@
                     @foreach ($conversations as $index => $conversation)
 
                         <section
+                            id="message-panel-{{ $conversation['id'] }}"
                             class="conversation-panel {{ $index === 0 ? '' : 'hidden' }}
                                    h-full min-h-162.5 lg:min-h-0 flex flex-col"
                             data-conversation-panel="{{ $conversation['id'] }}"
@@ -1123,6 +1243,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 !active
             );
 
+            // Keep assistive selection state aligned with the visual active-thread rail.
+            row.setAttribute(
+                'aria-pressed',
+                active ? 'true' : 'false'
+            );
+
 
             if (active) {
 
@@ -1310,6 +1436,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 item.classList.add(
                     'bg-gray-bg',
                     'text-navy/50'
+                );
+
+                // Filters behave as one selection set, not independent toggles.
+                item.setAttribute(
+                    'aria-pressed',
+                    item === button ? 'true' : 'false'
                 );
             });
 

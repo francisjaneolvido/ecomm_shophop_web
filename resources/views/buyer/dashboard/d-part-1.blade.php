@@ -238,27 +238,30 @@
             </div>
 
             <div class="grid grid-cols-3 gap-2 w-full sm:w-auto">
-                <a
-                    href="#recommended"
-                    class="min-w-0 sm:w-28 rounded-xl border border-gray-border bg-white px-3 py-2.5 hover:border-teal/30 hover:shadow-sm transition"
+                <div
+                    data-wishlist-unavailable
+                    aria-disabled="true"
+                    title="Wishlist is unavailable: saved items are not available yet"
+                    class="min-w-0 sm:w-28 rounded-xl border border-gray-border bg-white px-3 py-2.5 text-navy/45"
                 >
                     <div class="flex items-center gap-2">
                         <x-lucide-heart class="w-3.5 h-3.5 text-teal-dark shrink-0" />
                         <div class="min-w-0">
-                            <p class="text-sm font-bold leading-none text-navy">2</p>
+                            <p class="text-[9px] font-semibold leading-none">Unavailable</p>
                             <p class="text-[8px] text-navy/35 mt-1 truncate">Wishlist</p>
                         </div>
                     </div>
-                </a>
+                </div>
 
                 <a
+                    data-buyer-cart-link
                     href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}"
                     class="min-w-0 sm:w-28 rounded-xl border border-gray-border bg-white px-3 py-2.5 hover:border-teal/30 hover:shadow-sm transition"
                 >
                     <div class="flex items-center gap-2">
                         <x-lucide-shopping-cart class="w-3.5 h-3.5 text-teal-dark shrink-0" />
                         <div class="min-w-0">
-                            <p class="text-sm font-bold leading-none text-navy">3</p>
+                            <p data-cart-count class="text-sm font-bold leading-none text-navy">{{ $cartItemCount }}</p>
                             <p class="text-[8px] text-navy/35 mt-1 truncate">Cart</p>
                         </div>
                     </div>
@@ -519,7 +522,10 @@
                         <button
                             type="button"
                             class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white/95 text-navy/55 shadow-sm hover:text-teal-dark transition"
-                            aria-label="Add {{ $product['name'] }} to wishlist"
+                            aria-label="Wishlist unavailable: saved items are not available yet"
+                            data-wishlist-unavailable
+                            disabled
+                            title="Wishlist is unavailable"
                         >
                             <x-lucide-heart class="w-3.5 h-3.5" />
                         </button>
@@ -798,6 +804,10 @@
 
                             <button
                                 type="button"
+                                data-wishlist-unavailable
+                                disabled
+                                title="Wishlist is unavailable: saved items are not available yet"
+                                aria-label="Wishlist unavailable: saved items are not available yet"
                                 class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white/95 text-navy/55 shadow-sm hover:text-teal-dark transition"
                             >
                                 <x-lucide-heart class="w-3.5 h-3.5" />
@@ -909,6 +919,10 @@
 
                             <button
                                 type="button"
+                                data-wishlist-unavailable
+                                disabled
+                                title="Wishlist is unavailable: saved items are not available yet"
+                                aria-label="Wishlist unavailable: saved items are not available yet"
                                 class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white/95 text-navy/55 shadow-sm hover:text-teal-dark transition"
                             >
                                 <x-lucide-heart class="w-3.5 h-3.5" />
@@ -949,6 +963,16 @@
 
                                 <button
                                     type="button"
+                                    data-dashboard-add-to-cart
+                                    data-cart-product-id="{{ $product['id'] }}"
+                                    data-cart-name="{{ $product['name'] }}"
+                                    data-cart-image="{{ $productImageUrl($product['image']) }}"
+                                    data-cart-price="{{ $product['price'] }}"
+                                    data-cart-original-price="{{ $product['original_price'] ?? '' }}"
+                                    data-cart-stock="{{ $product['stock'] ?? '' }}"
+                                    data-cart-shop-id="{{ $product['shop_id'] ?? '' }}"
+                                    data-cart-shop-name="{{ ! empty($product['preview']) ? 'ShopHop demo catalog' : 'ShopHop Seller' }}"
+                                    data-cart-preview="{{ ! empty($product['preview']) ? 'true' : 'false' }}"
                                     class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal text-white hover:bg-teal-dark transition"
                                     aria-label="Add {{ $product['name'] }} to cart"
                                 >

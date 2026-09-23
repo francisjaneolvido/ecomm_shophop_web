@@ -614,63 +614,6 @@
         window.openLoginModal = openLoginModal;
         window.closeLoginModal = closeLoginModal;
 
-        function controlHasLoginIcon(control) {
-            if (!control) {
-                return false;
-            }
-
-            return Boolean(control.querySelector(
-                '.lucide-heart, ' +
-                '.lucide-shopping-cart, ' +
-                '.lucide-user, ' +
-                '.lucide-user-round, ' +
-                '.lucide-circle-user, ' +
-                '.lucide-circle-user-round, ' +
-                '.lucide-user-circle, ' +
-                '.lucide-users, ' +
-                '.lucide-search'
-            ));
-        }
-
-        function isLoginAction(control) {
-            if (!control) {
-                return false;
-            }
-
-            if (controlHasLoginIcon(control)) {
-                return true;
-            }
-
-            const text = (control.textContent || '').trim().replace(/\s+/g, ' ').toLowerCase();
-            const ariaLabel = (control.getAttribute('aria-label') || '').toLowerCase();
-            const title = (control.getAttribute('title') || '').toLowerCase();
-            const href = (control.getAttribute('href') || '').toLowerCase();
-            const combined = [text, ariaLabel, title, href].join(' ');
-            const isHeaderControl = Boolean(control.closest('header, nav'));
-
-            if (
-                text === 'log in' ||
-                text === 'login' ||
-                text === 'sign in' ||
-                text === 'search' ||
-                combined.includes('/login')
-            ) {
-                return true;
-            }
-
-            if (!isHeaderControl) {
-                return false;
-            }
-
-            return (
-                combined.includes('wishlist') ||
-                combined.includes('shopping cart') ||
-                combined.includes('/cart') ||
-                combined.includes('profile') ||
-                combined.includes('account')
-            );
-        }
-
         document.addEventListener('DOMContentLoaded', function () {
             const { modal, passwordInput, togglePassword } = getModalParts();
 
@@ -678,8 +621,7 @@
                 return;
             }
 
-            // Site-wide interceptor: heart/cart/user/search/login controls,
-            // plus any element with [data-login-required], open this modal.
+            // Only explicit public controls may request Sign In; icon/text matching steals protected navigation.
             document.addEventListener('click', function (event) {
                 const closeButton = event.target.closest('[data-login-modal-close]');
 
@@ -699,31 +641,13 @@
                     return;
                 }
 
-                if (control.hasAttribute('data-login-required') || isLoginAction(control)) {
+                if (control.hasAttribute('data-login-required')) {
                     event.preventDefault();
                     event.stopPropagation();
                     openLoginModal();
                 }
             });
-
-            // Catch pressing Enter/submitting the navbar search form.
-            document.addEventListener('submit', function (event) {
-                const form = event.target;
-
-                if (!form || modal.contains(form)) {
-                    return;
-                }
-
-                const isHeaderForm = Boolean(form.closest('header, nav'));
-                const hasSearchField = Boolean(form.querySelector(
-                    'input[type="search"], input[name*="search"], input[placeholder*="Search"], input[placeholder*="search"]'
-                ));
-
-                if (isHeaderForm && hasSearchField) {
-                    event.preventDefault();
-                    openLoginModal();
-                }
-            });
+            // Only explicit protected actions open this modal; public Search is normal GET navigation.
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape' && modal.getAttribute('aria-hidden') === 'false') {

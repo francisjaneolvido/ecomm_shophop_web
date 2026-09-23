@@ -105,6 +105,7 @@
 {{-- =========================================================
     HERO — BRAND / PUBLIC DISCOVERY
 ========================================================= --}}
+{{-- Keep hero decoration static so scroll-linked motion does not compete with marketplace browsing. --}}
 <section class="relative overflow-hidden bg-gray-bg border-b border-gray-border/70">
 
     <div class="pointer-events-none absolute -top-28 -right-20 w-80 h-80 rounded-full bg-teal/10 blur-3xl"></div>

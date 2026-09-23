@@ -1,3 +1,4 @@
+{{-- The toggle is markup-only; shared theme behavior lives in theme-head so repeated controls cannot drift. --}}
 <button
     type="button"
     class="theme-toggle"

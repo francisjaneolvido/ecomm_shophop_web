@@ -45,6 +45,7 @@ Route::prefix('dev')
         });
     });
 
+// TEST previews render real Blade surfaces but must never become a production authentication bypass.
 if (app()->environment('local')) {
     Route::prefix('__dev')
         ->name('dev.')
@@ -54,7 +55,6 @@ if (app()->environment('local')) {
             Route::prefix('preview')->name('preview.')->group(function () {
                 // TEST routing: use real Blade surfaces with local representative defaults.
                 Route::view('/buyer/categories', 'buyer.category.index')->name('buyer.categories');
-                Route::view('/buyer/products', 'buyer.product.show-product-details')->name('buyer.products');
                 Route::view('/buyer/cart', 'buyer.cart.cart')->name('buyer.cart');
                 Route::view('/buyer/checkout', 'buyer.checkout.cart-checkout')->name('buyer.checkout');
                 Route::view('/buyer/orders', 'buyer.orders.index')->name('buyer.orders');

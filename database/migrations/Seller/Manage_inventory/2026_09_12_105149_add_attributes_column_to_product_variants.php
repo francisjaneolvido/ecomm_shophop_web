@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Existing production/demo databases can already carry this rollout's column.
         if (Schema::hasColumn('product_variants', 'attributes')) {
             return;
         }

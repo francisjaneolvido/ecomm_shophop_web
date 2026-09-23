@@ -79,7 +79,7 @@ class UserAccountController extends Controller
      */
     private function toJsUser(User $user): array
     {
-        $fileUrl = fn (?string $path) => $path ? Storage::url($path) : null;
+        $fileUrl = fn (?string $path) => $path ? Storage::disk('public')->url($path) : null;
 
         $phone = null;
         $address = null;
@@ -146,7 +146,7 @@ class UserAccountController extends Controller
             'address' => $address ?: null,
             'account_type' => $user->account_type,
             'status' => $user->status,
-            'verified' => $user->status === 'approved',
+            'verified' => $user->email_verified_at !== null,
             'sex' => $sex,
             'birthday' => $birthday,
             'age' => $age,
@@ -171,9 +171,10 @@ class UserAccountController extends Controller
      */
     public function show(User $user): JsonResponse
     {
+        abort_unless($this->isModeratable($user, ['approved', 'suspended']), 404);
         $user->load(['buyer', 'seller', 'logisticsPartner.coverageAreas']);
 
-        $fileUrl = fn (?string $path) => $path ? Storage::url($path) : null;
+        $fileUrl = fn (?string $path) => $path ? Storage::disk('public')->url($path) : null;
 
         $data = [
             'id' => $user->id,
@@ -259,6 +260,10 @@ class UserAccountController extends Controller
 
     public function approve(User $user): RedirectResponse
     {
+        if (! $this->isModeratable($user, ['pending'], true)) {
+            return back()->withErrors(['moderation' => 'Only eligible pending registrations can be approved.']);
+        }
+
         $user->update(['status' => 'approved']);
 
         return back()->with('status', "{$user->display_name}'s account has been approved.");
@@ -266,6 +271,10 @@ class UserAccountController extends Controller
 
     public function reject(User $user): RedirectResponse
     {
+        if (! $this->isModeratable($user, ['pending'], true)) {
+            return back()->withErrors(['moderation' => 'Only eligible pending registrations can be rejected.']);
+        }
+
         $user->update(['status' => 'rejected']);
 
         return back()->with('status', "{$user->display_name}'s account has been rejected.");
@@ -273,6 +282,10 @@ class UserAccountController extends Controller
 
     public function suspend(User $user): RedirectResponse
     {
+        if (! $this->isModeratable($user, ['approved'])) {
+            return back()->withErrors(['moderation' => 'Only active Buyer, Seller, or Logistics accounts can be suspended.']);
+        }
+
         $user->update(['status' => 'suspended']);
 
         return back()->with('status', "{$user->display_name}'s account has been suspended.");
@@ -280,8 +293,20 @@ class UserAccountController extends Controller
 
     public function reactivate(User $user): RedirectResponse
     {
+        if (! $this->isModeratable($user, ['suspended'])) {
+            return back()->withErrors(['moderation' => 'Only suspended Buyer, Seller, or Logistics accounts can be reactivated.']);
+        }
+
         $user->update(['status' => 'approved']);
 
         return back()->with('status', "{$user->display_name}'s account has been reactivated.");
+    }
+
+    private function isModeratable(User $user, array $statuses, bool $registration = false): bool
+    {
+        // Registration decisions require verified Buyer/Seller email; later account transitions do not.
+        return in_array($user->account_type, ['buyer', 'seller', 'logistics'], true)
+            && in_array($user->status, $statuses, true)
+            && (! $registration || $user->account_type === 'logistics' || $user->email_verified_at !== null);
     }
 }

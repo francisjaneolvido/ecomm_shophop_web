@@ -849,7 +849,7 @@
                     </h2>
 
                     <p class="text-xs text-navy/40 mt-0.5">
-                        Create store-wide or product-specific discounts.
+                        Show voucher codes on selected product pages. Checkout redemption is not available yet.
                     </p>
                 </div>
 
@@ -878,7 +878,7 @@
                     </p>
 
                     <p class="mt-1 text-xs text-navy/35">
-                        Create a voucher to offer discounts to buyers.
+                        Create a voucher code for selected product pages.
                     </p>
                 </div>
 
@@ -954,7 +954,7 @@
                                     <td class="px-4 py-3">
                                         <span class="text-xs text-navy/45">
                                             {{ $voucher->products->isEmpty()
-                                                ? 'Store-wide'
+                                                ? 'No products selected'
                                                 : $voucher->products->count() . ' selected product(s)'
                                             }}
                                         </span>
@@ -993,7 +993,7 @@
                                             <button
                                                 type="button"
                                                 data-open-voucher-modal
-                                                data-voucher="{{ e(json_encode($voucherJson)) }}"
+                                                data-voucher="{{ json_encode($voucherJson) }}"
                                                 class="h-8 px-2.5 rounded-lg border border-gray-border text-xs font-semibold text-navy/55 hover:text-teal-dark hover:border-teal/30 transition"
                                             >
                                                 Edit
@@ -1620,7 +1620,7 @@
                 </p>
 
                 <p class="text-xs text-navy/35 mt-0.5">
-                    Create a store-wide or product-specific discount.
+                    Choose products whose detail pages show this voucher code.
                 </p>
             </div>
 
@@ -1788,7 +1788,7 @@
                         </p>
 
                         <p class="text-[10px] text-navy/35 mt-0.5">
-                            Leave all unchecked to make the voucher store-wide.
+                            Leave all unchecked to keep this voucher unassigned.
                         </p>
                     </div>
 
@@ -2647,7 +2647,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 'Restore ' + name + '?';
 
             archiveModalSubtext.textContent =
-                'This product will become visible to buyers again.';
+                'This product will become active again. Buyers can see it when stock is available.';
 
             archiveSubmitBtn.textContent =
                 'Restore';

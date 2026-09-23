@@ -129,11 +129,37 @@ class RegistrationController extends Controller
      */
     public function show(User $user): JsonResponse
     {
-        $user->load(['buyer', 'seller', 'logisticsPartner', 'activities', 'reports']);
+        // The detail endpoint must use the same eligible registration set as the queue, not any guessed User id.
+        abort_unless(
+            in_array($user->account_type, self::ROLES, true)
+                && in_array($user->status, ['pending', 'approved', 'rejected'], true)
+                && ($user->account_type === 'logistics' || $user->email_verified_at !== null),
+            404
+        );
 
-        $docs = $user->registration_documents;
+        $user->load(['buyer', 'seller', 'logisticsPartner']);
+
+        // Registration files live on role profiles; User has no document or decision-history relation.
+        $files = match ($user->account_type) {
+            'buyer' => ['Valid ID' => $user->buyer?->valid_id_path],
+            'seller' => [
+                'Valid ID' => $user->seller?->valid_id_path,
+                'Business Permit' => $user->seller?->business_permit_path,
+            ],
+            'logistics' => [
+                'Representative Valid ID' => $user->logisticsPartner?->rep_valid_id_path,
+                'Business Permit' => $user->logisticsPartner?->business_permit_path,
+                'Accreditation Docs' => $user->logisticsPartner?->accreditation_docs_path,
+                'Agreement Signature' => $user->logisticsPartner?->agreement_signature_path,
+            ],
+        };
+        $docs = collect($files)->map(fn ($path, $label) => [
+            'label' => $label,
+            'status' => $path ? 'submitted' : 'missing',
+            'url' => $path ? Storage::disk('public')->url($path) : null,
+        ])->values();
         $submittedCount = collect($docs)->where('status', 'submitted')->count();
-        $totalCount = count($docs);
+        $totalCount = $docs->count();
 
         $profile = match ($user->account_type) {
             'buyer' => $user->buyer,
@@ -149,10 +175,10 @@ class RegistrationController extends Controller
             'email' => $user->email,
             'role' => $user->account_type,
             'status' => $user->status,
-            'phone' => $profile->contact_no ?? null,
-            'sex' => $profile->sex ?? ($profile->rep_sex ?? null),
-            'birthday' => $profile->birthday?->format('M d, Y') ?? $profile->rep_birthday?->format('M d, Y'),
-            'age' => $profile->birthday?->age ?? $profile->rep_birthday?->age,
+            'phone' => $profile?->contact_no,
+            'sex' => $profile?->sex ?? $profile?->rep_sex,
+            'birthday' => $profile?->birthday?->format('M d, Y') ?? $profile?->rep_birthday?->format('M d, Y'),
+            'age' => $profile?->birthday?->age ?? $profile?->rep_birthday?->age,
             'address' => $this->buildAddress($user),
             'business_name' => $user->seller?->business_name ?? $user->logisticsPartner?->company_name,
             'business_category' => $user->seller?->business_category
@@ -164,17 +190,10 @@ class RegistrationController extends Controller
                 'sub' => $submittedCount === $totalCount ? 'All documents complete' : ($totalCount - $submittedCount).' document(s) incomplete',
             ],
             'documents' => $docs,
-            'notes' => $user->notes,
-            'rejection_reason' => $user->rejection_reason,
-            'activity' => $user->activities->map(fn ($a) => [
-                'label' => $a->description,
-                'time' => $a->created_at->diffForHumans(),
-            ]),
-            'reports' => $user->reports->map(fn ($r) => [
-                'type' => $r->type,
-                'description' => $r->description,
-                'date' => $r->created_at->format('M d, Y').' · '.$r->created_at->diffForHumans(),
-            ]),
+            'notes' => null,
+            'rejection_reason' => null,
+            'activity' => [],
+            'reports' => [],
         ]);
     }
 

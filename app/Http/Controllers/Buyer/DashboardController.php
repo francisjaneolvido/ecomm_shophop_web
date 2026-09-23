@@ -26,6 +26,8 @@ class DashboardController extends Controller
         $recommendedProducts = $this->getRecommendedProducts();
         $dealProducts = $this->getDealProducts();
         $newArrivals = $this->getNewArrivals();
+        // CartController's cart_count is the number of session lines, not total quantity.
+        $cartItemCount = count(session('shophop_cart', []));
 
         return view('buyer.dashboard.dashboard', compact(
             'buyerName',
@@ -37,7 +39,8 @@ class DashboardController extends Controller
             'recentlyViewed',
             'recommendedProducts',
             'dealProducts',
-            'newArrivals'
+            'newArrivals',
+            'cartItemCount'
         ));
     }
 
@@ -51,14 +54,12 @@ class DashboardController extends Controller
      */
     private function activeProductsQuery()
     {
-        return Product::query()
-            ->where('status', 'active')
-            ->where('stock', '>', 0);
+        return Product::query()->publiclyDiscoverable();
     }
 
     private function productsTableIsAvailable(): bool
     {
-        // The dashboard already has empty-state fallbacks when local demo data has no catalog.
+        // Sparse demo catalog: render the existing empty state instead of throwing.
         return Schema::hasTable((new Product())->getTable());
     }
 
@@ -94,6 +95,8 @@ class DashboardController extends Controller
             'rating' => 4.5,   // placeholder until reviews exist
             'reviews' => 0,    // placeholder until reviews exist
             'image' => asset($imagePath),
+            'stock' => (int) $product->stock,
+            'shop_id' => $product->seller_id,
         ];
     }
 

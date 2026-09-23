@@ -29,6 +29,7 @@
 
 
             {{-- DESKTOP NAVIGATION --}}
+            {{-- data-section-nav lets the shared progressive-enhancement script track the current public section. --}}
             <nav class="hidden xl:flex items-center gap-1 text-[12px] text-navy shrink-0 ml-2">
 
                 <a
@@ -70,7 +71,7 @@
             <div class="hidden md:flex flex-1 max-w-80 ml-auto">
 
                 <form
-                    action="#"
+                    action="{{ route('search.index') }}"
                     method="GET"
                     class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1"
                 >
@@ -81,9 +82,12 @@
                             class="w-4 h-4 text-navy/35 shrink-0"
                         />
 
+                        <label class="sr-only" for="public-search-desktop">Search products</label>
                         <input
-                            type="text"
+                            id="public-search-desktop"
+                            type="search"
                             name="search"
+                            value="{{ request('search') }}"
                             placeholder="Search products"
                             class="bg-transparent border-0 outline-none focus:ring-0
                                    w-full min-w-0 p-0
@@ -161,6 +165,7 @@
                 {{-- SIGN UP — this is the account.register route, so the
                      label now matches what it actually does (the icon
                      above already covers returning-user sign-in). --}}
+                {{-- JavaScript opens the chooser immediately; /register remains the no-JavaScript fallback. --}}
                 <a
                     href="{{ route('register') }}"
                     data-open-account-type-modal
@@ -198,7 +203,7 @@
         <div class="md:hidden pb-3">
 
             <form
-                action="#"
+                action="{{ route('search.index') }}"
                 method="GET"
                 class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1"
             >
@@ -209,9 +214,12 @@
                         class="w-4 h-4 text-navy/35 shrink-0"
                     />
 
+                    <label class="sr-only" for="public-search-mobile">Search products</label>
                     <input
-                        type="text"
+                        id="public-search-mobile"
+                        type="search"
                         name="search"
+                        value="{{ request('search') }}"
                         placeholder="Search products"
                         class="bg-transparent border-0 outline-none focus:ring-0
                                w-full min-w-0 p-0

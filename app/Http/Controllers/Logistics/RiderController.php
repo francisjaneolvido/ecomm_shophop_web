@@ -161,25 +161,25 @@ class RiderController extends Controller
     public function approve(Request $request, int $rider): RedirectResponse
     {
         // TODO: mark the rider application approved, notify by email.
-        return back()->with('status', 'Rider application approved.');
+        return back()->with('notice', 'Preview only: rider approval was not saved.');
     }
 
     public function disapprove(Request $request, int $rider): RedirectResponse
     {
         // TODO: mark the rider application disapproved, notify by email.
-        return back()->with('status', 'Rider application disapproved.');
+        return back()->with('notice', 'Preview only: rider disapproval was not saved.');
     }
 
     public function suspend(Request $request, int $rider): RedirectResponse
     {
         // TODO: suspend the rider's account.
-        return back()->with('status', 'Rider suspended.');
+        return back()->with('notice', 'Preview only: rider suspension was not saved.');
     }
 
     public function activate(Request $request, int $rider): RedirectResponse
     {
         // TODO: reactivate the rider's account.
-        return back()->with('status', 'Rider activated.');
+        return back()->with('notice', 'Preview only: rider activation was not saved.');
     }
 
     public function warn(Request $request, int $rider): RedirectResponse
@@ -193,6 +193,6 @@ class RiderController extends Controller
         // TODO: persist this to a rider_warnings table once the Rider model exists, e.g.
         // Rider::findOrFail($rider)->warnings()->create($request->only('type', 'severity', 'details'));
 
-        return back()->with('status', 'Warning issued to rider.');
+        return back()->with('notice', 'Preview only: the rider warning was not saved.');
     }
 }

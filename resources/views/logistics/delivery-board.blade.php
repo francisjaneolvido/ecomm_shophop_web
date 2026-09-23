@@ -72,10 +72,14 @@
     ];
 @endphp
 
+<div role="status" class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    {{ session('notice') ?: 'Preview data: assignment and status moves are local to this page and reset on refresh.' }}
+</div>
+
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h1 class="text-navy text-2xl sm:text-3xl font-bold">Deliveries</h1>
-        <p class="text-navy/55 text-sm mt-1">Every pickup request moving through your fleet, live.</p>
+        <p class="text-navy/55 text-sm mt-1">Sample pickup requests moving through a preview board.</p>
     </div>
 
     <div class="relative w-full sm:w-auto">
@@ -353,7 +357,7 @@
         function stampLastUpdated() {
             if (!lastUpdatedEl) return;
             const now = new Date();
-            lastUpdatedEl.textContent = 'Updated ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            lastUpdatedEl.textContent = 'Preview loaded ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         }
         stampLastUpdated();
 
@@ -661,7 +665,7 @@
                 assignSubmitBtn.disabled = false;
                 if (assignSubmitLabel) assignSubmitLabel.textContent = 'Confirm assignment';
                 closeModal('assign');
-                showToast('Rider assigned — ' + riderName);
+                showToast('Preview assignment only — not saved. Refresh resets it.');
             }, 500);
         }
 

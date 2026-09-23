@@ -136,14 +136,11 @@
                 // Longest matches win so parameterized product/order URLs use their list preview.
                 const previewPaths = {
                     buyer: {
-                        // Buyer dashboard requires missing product-schema data, so Messages is the
-                        // first renderable preview surface until a real frontend fixture exists.
+                        // TEST has no dashboard preview route; keep its navigation on a renderable local preview.
                         '/': @json(route('dev.preview.buyer.messages')),
                         '/buyer/dashboard': @json(route('dev.preview.buyer.messages')),
                         '/buyer/categories': @json(route('dev.preview.buyer.categories')),
                         '/buyer/category': @json(route('dev.preview.buyer.categories')),
-                        '/buyer/product-preview': @json(route('dev.preview.buyer.products')),
-                        '/buyer/product': @json(route('dev.preview.buyer.products')),
                         '/buyer/cart/checkout': @json(route('dev.preview.buyer.checkout')),
                         '/buyer/cart': @json(route('dev.preview.buyer.cart')),
                         '/buyer/orders': @json(route('dev.preview.buyer.orders')),

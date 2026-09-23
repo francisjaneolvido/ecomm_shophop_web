@@ -87,11 +87,11 @@ class ShowProductDetails_Controller extends Controller
             ];
         })->values()->toArray();
 
-        // ---- Vouchers (active only) ----
+        // Voucher.type stores "percent", not "percentage"; this is code display, not redemption.
         $shopVouchers = $product->vouchers
             ->where('status', 'active')
             ->map(function ($voucher) {
-                $label = $voucher->type === 'percentage'
+                $label = $voucher->type === 'percent'
                     ? $voucher->value . '% off'
                     : '₱' . number_format($voucher->value) . ' off';
 

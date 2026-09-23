@@ -502,6 +502,10 @@
 
                             <button
                                 type="button"
+                                data-wishlist-unavailable
+                                disabled
+                                title="Wishlist is unavailable: saved items are not available yet"
+                                aria-label="Wishlist unavailable: saved items are not available yet"
                                 class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white/95 text-navy/55 shadow-sm hover:text-teal-dark transition"
                             >
                                 <x-lucide-heart class="w-3.5 h-3.5" />
@@ -613,6 +617,10 @@
 
                             <button
                                 type="button"
+                                data-wishlist-unavailable
+                                disabled
+                                title="Wishlist is unavailable: saved items are not available yet"
+                                aria-label="Wishlist unavailable: saved items are not available yet"
                                 class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white/95 text-navy/55 shadow-sm hover:text-teal-dark transition"
                             >
                                 <x-lucide-heart class="w-3.5 h-3.5" />
@@ -643,9 +651,21 @@
                                     ₱{{ number_format($product['price']) }}
                                 </span>
 
+                                {{-- Card attributes seed the session Cart; purchase must re-read canonical Product values. --}}
                                 <button
                                     type="button"
+                                    data-dashboard-add-to-cart
+                                    data-cart-product-id="{{ $product['id'] }}"
+                                    data-cart-name="{{ $product['name'] }}"
+                                    data-cart-image="{{ $productImageUrl($product['image']) }}"
+                                    data-cart-price="{{ $product['price'] }}"
+                                    data-cart-original-price="{{ $product['original_price'] ?? '' }}"
+                                    data-cart-stock="{{ $product['stock'] ?? '' }}"
+                                    data-cart-shop-id="{{ $product['shop_id'] ?? '' }}"
+                                    data-cart-shop-name="{{ ! empty($product['preview']) ? 'ShopHop demo catalog' : 'ShopHop Seller' }}"
+                                    data-cart-preview="{{ ! empty($product['preview']) ? 'true' : 'false' }}"
                                     class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal text-white hover:bg-teal-dark transition"
+                                    aria-label="Add {{ $product['name'] }} to cart"
                                 >
                                     <x-lucide-shopping-cart class="w-3.5 h-3.5" />
                                 </button>
@@ -695,6 +715,10 @@
 
                         <button
                             type="button"
+                            data-wishlist-unavailable
+                            disabled
+                            title="Wishlist is unavailable: saved items are not available yet"
+                            aria-label="Wishlist unavailable: saved items are not available yet"
                             class="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full border border-black/5 bg-white/95 text-navy/55 shadow-sm hover:text-teal-dark transition"
                         >
                             <x-lucide-heart class="w-3.5 h-3.5" />
@@ -726,7 +750,18 @@
 
                             <button
                                 type="button"
+                                data-dashboard-add-to-cart
+                                data-cart-product-id="{{ $product['id'] }}"
+                                data-cart-name="{{ $product['name'] }}"
+                                data-cart-image="{{ $productImageUrl($product['image']) }}"
+                                data-cart-price="{{ $product['price'] }}"
+                                data-cart-original-price="{{ $product['original_price'] ?? '' }}"
+                                data-cart-stock="{{ $product['stock'] ?? '' }}"
+                                data-cart-shop-id="{{ $product['shop_id'] ?? '' }}"
+                                data-cart-shop-name="{{ ! empty($product['preview']) ? 'ShopHop demo catalog' : 'ShopHop Seller' }}"
+                                data-cart-preview="{{ ! empty($product['preview']) ? 'true' : 'false' }}"
                                 class="inline-flex h-7 items-center gap-1 rounded-lg bg-teal-light px-2 text-[8.5px] font-semibold text-teal-dark hover:bg-teal hover:text-white transition"
+                                aria-label="Add {{ $product['name'] }} to cart"
                             >
                                 <x-lucide-shopping-cart class="w-3 h-3" />
                                 Add

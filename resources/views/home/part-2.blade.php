@@ -32,6 +32,12 @@
         return asset('images/' . $path);
     };
 
+    // Guest cards use canonical inventory only; fixtures would make Search lie.
+    $landingTrendingProducts = collect($trendingProducts ?? [])
+        ->take(6)
+        ->values();
+
+    /*
     $landingFallbackProducts = collect([
         [
             'name' => 'Smart Wi-Fi CCTV Camera',
@@ -109,6 +115,7 @@
     $landingTrendingProducts = $landingTrendingProducts
         ->take(6)
         ->values();
+    */
 @endphp
 
 
@@ -331,7 +338,7 @@
                 </h2>
 
                 <p class="mt-1 text-[10px] sm:text-[11px] text-navy/45">
-                    A public preview of products and categories shoppers can discover.
+                    Products currently available from ShopHop sellers.
                 </p>
             </div>
 
@@ -362,20 +369,7 @@
                 data-landing-product-track
                 class="landing-product-shelf grid grid-flow-col gap-2.5 sm:gap-3 overflow-x-auto scroll-smooth snap-x snap-mandatory [&::-webkit-scrollbar]:hidden"
             >
-                @foreach ($landingTrendingProducts as $product)
-
-                    @php
-                        $hasDiscount = ! empty($product['original_price']);
-
-                        $discount = $hasDiscount && (float) $product['original_price'] > 0
-                            ? max(
-                                1,
-                                (int) round(
-                                    (1 - ((float) $product['price'] / (float) $product['original_price'])) * 100
-                                )
-                            )
-                            : null;
-                    @endphp
+                @forelse ($landingTrendingProducts as $product)
 
                     <article
                         style="--stagger-index: {{ $loop->index % 6 }};"
@@ -390,15 +384,9 @@
                                 class="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
                             >
 
-                            @if ($discount)
-                                <span class="absolute left-2 top-2 rounded-md bg-coral px-2 py-1 text-[8px] font-bold text-white shadow-sm">
-                                    -{{ $discount }}%
-                                </span>
-                            @else
-                                <span class="absolute left-2 top-2 rounded-md bg-navy px-2 py-1 text-[8px] font-bold text-white shadow-sm">
-                                    POPULAR
-                                </span>
-                            @endif
+                        <span class="absolute left-2 top-2 rounded-md bg-navy px-2 py-1 text-[8px] font-bold text-white shadow-sm">
+                            {{ (int) $product->stock }} in stock
+                        </span>
 
                             <button
                                 type="button"
@@ -423,23 +411,15 @@
                                 {{ $product['name'] }}
                             </h3>
 
-                            <div class="mt-1.5 flex items-center gap-1 text-[8px] sm:text-[8.5px] text-navy/35">
-                                <span class="text-amber-400">★</span>
-                                <span>{{ $product['rating'] }}</span>
-                                <span>·</span>
-                                <span>{{ number_format($product['reviews'] ?? 0) }} reviews</span>
-                            </div>
+                            <p class="mt-1.5 text-[8px] sm:text-[8.5px] text-navy/35">
+                                {{ (int) $product->stock }} in stock
+                            </p>
 
                             <div class="mt-2 flex flex-wrap items-baseline gap-1.5">
                                 <span class="text-[12px] sm:text-[13px] font-bold text-teal-dark">
                                     ₱{{ number_format($product['price']) }}
                                 </span>
 
-                                @if ($hasDiscount)
-                                    <span class="text-[8px] sm:text-[9px] text-navy/25 line-through">
-                                        ₱{{ number_format($product['original_price']) }}
-                                    </span>
-                                @endif
                             </div>
 
                             <button
@@ -452,7 +432,11 @@
                             </button>
                         </div>
                     </article>
-                @endforeach
+                @empty
+                    <div class="rounded-xl border border-dashed border-gray-border bg-gray-bg px-4 py-6 text-center text-[11px] text-navy/55">
+                        No products are available yet. Check back after a seller publishes an in-stock product.
+                    </div>
+                @endforelse
             </div>
         </div>
     </div>

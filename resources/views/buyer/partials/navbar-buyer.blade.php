@@ -31,6 +31,8 @@
     ];
 
     $notificationCount = collect($notifications)->where('unread', true)->count();
+    // CartController's cart_count uses session-line cardinality, which chrome mirrors.
+    $cartItemCount = $cartItemCount ?? count(session('shophop_cart', []));
 @endphp
 
 <header class="bg-white border-b border-gray-border sticky top-0 z-50">
@@ -69,19 +71,18 @@
 
             <div class="ml-auto md:ml-0 flex items-center gap-1.5 shrink-0">
 
-                {{-- WISHLIST --}}
-                <a href="#" title="Wishlist" aria-label="Wishlist"
-                   class="hidden sm:flex relative w-8 h-8 items-center justify-center rounded-full text-navy hover:bg-gray-bg hover:text-teal-dark transition">
+                {{-- Wishlist persistence does not exist yet, so this must not imply otherwise. --}}
+                <button type="button" data-wishlist-unavailable disabled title="Wishlist is unavailable"
+                   aria-label="Wishlist unavailable: saved items are not available yet"
+                   class="hidden sm:flex w-8 h-8 items-center justify-center rounded-full text-navy/40 cursor-not-allowed opacity-55">
                     <x-lucide-heart class="w-4.5 h-4.5" />
-                    <span class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-teal text-white text-[7px] font-bold">2</span>
-                </a>
+                </button>
 
                 {{-- CART — points to the real cart route --}}
-                <a href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" title="Shopping Cart" aria-label="Shopping Cart"
+                <a data-buyer-cart-link href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" title="Shopping Cart" aria-label="Shopping Cart"
                    class="relative w-8 h-8 flex items-center justify-center rounded-full text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                     <x-lucide-shopping-cart class="w-4.5 h-4.5" />
-                    {{-- TEMP count --}}
-                    <span class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-teal text-white text-[7px] font-bold">3</span>
+                    <span data-cart-count class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-teal text-white text-[7px] font-bold">{{ $cartItemCount }}</span>
                 </a>
 
                 {{-- NOTIFICATIONS --}}
@@ -224,13 +225,14 @@
 
                 <div class="my-2 border-t border-gray-border"></div>
 
-                <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
+                <span data-wishlist-unavailable aria-disabled="true" title="Wishlist is unavailable"
+                    class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-navy/45 cursor-not-allowed">
                     <x-lucide-heart class="w-4 h-4" />
-                    Wishlist
-                </a>
+                    Wishlist unavailable
+                </span>
 
                 {{-- CART — points to the real cart route --}}
-                <a href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
+                <a data-buyer-cart-link href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
                     <x-lucide-shopping-cart class="w-4 h-4" />
                     Shopping Cart
                 </a>
@@ -291,6 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!toggle || !panel) return;
 
         let closeTimer = null;
+        // Hover or focus can open the panel before click; retain that origin so the first click does not immediately close Logout.
         let openedByToggle = false;
 
         function openMenu() {

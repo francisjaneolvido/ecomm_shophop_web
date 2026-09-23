@@ -7,6 +7,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // SQLite has no MySQL-style MODIFY ENUM support, and it does not enforce this enum type.
         if (DB::connection()->getDriverName() === 'sqlite') {
             return;
         }
@@ -28,6 +29,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Keep rollback equally portable for the local SQLite demo database.
         if (DB::connection()->getDriverName() === 'sqlite') {
             return;
         }

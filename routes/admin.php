@@ -17,6 +17,7 @@ use App\Http\Controllers\Admin\AccountManagementController;
 
 Route::prefix('admin')
     ->name('admin.')
+    // A route prefix is only a URL namespace; every admin action needs the same session and role boundary.
     ->middleware(['auth', 'approved.role:admin'])
     ->group(function () {
 

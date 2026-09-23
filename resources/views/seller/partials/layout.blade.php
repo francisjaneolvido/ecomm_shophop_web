@@ -3,6 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    {{-- Apply the persisted theme before the seller shell paints. --}}
     @include('partials.theme-head')
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -357,6 +358,7 @@
 
 <body class="bg-gray-bg text-navy antialiased">
 
+{{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 @includeWhen(app()->environment('local'), 'dev.account-switcher')
 
 <div

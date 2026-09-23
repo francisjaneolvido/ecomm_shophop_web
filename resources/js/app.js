@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Public navigation remains ordinary links without JavaScript; these hooks add in-page state only when available.
     const sectionIds = ['home', 'categories', 'deals', 'new-arrivals'];
     const validSectionIds = new Set(sectionIds.concat('trending'));
     const navLinks = Array.from(document.querySelectorAll('[data-section-nav]'));
@@ -46,6 +47,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const sections = sectionIds.slice(1)
             .map(function (id) { return document.getElementById(id); })
             .filter(Boolean);
+        // Observe section visibility instead of calculating positions in every scroll event.
         const observer = new IntersectionObserver(function (entries) {
             const visible = entries
                 .filter(function (entry) { return entry.isIntersecting; })
@@ -65,6 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setActiveSection(currentSectionId());
     }
 
+    // Intercept only same-document section links so normal routes and the no-JavaScript navigation path stay intact.
     document.addEventListener('click', function (event) {
         const link = event.target.closest('a[href]');
 
@@ -114,6 +117,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Placeholder forms have no server endpoint yet; prevent a misleading jump to the top of the page.
     document.querySelectorAll('form[action="#"]').forEach(function (form) {
         form.addEventListener('submit', function (event) {
             event.preventDefault();

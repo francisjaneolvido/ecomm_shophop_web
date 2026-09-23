@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class InventoryController extends Controller
@@ -277,6 +278,18 @@ class InventoryController extends Controller
                 ->findOrFail($request->input('voucher_id'));
         }
 
+        // A foreign Product id is an authorization failure, even if other fields are invalid.
+        $submittedProductIds = $request->input('product_ids', []);
+        if (is_array($submittedProductIds)) {
+            abort_if(
+                Product::query()
+                    ->whereIn('id', array_filter($submittedProductIds, static fn ($id) => is_int($id) || is_string($id)))
+                    ->where('seller_id', '!=', Auth::id())
+                    ->exists(),
+                403
+            );
+        }
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'code' => [
@@ -294,7 +307,13 @@ class InventoryController extends Controller
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             'product_ids' => ['nullable', 'array'],
-            'product_ids.*' => ['integer', 'exists:products,id'],
+            // The checkbox list is seller scoped, but submitted IDs need the same guard.
+            'product_ids.*' => [
+                'integer',
+                Rule::exists('products', 'id')
+                    ->where('seller_id', Auth::id())
+                    ->where('status', 'active'),
+            ],
         ]);
 
         $payload = [

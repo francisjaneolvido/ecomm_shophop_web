@@ -82,8 +82,7 @@ class CategoryController extends Controller
         // Product query
         // ---------------------------------------------------------------
         $query = Product::query()
-            ->where('status', 'active')
-            ->where('stock', '>', 0)
+            ->publiclyDiscoverable()
             ->where('category', $activeCategory['name']);
 
         if ($activeSub) {

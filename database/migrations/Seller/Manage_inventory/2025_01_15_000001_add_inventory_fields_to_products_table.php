@@ -8,6 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // Sparse preview databases can omit optional inventory tables.
         if (! Schema::hasTable('products')) {
             return;
         }
@@ -21,6 +22,7 @@ return new class extends Migration
 
     public function down(): void
     {
+        // Match the forward guard so rollback also works against the same sparse preview schema.
         if (! Schema::hasTable('products')) {
             return;
         }

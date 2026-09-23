@@ -1,15 +1,18 @@
+{{-- Resolve the saved theme before the first paint so public and role layouts never flash light. --}}
 <meta name="theme-color" content="#ffffff" data-theme-color>
 
 <script>
     (function () {
         const themes = ['light', 'dark', 'oled'];
         const colors = { light: '#ffffff', dark: '#0b1220', oled: '#000000' };
+        let transitionReleaseFrame = null;
 
         function savedTheme() {
             try {
                 const theme = localStorage.getItem('shophop-theme');
                 return themes.includes(theme) ? theme : 'light';
             } catch (error) {
+                // Privacy modes can deny storage; light remains the safe deterministic fallback.
                 return 'light';
             }
         }
@@ -32,8 +35,19 @@
 
         function applyTheme(theme, persist) {
             const selected = themes.includes(theme) ? theme : 'light';
-            document.documentElement.dataset.theme = selected;
-            document.documentElement.style.colorScheme = selected === 'light' ? 'light' : 'dark';
+            const root = document.documentElement;
+
+            if (persist) {
+                // Switch semantic tokens atomically instead of animating every affected utility.
+                if (transitionReleaseFrame) {
+                    window.cancelAnimationFrame(transitionReleaseFrame);
+                }
+
+                root.dataset.themeSwitching = 'true';
+            }
+
+            root.dataset.theme = selected;
+            root.style.colorScheme = selected === 'light' ? 'light' : 'dark';
 
             const themeColor = document.querySelector('[data-theme-color]');
             if (themeColor) {
@@ -50,8 +64,16 @@
 
             updateControls(selected);
             document.dispatchEvent(new CustomEvent('shophop:theme-change', { detail: { theme: selected } }));
+
+            if (persist) {
+                transitionReleaseFrame = window.requestAnimationFrame(function () {
+                    root.removeAttribute('data-theme-switching');
+                    transitionReleaseFrame = null;
+                });
+            }
         }
 
+        // Layouts share this small API so every repeated toggle applies identical state and accessibility copy.
         window.ShopHopTheme = {
             apply: applyTheme,
             current: function () {
@@ -75,6 +97,7 @@
             applyTheme(themes[(themes.indexOf(current) + 1) % themes.length], true);
         });
 
+        // Keep a theme choice consistent when a shopper has multiple ShopHop tabs open.
         window.addEventListener('storage', function (event) {
             if (event.key === 'shophop-theme') {
                 applyTheme(event.newValue, false);
@@ -137,6 +160,14 @@
         transition: background-color .18s ease, color .18s ease;
     }
 
+    /* Theme changes should not create a page-wide paint queue from utility transitions. */
+    html[data-theme-switching],
+    html[data-theme-switching] *,
+    html[data-theme-switching] *::before,
+    html[data-theme-switching] *::after {
+        transition: none !important;
+    }
+
     .theme-toggle {
         display: inline-flex;
         min-width: 2.75rem;
@@ -182,6 +213,7 @@
         display: block;
     }
 
+    /* Map legacy light utilities to semantic Dark/OLED surfaces without rewriting every route. */
     html:not([data-theme="light"]) .bg-white,
     html:not([data-theme="light"]) .bg-white\/95,
     html:not([data-theme="light"]) .bg-white\/90,
@@ -299,6 +331,7 @@
         --tw-ring-color: var(--sh-surface) !important;
     }
 
+    /* Image-card captions intentionally retain the light overlay for legibility over photography. */
     html:not([data-theme="light"]) .theme-image-card .text-navy {
         color: #0f1b3d !important;
     }
@@ -319,6 +352,7 @@
         color: var(--sh-text) !important;
     }
 
+    /* Lift legacy microcopy to a readable floor while preserving its existing hierarchy. */
     [class~="text-[7px]"],
     [class~="text-[8px]"],
     [class~="text-[8.5px]"],

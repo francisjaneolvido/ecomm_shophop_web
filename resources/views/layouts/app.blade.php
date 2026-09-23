@@ -11,6 +11,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
+    {{-- Load theme state before public content renders to avoid a light-theme flash. --}}
     @include('partials.theme-head')
 
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
@@ -57,6 +58,7 @@
 
 <body class="min-h-screen bg-white text-navy font-poppins antialiased selection:bg-teal/20 selection:text-navy">
 
+    {{-- TEST/DEMO aids are local previews only and never replace normal Laravel authentication. --}}
     @includeWhen(app()->environment('local'), 'dev.account-switcher')
 
 

@@ -6,16 +6,8 @@
     Privacy & Account, Vouchers, Chats, Activity Log, Notifications,
     Help Center, plus a direct My Orders shortcut and Log Out.
 
-    NOTE ON ROUTES: most action URLs below are plain "#" with a
-    "TODO: route(...)" comment — wala ka pa kasing backend routes/
-    controllers para dito, so calling route() directly would crash
-    the page (same error you hit earlier). Once you add a route,
-    just swap the "#" for {{ Route::has('name') ? route('name') : '#' }}
-    so it never hard-crashes even if the route name is off.
-
-    Sample/demo arrays below ($sampleAddresses, $sampleVouchers, etc.)
-    are placeholder data so you can see the UI populated. Swap them
-    for real Eloquent data once your controllers are ready.
+    Core profile fields use Buyer persistence. Other account settings remain
+    unavailable until their own backend contracts exist.
 --}}
 @extends('layouts.app')
 
@@ -97,9 +89,11 @@
 
 @php
     $user = auth()->user();
+    // Core buyer identity belongs to the buyer profile, not the login record.
+    $buyer = $user?->buyer;
 
     $displayName = trim(
-        ($user->first_name ?? 'Buyer') . ' ' . ($user->last_name ?? '')
+        ($buyer?->first_name ?? 'Buyer') . ' ' . ($buyer?->last_name ?? '')
     );
 
     $commonAllergens = [
@@ -129,44 +123,10 @@
         ->filter(fn ($allergen) => filled($allergen['name']))
         ->values();
 
-    // ---- Sample/demo data — replace with real queries later ----
-    $sampleAddresses = [
-        ['id' => 1, 'label' => 'Home', 'name' => $displayName, 'phone' => '0917 123 4567', 'full' => 'Blk 12 Lot 5, Molino Blvd., Brgy. Molino III, Bacoor, Cavite', 'default' => true],
-        ['id' => 2, 'label' => 'Work', 'name' => $displayName, 'phone' => '0917 123 4567', 'full' => 'Unit 4B, ABC Tower, Ayala Ave., Makati City', 'default' => false],
-    ];
-
-    $sampleVouchers = [
-        ['code' => 'SHOP100', 'title' => '₱100 Off', 'desc' => 'Min. spend ₱1,000', 'expiry' => 'Sep 30, 2026', 'status' => 'active'],
-        ['code' => 'FREESHIP', 'title' => 'Free Shipping', 'desc' => 'No minimum spend', 'expiry' => 'Aug 31, 2026', 'status' => 'active'],
-        ['code' => 'ELEC20', 'title' => '20% Off Electronics', 'desc' => 'Max discount ₱500', 'expiry' => 'Jul 15, 2026', 'status' => 'expired'],
-    ];
-
-    $sampleChats = [
-        ['seller' => 'TechHub PH', 'message' => 'Your order has been shipped na po!', 'time' => '2h ago', 'unread' => 2],
-        ['seller' => 'Cavite Pet Supplies', 'message' => 'Thank you for your order!', 'time' => '1d ago', 'unread' => 0],
-        ['seller' => 'ShopHop Support', 'message' => 'We reviewed your recent support report.', 'time' => '3d ago', 'unread' => 0],
-    ];
-
-    $activeVoucherCount = collect($sampleVouchers)
-        ->where('status', 'active')
-        ->count();
-
-    $unreadChatCount = collect($sampleChats)
-        ->sum('unread');
-
-    $sampleActivity = [
-        ['action' => 'Logged in', 'detail' => 'Chrome on Windows · Bacoor, Cavite', 'time' => 'Today, 9:42 AM'],
-        ['action' => 'Changed password', 'detail' => 'Security settings updated', 'time' => 'Aug 20, 2026'],
-        ['action' => 'Redeemed voucher', 'detail' => 'SHOP100 applied to Order #10234', 'time' => 'Aug 18, 2026'],
-        ['action' => 'Added address', 'detail' => 'New address "Work" saved', 'time' => 'Aug 15, 2026'],
-    ];
-
-    $twoFactorEnabled = (bool) ($user->two_factor_enabled ?? false);
-
     $birthdayValue = old(
         'birthday',
-        filled($user->birthday ?? null)
-            ? \Illuminate\Support\Carbon::parse($user->birthday)->format('Y-m-d')
+        filled($buyer?->birthday)
+            ? \Illuminate\Support\Carbon::parse($buyer->birthday)->format('Y-m-d')
             : ''
     );
 @endphp
@@ -204,7 +164,7 @@
                         </p>
 
                         <p class="text-[11px] sm:text-[12px] text-navy/50 mt-1.5 max-w-2xl leading-relaxed">
-                            Manage your profile, delivery addresses, security, vouchers, messages, notifications, and support in one place.
+                            Update your core profile and view your registered address. Other account controls are marked where unavailable.
                         </p>
                     </div>
 
@@ -294,8 +254,8 @@
                     <option value="allergens">Allergens & Diet</option>
                     <option value="security">Security</option>
                     <option value="privacy">Privacy & Account</option>
-                    <option value="vouchers">Vouchers ({{ $activeVoucherCount }})</option>
-                    <option value="chats">Chats ({{ $unreadChatCount }})</option>
+                    <option value="vouchers">Vouchers</option>
+                    <option value="chats">Chats</option>
                     <option value="activity">Activity Log</option>
                     <option value="notifications">Notifications</option>
                     <option value="help">Help Center</option>
@@ -333,7 +293,7 @@
                                            flex items-center justify-center text-[15px] font-bold
                                            border border-teal/10 shrink-0"
                                 >
-                                    {{ strtoupper(substr($user->first_name ?? 'B', 0, 1)) }}
+                                    {{ strtoupper(substr($buyer?->first_name ?? 'B', 0, 1)) }}
                                 </span>
                             @endif
 
@@ -341,7 +301,7 @@
 
                                 <div class="flex items-center gap-1.5 min-w-0">
                                     <p class="text-[12.5px] font-bold text-navy truncate">
-                                        {{ $user->first_name ?? 'Buyer' }} {{ $user->last_name ?? '' }}
+                                        {{ $buyer?->first_name ?? 'Buyer' }} {{ $buyer?->last_name ?? '' }}
                                     </p>
 
                                     <span class="shrink-0 text-[7px] font-bold uppercase tracking-wide
@@ -475,13 +435,6 @@
                                 <x-lucide-ticket class="w-3.5 h-3.5 shrink-0" />
                                 <span class="flex-1 text-left truncate">Vouchers</span>
 
-                                @if ($activeVoucherCount > 0)
-                                    <span class="min-w-4.5 h-4.5 px-1 rounded-full bg-teal-light
-                                                 text-teal-dark text-[7px] font-bold
-                                                 flex items-center justify-center shrink-0">
-                                        {{ $activeVoucherCount }}
-                                    </span>
-                                @endif
                             </button>
 
                             <button
@@ -495,13 +448,6 @@
                                 <x-lucide-message-circle class="w-3.5 h-3.5 shrink-0" />
                                 <span class="flex-1 text-left truncate">Chats</span>
 
-                                @if ($unreadChatCount > 0)
-                                    <span class="min-w-4.5 h-4.5 px-1 rounded-full bg-teal
-                                                 text-white text-[7px] font-bold
-                                                 flex items-center justify-center shrink-0">
-                                        {{ $unreadChatCount }}
-                                    </span>
-                                @endif
                             </button>
 
                             <button
@@ -616,29 +562,22 @@
                             This is how you appear across ShopHop.
                         </p>
 
-                        <form method="POST" action="{{ Route::has('buyer.settings.profile.update') ? route('buyer.settings.profile.update') : '#' }}" enctype="multipart/form-data" class="space-y-4">
+                        <form method="POST" action="{{ route('buyer.settings.profile.update') }}" class="space-y-4">
                             @csrf
                             @method('PATCH')
 
                             {{-- Avatar --}}
                             <div class="flex items-center gap-4">
-                                <div class="relative">
+                                <div>
                                     <img
                                         id="avatarPreviewLarge"
                                         src="{{ $user->avatar_url ?? asset('images/avatar-placeholder.png') }}"
                                         alt="Avatar preview"
                                         class="w-16 h-16 rounded-full object-cover border border-gray-border"
                                     >
-                                    <label
-                                        for="avatarInput"
-                                        class="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-teal hover:bg-teal-dark text-white flex items-center justify-center cursor-pointer shadow-md transition-colors"
-                                    >
-                                        <x-lucide-camera class="w-3.5 h-3.5" />
-                                    </label>
-                                    <input id="avatarInput" name="avatar" type="file" accept="image/*" class="hidden">
                                 </div>
                                 <div class="text-xs text-navy/50">
-                                    JPG or PNG. Max 2MB.
+                                    Avatar upload is unavailable.
                                 </div>
                             </div>
 
@@ -646,17 +585,17 @@
                             <div class="grid sm:grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Last Name *</label>
-                                    <input type="text" name="last_name" autocomplete="family-name" value="{{ old('last_name', $user->last_name ?? '') }}" required
+                                    <input type="text" name="last_name" autocomplete="family-name" value="{{ old('last_name', $buyer?->last_name ?? '') }}" required
                                         class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">First Name *</label>
-                                    <input type="text" name="first_name" autocomplete="given-name" value="{{ old('first_name', $user->first_name ?? '') }}" required
+                                    <input type="text" name="first_name" autocomplete="given-name" value="{{ old('first_name', $buyer?->first_name ?? '') }}" required
                                         class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Middle Initial</label>
-                                    <input type="text" name="middle_initial" autocomplete="additional-name" maxlength="3" value="{{ old('middle_initial', $user->middle_initial ?? '') }}"
+                                    <input type="text" name="middle_initial" autocomplete="additional-name" maxlength="2" value="{{ old('middle_initial', $buyer?->middle_initial ?? '') }}"
                                         class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                                 </div>
                             </div>
@@ -665,15 +604,21 @@
                             <div class="grid sm:grid-cols-3 gap-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Sex *</label>
-                                    <div class="flex gap-4 pt-2.5">
+                                    <div class="flex flex-wrap gap-4 pt-2.5">
                                         <label class="flex items-center gap-2 text-sm text-navy">
-                                            <input type="radio" name="sex" value="Male" class="accent-teal" {{ old('sex', $user->sex ?? '') === 'Male' ? 'checked' : '' }}>
+                                            <input type="radio" name="sex" value="Male" class="accent-teal" {{ old('sex', $buyer?->sex ?? '') === 'Male' ? 'checked' : '' }}>
                                             Male
                                         </label>
                                         <label class="flex items-center gap-2 text-sm text-navy">
-                                            <input type="radio" name="sex" value="Female" class="accent-teal" {{ old('sex', $user->sex ?? '') === 'Female' ? 'checked' : '' }}>
+                                            <input type="radio" name="sex" value="Female" class="accent-teal" {{ old('sex', $buyer?->sex ?? '') === 'Female' ? 'checked' : '' }}>
                                             Female
                                         </label>
+                                        @if (\Illuminate\Support\Facades\DB::connection()->getDriverName() !== 'sqlite')
+                                            <label class="flex items-center gap-2 text-sm text-navy">
+                                                <input type="radio" name="sex" value="Prefer not to say" class="accent-teal" {{ old('sex', $buyer?->sex ?? '') === 'Prefer not to say' ? 'checked' : '' }}>
+                                                Prefer not to say
+                                            </label>
+                                        @endif
                                     </div>
                                 </div>
                                 <div>
@@ -683,7 +628,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Age</label>
-                                    <input id="ageInput" type="text" readonly value="{{ $user->age ?? '' }}"
+                                    <input id="ageInput" type="text" readonly value="{{ $buyer?->birthday?->age ?? '' }}"
                                         class="w-full px-3 py-2 rounded-lg border border-gray-border bg-gray-bg text-sm text-navy/60">
                                 </div>
                             </div>
@@ -691,13 +636,14 @@
                             {{-- Email + Contact --}}
                             <div class="grid sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs font-semibold text-navy/70 mb-1.5">E-mail *</label>
-                                    <input type="email" name="email" autocomplete="email" value="{{ old('email', $user->email ?? '') }}" required
-                                        class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
+                                    <label class="block text-xs font-semibold text-navy/70 mb-1.5">E-mail</label>
+                                    <input type="email" autocomplete="email" value="{{ $user->email ?? '' }}" readonly
+                                        class="w-full px-3 py-2 rounded-lg border border-gray-border bg-gray-bg text-sm text-navy/60">
+                                    <p class="text-[11px] text-navy/45 mt-1">Email changes require a separate verification flow and are unavailable here.</p>
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Contact No. *</label>
-                                    <input type="tel" name="contact_no" autocomplete="tel" value="{{ old('contact_no', $user->contact_no ?? '') }}" placeholder="09XX XXX XXXX" required
+                                    <input type="tel" name="contact_no" autocomplete="tel" value="{{ old('contact_no', $buyer?->contact_no ?? '') }}" placeholder="09XX XXX XXXX" required
                                         class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                                 </div>
                             </div>
@@ -706,26 +652,10 @@
                             <div class="pt-2 border-t border-gray-border">
                                 <label class="block text-xs font-semibold text-navy/70 mb-2">Valid ID on File</label>
                                 <div class="flex flex-wrap items-center gap-4">
-                                    <img
-                                        src="{{ $user->id_document_url ?? asset('images/id-placeholder.png') }}"
-                                        alt="Uploaded ID"
-                                        class="w-28 h-18 object-cover rounded-lg border border-gray-border"
-                                    >
-
-                                    @php $idStatus = $user->id_verification_status ?? 'pending'; @endphp
-                                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold
-                                        {{ $idStatus === 'verified' ? 'bg-teal-light text-teal-dark' : ($idStatus === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-700') }}">
-                                        <x-lucide-badge-check class="w-3.5 h-3.5" />
-                                        {{ ucfirst($idStatus) }}
-                                    </span>
-
-                                    <label for="idInput" class="text-xs font-semibold text-teal-dark hover:text-teal cursor-pointer underline underline-offset-2">
-                                        Re-upload ID
-                                    </label>
-                                    <input id="idInput" name="valid_id" type="file" accept="image/*,.pdf" class="hidden">
+                                    <span class="text-xs text-navy/60">{{ filled($buyer?->valid_id_path) ? 'ID document on file' : 'No ID document on file' }}</span>
                                 </div>
                                 <p class="text-[11px] text-navy/45 mt-2">
-                                    Re-uploading your ID will require re-verification by the administrator.
+                                    ID replacement and re-verification are unavailable here.
                                 </p>
                             </div>
 
@@ -749,59 +679,24 @@
                             <div>
                                 <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Address Book</h2>
                                 <p class="text-sm text-navy/55">
-                                    Manage where your orders get delivered.
+                                    Your registration address is shown below. An editable address book is unavailable.
                                 </p>
                             </div>
-                            <button type="button" id="addAddressBtn"
-                                class="inline-flex items-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors duration-200 shrink-0">
-                                <x-lucide-plus class="w-4 h-4" /> Add New Address
+                            <button type="button" disabled title="Address book is unavailable"
+                                class="inline-flex items-center gap-1.5 bg-gray-bg text-navy/45 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-not-allowed shrink-0">
+                                <x-lucide-plus class="w-4 h-4" /> Address book unavailable
                             </button>
                         </div>
 
                         <div id="addressList" class="space-y-3">
-                            @foreach ($sampleAddresses as $address)
-                                <div data-address-card data-address-id="{{ $address['id'] }}" class="border border-gray-border rounded-xl p-3.5 hover:border-teal/30 hover:bg-gray-bg/40 transition-colors">
-                                    <div class="flex flex-wrap items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <div class="flex items-center gap-2 mb-1.5">
-                                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-teal-light text-teal-dark">
-                                                    {{ $address['label'] }}
-                                                </span>
-                                                @if ($address['default'])
-                                                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-navy/50">
-                                                        <x-lucide-star class="w-3 h-3 fill-current" /> Default
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <p class="text-sm font-semibold text-navy">{{ $address['name'] }} &middot; {{ $address['phone'] }}</p>
-                                            <p class="text-sm text-navy/60 mt-0.5">{{ $address['full'] }}</p>
-                                        </div>
-
-                                        <div class="flex items-center gap-3 shrink-0">
-                                            @if (! $address['default'])
-                                                <button type="button" data-set-default="{{ $address['id'] }}" class="text-xs font-semibold text-navy/60 hover:text-teal-dark">
-                                                    Set as Default
-                                                </button>
-                                            @endif
-                                            <button type="button" data-edit-address="{{ $address['id'] }}" class="text-navy/50 hover:text-teal-dark" aria-label="Edit address">
-                                                <x-lucide-pencil class="w-4 h-4" />
-                                            </button>
-                                            <button type="button"
-                                                data-confirm-action="remove-address"
-                                                data-confirm-message="This will remove the &quot;{{ $address['label'] }}&quot; address from your address book."
-                                                data-target-id="{{ $address['id'] }}"
-                                                class="text-navy/50 hover:text-red-500" aria-label="Remove address">
-                                                <x-lucide-trash-2 class="w-4 h-4" />
-                                            </button>
-                                        </div>
-                                    </div>
+                            @if ($buyer)
+                                <div class="border border-gray-border rounded-xl p-3.5">
+                                    <p class="text-xs font-semibold text-navy/50 mb-1">Registration address · read only</p>
+                                    <p class="text-sm font-semibold text-navy">{{ $displayName }} &middot; {{ $buyer->contact_no }}</p>
+                                    <p class="text-sm text-navy/60 mt-0.5">{{ $buyer->street_address }}, {{ $buyer->barangay_name }}, {{ $buyer->municipality_name }}, {{ $buyer->province_name }}</p>
                                 </div>
-                            @endforeach
+                            @endif
                         </div>
-
-                        <p id="noAddressesNote" class="hidden text-sm text-navy/40 italic text-center py-6">
-                            No saved addresses yet.
-                        </p>
                     </div>
                 </div>
 
@@ -818,14 +713,13 @@
                             <div>
                                 <h2 class="text-navy text-base sm:text-lg font-bold">Allergens & Dietary Preferences</h2>
                                 <p class="text-sm text-navy/55 mt-1">
-                                    Tell us what you're allergic to. Sellers disclose ingredients on food
-                                    products, and we'll warn you at checkout if something you're ordering
-                                    matches an allergen on this list.
+                                    Allergen alerts and saved dietary preferences are unavailable.
                                 </p>
                             </div>
                         </div>
 
-                        <form method="POST" action="{{ Route::has('buyer.settings.allergens.update') ? route('buyer.settings.allergens.update') : '#' }}" class="space-y-4">
+                        <form class="space-y-4">
+                            <fieldset disabled>
                             @csrf
                             @method('PATCH')
 
@@ -865,11 +759,12 @@
                             <div id="allergenHiddenInputs"></div>
 
                             <div class="flex justify-end pt-2">
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
-                                    Save Preferences
+                                <button type="button" disabled
+                                    class="inline-flex items-center justify-center gap-1.5 bg-gray-bg text-navy/45 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed">
+                                    Preferences unavailable
                                 </button>
                             </div>
+                            </fieldset>
                         </form>
                     </div>
                 </div>
@@ -886,9 +781,9 @@
                                 Update your password to keep your account secure.
                             </p>
 
-                            <form id="passwordForm" method="POST" action="{{ Route::has('buyer.settings.password.update') ? route('buyer.settings.password.update') : '#' }}" class="space-y-4 max-w-md">
-                                @csrf
-                                @method('PATCH')
+                            <p class="text-xs text-navy/50 mb-4">Password change is unavailable from this page.</p>
+                            <form id="passwordForm" class="space-y-4 max-w-md">
+                                <fieldset disabled>
 
                                 <div>
                                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Current Password *</label>
@@ -908,22 +803,23 @@
                                 </div>
 
                                 <div class="flex justify-end pt-2">
-                                    <button type="submit"
-                                        class="inline-flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
-                                        Update Password
+                                    <button type="button" disabled
+                                        class="inline-flex items-center justify-center gap-1.5 bg-gray-bg text-navy/45 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed">
+                                        Password change unavailable
                                     </button>
                                 </div>
+                                </fieldset>
                             </form>
                         </div>
 
                         <div class="pt-5 border-t border-gray-border">
-                            <label class="flex items-center justify-between gap-4 cursor-pointer max-w-lg border border-gray-border rounded-xl p-3.5 hover:bg-gray-bg/50 transition-colors">
+                            <label class="flex items-center justify-between gap-4 max-w-lg border border-gray-border rounded-xl p-3.5">
                                 <span>
                                     <span class="block text-sm font-semibold text-navy">Two-Factor Authentication</span>
-                                    <span class="block text-xs text-navy/50 mt-0.5">Adds an extra verification step when logging in.</span>
+                                    <span class="block text-xs text-navy/50 mt-0.5">Unavailable. No two-factor login contract exists.</span>
                                 </span>
                                 <span class="relative inline-flex items-center shrink-0">
-                                    <input type="checkbox" name="two_factor_enabled" value="1" {{ $twoFactorEnabled ? 'checked' : '' }} class="peer sr-only">
+                                    <input type="checkbox" disabled class="peer sr-only">
                                     <span class="w-11 h-6 rounded-full bg-gray-border peer-checked:bg-teal transition-colors duration-200"></span>
                                     <span class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-5"></span>
                                 </span>
@@ -941,27 +837,27 @@
                         <div>
                             <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Privacy & Account</h2>
                             <p class="text-sm text-navy/55">
-                                Control your data and how visible your activity is to others.
+                                These account controls are unavailable until their backend contracts are built.
                             </p>
                         </div>
 
                         <div class="flex items-center justify-between gap-4 max-w-xl border border-gray-border rounded-xl p-3.5">
                             <div>
                                 <p class="text-sm font-semibold text-navy">Download My Data</p>
-                                <p class="text-xs text-navy/50 mt-0.5">Get a copy of your profile, orders, and activity.</p>
+                                <p class="text-xs text-navy/50 mt-0.5">Data export requests are unavailable.</p>
                             </div>
-                            <button type="button" class="inline-flex items-center gap-1.5 border border-navy text-navy text-xs font-semibold px-3.5 py-2 rounded-lg hover:bg-navy hover:text-white transition-colors duration-200 shrink-0">
-                                <x-lucide-download class="w-4 h-4" /> Request
+                            <button type="button" disabled class="inline-flex items-center gap-1.5 border border-gray-border text-navy/45 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-not-allowed shrink-0">
+                                <x-lucide-download class="w-4 h-4" /> Unavailable
                             </button>
                         </div>
 
-                        <label class="flex items-center justify-between gap-4 cursor-pointer max-w-xl border border-gray-border rounded-xl p-3.5 hover:bg-gray-bg/50 transition-colors">
+                        <label class="flex items-center justify-between gap-4 max-w-xl border border-gray-border rounded-xl p-3.5">
                             <span>
                                 <span class="block text-sm font-semibold text-navy">Show My Review Activity Publicly</span>
-                                <span class="block text-xs text-navy/50 mt-0.5">Other buyers can see reviews you've posted.</span>
+                                <span class="block text-xs text-navy/50 mt-0.5">Review visibility settings are unavailable.</span>
                             </span>
                             <span class="relative inline-flex items-center shrink-0">
-                                <input type="checkbox" name="public_reviews" value="1" checked class="peer sr-only">
+                                <input type="checkbox" disabled class="peer sr-only">
                                 <span class="w-11 h-6 rounded-full bg-gray-border peer-checked:bg-teal transition-colors duration-200"></span>
                                 <span class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-5"></span>
                             </span>
@@ -975,22 +871,22 @@
                                 <div class="flex flex-wrap items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
                                     <div>
                                         <p class="text-sm font-semibold text-navy">Deactivate Account</p>
-                                        <p class="text-xs text-navy/55 mt-0.5">Temporarily hide your profile. Log back in anytime to reactivate.</p>
+                                        <p class="text-xs text-navy/55 mt-0.5">Self-deactivation and reactivation are unavailable.</p>
                                     </div>
-                                    <button type="button" data-confirm-action="deactivate"
-                                        class="inline-flex items-center gap-1.5 bg-white border border-amber-500 text-amber-700 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg hover:bg-amber-500 hover:text-white transition-colors duration-200 shrink-0">
-                                        <x-lucide-power class="w-4 h-4" /> Deactivate
+                                    <button type="button" disabled
+                                        class="inline-flex items-center gap-1.5 bg-white border border-gray-border text-navy/45 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed shrink-0">
+                                        <x-lucide-power class="w-4 h-4" /> Unavailable
                                     </button>
                                 </div>
 
                                 <div class="flex flex-wrap items-center justify-between gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
                                     <div>
                                         <p class="text-sm font-semibold text-navy">Delete Account</p>
-                                        <p class="text-xs text-navy/55 mt-0.5">Permanently erase your account, orders, and saved data. Cannot be undone.</p>
+                                        <p class="text-xs text-navy/55 mt-0.5">Account deletion requests are unavailable.</p>
                                     </div>
-                                    <button type="button" data-confirm-action="delete"
-                                        class="inline-flex items-center gap-1.5 bg-white border border-red-500 text-red-600 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors duration-200 shrink-0">
-                                        <x-lucide-trash-2 class="w-4 h-4" /> Delete Account
+                                    <button type="button" disabled
+                                        class="inline-flex items-center gap-1.5 bg-white border border-gray-border text-navy/45 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed shrink-0">
+                                        <x-lucide-trash-2 class="w-4 h-4" /> Unavailable
                                     </button>
                                 </div>
                             </div>
@@ -1005,36 +901,16 @@
                     <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
 
                         <h2 class="text-navy text-base sm:text-lg font-bold mb-1">My Vouchers</h2>
-                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Discounts and perks available on your account.</p>
+                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Account vouchers and redemption are unavailable. Seller voucher codes appear on eligible real Product details.</p>
 
                         <div class="flex gap-2 mb-4 max-w-md">
-                            <input type="text" placeholder="Enter voucher code"
+                            <input type="text" disabled placeholder="Voucher redemption unavailable"
                                 class="flex-1 px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                            <button type="button" class="bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
-                                Redeem
+                            <button type="button" disabled class="bg-gray-bg text-navy/45 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed">
+                                Unavailable
                             </button>
                         </div>
 
-                        <div class="grid sm:grid-cols-2 gap-4">
-                            @foreach ($sampleVouchers as $voucher)
-                                @php $expired = $voucher['status'] === 'expired'; @endphp
-                                <div class="relative border border-dashed rounded-xl p-3.5 {{ $expired ? 'border-gray-border opacity-50' : 'border-teal bg-teal-light/20' }}">
-                                    <div class="flex items-start justify-between gap-2">
-                                        <div>
-                                            <p class="text-sm font-bold text-navy">{{ $voucher['title'] }}</p>
-                                            <p class="text-xs text-navy/55 mt-0.5">{{ $voucher['desc'] }}</p>
-                                        </div>
-                                        <x-lucide-ticket class="w-5 h-5 {{ $expired ? 'text-navy/30' : 'text-teal' }} shrink-0" />
-                                    </div>
-                                    <div class="flex items-center justify-between mt-3 pt-3 border-t border-dashed border-gray-border">
-                                        <span class="text-[11px] font-mono text-navy/50">{{ $voucher['code'] }}</span>
-                                        <span class="text-[11px] {{ $expired ? 'text-navy/40' : 'text-navy/50' }}">
-                                            {{ $expired ? 'Expired' : 'Valid until' }} {{ $voucher['expiry'] }}
-                                        </span>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
                     </div>
                 </div>
 
@@ -1047,34 +923,10 @@
                         <div class="flex items-start justify-between gap-4 mb-4">
                             <div>
                                 <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Chats</h2>
-                                <p class="text-sm text-navy/55">Recent conversations with sellers and support.</p>
+                                <p class="text-sm text-navy/55">Account chat history is unavailable here. Buyer Messages remains a frontend demo.</p>
                             </div>
-                            <a href="#" class="text-xs sm:text-sm font-semibold text-teal-dark hover:text-teal shrink-0">
-                                Open Full Chat
-                            </a>
                         </div>
 
-                        <div class="divide-y divide-gray-border">
-                            @foreach ($sampleChats as $chat)
-                                <a href="#" class="flex items-center gap-3 py-3 hover:bg-gray-bg -mx-2 px-2 rounded-lg transition-colors duration-150">
-                                    <div class="w-9 h-9 rounded-full bg-teal-light text-teal-dark flex items-center justify-center text-sm font-bold shrink-0">
-                                        {{ strtoupper(substr($chat['seller'], 0, 1)) }}
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-sm font-semibold text-navy truncate">{{ $chat['seller'] }}</p>
-                                        <p class="text-xs text-navy/55 truncate">{{ $chat['message'] }}</p>
-                                    </div>
-                                    <div class="text-right shrink-0">
-                                        <p class="text-[11px] text-navy/40">{{ $chat['time'] }}</p>
-                                        @if ($chat['unread'] > 0)
-                                            <span class="inline-flex items-center justify-center mt-1 w-4.5 h-4.5 rounded-full bg-teal text-white text-[10px] font-bold">
-                                                {{ $chat['unread'] }}
-                                            </span>
-                                        @endif
-                                    </div>
-                                </a>
-                            @endforeach
-                        </div>
                     </div>
                 </div>
 
@@ -1085,25 +937,7 @@
                     <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
 
                         <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Activity Log</h2>
-                        <p class="text-xs sm:text-sm text-navy/50 mb-4">A history of actions taken on your account.</p>
-
-                        <div class="space-y-0">
-                            @foreach ($sampleActivity as $i => $entry)
-                                <div class="flex gap-4">
-                                    <div class="flex flex-col items-center">
-                                        <span class="w-2.5 h-2.5 rounded-full bg-teal shrink-0 mt-1.5"></span>
-                                        @if (! $loop->last)
-                                            <span class="w-px flex-1 bg-gray-border"></span>
-                                        @endif
-                                    </div>
-                                    <div class="pb-5">
-                                        <p class="text-sm font-semibold text-navy">{{ $entry['action'] }}</p>
-                                        <p class="text-xs text-navy/55 mt-0.5">{{ $entry['detail'] }}</p>
-                                        <p class="text-[11px] text-navy/40 mt-1">{{ $entry['time'] }}</p>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
+                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Account activity history is unavailable.</p>
                     </div>
                 </div>
 
@@ -1114,11 +948,10 @@
                     <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
 
                         <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Notifications</h2>
-                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Choose what ShopHop can notify you about.</p>
+                        <p class="text-xs sm:text-sm text-navy/50 mb-4">Notification preferences are unavailable and are not saved.</p>
 
-                        <form method="POST" action="{{ Route::has('buyer.settings.notifications.update') ? route('buyer.settings.notifications.update') : '#' }}" class="space-y-1">
-                            @csrf
-                            @method('PATCH')
+                        <form class="space-y-1">
+                            <fieldset disabled>
 
                             @foreach ([
                                 ['name' => 'order_updates', 'label' => 'Order Updates', 'desc' => 'Shipping, delivery, and status changes.', 'checked' => true],
@@ -1132,7 +965,7 @@
                                         <span class="block text-xs text-navy/50 mt-0.5">{{ $pref['desc'] }}</span>
                                     </span>
                                     <span class="relative inline-flex items-center shrink-0">
-                                        <input type="checkbox" name="{{ $pref['name'] }}" value="1" {{ $pref['checked'] ? 'checked' : '' }} class="peer sr-only">
+                                        <input type="checkbox" class="peer sr-only">
                                         <span class="w-11 h-6 rounded-full bg-gray-border peer-checked:bg-teal transition-colors duration-200"></span>
                                         <span class="absolute left-1 top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-200 peer-checked:translate-x-5"></span>
                                     </span>
@@ -1140,11 +973,12 @@
                             @endforeach
 
                             <div class="flex justify-end pt-4">
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
-                                    Save Preferences
+                                <button type="button" disabled
+                                    class="inline-flex items-center justify-center gap-1.5 bg-gray-bg text-navy/45 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed">
+                                    Preferences unavailable
                                 </button>
                             </div>
+                            </fieldset>
                         </form>
                     </div>
                 </div>
@@ -1171,19 +1005,17 @@
                                     <x-lucide-package class="w-4 h-4" />
                                 </span>
                                 <p class="text-[11px] font-bold text-navy mt-2.5">Order Help</p>
-                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
-                                    Track an order or report a delivered-order issue.
-                                </p>
+                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">Buyer Orders is a frontend preview.</p>
                             </a>
 
-                            <a href="#chats"
+                            <a href="{{ route('buyer.messages') }}"
                                class="rounded-xl border border-gray-border p-3.5 hover:border-teal/30 hover:bg-teal-light/20 transition">
                                 <span class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
                                     <x-lucide-message-circle class="w-4 h-4" />
                                 </span>
-                                <p class="text-[11px] font-bold text-navy mt-2.5">Contact Support</p>
+                                <p class="text-[11px] font-bold text-navy mt-2.5">Messages preview</p>
                                 <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
-                                    Continue a conversation with ShopHop support.
+                                    Buyer Messages is a frontend demo with no conversation backend.
                                 </p>
                             </a>
 
@@ -1194,7 +1026,7 @@
                                 </span>
                                 <p class="text-[11px] font-bold text-navy mt-2.5">Account Security</p>
                                 <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
-                                    Password, login, and account-protection help.
+                                    Password and two-factor controls are currently unavailable.
                                 </p>
                             </a>
                         </div>

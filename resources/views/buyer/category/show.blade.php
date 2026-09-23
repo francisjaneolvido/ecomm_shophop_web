@@ -471,9 +471,11 @@
 
                                 <button
                                     type="button"
-                                    title="Add to wishlist"
-                                    class="wishlist-btn absolute top-1.5 left-1.5 w-6 h-6 rounded-md bg-white/95 shadow-sm border border-black/5 flex items-center justify-center text-navy hover:text-teal-dark transition opacity-0 group-hover:opacity-100"
-                                    data-wished="false"
+                                    data-wishlist-unavailable
+                                    disabled
+                                    title="Wishlist is unavailable: saved items are not available yet"
+                                    aria-label="Wishlist unavailable: saved items are not available yet"
+                                    class="absolute top-1.5 left-1.5 w-6 h-6 rounded-md bg-white/95 shadow-sm border border-black/5 flex items-center justify-center text-navy/45 cursor-not-allowed opacity-50"
                                 >
                                     <x-lucide-heart class="w-3 h-3" />
                                 </button>
@@ -583,17 +585,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 link.classList.remove('hidden');
             });
             btn.remove();
-        });
-    });
-
-    document.querySelectorAll('.wishlist-btn').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            const wished = btn.getAttribute('data-wished') === 'true';
-            btn.setAttribute('data-wished', String(!wished));
-            if (motionReduced) return;
-            btn.classList.remove('heart-pop');
-            void btn.offsetWidth;
-            btn.classList.add('heart-pop');
         });
     });
 

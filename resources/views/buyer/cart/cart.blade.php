@@ -568,6 +568,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    function updateCartCountBadges(count) {
+        document.querySelectorAll('[data-cart-count]').forEach(function (badge) {
+            badge.textContent = count;
+        });
+    }
+
     async function apiRequest(url, options = {}) {
         try {
             const response = await fetch(url, {
@@ -584,7 +590,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error('Request failed: ' + response.status);
             }
 
-            return await response.json();
+            const data = await response.json();
+            if (typeof data?.cart_count === 'number') {
+                updateCartCountBadges(data.cart_count);
+            }
+
+            return data;
         } catch (error) {
             console.error(error);
             showToast('Something went wrong. Please try again.');
@@ -619,6 +630,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    // Cart voucher math is a preview; purchase totals require server validation of persisted eligibility.
     function calculateVoucherDiscount(subtotal) {
         if (!activeVoucher || subtotal <= 0) return 0;
 
@@ -921,6 +933,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    // Selected keys and quantities are requests, not proof that a line exists or remains purchasable.
     function proceedToCheckout() {
         const selected = Array.from(currentItemCheckboxes())
             .filter(function (cb) { return cb.checked; });

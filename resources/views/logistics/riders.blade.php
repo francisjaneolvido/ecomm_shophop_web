@@ -23,6 +23,10 @@
     };
 @endphp
 
+<div role="status" class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    {{ session('notice') ?: 'Preview data: interviews, rider decisions, status changes, and warnings are not saved.' }}
+</div>
+
 {{-- =========================================================
     PAGE HEADER
 ========================================================= --}}
@@ -875,7 +879,7 @@
                     const existing = interviewState[id] || {};
                     interviewState[id] = { status: 'completed', date: existing.date, time: existing.time };
                     renderInterviewState(id);
-                    showToast('Interview marked as completed. You can now approve this applicant.', 'success');
+                showToast('Preview only: interview completion is not saved. Approve is enabled on this page.', 'info');
                     return;
                 }
 
@@ -1129,7 +1133,7 @@
                 renderInterviewState(pendingScheduleId);
             }
             closeModal('modal-schedule');
-            showToast('Interview invite queued — email sending isn\'t wired up yet.', 'info');
+            showToast('Preview schedule only — not saved; no email was sent.', 'info');
         });
 
         // -----------------------------------------------------------
@@ -1163,7 +1167,6 @@
             closeModal('modal-confirm-approve');
             closeModal('modal-view');
             if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
-            showToast('Applicant approved.', 'success');
         });
 
         document.getElementById('disapprove-confirm-btn').addEventListener('click', function () {
@@ -1178,7 +1181,6 @@
                 closeModal('modal-confirm-disapprove');
                 closeModal('modal-view');
                 form.requestSubmit ? form.requestSubmit() : form.submit();
-                showToast('Applicant disapproved.', 'error');
             }
         });
 
@@ -1373,7 +1375,6 @@
             closeModal('modal-confirm-status');
             closeModal('modal-rider-detail');
             if (form) form.requestSubmit ? form.requestSubmit() : form.submit();
-            showToast(pendingStatusAction === 'suspend' ? 'Rider suspended.' : 'Rider activated.', pendingStatusAction === 'suspend' ? 'error' : 'success');
         });
 
         // -----------------------------------------------------------
