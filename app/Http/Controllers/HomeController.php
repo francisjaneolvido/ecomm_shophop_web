@@ -3,6 +3,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Seller\Manage_inventory\Product;
+
 class HomeController extends Controller
 {
     /**
@@ -91,57 +93,12 @@ class HomeController extends Controller
             : array_slice($allCategories, 0, 7);
 
 
-        /*
-        |--------------------------------------------------------------------------
-        | TRENDING PRODUCTS
-        |--------------------------------------------------------------------------
-        |
-        | Temporary static data.
-        | Later pwede itong manggaling sa Product model/database.
-        |
-        */
-
-        $trendingProducts = [
-            [
-                'name' => 'Minimalist Canvas Sneakers',
-                'category' => "Women's Apparel",
-                'price' => 899,
-                'original_price' => 1199,
-                'rating' => 4.6,
-                'reviews' => 128,
-                'image' => 'https://placehold.co/400x400/F3F5F7/0F1B3D?text=Sneakers',
-            ],
-
-            [
-                'name' => 'Wireless Earbuds Pro',
-                'category' => 'Electronics and Gadgets',
-                'price' => 1299,
-                'original_price' => null,
-                'rating' => 4.8,
-                'reviews' => 342,
-                'image' => 'https://placehold.co/400x400/F3F5F7/0F1B3D?text=Earbuds',
-            ],
-
-            [
-                'name' => 'Everyday Tote Bag',
-                'category' => "Women's Apparel",
-                'price' => 599,
-                'original_price' => 799,
-                'rating' => 4.5,
-                'reviews' => 96,
-                'image' => 'https://placehold.co/400x400/F3F5F7/0F1B3D?text=Tote+Bag',
-            ],
-
-            [
-                'name' => 'Smart Fitness Watch',
-                'category' => 'Electronics and Gadgets',
-                'price' => 1799,
-                'original_price' => null,
-                'rating' => 4.7,
-                'reviews' => 210,
-                'image' => 'https://placehold.co/400x400/F3F5F7/0F1B3D?text=Fitness+Watch',
-            ],
-        ];
+        // Guest cards and Search must draw from the same available persisted catalogue.
+        $trendingProducts = Product::query()
+            ->publiclyDiscoverable()
+            ->latest()
+            ->take(6)
+            ->get();
 
 
         /*

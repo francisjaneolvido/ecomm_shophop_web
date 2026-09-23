@@ -33,6 +33,11 @@
 
 @include('buyer.dashboard.d-part-2')
 
+<div id="dashboardCartToast" role="status" aria-live="polite"
+    class="fixed left-1/2 bottom-5 z-60 -translate-x-1/2 translate-y-6 opacity-0 pointer-events-none bg-navy text-white text-[9.5px] font-medium px-3 py-2 rounded-lg shadow-lg transition-all duration-200">
+    <span data-dashboard-cart-status></span>
+</div>
+
 @include('partials.footer')
 
 @endsection
@@ -185,6 +190,95 @@ document.addEventListener('DOMContentLoaded', function () {
     const motionReduced =
         window.matchMedia &&
         window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const dashboardCartToast = document.getElementById('dashboardCartToast');
+    const dashboardCartStatus = document.querySelector('[data-dashboard-cart-status]');
+    // Card data is only a session-cart hint; checkout must re-read price, stock, and ownership from persisted Product.
+    const dashboardCartAddUrl = @json(route('buyer.cart.add'));
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    let dashboardCartToastTimer = null;
+
+    function updateCartCountBadges(count) {
+        document.querySelectorAll('[data-cart-count]').forEach(function (badge) {
+            badge.textContent = count;
+        });
+    }
+
+    function showDashboardCartStatus(message) {
+        if (!dashboardCartToast || !dashboardCartStatus) return;
+
+        dashboardCartStatus.textContent = message;
+        dashboardCartToast.classList.remove('translate-y-6', 'opacity-0');
+        dashboardCartToast.classList.add('translate-y-0', 'opacity-100');
+        clearTimeout(dashboardCartToastTimer);
+        dashboardCartToastTimer = setTimeout(function () {
+            dashboardCartToast.classList.remove('translate-y-0', 'opacity-100');
+            dashboardCartToast.classList.add('translate-y-6', 'opacity-0');
+        }, 2200);
+    }
+
+    document.querySelectorAll('[data-dashboard-add-to-cart]').forEach(function (button) {
+        button.addEventListener('click', async function () {
+            if (button.dataset.cartAdding === 'true') return;
+
+            const price = Number(button.dataset.cartPrice);
+            if (!button.dataset.cartProductId || !button.dataset.cartName || !Number.isFinite(price)) {
+                console.error('Dashboard cart payload is incomplete.');
+                showDashboardCartStatus('Could not add this item to cart.');
+                return;
+            }
+
+            button.dataset.cartAdding = 'true';
+            button.disabled = true;
+
+            try {
+                const response = await fetch(dashboardCartAddUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        product_id: button.dataset.cartProductId,
+                        variant_id: null,
+                        variant_label: 'Standard',
+                        name: button.dataset.cartName,
+                        image: button.dataset.cartImage,
+                        price: price,
+                        original_price: button.dataset.cartOriginalPrice
+                            ? Number(button.dataset.cartOriginalPrice)
+                            : null,
+                        stock: button.dataset.cartStock
+                            ? Number(button.dataset.cartStock)
+                            : null,
+                        qty: 1,
+                        shop_id: button.dataset.cartShopId || null,
+                        shop_name: button.dataset.cartShopName || null,
+                    }),
+                });
+
+                if (!response.ok) {
+                    throw new Error('Dashboard add to cart failed: ' + response.status);
+                }
+
+                const data = await response.json();
+                if (typeof data?.cart_count !== 'number') {
+                    throw new Error('Dashboard add to cart returned no cart count.');
+                }
+
+                updateCartCountBadges(data.cart_count);
+                showDashboardCartStatus('Added to cart. Cart has ' + data.cart_count + ' item(s).');
+            } catch (error) {
+                console.error(error);
+                showDashboardCartStatus('Could not add this item to cart.');
+            } finally {
+                delete button.dataset.cartAdding;
+                button.disabled = false;
+            }
+        });
+    });
 
 
     /*

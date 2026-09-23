@@ -6,6 +6,7 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Buyer\ShowProductDetails_Controller as BuyerProductController;
 use App\Http\Controllers\Buyer\CategoryController as BuyerCategoryController;
 use App\Http\Controllers\Buyer\CartController as BuyerCartController;
+use App\Http\Controllers\Buyer\BuyerProfileController;
 
 
 /*
@@ -60,21 +61,11 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Product Preview
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/product-preview', function () {
-            return view('buyer.product.show-product-details');
-        })->name('product.preview');
-
-
-        /*
-        |--------------------------------------------------------------------------
         | Product Details
         |--------------------------------------------------------------------------
         */
 
+        // Product detail needs the controller's persisted Product and review data; a bare view route cannot supply them.
         Route::get('/product/{product}', [
             BuyerProductController::class,
             'show',
@@ -177,17 +168,17 @@ Route::prefix('buyer')
             return view('buyer.buyer-profile-settings');
         })->name('profile');
 
+        Route::patch('/settings/profile', [
+            BuyerProfileController::class,
+            'update',
+        ])->name('settings.profile.update');
+
 
         /*
         |--------------------------------------------------------------------------
         | Future Buyer Settings
         |--------------------------------------------------------------------------
         */
-
-        // Route::patch('/settings/profile', [
-        //     BuyerProfileController::class,
-        //     'update'
-        // ])->name('settings.profile.update');
 
         // Route::patch('/settings/address', [
         //     BuyerProfileController::class,

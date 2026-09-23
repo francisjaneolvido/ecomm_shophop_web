@@ -44,14 +44,17 @@ Route::prefix('logistics-partner')
 | Logistics Partner Console
 |--------------------------------------------------------------------------
 |
-| Auth temporarily disabled.
-| Ibalik ang middleware kapag ready na ang login/account system.
+| Console routes require the same approved role boundary as the other
+| operational portals; applicant entry remains in the public group above.
 |
 */
 
 Route::prefix('logistics-partner')
     ->name('logistics.')
-    // ->middleware(['auth'])
+    ->middleware([
+        'auth',
+        'approved.role:logistics',
+    ])
     ->group(function () {
 
         /*

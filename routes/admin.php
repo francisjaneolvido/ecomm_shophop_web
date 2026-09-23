@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\AccountManagementController;
 
 Route::prefix('admin')
     ->name('admin.')
+    // A route prefix is only a URL namespace; every admin action needs the same session and role boundary.
+    ->middleware(['auth', 'approved.role:admin'])
     ->group(function () {
 
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
@@ -85,7 +87,4 @@ Route::prefix('admin')
         Route::patch('/accounts/{admin}/enable', [AccountManagementController::class, 'enable'])
             ->name('accounts.enable');
 
-        Route::get('/logout', function () {
-            return redirect('/');
-        })->name('logout');
-    });
+});

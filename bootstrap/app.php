@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Deployment terminates HTTPS at a proxy; honor forwarded scheme for secure links and cookies.
+        $middleware->trustProxies(at: '*');
 
         $middleware->alias([
             'approved.role' => EnsureApprovedRole::class,

@@ -1624,4 +1624,4 @@
     });
 </script>
 
-@endsectiongit add .
+@endsection

@@ -17,8 +17,9 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'admin@shophop.com'],
             [
+                // Keep the demo administrator aligned with the credentials supplied by the team.
                 'name' => 'Admin',
-                'password' => Hash::make('Admin123!'),
+                'password' => Hash::make('Admin1234!'),
                 'account_type' => 'admin',
                 'status' => 'approved',
                 'email_verified_at' => now(),

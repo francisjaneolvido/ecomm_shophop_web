@@ -52,6 +52,6 @@ class DeliveryController extends Controller
 
         // TODO: assign the delivery to the chosen rider, notify both parties.
 
-        return back()->with('status', "Delivery #{$delivery} assigned.");
+        return back()->with('notice', 'Preview only: delivery assignment was not saved.');
     }
 }

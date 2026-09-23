@@ -3,6 +3,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    {{-- Apply the persisted theme before the seller shell paints. --}}
+    @include('partials.theme-head')
+
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <title>@yield('title', 'Seller') - ShopHop Seller</title>
@@ -354,6 +357,9 @@
 
 
 <body class="bg-gray-bg text-navy antialiased">
+
+{{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
+@includeWhen(app()->environment('local'), 'dev.account-switcher')
 
 <div
     id="sellerShell"
@@ -740,6 +746,8 @@
 
 
             <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
+
+                @include('partials.theme-toggle')
 
                 {{-- Visit storefront --}}
                 <a

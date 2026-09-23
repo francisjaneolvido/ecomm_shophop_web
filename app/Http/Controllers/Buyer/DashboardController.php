@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Seller\Manage_inventory\Product;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -25,6 +26,8 @@ class DashboardController extends Controller
         $recommendedProducts = $this->getRecommendedProducts();
         $dealProducts = $this->getDealProducts();
         $newArrivals = $this->getNewArrivals();
+        // CartController's cart_count is the number of session lines, not total quantity.
+        $cartItemCount = count(session('shophop_cart', []));
 
         return view('buyer.dashboard.dashboard', compact(
             'buyerName',
@@ -36,7 +39,8 @@ class DashboardController extends Controller
             'recentlyViewed',
             'recommendedProducts',
             'dealProducts',
-            'newArrivals'
+            'newArrivals',
+            'cartItemCount'
         ));
     }
 
@@ -50,9 +54,13 @@ class DashboardController extends Controller
      */
     private function activeProductsQuery()
     {
-        return Product::query()
-            ->where('status', 'active')
-            ->where('stock', '>', 0);
+        return Product::query()->publiclyDiscoverable();
+    }
+
+    private function productsTableIsAvailable(): bool
+    {
+        // Sparse demo catalog: render the existing empty state instead of throwing.
+        return Schema::hasTable((new Product())->getTable());
     }
 
 
@@ -87,6 +95,8 @@ class DashboardController extends Controller
             'rating' => 4.5,   // placeholder until reviews exist
             'reviews' => 0,    // placeholder until reviews exist
             'image' => asset($imagePath),
+            'stock' => (int) $product->stock,
+            'shop_id' => $product->seller_id,
         ];
     }
 
@@ -127,6 +137,10 @@ class DashboardController extends Controller
      */
     private function getTrendingProducts(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->latest()
             ->take(4)
@@ -143,6 +157,10 @@ class DashboardController extends Controller
      */
     private function getRecommendedProducts(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->inRandomOrder()
             ->take(5)
@@ -157,6 +175,10 @@ class DashboardController extends Controller
      */
     private function getDealProducts(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->where('discount', '>', 0)
             ->latest()
@@ -172,6 +194,10 @@ class DashboardController extends Controller
      */
     private function getNewArrivals(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->latest()
             ->take(5)
@@ -191,6 +217,10 @@ class DashboardController extends Controller
      */
     private function getRecentlyViewed(): array
     {
+        if (! $this->productsTableIsAvailable()) {
+            return [];
+        }
+
         return $this->activeProductsQuery()
             ->inRandomOrder()
             ->take(5)

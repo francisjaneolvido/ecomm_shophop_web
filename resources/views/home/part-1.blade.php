@@ -105,10 +105,11 @@
 {{-- =========================================================
     HERO — BRAND / PUBLIC DISCOVERY
 ========================================================= --}}
-<section class="relative overflow-hidden bg-gray-bg border-b border-gray-border/70" data-parallax-container>
+{{-- Keep hero decoration static so scroll-linked motion does not compete with marketplace browsing. --}}
+<section class="relative overflow-hidden bg-gray-bg border-b border-gray-border/70">
 
-    <div class="pointer-events-none absolute -top-28 -right-20 w-80 h-80 rounded-full bg-teal/10 blur-3xl" data-parallax="12"></div>
-    <div class="pointer-events-none absolute -bottom-36 -left-28 w-96 h-96 rounded-full bg-navy/5 blur-3xl" data-parallax="-10"></div>
+    <div class="pointer-events-none absolute -top-28 -right-20 w-80 h-80 rounded-full bg-teal/10 blur-3xl"></div>
+    <div class="pointer-events-none absolute -bottom-36 -left-28 w-96 h-96 rounded-full bg-navy/5 blur-3xl"></div>
 
     <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10">
 
@@ -216,7 +217,7 @@
             {{-- RIGHT: MARKETPLACE PHOTO MOSAIC --}}
             <div
                 style="--stagger-index: 2;"
-                class="stagger-item relative min-h-97.5 sm:min-h-112.5 lg:min-h-122.5"
+                class="stagger-item relative min-h-97.5 sm:min-h-100 lg:min-h-122.5"
             >
                 <div class="absolute inset-[8%] rounded-[2.4rem] bg-teal/10 blur-3xl"></div>
 
@@ -400,7 +401,7 @@
                     <a
                         href="#trending"
                         style="--stagger-index: {{ $loop->index % 8 }};"
-                        class="group stagger-item relative min-h-31 sm:min-h-33 overflow-hidden rounded-2xl border border-gray-border bg-gray-bg snap-start hover:border-teal/35 hover:-translate-y-0.5 hover:shadow-lg transition-all"
+                        class="theme-image-card group stagger-item relative min-h-31 sm:min-h-33 overflow-hidden rounded-2xl border border-gray-border bg-gray-bg snap-start hover:border-teal/35 hover:-translate-y-0.5 hover:shadow-lg transition-all"
                     >
 
                         @if ($imageCount > 0)

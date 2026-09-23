@@ -266,7 +266,7 @@
                             </p>
 
                             <p class="text-[8px] text-white/40 mt-0.5">
-                                @{{ $store['username'] }}
+                                {{ '@' . $store['username'] }}
                             </p>
                         </div>
                     </div>
@@ -970,10 +970,10 @@
 
 {{-- Floating chat --}}
 <button type="button"
-        class="fixed right-4 bottom-4 z-40 h-10 px-4 rounded-xl
+        class="hidden sm:flex fixed right-4 bottom-4 z-40 min-h-11 px-4 rounded-xl
                bg-white border border-gray-border shadow-lg
                text-[10px] font-semibold text-teal-dark
-               flex items-center gap-1.5 hover:bg-teal hover:text-white transition">
+               items-center gap-1.5 hover:bg-teal hover:text-white transition">
     <x-lucide-message-square class="w-3.5 h-3.5" />
     Chat
 </button>

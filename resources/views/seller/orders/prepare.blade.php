@@ -1380,7 +1380,7 @@ document.addEventListener('DOMContentLoaded', function () {
         readyModal.hidden = true;
         setBodyLock(false);
 
-        showToast((order.id || 'Order') + ' is now ready for pickup.');
+        showToast((order.id || 'Order') + ' is marked ready for pickup in this preview only. No order was updated.');
         applyFilters();
     });
 

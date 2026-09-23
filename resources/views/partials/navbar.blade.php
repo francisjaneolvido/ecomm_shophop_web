@@ -29,10 +29,12 @@
 
 
             {{-- DESKTOP NAVIGATION --}}
+            {{-- data-section-nav lets the shared progressive-enhancement script track the current public section. --}}
             <nav class="hidden xl:flex items-center gap-1 text-[12px] text-navy shrink-0 ml-2">
 
                 <a
                     href="{{ route('home') }}"
+                    data-section-nav="home"
                     class="px-3.5 py-2 rounded-lg bg-teal/15 text-teal-dark font-medium"
                 >
                     Home
@@ -40,6 +42,7 @@
 
                 <a
                     href="{{ route('home') }}#categories"
+                    data-section-nav="categories"
                     class="px-3.5 py-2 rounded-lg hover:bg-gray-bg hover:text-teal-dark transition"
                 >
                     Categories
@@ -47,6 +50,7 @@
 
                 <a
                     href="{{ route('home') }}#deals"
+                    data-section-nav="deals"
                     class="px-3.5 py-2 rounded-lg hover:bg-gray-bg hover:text-teal-dark transition"
                 >
                     Deals
@@ -54,6 +58,7 @@
 
                 <a
                     href="{{ route('home') }}#new-arrivals"
+                    data-section-nav="new-arrivals"
                     class="px-3.5 py-2 rounded-lg hover:bg-gray-bg hover:text-teal-dark transition whitespace-nowrap"
                 >
                     New Arrivals
@@ -66,7 +71,7 @@
             <div class="hidden md:flex flex-1 max-w-80 ml-auto">
 
                 <form
-                    action="#"
+                    action="{{ route('search.index') }}"
                     method="GET"
                     class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1"
                 >
@@ -77,9 +82,12 @@
                             class="w-4 h-4 text-navy/35 shrink-0"
                         />
 
+                        <label class="sr-only" for="public-search-desktop">Search products</label>
                         <input
-                            type="text"
+                            id="public-search-desktop"
+                            type="search"
                             name="search"
+                            value="{{ request('search') }}"
                             placeholder="Search products"
                             class="bg-transparent border-0 outline-none focus:ring-0
                                    w-full min-w-0 p-0
@@ -157,8 +165,10 @@
                 {{-- SIGN UP — this is the account.register route, so the
                      label now matches what it actually does (the icon
                      above already covers returning-user sign-in). --}}
+                {{-- JavaScript opens the chooser immediately; /register remains the no-JavaScript fallback. --}}
                 <a
                     href="{{ route('register') }}"
+                    data-open-account-type-modal
                     class="hidden xl:inline-flex items-center justify-center
                            bg-teal hover:bg-teal-dark
                            text-white text-[11px] font-semibold
@@ -167,6 +177,8 @@
                 >
                     Sign Up
                 </a>
+
+@include('partials.theme-toggle')
 
 
                 {{-- MOBILE MENU --}}
@@ -191,7 +203,7 @@
         <div class="md:hidden pb-3">
 
             <form
-                action="#"
+                action="{{ route('search.index') }}"
                 method="GET"
                 class="flex items-center w-full h-9 bg-gray-bg rounded-full pl-1 pr-1"
             >
@@ -202,9 +214,12 @@
                         class="w-4 h-4 text-navy/35 shrink-0"
                     />
 
+                    <label class="sr-only" for="public-search-mobile">Search products</label>
                     <input
-                        type="text"
+                        id="public-search-mobile"
+                        type="search"
                         name="search"
+                        value="{{ request('search') }}"
                         placeholder="Search products"
                         class="bg-transparent border-0 outline-none focus:ring-0
                                w-full min-w-0 p-0
@@ -233,10 +248,10 @@
         {{-- MOBILE NAVIGATION --}}
         <div data-mobile-menu-panel class="hidden xl:hidden pb-4 border-t border-gray-border pt-3">
             <nav class="flex flex-col gap-1 text-[13px] text-navy">
-                <a href="{{ route('home') }}" class="px-3 py-2.5 rounded-lg bg-teal/15 text-teal-dark font-medium">Home</a>
-                <a href="{{ route('home') }}#categories" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Categories</a>
-                <a href="{{ route('home') }}#deals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Deals</a>
-                <a href="{{ route('home') }}#new-arrivals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">New Arrivals</a>
+                <a href="{{ route('home') }}" data-section-nav="home" class="px-3 py-2.5 rounded-lg bg-teal/15 text-teal-dark font-medium">Home</a>
+                <a href="{{ route('home') }}#categories" data-section-nav="categories" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Categories</a>
+                <a href="{{ route('home') }}#deals" data-section-nav="deals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Deals</a>
+                <a href="{{ route('home') }}#new-arrivals" data-section-nav="new-arrivals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">New Arrivals</a>
 
                 <div class="my-2 border-t border-gray-border"></div>
 
@@ -257,10 +272,11 @@
                     Sign In
                 </a>
 
-                <a href="{{ route('register') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-teal hover:bg-teal-dark text-white font-semibold justify-center transition">
+                <a href="{{ route('register') }}" data-open-account-type-modal class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-teal hover:bg-teal-dark text-white font-semibold justify-center transition">
                     <x-lucide-user-plus class="w-4 h-4" />
                     Sign Up
                 </a>
+
             </nav>
         </div>
 

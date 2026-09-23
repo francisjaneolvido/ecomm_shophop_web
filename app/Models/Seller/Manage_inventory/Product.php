@@ -4,6 +4,7 @@ namespace App\Models\Seller\Manage_inventory;
 
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Buyer\Review\Review;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -35,6 +36,14 @@ class Product extends Model
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',
     ];
+
+    public function scopePubliclyDiscoverable(Builder $query): Builder
+    {
+        // Buyer discovery and public Search must never drift into separate catalogues.
+        return $query
+            ->where('status', 'active')
+            ->where('stock', '>', 0);
+    }
 
     public function seller(): BelongsTo
     {

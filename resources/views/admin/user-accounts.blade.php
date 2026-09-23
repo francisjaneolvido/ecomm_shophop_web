@@ -24,6 +24,12 @@
         </div>
     @endif
 
+    @if ($errors->any())
+        <div class="mb-5 rounded-xl border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-coral">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
 
     {{-- =========================================================
         PAGE HEADER
@@ -846,7 +852,7 @@
                                 class="hidden inline-flex items-center gap-1 text-[11px] font-semibold text-mint-dark bg-mint/10 px-2 py-0.5 rounded-full shrink-0"
                             >
                                 <x-lucide-badge-check class="w-3 h-3" />
-                                Verified
+                        Email Verified
                             </span>
                         </div>
 

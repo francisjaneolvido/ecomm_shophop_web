@@ -236,6 +236,7 @@
                             <button type="button" class="registration-reject-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-coral border border-coral/30 hover:bg-coral/5 transition"
                                 data-id="{{ $registration->id }}"
                                 data-name="{{ $registration->display_name }}"
+                                data-role="{{ $rStyle['label'] }}"
                                 data-reject-url="{{ route('admin.users.reject', $registration) }}">
                                 <x-lucide-x class="w-3.5 h-3.5" />
                                 Reject
@@ -377,16 +378,6 @@
                         </dl>
                     </div>
 
-                    <div id="modalNotesWrap" class="hidden">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-1.5">Admin Notes</p>
-                        <p id="modalNotes" class="text-xs text-slate-600 leading-relaxed"></p>
-                    </div>
-
-                    <div id="modalRejectionWrap" class="hidden bg-coral/5 border border-coral/15 rounded-xl p-4">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-coral mb-1.5">Rejection Reason</p>
-                        <p id="modalRejectionReason" class="text-xs text-slate-600 leading-relaxed"></p>
-                    </div>
-
                     <div class="bg-coral/5 border border-coral/15 rounded-xl p-4">
                         <div class="flex items-center gap-1.5 mb-3">
                             <x-lucide-flag class="w-3.5 h-3.5 text-coral" />
@@ -447,32 +438,6 @@
             <h3 id="confirmTitle" class="text-base font-bold text-navy mb-1.5"></h3>
             <p id="confirmMessage" class="text-sm text-slate-500 leading-relaxed mb-4"></p>
 
-            {{-- Reject-only fields --}}
-            <div id="confirmRejectFields" class="hidden mb-4 space-y-3">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Reason for rejection</label>
-                    <select id="confirmRejectReason" class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-coral/40">
-                        <option value="incomplete">Incomplete / missing documents</option>
-                        <option value="unclear">Unclear or unreadable document</option>
-                        <option value="mismatch">Information does not match documents</option>
-                        <option value="suspicious">Suspicious or fraudulent information</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-500 mb-1.5">Notes</label>
-                    <textarea id="confirmRejectNotes" rows="3" placeholder="Enter the details of the issue..."
-                        class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-coral/40"></textarea>
-                </div>
-            </div>
-
-            {{-- Approve-only field --}}
-            <div id="confirmApproveFields" class="hidden mb-4">
-                <label class="block text-xs font-semibold text-slate-500 mb-1.5">Approval notes (optional)</label>
-                <textarea id="confirmApproveNotes" rows="3" placeholder="e.g. All submitted documents are complete and valid."
-                    class="w-full text-sm rounded-lg border border-slate-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mint/40"></textarea>
-            </div>
-
             <div class="flex items-center justify-end gap-2">
                 <button type="button" id="confirmCancelBtn" class="h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 transition">
                     Cancel
@@ -487,12 +452,9 @@
     {{-- Hidden forms — actually submitted to the backend on confirm --}}
     <form id="approveForm" method="POST" class="hidden">
         @csrf
-        <input type="hidden" name="notes" id="approveFormNotes">
     </form>
     <form id="rejectForm" method="POST" class="hidden">
         @csrf
-        <input type="hidden" name="reason" id="rejectFormReason">
-        <input type="hidden" name="notes" id="rejectFormNotes">
     </form>
 
 
@@ -590,29 +552,13 @@
             businessCategoryRow.className = r.business_category ? 'flex justify-between gap-3' : 'hidden justify-between gap-3';
             if (r.business_category) document.getElementById('modalBusinessCategory').textContent = r.business_category;
 
-            const notesWrap = document.getElementById('modalNotesWrap');
-            if (r.notes) {
-                notesWrap.classList.remove('hidden');
-                document.getElementById('modalNotes').textContent = r.notes;
-            } else {
-                notesWrap.classList.add('hidden');
-            }
-
-            const rejectionWrap = document.getElementById('modalRejectionWrap');
-            if (r.status === 'rejected' && r.rejection_reason) {
-                rejectionWrap.classList.remove('hidden');
-                document.getElementById('modalRejectionReason').textContent = r.rejection_reason.replace(/_/g, ' ');
-            } else {
-                rejectionWrap.classList.add('hidden');
-            }
-
             document.getElementById('modalDocsValue').textContent = r.docs_summary.value;
             document.getElementById('modalDocsSub').textContent = r.docs_summary.sub;
 
             const activityList = document.getElementById('modalActivity');
             activityList.innerHTML = '';
             if (!r.activity || r.activity.length === 0) {
-                activityList.innerHTML = '<li class="text-xs text-slate-400">No activity recorded yet.</li>';
+                activityList.innerHTML = '<li class="text-xs text-slate-400">Decision history is not tracked here.</li>';
             } else {
                 r.activity.forEach(item => {
                     const li = document.createElement('li');
@@ -631,7 +577,7 @@
             const reportsWrap = document.getElementById('modalReports');
             reportsWrap.innerHTML = '';
             if (!r.reports || r.reports.length === 0) {
-                reportsWrap.innerHTML = '<p class="text-xs text-slate-400">No reports or flags on file.</p>';
+                reportsWrap.innerHTML = '<p class="text-xs text-slate-400">Reports and flags are not tracked here.</p>';
             } else {
                 r.reports.forEach(rep => {
                     const item = document.createElement('div');
@@ -737,9 +683,6 @@
             activeConfirmAction = action;
             activeConfirmTarget = target; // { id, name, role }
 
-            confirmRejectFields.classList.toggle('hidden', action !== 'reject');
-            confirmApproveFields.classList.toggle('hidden', action !== 'approve');
-
             if (action === 'approve') {
                 confirmIconWrap.className = 'w-11 h-11 rounded-xl flex items-center justify-center mb-4 bg-mint/15 text-mint-dark';
                 confirmIconWrap.innerHTML = checkIconSvg;
@@ -747,16 +690,13 @@
                 confirmMessage.textContent = `Are you sure you want to approve ${target.name}'s ${target.role.toLowerCase()} account? This will grant them full platform access.`;
                 confirmProceedBtn.className = 'h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-mint-dark hover:opacity-90 transition-all duration-300';
                 confirmProceedBtn.textContent = 'Confirm Approve';
-                document.getElementById('confirmApproveNotes').value = '';
             } else {
                 confirmIconWrap.className = 'w-11 h-11 rounded-xl flex items-center justify-center mb-4 bg-coral/15 text-coral';
                 confirmIconWrap.innerHTML = flagIconSvg;
                 confirmTitle.textContent = 'Reject this application?';
-                confirmMessage.textContent = `Reject ${target.name}'s application? They will need to reapply or resubmit their documents.`;
+                confirmMessage.textContent = `Reject ${target.name}'s application? This account will not have protected access.`;
                 confirmProceedBtn.className = 'h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-coral hover:opacity-90 transition-all duration-300';
                 confirmProceedBtn.textContent = 'Confirm Reject';
-                document.getElementById('confirmRejectReason').value = 'incomplete';
-                document.getElementById('confirmRejectNotes').value = '';
             }
 
             confirmOverlay.classList.remove('hidden');
@@ -781,7 +721,7 @@
                 openConfirmModal('approve', {
                     id: btn.dataset.id,
                     name: btn.dataset.name,
-                    role: 'Buyer', // label not critical here; message still reads fine
+                    role: btn.dataset.role,
                     url: btn.dataset.approveUrl,
                 });
             });
@@ -792,7 +732,7 @@
                 openConfirmModal('reject', {
                     id: btn.dataset.id,
                     name: btn.dataset.name,
-                    role: 'Buyer',
+                    role: btn.dataset.role,
                     url: btn.dataset.rejectUrl,
                 });
             });
@@ -803,12 +743,9 @@
 
             if (activeConfirmAction === 'approve') {
                 approveForm.action = activeConfirmTarget.url || approveUrlTemplate.replace('__ID__', activeConfirmTarget.id);
-                document.getElementById('approveFormNotes').value = document.getElementById('confirmApproveNotes').value;
                 approveForm.submit();
             } else {
                 rejectForm.action = activeConfirmTarget.url || rejectUrlTemplate.replace('__ID__', activeConfirmTarget.id);
-                document.getElementById('rejectFormReason').value = document.getElementById('confirmRejectReason').value;
-                document.getElementById('rejectFormNotes').value = document.getElementById('confirmRejectNotes').value;
                 rejectForm.submit();
             }
         });

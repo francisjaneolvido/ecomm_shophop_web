@@ -6,6 +6,10 @@
 
 @section('content')
 
+<div role="status" class="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+    Preview figures: the date range changes the label, not the totals or rider rows. PDF exports are unavailable.
+</div>
+
 {{--
     ============================================================
     BACKEND NOTES for Yesel (things the controller/routes need)
@@ -45,7 +49,7 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h1 class="text-navy text-xl sm:text-2xl lg:text-3xl font-bold">Delivery &amp; earnings report</h1>
-        <p class="text-navy/55 text-sm mt-1">Filter by date range, then export for your records.</p>
+        <p class="text-navy/55 text-sm mt-1">Explore the sample delivery and earnings figures.</p>
     </div>
 </div>
 
@@ -61,11 +65,10 @@
     <input type="hidden" name="from" id="reportFromDate" value="{{ $from->format('Y-m-d') }}">
     <input type="hidden" name="to" id="reportToDate" value="{{ $to->format('Y-m-d') }}">
 
-    <a href="{{ route('logistics.reports.export.pdf', request()->query()) }}"
-       class="sm:ml-auto inline-flex items-center justify-center gap-2 text-xs font-semibold bg-navy hover:bg-teal text-white px-4 py-2.5 rounded-full transition">
+    <span class="sm:ml-auto inline-flex items-center justify-center gap-2 text-xs font-semibold bg-slate-200 text-slate-600 px-4 py-2.5 rounded-full">
         <svg class="icon w-3.5 h-3.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Export PDF
-    </a>
+        PDF unavailable
+    </span>
 </form>
 <p class="text-[11px] font-semibold text-navy/35 mb-6">Picking a range reloads the report scoped to those dates.</p>
 
@@ -157,12 +160,10 @@
                                     <svg class="icon w-3.5 h-3.5" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/></svg>
                                     <span class="hidden sm:inline">View full</span>
                                 </button>
-                                <a href="{{ route('logistics.reports.riders.export.pdf', $riderId) }}"
-                                   onclick="event.stopPropagation()"
-                                   class="inline-flex items-center gap-1.5 text-xs font-semibold text-navy hover:text-teal-dark transition">
+                                <span onclick="event.stopPropagation()" class="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400">
                                     <svg class="icon w-3.5 h-3.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                    <span class="hidden sm:inline">PDF</span>
-                                </a>
+                                    <span class="hidden sm:inline">PDF unavailable</span>
+                                </span>
                             </div>
                         </td>
                     </tr>
@@ -393,11 +394,10 @@
             </div>
 
             <div class="px-6 pb-6">
-                <a href="/logistics/reports/riders/${r.id}/export.pdf${window.location.search}"
-                   class="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-navy hover:bg-teal px-4 py-2.5 rounded-full transition">
+                <span class="w-full inline-flex items-center justify-center gap-2 text-sm font-semibold text-slate-600 bg-slate-200 px-4 py-2.5 rounded-full">
                     <svg class="icon w-3.5 h-3.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                    Export ${r.name.split(' ')[0]}'s report (PDF)
-                </a>
+                    PDF unavailable
+                </span>
             </div>
         `;
         document.getElementById('closeRiderModalBtn').addEventListener('click', closeRiderModal);

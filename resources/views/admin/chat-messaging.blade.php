@@ -429,9 +429,9 @@
         {{-- ===== MESSAGE THREAD ===== --}}
         <main id="chatThreadPanel" class="hidden sm:flex flex-1 flex-col min-w-0">
 
-            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-100">
-                <div class="flex items-center gap-3 min-w-0">
-                    <button type="button" id="mobileBackToChats" class="sm:hidden w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 shrink-0">
+            <div class="flex items-center justify-between gap-2 px-3 sm:px-5 py-3.5 border-b border-slate-100">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                    <button type="button" id="mobileBackToChats" aria-label="Back to conversations" class="sm:hidden w-10 h-10 rounded-lg flex items-center justify-center text-slate-500 hover:bg-slate-100 shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" /></svg>
                     </button>
 
@@ -442,7 +442,7 @@
                         <span id="threadOnlineDot" hidden class="absolute right-0 bottom-0 w-3 h-3 rounded-full bg-mint-dark border-2 border-white"></span>
                     </div>
 
-                    <div class="min-w-0">
+                    <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-1.5">
                             <p id="threadName" class="text-sm font-semibold text-navy truncate"></p>
                             <span id="threadRoleBadge" class="shrink-0 text-[9px] font-bold uppercase tracking-wide rounded px-1.5 py-0.5"></span>
@@ -451,13 +451,13 @@
                     </div>
                 </div>
 
-                <div class="flex items-center gap-1 shrink-0">
-                    <button type="button" id="contextBtn" onclick="openContextModal()" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+                <div class="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                    <button type="button" id="contextBtn" onclick="openContextModal()" title="Related order or store" aria-label="Related order or store" class="hidden sm:inline-flex p-2 rounded-lg hover:bg-slate-100 text-slate-500">
                         <x-lucide-package-search id="contextBtnIconOrder" class="w-4 h-4" />
                         <x-lucide-store id="contextBtnIconStore" class="w-4 h-4 hidden" />
                     </button>
 
-                    <button type="button" id="muteBtn" onclick="toggleMute()" title="Mute notifications" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+                    <button type="button" id="muteBtn" onclick="toggleMute()" title="Mute notifications" aria-label="Mute notifications" class="hidden sm:inline-flex p-2 rounded-lg hover:bg-slate-100 text-slate-500">
                         <svg id="muteIconOff" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9.143 17.082a24.248 24.248 0 003.844.148m-3.844-.148a23.856 23.856 0 01-5.455-1.31 8.964 8.964 0 002.3-5.542m3.155 6.852a3 3 0 005.667 1.97m1.965-2.277L21 21m-4.225-4.225a23.81 23.81 0 003.536-1.003A8.967 8.967 0 0118 9.75V9A6 6 0 006.53 6.53m10.245 10.245L6.53 6.53M3 3l3.53 3.53" />
                         </svg>
@@ -466,7 +466,7 @@
                         </svg>
                     </button>
 
-                    <button type="button" id="infoBtn" onclick="toggleConvoInfo()" title="Conversation info" class="p-2 rounded-lg hover:bg-slate-100 text-slate-500">
+                    <button type="button" id="infoBtn" onclick="toggleConvoInfo()" title="Conversation info" aria-label="Conversation info" class="p-2.5 rounded-lg hover:bg-slate-100 text-slate-500">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                             <circle cx="12" cy="12" r="9" />
                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 8h.01M11 11h1v5h1" />

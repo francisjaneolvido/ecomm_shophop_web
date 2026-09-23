@@ -1429,11 +1429,11 @@ document.addEventListener('DOMContentLoaded', function () {
         setBodyLock(false);
 
         showToast(
-            'Pickup request for ' +
+            'Pickup request previewed for ' +
             activeOrder.id +
-            ' sent for ' +
+            ' (' +
             preferredWindow +
-            '.'
+            '). No request was sent.'
         );
     });
 
@@ -1569,9 +1569,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         showToast(
             activeOrder.id +
-            ' was handed over to ' +
-            (activeOrder.rider?.name || 'the assigned rider') +
-            '. Status is now PICKED_UP.'
+            ' shows PICKED_UP in this preview only. No order was updated.'
         );
 
         applyFilters();

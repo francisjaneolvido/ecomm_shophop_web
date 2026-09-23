@@ -39,4 +39,15 @@ class ReportController extends Controller
         // filtered by $request->date('from') / $request->date('to').
         abort(501, 'CSV export not implemented yet.');
     }
+
+    // Keep registered PDF URLs explicit until reports have a persisted source.
+    public function exportPdf(): Response
+    {
+        abort(501, 'PDF report export is unavailable.');
+    }
+
+    public function exportRiderPdf(string $rider): Response
+    {
+        abort(501, 'Rider PDF export is unavailable.');
+    }
 }
