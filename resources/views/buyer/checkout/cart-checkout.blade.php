@@ -2,180 +2,6 @@
 
 @extends('layouts.app')
 
-@php
-    /*
-    |--------------------------------------------------------------------------
-    | TEMPORARY CHECKOUT PREVIEW DATA
-    |--------------------------------------------------------------------------
-    | Once the checkout backend is connected:
-    | - replace $address with the buyer's saved/default address
-    | - replace $allCartGroups with selected cart rows from session / DB
-    | - validate voucher/payment server-side
-    | - remove the demo submit preventDefault() in the script
-    */
-
-    $buyer = auth()->user();
-
-    $buyerName = $buyer?->first_name
-        ?? $buyer?->name
-        ?? 'Buyer';
-
-    $address = [
-        'name' => $buyerName,
-        'phone' => '+63 917 123 4567',
-        'line' => 'Blk 4 Lot 12, Purok 3, Brgy. San Isidro',
-        'city' => 'Santa Cruz, Laguna, 4009',
-        'is_default' => true,
-        'verified' => true,
-    ];
-
-    $allCartGroups = collect([
-        [
-            'shop' => [
-                'id' => 1,
-                'name' => 'ShopHop Tech Store',
-                'response_rate' => '96%',
-                'preferred' => true,
-            ],
-            'shipping_fee' => 58,
-            'items' => [
-                [
-                    'id' => 1,
-                    'name' => 'Wireless Earbuds Pro with ENC Noise Reduction & Charging Case',
-                    'image' => 'images/hero/earbuds.jpg',
-                    'variant' => 'Black, Earbuds Only',
-                    'price' => 1299,
-                    'original_price' => 1699,
-                    'qty' => 1,
-                    'stock' => 42,
-                ],
-                [
-                    'id' => 2,
-                    'name' => 'ShopHop Fitness Watch, Heart Rate & Sleep Tracking',
-                    'image' => 'images/hero/watch.jpg',
-                    'variant' => 'Midnight Black, 44mm',
-                    'price' => 2499,
-                    'original_price' => null,
-                    'qty' => 1,
-                    'stock' => 15,
-                ],
-            ],
-        ],
-        [
-            'shop' => [
-                'id' => 2,
-                'name' => 'StepUp Footwear PH',
-                'response_rate' => '89%',
-                'preferred' => false,
-            ],
-            'shipping_fee' => 65,
-            'items' => [
-                [
-                    'id' => 3,
-                    'name' => 'Everyday Running Sneakers, Lightweight & Breathable',
-                    'image' => 'images/hero/sneaker.jpg',
-                    'variant' => 'White, Size 9',
-                    'price' => 1899,
-                    'original_price' => 2199,
-                    'qty' => 1,
-                    'stock' => 8,
-                ],
-            ],
-        ],
-    ]);
-
-    $availableVouchers = collect([
-        [
-            'code' => 'SHOPHOP100',
-            'title' => '₱100 Off',
-            'description' => '₱100 off on ₱1,000 minimum spend',
-            'type' => 'fixed',
-            'value' => 100,
-            'min_spend' => 1000,
-            'max_discount' => null,
-        ],
-        [
-            'code' => 'WELCOME10',
-            'title' => '10% Off',
-            'description' => '10% off on ₱500+, capped at ₱200',
-            'type' => 'percent',
-            'value' => 10,
-            'min_spend' => 500,
-            'max_discount' => 200,
-        ],
-        [
-            'code' => 'SAVE50',
-            'title' => '₱50 Off',
-            'description' => '₱50 off on ₱699 minimum spend',
-            'type' => 'fixed',
-            'value' => 50,
-            'min_spend' => 699,
-            'max_discount' => null,
-        ],
-    ]);
-
-    /*
-    |--------------------------------------------------------------------------
-    | Read selection / qty from cart page
-    |--------------------------------------------------------------------------
-    | cart.blade.php sends:
-    | ?items[]=1&items[]=3&qty[1]=2&qty[3]=1&voucher=SHOPHOP100
-    */
-
-    $selectedItemIds = collect(request()->query('items', []))
-        ->map(fn ($id) => (string) $id)
-        ->filter()
-        ->values();
-
-    $queryQty = collect(request()->query('qty', []));
-    $queryVoucher = strtoupper(trim((string) request()->query('voucher', '')));
-
-    $cartGroups = $allCartGroups
-        ->map(function ($group) use ($selectedItemIds, $queryQty) {
-            $items = collect($group['items']);
-
-            if ($selectedItemIds->isNotEmpty()) {
-                $items = $items->filter(
-                    fn ($item) => $selectedItemIds->contains((string) $item['id'])
-                );
-            }
-
-            $group['items'] = $items
-                ->map(function ($item) use ($queryQty) {
-                    $requestedQty = (int) $queryQty->get((string) $item['id'], $item['qty']);
-
-                    $item['qty'] = max(
-                        1,
-                        min((int) $item['stock'], $requestedQty ?: 1)
-                    );
-
-                    return $item;
-                })
-                ->values()
-                ->all();
-
-            return $group;
-        })
-        ->filter(fn ($group) => count($group['items']) > 0)
-        ->values();
-
-    // If there are no valid selected IDs, show preview cart items.
-    if ($cartGroups->isEmpty()) {
-        $cartGroups = $allCartGroups;
-    }
-
-    $itemCount = $cartGroups->sum(fn ($group) => count($group['items']));
-    $shopCount = $cartGroups->count();
-
-    $codFee = 20;
-
-    $initialVoucher = $availableVouchers
-        ->first(fn ($voucher) => $voucher['code'] === $queryVoucher);
-
-    $initialVoucherCode = $initialVoucher['code'] ?? '';
-@endphp
-
-
 @section('title', 'Checkout - ShopHop')
 @section('hideChrome', true)
 
@@ -210,6 +36,16 @@
 ========================================================= --}}
 <section class="bg-gray-bg/75 min-h-[72vh] py-5 sm:py-6">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
+
+        @if ($errors->any())
+            <div class="bg-red-50 border border-red-200 text-red-600 text-[11px] rounded-xl px-4 py-3 mb-4">
+                <ul class="list-disc list-inside space-y-0.5">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         {{-- Header --}}
         <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-3 mb-4 sm:mb-5">
@@ -267,7 +103,7 @@
 
         <form
             id="checkoutForm"
-            action="{{ url('/buyer/checkout/place-order') }}"
+            action="{{ route('buyer.checkout.place') }}"
             method="POST"
             enctype="multipart/form-data"
             class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-5 items-start"
@@ -298,13 +134,14 @@
                             </div>
                         </div>
 
-                        <button
-                            type="button"
+                        <a
+                            href="{{ route('buyer.profile') }}"
                             class="h-7 px-2.5 rounded-lg bg-gray-bg hover:bg-teal-light
-                                   text-[9px] font-semibold text-navy/55 hover:text-teal-dark transition"
+                                   text-[9px] font-semibold text-navy/55 hover:text-teal-dark transition
+                                   flex items-center"
                         >
                             Change
-                        </button>
+                        </a>
                     </div>
 
 
@@ -318,33 +155,34 @@
 
                             <div class="min-w-0 flex-1">
 
-                                <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
-                                    <p class="text-[11px] font-bold text-navy">
-                                        {{ $address['name'] }}
+                                @if (empty($address['line']))
+                                    <p class="text-[10.5px] text-red-500">
+                                        No delivery address on file. Please
+                                        <a href="{{ route('buyer.profile') }}" class="underline font-semibold">add one</a>
+                                        before placing an order.
                                     </p>
+                                @else
+                                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                        <p class="text-[11px] font-bold text-navy">
+                                            {{ $address['name'] }}
+                                        </p>
 
-                                    <span class="text-[9.5px] text-navy/45">
-                                        {{ $address['phone'] }}
-                                    </span>
-
-                                    @if ($address['is_default'])
-                                        <span class="inline-flex text-[7.5px] font-bold px-1.5 py-0.5 rounded
-                                                     bg-teal-light text-teal-dark">
-                                            DEFAULT
+                                        <span class="text-[9.5px] text-navy/45">
+                                            {{ $address['phone'] }}
                                         </span>
-                                    @endif
 
-                                    @if (! empty($address['verified']))
-                                        <span class="inline-flex items-center gap-1 text-[7.5px] font-semibold text-teal-dark">
-                                            <x-lucide-badge-check class="w-2.5 h-2.5" />
-                                            Verified
-                                        </span>
-                                    @endif
-                                </div>
+                                        @if ($address['is_default'])
+                                            <span class="inline-flex text-[7.5px] font-bold px-1.5 py-0.5 rounded
+                                                         bg-teal-light text-teal-dark">
+                                                DEFAULT
+                                            </span>
+                                        @endif
+                                    </div>
 
-                                <p class="text-[10px] sm:text-[10.5px] text-navy/55 mt-1.5 leading-relaxed">
-                                    {{ $address['line'] }}, {{ $address['city'] }}
-                                </p>
+                                    <p class="text-[10px] sm:text-[10.5px] text-navy/55 mt-1.5 leading-relaxed">
+                                        {{ $address['line'] }}, {{ $address['city'] }}
+                                    </p>
+                                @endif
 
                             </div>
                         </div>
@@ -357,8 +195,13 @@
                 ================================================== --}}
                 @foreach ($cartGroups as $groupIndex => $group)
                     @php
-                        $standardFee = (float) $group['shipping_fee'];
-                        $expressFee = $standardFee + 70;
+                        $standardFee = (float) $group['shipping_fee_standard'];
+                        $expressFee = (float) $group['shipping_fee_express'];
+                        $shopId = $group['shop']['id'];
+
+                        $shopVouchers = $availableVouchers
+                            ->filter(fn ($voucher) => (int) $voucher['seller_id'] === (int) $shopId)
+                            ->values();
                     @endphp
 
                     <section
@@ -366,6 +209,7 @@
                         data-standard-fee="{{ $standardFee }}"
                         data-express-fee="{{ $expressFee }}"
                         data-shop-index="{{ $groupIndex }}"
+                        data-shop-id="{{ $shopId }}"
                     >
 
                         {{-- Shop header --}}
@@ -378,31 +222,11 @@
                                 </span>
 
                                 <div class="min-w-0">
-
-                                    <div class="flex items-center gap-1.5 min-w-0">
-                                        <p class="text-[10.5px] sm:text-[11px] font-bold text-navy truncate">
-                                            {{ $group['shop']['name'] }}
-                                        </p>
-
-                                        @if (! empty($group['shop']['preferred']))
-                                            <span class="hidden sm:inline-flex text-[7.5px] font-bold px-1.5 py-0.5 rounded-full bg-teal text-white">
-                                                Preferred
-                                            </span>
-                                        @endif
-                                    </div>
-
-                                    <p class="text-[8.5px] text-navy/35 mt-0.5">
-                                        {{ $group['shop']['response_rate'] }} response rate
+                                    <p class="text-[10.5px] sm:text-[11px] font-bold text-navy truncate">
+                                        {{ $group['shop']['name'] }}
                                     </p>
-
                                 </div>
                             </div>
-
-                            <button type="button"
-                                    class="inline-flex items-center gap-1 text-[9px] font-semibold text-teal-dark hover:text-navy transition shrink-0">
-                                <x-lucide-message-circle class="w-3 h-3" />
-                                Chat
-                            </button>
 
                         </div>
 
@@ -421,15 +245,16 @@
                                     class="checkout-item px-4 py-3"
                                     data-price="{{ $item['price'] }}"
                                     data-original-price="{{ $item['original_price'] ?? $item['price'] }}"
+                                    data-product-id="{{ $item['product_id'] }}"
                                 >
 
                                     <div class="flex gap-3">
 
-                                        <a href="#"
+                                        <a href="{{ route('buyer.product.show', $item['product_id']) }}"
                                            class="w-16 h-16 sm:w-17 sm:h-17 rounded-xl overflow-hidden
                                                   bg-gray-bg border border-gray-border/80 shrink-0">
                                             <img
-                                                src="{{ asset($item['image']) }}"
+                                                src="{{ $item['image'] }}"
                                                 alt="{{ $item['name'] }}"
                                                 class="w-full h-full object-cover"
                                             >
@@ -524,7 +349,7 @@
 
                                 <input
                                     type="text"
-                                    name="groups[{{ $group['shop']['id'] }}][note]"
+                                    name="groups[{{ $shopId }}][note]"
                                     placeholder="Optional note for this seller"
                                     class="w-full text-[10px] text-navy rounded-lg border border-gray-border
                                            px-3 py-2 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal/10"
@@ -558,7 +383,7 @@
 
                                         <input
                                             type="radio"
-                                            name="shipping_method[{{ $group['shop']['id'] }}]"
+                                            name="shipping_method[{{ $shopId }}]"
                                             value="standard"
                                             data-fee="{{ $standardFee }}"
                                             checked
@@ -586,7 +411,7 @@
 
                                         <input
                                             type="radio"
-                                            name="shipping_method[{{ $group['shop']['id'] }}]"
+                                            name="shipping_method[{{ $shopId }}]"
                                             value="express"
                                             data-fee="{{ $expressFee }}"
                                             class="mt-0.5 accent-teal-dark w-3.5 h-3.5"
@@ -605,6 +430,31 @@
 
                             </div>
                         </div>
+
+
+                        {{-- Shop voucher (only vouchers issued by this seller) --}}
+                        @if ($shopVouchers->isNotEmpty())
+                            <div class="px-4 py-3 border-t border-gray-border/80">
+                                <p class="text-[9px] font-semibold text-navy/45 mb-2">
+                                    Vouchers from this seller
+                                </p>
+
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach ($shopVouchers as $voucher)
+                                        <button
+                                            type="button"
+                                            class="voucher-suggestion inline-flex items-center gap-1
+                                                   px-2 py-1 rounded-md bg-gray-bg hover:bg-teal-light
+                                                   text-[8px] font-semibold text-navy/45 hover:text-teal-dark transition"
+                                            data-code="{{ $voucher['code'] }}"
+                                        >
+                                            <x-lucide-ticket class="w-2.5 h-2.5" />
+                                            {{ $voucher['code'] }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
 
 
                         {{-- Shop subtotal --}}
@@ -675,7 +525,7 @@
                             </div>
 
                             <span class="text-[8px] font-semibold text-navy/35">
-                                +₱{{ number_format($codFee) }}
+                                +₱{{ number_format($codFee) }}/shop
                             </span>
                         </label>
 
@@ -832,13 +682,13 @@
 
                             <div>
                                 <p class="text-[11px] font-bold text-navy">Voucher</p>
-                                <p class="text-[8.5px] text-navy/35 mt-0.5">Apply one ShopHop voucher</p>
+                                <p class="text-[8.5px] text-navy/35 mt-0.5">Applies only to the matching seller</p>
                             </div>
 
                         </div>
 
                         <span id="voucherAppliedBadge"
-                              class="{{ $initialVoucher ? '' : 'hidden' }} text-[7.5px] font-bold
+                              class="{{ $initialVoucherCode ? '' : 'hidden' }} text-[7.5px] font-bold
                                      bg-teal-light text-teal-dark px-1.5 py-1 rounded">
                             Applied
                         </span>
@@ -873,21 +723,11 @@
                            class="hidden text-[8.5px] mt-1.5">
                         </p>
 
-
-                        <div class="flex flex-wrap gap-1.5 mt-3">
-                            @foreach ($availableVouchers as $voucher)
-                                <button
-                                    type="button"
-                                    class="voucher-suggestion inline-flex items-center gap-1
-                                           px-2 py-1 rounded-md bg-gray-bg hover:bg-teal-light
-                                           text-[8px] font-semibold text-navy/45 hover:text-teal-dark transition"
-                                    data-code="{{ $voucher['code'] }}"
-                                >
-                                    <x-lucide-ticket class="w-2.5 h-2.5" />
-                                    {{ $voucher['code'] }}
-                                </button>
-                            @endforeach
-                        </div>
+                        @if ($availableVouchers->isEmpty())
+                            <p class="text-[9px] text-navy/35 mt-3">
+                                No vouchers available for the items in this order.
+                            </p>
+                        @endif
 
                     </div>
 
@@ -945,7 +785,7 @@
                             <span class="text-navy/50">COD handling fee</span>
 
                             <span id="summaryCodFee" class="font-semibold text-navy">
-                                ₱{{ number_format($codFee) }}
+                                ₱0
                             </span>
                         </div>
 
@@ -976,7 +816,9 @@
                     <button
                         type="submit"
                         id="placeOrderBtn"
+                        {{ empty($address['line']) || $itemCount === 0 ? 'disabled' : '' }}
                         class="w-full h-10 mt-4 rounded-xl bg-teal hover:bg-teal-dark
+                               disabled:bg-gray-border disabled:cursor-not-allowed
                                text-white text-[11px] font-semibold
                                flex items-center justify-center gap-1.5
                                shadow-sm hover:shadow-md active:scale-[0.99]
@@ -1069,7 +911,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    const codFee = {{ (float) $codFee }};
+    const codFeePerShop = {{ (float) $codFee }};
 
     const voucherCatalog = @json(
         $availableVouchers->mapWithKeys(fn ($voucher) => [$voucher['code'] => $voucher])
@@ -1119,7 +961,6 @@ document.addEventListener('DOMContentLoaded', function () {
             ? initialVoucherCode
             : '';
 
-    let currentMerchandiseSubtotal = 0;
     let currentVoucherDiscount = 0;
 
 
@@ -1155,41 +996,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    function voucherDiscountFor(subtotal) {
-        if (!activeVoucherCode || !voucherCatalog[activeVoucherCode]) {
-            return 0;
-        }
+    function voucherDiscountForShop(shopSubtotal) {
+        const voucher = activeVoucherCode ? voucherCatalog[activeVoucherCode] : null;
 
-        const voucher = voucherCatalog[activeVoucherCode];
+        if (!voucher) return 0;
+
         const minimum = Number(voucher.min_spend || 0);
 
-        if (subtotal < minimum) {
+        if (shopSubtotal < minimum) {
             return 0;
         }
 
         if (voucher.type === 'percent') {
-            const raw =
-                subtotal * (Number(voucher.value || 0) / 100);
-
-            const maximum =
-                Number(voucher.max_discount || 0);
-
-            return maximum > 0
-                ? Math.min(raw, maximum)
-                : raw;
+            return shopSubtotal * (Number(voucher.value || 0) / 100);
         }
 
-        return Number(voucher.value || 0);
+        return Math.min(Number(voucher.value || 0), shopSubtotal);
     }
 
 
-    function syncVoucherUI() {
-        const voucher = activeVoucherCode
-            ? voucherCatalog[activeVoucherCode]
-            : null;
+    function syncVoucherUI(voucherEligibleShopSubtotal, discount) {
+        const voucher = activeVoucherCode ? voucherCatalog[activeVoucherCode] : null;
 
-        currentVoucherDiscount =
-            voucherDiscountFor(currentMerchandiseSubtotal);
+        currentVoucherDiscount = discount;
 
         if (voucherCodeHidden) {
             voucherCodeHidden.value = voucher ? activeVoucherCode : '';
@@ -1210,8 +1039,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (summaryVoucherRow) {
-            const show =
-                voucher && currentVoucherDiscount > 0;
+            const show = voucher && currentVoucherDiscount > 0;
 
             summaryVoucherRow.classList.toggle('hidden', !show);
             summaryVoucherRow.classList.toggle('flex', !!show);
@@ -1220,7 +1048,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (voucher) {
             const minimum = Number(voucher.min_spend || 0);
 
-            if (currentMerchandiseSubtotal >= minimum) {
+            if (voucherEligibleShopSubtotal >= minimum) {
                 voucherMessage.textContent =
                     activeVoucherCode + ' applied — you save ' +
                     formatPeso(currentVoucherDiscount) + '.';
@@ -1230,7 +1058,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 voucherMessage.textContent =
                     'Spend ' + formatPeso(minimum) +
-                    ' to use ' + activeVoucherCode + '.';
+                    ' on this seller\'s items to use ' + activeVoucherCode + '.';
 
                 voucherMessage.classList.remove('hidden', 'text-teal-dark');
                 voucherMessage.classList.add('text-red-500');
@@ -1243,102 +1071,78 @@ document.addEventListener('DOMContentLoaded', function () {
         let merchandiseSubtotal = 0;
         let shippingTotal = 0;
         let productSavings = 0;
+        let voucherEligibleShopSubtotal = 0;
+        let voucherDiscount = 0;
+
+        const voucher = activeVoucherCode ? voucherCatalog[activeVoucherCode] : null;
 
         shopGroups.forEach(function (group, index) {
             let groupSubtotal = 0;
 
             group.querySelectorAll('.checkout-item').forEach(function (row) {
-                const price =
-                    Number(row.dataset.price || 0);
+                const price = Number(row.dataset.price || 0);
+                const originalPrice = Number(row.dataset.originalPrice || price);
 
-                const originalPrice =
-                    Number(row.dataset.originalPrice || price);
-
-                const qtyInput =
-                    row.querySelector('[data-qty-input]');
-
-                const qty =
-                    Math.max(1, parseInt(qtyInput?.value, 10) || 1);
+                const qtyInput = row.querySelector('[data-qty-input]');
+                const qty = Math.max(1, parseInt(qtyInput?.value, 10) || 1);
 
                 groupSubtotal += price * qty;
 
-                productSavings +=
-                    Math.max(0, originalPrice - price) * qty;
+                productSavings += Math.max(0, originalPrice - price) * qty;
             });
 
-            const selectedShipping =
-                group.querySelector(
-                    'input[type="radio"][name^="shipping_method"]:checked'
-                );
+            merchandiseSubtotal += groupSubtotal;
 
-            shippingTotal +=
-                Number(selectedShipping?.dataset.fee || 0);
+            const selectedShipping = group.querySelector(
+                'input[type="radio"][name^="shipping_method"]:checked'
+            );
 
-            const groupSubtotalEl =
-                group.querySelector(
-                    '[data-shop-subtotal="' + index + '"]'
-                );
+            shippingTotal += Number(selectedShipping?.dataset.fee || 0);
+
+            const groupSubtotalEl = group.querySelector(
+                '[data-shop-subtotal="' + index + '"]'
+            );
 
             if (groupSubtotalEl) {
-                groupSubtotalEl.textContent =
-                    formatPeso(groupSubtotal);
+                groupSubtotalEl.textContent = formatPeso(groupSubtotal);
+            }
+
+            if (voucher && String(group.dataset.shopId) === String(voucher.seller_id)) {
+                voucherEligibleShopSubtotal = groupSubtotal;
+                voucherDiscount = voucherDiscountForShop(groupSubtotal);
             }
         });
 
+        syncVoucherUI(voucherEligibleShopSubtotal, voucherDiscount);
 
-        currentMerchandiseSubtotal =
-            merchandiseSubtotal;
-
-        syncVoucherUI();
-
-        const isCod =
-            currentPaymentMethod() === 'cod';
-
-        const paymentFee =
-            isCod ? codFee : 0;
+        const isCod = currentPaymentMethod() === 'cod';
+        const codFeeTotal = isCod ? codFeePerShop * shopGroups.length : 0;
 
         const total =
             merchandiseSubtotal +
             shippingTotal +
-            paymentFee -
+            codFeeTotal -
             currentVoucherDiscount;
 
 
-        summarySubtotal.textContent =
-            formatPeso(merchandiseSubtotal);
+        summarySubtotal.textContent = formatPeso(merchandiseSubtotal);
+        summaryShipping.textContent = formatPeso(shippingTotal);
+        summaryProductSavings.textContent = '-' + formatPeso(productSavings);
 
-        summaryShipping.textContent =
-            formatPeso(shippingTotal);
+        summaryCodFee.textContent = formatPeso(codFeeTotal);
+        summaryCodFeeRow.classList.toggle('hidden', !isCod);
 
-        summaryProductSavings.textContent =
-            '-' + formatPeso(productSavings);
-
-        summaryCodFee.textContent =
-            formatPeso(codFee);
-
-        summaryCodFeeRow.classList.toggle(
-            'hidden',
-            !isCod
-        );
-
-        summaryTotal.textContent =
-            formatPeso(total);
-
-        mobileSummaryTotal.textContent =
-            formatPeso(total);
+        summaryTotal.textContent = formatPeso(total);
+        mobileSummaryTotal.textContent = formatPeso(total);
 
         summarySavedText.textContent =
-            'You save ' +
-            formatPeso(productSavings + currentVoucherDiscount);
+            'You save ' + formatPeso(productSavings + currentVoucherDiscount);
 
 
         if (gcashAmountText) {
-            gcashAmountText.textContent =
-                formatPeso(
-                    merchandiseSubtotal +
-                    shippingTotal -
-                    currentVoucherDiscount
-                );
+            gcashAmountText.textContent = formatPeso(
+                merchandiseSubtotal + shippingTotal - currentVoucherDiscount
+            );
         }
     }
 
@@ -1350,58 +1154,36 @@ document.addEventListener('DOMContentLoaded', function () {
     */
     document.querySelectorAll('.checkout-item').forEach(function (row) {
 
-        const decreaseButton =
-            row.querySelector('[data-qty-decrease]');
-
-        const increaseButton =
-            row.querySelector('[data-qty-increase]');
-
-        const qtyInput =
-            row.querySelector('[data-qty-input]');
+        const decreaseButton = row.querySelector('[data-qty-decrease]');
+        const increaseButton = row.querySelector('[data-qty-increase]');
+        const qtyInput = row.querySelector('[data-qty-input]');
 
         if (!decreaseButton || !increaseButton || !qtyInput) {
             return;
         }
 
-        const max =
-            parseInt(qtyInput.max, 10) || 1;
+        const max = parseInt(qtyInput.max, 10) || 1;
 
 
         function normalizeQty(value) {
-            return Math.max(
-                1,
-                Math.min(
-                    max,
-                    parseInt(value, 10) || 1
-                )
-            );
+            return Math.max(1, Math.min(max, parseInt(value, 10) || 1));
         }
 
 
         decreaseButton.addEventListener('click', function () {
-            qtyInput.value =
-                normalizeQty(
-                    (parseInt(qtyInput.value, 10) || 1) - 1
-                );
-
+            qtyInput.value = normalizeQty((parseInt(qtyInput.value, 10) || 1) - 1);
             recalculate();
         });
 
 
         increaseButton.addEventListener('click', function () {
-            qtyInput.value =
-                normalizeQty(
-                    (parseInt(qtyInput.value, 10) || 1) + 1
-                );
-
+            qtyInput.value = normalizeQty((parseInt(qtyInput.value, 10) || 1) + 1);
             recalculate();
         });
 
 
         qtyInput.addEventListener('change', function () {
-            qtyInput.value =
-                normalizeQty(qtyInput.value);
-
+            qtyInput.value = normalizeQty(qtyInput.value);
             recalculate();
         });
 
@@ -1415,36 +1197,20 @@ document.addEventListener('DOMContentLoaded', function () {
     */
     document.querySelectorAll('[data-shipping-option]').forEach(function (option) {
 
-        const radio =
-            option.querySelector('input[type="radio"]');
+        const radio = option.querySelector('input[type="radio"]');
 
         option.addEventListener('click', function () {
             radio.checked = true;
 
-            const group =
-                option.closest('[data-shipping-group]');
+            const group = option.closest('[data-shipping-group]');
 
-            group
-                .querySelectorAll('[data-shipping-option]')
-                .forEach(function (item) {
-                    item.classList.remove(
-                        'border-teal',
-                        'bg-teal-light/35'
-                    );
+            group.querySelectorAll('[data-shipping-option]').forEach(function (item) {
+                item.classList.remove('border-teal', 'bg-teal-light/35');
+                item.classList.add('border-gray-border');
+            });
 
-                    item.classList.add(
-                        'border-gray-border'
-                    );
-                });
-
-            option.classList.remove(
-                'border-gray-border'
-            );
-
-            option.classList.add(
-                'border-teal',
-                'bg-teal-light/35'
-            );
+            option.classList.remove('border-gray-border');
+            option.classList.add('border-teal', 'bg-teal-light/35');
 
             recalculate();
         });
@@ -1459,47 +1225,27 @@ document.addEventListener('DOMContentLoaded', function () {
     */
     paymentOptions.forEach(function (option) {
 
-        const radio =
-            option.querySelector('input[type="radio"]');
+        const radio = option.querySelector('input[type="radio"]');
 
         option.addEventListener('click', function () {
 
             radio.checked = true;
 
             paymentOptions.forEach(function (item) {
-                item.classList.remove(
-                    'border-teal',
-                    'bg-teal-light/35'
-                );
-
-                item.classList.add(
-                    'border-gray-border'
-                );
+                item.classList.remove('border-teal', 'bg-teal-light/35');
+                item.classList.add('border-gray-border');
             });
 
-            option.classList.remove(
-                'border-gray-border'
-            );
-
-            option.classList.add(
-                'border-teal',
-                'bg-teal-light/35'
-            );
+            option.classList.remove('border-gray-border');
+            option.classList.add('border-teal', 'bg-teal-light/35');
 
 
-            const isGcash =
-                option.dataset.paymentOption === 'gcash';
+            const isGcash = option.dataset.paymentOption === 'gcash';
 
-            gcashPanel.classList.toggle(
-                'hidden',
-                !isGcash
-            );
+            gcashPanel.classList.toggle('hidden', !isGcash);
 
-            gcashReference.required =
-                isGcash;
-
-            gcashProof.required =
-                isGcash;
+            gcashReference.required = isGcash;
+            gcashProof.required = isGcash;
 
             recalculate();
         });
@@ -1510,18 +1256,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (gcashProof && gcashProofLabel) {
         gcashProof.addEventListener('change', function () {
 
-            const file =
-                gcashProof.files?.[0];
+            const file = gcashProof.files?.[0];
 
-            gcashProofLabel.textContent =
-                file
-                    ? file.name
-                    : 'Upload image';
+            gcashProofLabel.textContent = file ? file.name : 'Upload image';
 
-            gcashProofLabel.classList.toggle(
-                'text-navy',
-                !!file
-            );
+            gcashProofLabel.classList.toggle('text-navy', !!file);
 
         });
     }
@@ -1533,28 +1272,18 @@ document.addEventListener('DOMContentLoaded', function () {
     |--------------------------------------------------------------------------
     */
     function applyVoucher(code, showFeedback = true) {
-        const normalized =
-            String(code || '').trim().toUpperCase();
+        const normalized = String(code || '').trim().toUpperCase();
 
-        voucherInput.value =
-            normalized;
+        voucherInput.value = normalized;
 
         if (!normalized || !voucherCatalog[normalized]) {
             activeVoucherCode = '';
 
             voucherMessage.textContent =
-                normalized
-                    ? 'Invalid or expired voucher code.'
-                    : 'Enter a voucher code first.';
+                normalized ? 'Invalid or expired voucher code.' : 'Enter a voucher code first.';
 
-            voucherMessage.classList.remove(
-                'hidden',
-                'text-teal-dark'
-            );
-
-            voucherMessage.classList.add(
-                'text-red-500'
-            );
+            voucherMessage.classList.remove('hidden', 'text-teal-dark');
+            voucherMessage.classList.add('text-red-500');
 
             recalculate();
 
@@ -1565,8 +1294,27 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        activeVoucherCode =
-            normalized;
+        const belongsToCart = Array.from(shopGroups).some(
+            (group) => String(group.dataset.shopId) === String(voucherCatalog[normalized].seller_id)
+        );
+
+        if (!belongsToCart) {
+            activeVoucherCode = '';
+
+            voucherMessage.textContent = 'This voucher does not apply to any seller in your order.';
+            voucherMessage.classList.remove('hidden', 'text-teal-dark');
+            voucherMessage.classList.add('text-red-500');
+
+            recalculate();
+
+            if (showFeedback) {
+                showToast('Voucher not applicable.');
+            }
+
+            return;
+        }
+
+        activeVoucherCode = normalized;
 
         recalculate();
 
@@ -1604,13 +1352,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function tryPlaceOrder() {
         if (currentPaymentMethod() === 'gcash') {
 
-            if (
-                !gcashReference.value.trim() ||
-                !gcashProof.files?.length
-            ) {
-                showToast(
-                    'Add your GCash reference number and proof of payment.'
-                );
+            if (!gcashReference.value.trim() || !gcashProof.files?.length) {
+                showToast('Add your GCash reference number and proof of payment.');
 
                 gcashPanel.scrollIntoView({
                     behavior: 'smooth',
@@ -1632,16 +1375,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        /*
-         * TEMPORARY PREVIEW:
-         * remove this preventDefault block once your real
-         * /buyer/checkout/place-order controller is ready.
-         */
-        event.preventDefault();
-
-        showToast(
-            'Order ready to submit — connect the checkout controller next.'
-        );
+        // Real submit — CheckoutController@placeOrder handles it.
     });
 
 

@@ -6,6 +6,8 @@ use App\Http\Controllers\Buyer\DashboardController as BuyerDashboardController;
 use App\Http\Controllers\Buyer\ShowProductDetails_Controller as BuyerProductController;
 use App\Http\Controllers\Buyer\CategoryController as BuyerCategoryController;
 use App\Http\Controllers\Buyer\CartController as BuyerCartController;
+use App\Http\Controllers\Buyer\CheckoutController as BuyerCheckoutController;
+use App\Http\Controllers\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Buyer\BuyerProfileController;
 
 
@@ -76,8 +78,8 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         | Cart
         |--------------------------------------------------------------------------
-        | Wired to CartController so the session cart (add/update/remove)
-        | actually persists and renders on /buyer/cart.
+        | Wired to CartController so the buyer's cart_items (add/update/remove)
+        | persist in the database and render on /buyer/cart.
         */
 
         Route::get('/cart', [
@@ -115,11 +117,14 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         | Checkout
         |--------------------------------------------------------------------------
+        | Wired to CheckoutController so the page reads real cart_items,
+        | buyer address, and seller-scoped vouchers from the database.
         */
 
-        Route::get('/cart/checkout', function () {
-            return view('buyer.checkout.cart-checkout');
-        })->name('cart.checkout');
+        Route::get('/cart/checkout', [
+            BuyerCheckoutController::class,
+            'index',
+        ])->name('cart.checkout');
 
 
         /*
@@ -128,23 +133,24 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         */
 
-        Route::post('/checkout/place-order', function () {
-            return back()->with(
-                'status',
-                'Order placed (demo — no backend yet).'
-            );
-        })->name('checkout.place');
+        Route::post('/checkout/place-order', [
+            BuyerCheckoutController::class,
+            'placeOrder',
+        ])->name('checkout.place');
 
 
         /*
         |--------------------------------------------------------------------------
         | My Orders
         |--------------------------------------------------------------------------
+        | Wired to OrderController so the page reads real Order/OrderItem rows
+        | for the logged-in buyer instead of hardcoded demo data.
         */
 
-        Route::get('/orders', function () {
-            return view('buyer.orders.index');
-        })->name('orders');
+        Route::get('/orders', [
+            BuyerOrderController::class,
+            'index',
+        ])->name('orders');
 
 
         /*

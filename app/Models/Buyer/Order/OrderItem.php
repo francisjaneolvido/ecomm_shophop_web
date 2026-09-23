@@ -38,4 +38,26 @@ class OrderItem extends Model
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
     }
+
+    /**
+     * Human-readable variant text, e.g. "Black · Size 9".
+     */
+    public function variantLabel(): string
+    {
+        if (! $this->variant) {
+            return 'Standard';
+        }
+
+        if (! empty($this->variant->name)) {
+            return $this->variant->name;
+        }
+
+        $attributes = $this->variant->attributes ?? [];
+
+        if (is_array($attributes) && count($attributes) > 0) {
+            return collect($attributes)->implode(' · ');
+        }
+
+        return 'Standard';
+    }
 }
