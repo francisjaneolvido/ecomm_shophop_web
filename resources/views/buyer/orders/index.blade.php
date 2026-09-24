@@ -194,7 +194,8 @@
 
                 <article
                     class="order-card bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm"
-                    data-order-status="{{ $order['status'] }}"
+                    {{-- Preparation stays in To Ship filtering while the card shows the persisted Seller status. --}}
+                    data-order-status="{{ $order['status_group'] }}"
                     data-order-original-status="{{ $order['status'] }}"
                     data-order-search="{{ strtolower(
                         $order['id'] . ' ' .

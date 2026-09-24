@@ -68,6 +68,9 @@ class Order extends Model
 
     public const STATUS_TO_PAY = 'to-pay';
     public const STATUS_TO_SHIP = 'to-ship';
+    // Seller preview stages become persisted Order states; to-receive remains beyond the Logistics handoff.
+    public const STATUS_PREPARING = 'PREPARING';
+    public const STATUS_READY_FOR_PICKUP = 'READY_FOR_PICKUP';
     public const STATUS_TO_RECEIVE = 'to-receive';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CANCELLED = 'cancelled';
@@ -77,6 +80,9 @@ class Order extends Model
         return match ($this->status) {
             self::STATUS_TO_PAY => 'To Pay',
             self::STATUS_TO_SHIP => 'To Ship',
+            // Buyer and Seller read the same status; readiness does not claim a Rider has collected the parcel.
+            self::STATUS_PREPARING => 'Preparing',
+            self::STATUS_READY_FOR_PICKUP => 'Ready for Pickup',
             self::STATUS_TO_RECEIVE => 'To Receive',
             self::STATUS_COMPLETED => 'Delivered',
             self::STATUS_CANCELLED => 'Cancelled',
@@ -90,6 +96,9 @@ class Order extends Model
             // Status alone does not prove payment verification, packing, or courier movement.
             self::STATUS_TO_PAY => 'Online payment verification is unavailable.',
             self::STATUS_TO_SHIP => 'Awaiting seller fulfillment.',
+            // These Seller states report preparation only; neither proves courier pickup or delivery.
+            self::STATUS_PREPARING => 'The seller is preparing this order.',
+            self::STATUS_READY_FOR_PICKUP => 'Ready for pickup; courier assignment and pickup are pending Logistics.',
             self::STATUS_TO_RECEIVE => 'Courier details are unavailable.',
             // Completion records only a status; there is no issue-report action or delivery proof yet.
             self::STATUS_COMPLETED => 'Order marked delivered.',
@@ -111,15 +120,22 @@ class Order extends Model
         }
 
         $order = [
-            self::STATUS_TO_PAY,
+            // COD is collected on delivery, so a completed Payment step would misstate its current status.
+            ...($this->payment_method === 'cod' ? [] : [self::STATUS_TO_PAY]),
             self::STATUS_TO_SHIP,
+            // Preparation and readiness precede any Logistics-owned shipment or receipt state.
+            self::STATUS_PREPARING,
+            self::STATUS_READY_FOR_PICKUP,
             self::STATUS_TO_RECEIVE,
             self::STATUS_COMPLETED,
         ];
 
         $labels = [
             self::STATUS_TO_PAY => 'Payment',
-            self::STATUS_TO_SHIP => 'Preparing',
+            // Buyer progress must distinguish waiting, preparation, and readiness from shipped parcels.
+            self::STATUS_TO_SHIP => 'Awaiting Seller',
+            self::STATUS_PREPARING => 'Preparing',
+            self::STATUS_READY_FOR_PICKUP => 'Ready for Pickup',
             self::STATUS_TO_RECEIVE => 'Shipped',
             self::STATUS_COMPLETED => 'Delivered',
         ];
@@ -139,6 +155,14 @@ class Order extends Model
         }
 
         return $steps;
+    }
+
+    public function buyerStatusGroup(): string
+    {
+        // Seller preparation stays in Buyer's To Ship group until Logistics actually advances the Order.
+        return in_array($this->status, [self::STATUS_PREPARING, self::STATUS_READY_FOR_PICKUP], true)
+            ? self::STATUS_TO_SHIP
+            : $this->status;
     }
 
     public function canReport(): bool
