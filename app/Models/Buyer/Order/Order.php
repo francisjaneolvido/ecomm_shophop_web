@@ -87,10 +87,12 @@ class Order extends Model
     public function statusNote(): string
     {
         return match ($this->status) {
-            self::STATUS_TO_PAY => 'Your GCash payment is waiting for verification.',
-            self::STATUS_TO_SHIP => 'The seller is preparing your order for courier pickup.',
-            self::STATUS_TO_RECEIVE => 'Your parcel is on its way to your delivery address.',
-            self::STATUS_COMPLETED => 'Delivered successfully. Report an issue if something is wrong with this order.',
+            // Status alone does not prove payment verification, packing, or courier movement.
+            self::STATUS_TO_PAY => 'Online payment verification is unavailable.',
+            self::STATUS_TO_SHIP => 'Awaiting seller fulfillment.',
+            self::STATUS_TO_RECEIVE => 'Courier details are unavailable.',
+            // Completion records only a status; there is no issue-report action or delivery proof yet.
+            self::STATUS_COMPLETED => 'Order marked delivered.',
             self::STATUS_CANCELLED => 'This order was cancelled.',
             default => '',
         };
@@ -141,6 +143,7 @@ class Order extends Model
 
     public function canReport(): bool
     {
-        return $this->status === self::STATUS_COMPLETED;
+        // No order report persistence or submission route exists, regardless of status.
+        return false;
     }
 }

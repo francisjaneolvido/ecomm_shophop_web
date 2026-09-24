@@ -19,6 +19,8 @@ class BuyerProfileRenderingTest extends TestCase
             '0001_01_01_000000_create_users_table.php',
             '2026_08_31_000001_add_account_type_and_status_to_users_table.php',
             '2026_08_29_000001_create_buyers_table.php',
+            // Buyer Orders now queries persisted orders; keep this access test's disposable schema current.
+            'Buyer/2026_09_12_102227_create_orders_table.php',
         ]);
     }
 

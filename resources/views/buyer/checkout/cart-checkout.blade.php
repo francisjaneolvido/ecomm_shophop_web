@@ -277,12 +277,13 @@
                                                 <div class="flex flex-wrap items-center gap-1.5">
 
                                                     <span class="text-[12px] font-bold text-teal-dark">
-                                                        ₱{{ number_format($item['price']) }}
+                                                    {{-- Canonical discounted prices retain cents through display and placement. --}}
+                                                    ₱{{ number_format($item['price'], 2) }}
                                                     </span>
 
                                                     @if ($item['original_price'])
                                                         <span class="text-[8.5px] text-navy/30 line-through">
-                                                            ₱{{ number_format($item['original_price']) }}
+                                                            ₱{{ number_format($item['original_price'], 2) }}
                                                         </span>
 
                                                         <span class="text-[7.5px] font-bold text-teal-dark bg-teal-light px-1.5 py-0.5 rounded">
@@ -392,7 +393,8 @@
 
                                         <div>
                                             <p class="text-[10px] font-semibold text-navy">Standard</p>
-                                            <p class="text-[8.5px] text-navy/40 mt-0.5">2–5 days</p>
+                                                {{-- Fixed shipping charge has no carrier delivery-time estimate. --}}
+                                                <p class="text-[8.5px] text-navy/40 mt-0.5">Delivery time unavailable</p>
                                         </div>
                                     </div>
 
@@ -419,7 +421,8 @@
 
                                         <div>
                                             <p class="text-[10px] font-semibold text-navy">Express</p>
-                                            <p class="text-[8.5px] text-navy/40 mt-0.5">1–2 days</p>
+                                                {{-- Express changes the fixed charge, but no carrier timetable is persisted. --}}
+                                                <p class="text-[8.5px] text-navy/40 mt-0.5">Delivery time unavailable</p>
                                         </div>
                                     </div>
 
@@ -530,12 +533,12 @@
                         </label>
 
 
-                        {{-- GCASH --}}
+                        {{-- GCash has no provider or verified manual-review contract, so it cannot be selected. --}}
                         <label
                             data-payment-option="gcash"
                             class="payment-option flex items-center justify-between gap-3
                                    border border-gray-border rounded-xl px-3 py-2.5
-                                   cursor-pointer hover:border-teal/40 transition"
+                                   opacity-50 cursor-not-allowed"
                         >
                             <div class="flex items-center gap-2.5">
 
@@ -543,6 +546,7 @@
                                     type="radio"
                                     name="payment_method"
                                     value="gcash"
+                                    disabled
                                     class="accent-teal-dark w-3.5 h-3.5"
                                 >
 
@@ -553,110 +557,24 @@
 
                                 <div>
                                     <p class="text-[10.5px] font-semibold text-navy">
-                                        GCash
-                                        <span class="text-[8px] font-normal text-navy/35">(Manual verification)</span>
+                                        GCash (unavailable)
                                     </p>
 
                                     <p class="text-[8.5px] text-navy/40 mt-0.5">
-                                        Upload proof after payment
+                                        Payment setup is pending
                                     </p>
                                 </div>
                             </div>
 
-                            <span class="text-[8px] font-semibold text-teal-dark">
-                                No fee
+                            <span class="text-[8px] font-semibold text-navy/35">
+                                Unavailable
                             </span>
                         </label>
 
                     </div>
 
 
-                    {{-- GCASH PANEL --}}
-                    <div id="gcashPanel" class="hidden px-4 pb-4">
-
-                        <div class="rounded-xl bg-[#EAF9F5] border border-teal/10 p-3">
-
-                            <div class="grid sm:grid-cols-[105px_1fr] gap-3 items-start">
-
-                                <div class="aspect-square rounded-xl bg-white border border-dashed border-teal/30
-                                            flex flex-col items-center justify-center text-teal-dark">
-                                    <x-lucide-qr-code class="w-7 h-7" />
-                                    <span class="text-[8px] font-semibold mt-1">Scan to Pay</span>
-                                </div>
-
-
-                                <div>
-
-                                    <p class="text-[9px] text-navy/45">Send exactly</p>
-
-                                    <p class="text-[18px] leading-none font-bold text-teal-dark mt-1"
-                                       id="gcashAmountText">
-                                        ₱0
-                                    </p>
-
-                                    <p class="text-[9.5px] font-semibold text-navy mt-2">
-                                        0917 123 4567
-                                    </p>
-
-                                    <p class="text-[8.5px] text-navy/40">
-                                        ShopHop Store
-                                    </p>
-
-
-                                    <div class="grid sm:grid-cols-2 gap-2 mt-3">
-
-                                        <div>
-                                            <label class="text-[8.5px] font-medium text-navy/50 block mb-1">
-                                                Reference Number
-                                            </label>
-
-                                            <input
-                                                type="text"
-                                                name="gcash_reference"
-                                                id="gcashReference"
-                                                placeholder="e.g. 0123456789012"
-                                                class="w-full text-[9.5px] rounded-lg border border-gray-border
-                                                       px-2.5 py-2 focus:outline-none focus:border-teal"
-                                            >
-                                        </div>
-
-
-                                        <div>
-                                            <label class="text-[8.5px] font-medium text-navy/50 block mb-1">
-                                                Proof of Payment
-                                            </label>
-
-                                            <label
-                                                for="gcashProof"
-                                                class="h-8.5 flex items-center gap-1.5 border border-dashed border-gray-border
-                                                       bg-white rounded-lg px-2.5 cursor-pointer hover:border-teal transition"
-                                            >
-                                                <x-lucide-upload class="w-3 h-3 text-navy/35 shrink-0" />
-
-                                                <span id="gcashProofLabel"
-                                                      class="text-[8.5px] text-navy/40 truncate">
-                                                    Upload image
-                                                </span>
-                                            </label>
-
-                                            <input
-                                                type="file"
-                                                name="gcash_proof"
-                                                id="gcashProof"
-                                                accept="image/*"
-                                                class="hidden"
-                                            >
-                                        </div>
-                                    </div>
-
-
-                                    <p class="text-[8px] leading-relaxed text-navy/35 mt-2.5">
-                                        GCash orders stay pending until the reference number and screenshot are verified.
-                                    </p>
-
-                                </div>
-                            </div>
-                        </div>
+                    {{-- Unsupported payment instructions and proof entry were removed; COD remains the only placement path. --}}
                     </div>
 
                 </section>
@@ -852,7 +770,8 @@
 
                     <div class="bg-white border border-gray-border rounded-xl px-2 py-2.5 text-center">
                         <x-lucide-lock class="w-3.5 h-3.5 text-teal-dark mx-auto" />
-                        <p class="text-[7.5px] text-navy/45 mt-1">Secure Payment</p>
+                        {{-- Checkout currently accepts COD only; no online payment is processed here. --}}
+                        <p class="text-[7.5px] text-navy/45 mt-1">Cash on Delivery</p>
                     </div>
 
                 </section>
@@ -937,13 +856,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const mobileSummaryTotal = document.getElementById('mobileSummaryTotal');
 
-    const gcashAmountText = document.getElementById('gcashAmountText');
-
+    // Only COD is interactive until a real GCash verification contract exists.
     const paymentOptions = document.querySelectorAll('[data-payment-option]');
-    const gcashPanel = document.getElementById('gcashPanel');
-    const gcashReference = document.getElementById('gcashReference');
-    const gcashProof = document.getElementById('gcashProof');
-    const gcashProofLabel = document.getElementById('gcashProofLabel');
 
     const voucherInput = document.getElementById('voucherInput');
     const applyVoucherBtn = document.getElementById('applyVoucherBtn');
@@ -965,8 +879,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function formatPeso(amount) {
-        return '₱' + Math.max(0, Math.round(Number(amount) || 0))
-            .toLocaleString('en-PH');
+        // Summary previews retain cents so the server's persisted decimal total is not visually rounded.
+        return '₱' + Math.max(0, Number(amount) || 0)
+            .toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
 
@@ -1078,6 +993,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         shopGroups.forEach(function (group, index) {
             let groupSubtotal = 0;
+            let eligibleSubtotal = 0;
 
             group.querySelectorAll('.checkout-item').forEach(function (row) {
                 const price = Number(row.dataset.price || 0);
@@ -1087,6 +1003,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 const qty = Math.max(1, parseInt(qtyInput?.value, 10) || 1);
 
                 groupSubtotal += price * qty;
+
+                // Match the server voucher rule by counting only assigned Product rows in this seller group.
+                if (voucher && String(group.dataset.shopId) === String(voucher.seller_id)
+                    && voucher.product_ids.includes(Number(row.dataset.productId))) {
+                    eligibleSubtotal += price * qty;
+                }
 
                 productSavings += Math.max(0, originalPrice - price) * qty;
             });
@@ -1108,8 +1030,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (voucher && String(group.dataset.shopId) === String(voucher.seller_id)) {
-                voucherEligibleShopSubtotal = groupSubtotal;
-                voucherDiscount = voucherDiscountForShop(groupSubtotal);
+                voucherEligibleShopSubtotal = eligibleSubtotal;
+                voucherDiscount = voucherDiscountForShop(eligibleSubtotal);
             }
         });
 
@@ -1139,11 +1061,6 @@ document.addEventListener('DOMContentLoaded', function () {
             'You save ' + formatPeso(productSavings + currentVoucherDiscount);
 
 
-        if (gcashAmountText) {
-            gcashAmountText.textContent = formatPeso(
-                merchandiseSubtotal + shippingTotal - currentVoucherDiscount
-            );
-        }
     }
 
 
@@ -1229,6 +1146,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         option.addEventListener('click', function () {
 
+            // Disabled payment choices must not be re-enabled by label click handling.
+            if (radio.disabled) return;
+
             radio.checked = true;
 
             paymentOptions.forEach(function (item) {
@@ -1240,30 +1160,10 @@ document.addEventListener('DOMContentLoaded', function () {
             option.classList.add('border-teal', 'bg-teal-light/35');
 
 
-            const isGcash = option.dataset.paymentOption === 'gcash';
-
-            gcashPanel.classList.toggle('hidden', !isGcash);
-
-            gcashReference.required = isGcash;
-            gcashProof.required = isGcash;
-
             recalculate();
         });
 
     });
-
-
-    if (gcashProof && gcashProofLabel) {
-        gcashProof.addEventListener('change', function () {
-
-            const file = gcashProof.files?.[0];
-
-            gcashProofLabel.textContent = file ? file.name : 'Upload image';
-
-            gcashProofLabel.classList.toggle('text-navy', !!file);
-
-        });
-    }
 
 
     /*
@@ -1294,8 +1194,12 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const belongsToCart = Array.from(shopGroups).some(
-            (group) => String(group.dataset.shopId) === String(voucherCatalog[normalized].seller_id)
+        // A voucher code is eligible only when an assigned Product is selected from its seller.
+        const belongsToCart = Array.from(shopGroups).some((group) =>
+            String(group.dataset.shopId) === String(voucherCatalog[normalized].seller_id)
+            && Array.from(group.querySelectorAll('.checkout-item')).some((row) =>
+                voucherCatalog[normalized].product_ids.includes(Number(row.dataset.productId))
+            )
         );
 
         if (!belongsToCart) {
@@ -1319,7 +1223,10 @@ document.addEventListener('DOMContentLoaded', function () {
         recalculate();
 
         if (showFeedback) {
-            showToast(normalized + ' applied.');
+            // The server applies the code only after final eligibility and price validation.
+            showToast(currentVoucherDiscount > 0
+                ? normalized + ' selected for Checkout.'
+                : 'This voucher does not meet the eligible spend minimum.');
         }
     }
 
@@ -1349,33 +1256,16 @@ document.addEventListener('DOMContentLoaded', function () {
     | Submit
     |--------------------------------------------------------------------------
     */
-    function tryPlaceOrder() {
-        if (currentPaymentMethod() === 'gcash') {
-
-            if (!gcashReference.value.trim() || !gcashProof.files?.length) {
-                showToast('Add your GCash reference number and proof of payment.');
-
-                gcashPanel.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-
+    let isSubmitting = false;
     checkoutForm.addEventListener('submit', function (event) {
-
-        if (!tryPlaceOrder()) {
+        // Repeated clicks on the same loaded form must not dispatch a second placement request.
+        if (isSubmitting) {
             event.preventDefault();
             return;
         }
-
-        // Real submit — CheckoutController@placeOrder handles it.
+        isSubmitting = true;
+        document.getElementById('placeOrderBtn').disabled = true;
+        mobilePlaceOrderBtn.disabled = true;
     });
 
 

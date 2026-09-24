@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Buyer\Cart\CartItem;
 use App\Models\Seller\Manage_inventory\Product;
 use Illuminate\Support\Facades\Schema;
 
@@ -26,8 +27,10 @@ class DashboardController extends Controller
         $recommendedProducts = $this->getRecommendedProducts();
         $dealProducts = $this->getDealProducts();
         $newArrivals = $this->getNewArrivals();
-        // CartController's cart_count is the number of session lines, not total quantity.
-        $cartItemCount = count(session('shophop_cart', []));
+        // Teammate commerce moved Cart into cart_items; sparse previews without that schema show zero.
+        $cartItemCount = Schema::hasTable('cart_items')
+            ? CartItem::where('buyer_id', auth()->user()?->buyer?->id)->count()
+            : 0;
 
         return view('buyer.dashboard.dashboard', compact(
             'buyerName',
