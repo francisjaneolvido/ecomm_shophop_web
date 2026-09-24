@@ -40,7 +40,10 @@ class CartItem extends Model
 
     public function availableStock(): int
     {
-        return (int) ($this->variant?->stock ?? $this->product->stock);
+        // Seller Inventory stores Product stock as the variant aggregate, so either row can cap a variant line.
+        return $this->variant
+            ? min((int) $this->variant->stock, (int) $this->product->stock)
+            : (int) $this->product->stock;
     }
 
     public function unitPrice(): float

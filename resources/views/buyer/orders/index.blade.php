@@ -70,7 +70,8 @@
 
                 <p class="text-[11.5px] sm:text-[12px] text-navy/50 mt-1.5">
 
-                    Track payment, packing, courier movement, delivery, and proof of delivery.
+                    {{-- Order cards show persisted purchases; courier and report records are unavailable. --}}
+                    Review your persisted purchases and their current order status.
 
                 </p>
 
@@ -122,7 +123,7 @@
                     ['key' => 'to-receive', 'label' => 'To Receive'],
                     ['key' => 'completed', 'label' => 'Completed'],
                     ['key' => 'cancelled', 'label' => 'Cancelled'],
-                    ['key' => 'reported', 'label' => 'Reports'],
+                    {{-- Reports have no persisted endpoint, so this status tab is intentionally absent. --}}
                 ] as $index => $tab)
 
                     <button
@@ -357,7 +358,8 @@
 
                                         <span class="text-[13px] font-bold text-teal-dark">
 
-                                            ₱{{ number_format($item['price']) }}
+                                            {{-- Preserve the OrderItem purchase price, including cents. --}}
+                                            ₱{{ number_format($item['price'], 2) }}
 
                                         </span>
 
@@ -429,7 +431,7 @@
 
                                     @else
 
-                                        Tracking number will appear after courier pickup.
+                                        Courier tracking is unavailable for this order.
 
                                     @endif
 
@@ -532,7 +534,7 @@
 
                         <div class="grid lg:grid-cols-[minmax(0,1fr)_310px] gap-0">
 
-                            {{-- Tracking history --}}
+                                    {{-- Only the recorded placement event is available; courier history is not persisted. --}}
                             <div class="p-4 lg:border-r border-gray-border/80">
 
                                 <div class="flex items-center justify-between gap-3 mb-4">
@@ -541,14 +543,14 @@
 
                                         <p class="text-[13px] font-bold text-navy">
 
-                                            Detailed Tracking
+                                            Order History
 
                                         </p>
 
 
                                         <p class="text-[10px] text-navy/45 mt-1">
 
-                                            Latest courier updates for this order.
+                                            Recorded events for this order.
 
                                         </p>
 
@@ -721,7 +723,8 @@
 
                                                 <p class="text-[11px] font-semibold text-navy mt-0.5">
 
-                                                    {{ $order['courier'] ?? 'Not assigned yet' }}
+                                            {{-- A shipping method does not imply a persisted courier assignment. --}}
+                                            {{ $order['courier'] ?? 'Courier data unavailable' }}
 
                                                 </p>
 
@@ -1024,7 +1027,8 @@
                                     </p>
 
                                     <p class="text-[12.5px] font-bold text-teal-dark mt-0.5">
-                                        ₱{{ number_format($order['total']) }}
+                                        {{-- Display the persisted order total without rounding away cents. --}}
+                                        ₱{{ number_format($order['total'], 2) }}
                                     </p>
 
                                 </div>
@@ -1034,7 +1038,7 @@
 
                             <div class="flex flex-wrap items-center gap-2 lg:justify-end">
 
-                                {{-- Tracking toggle --}}
+                                    {{-- This panel shows the recorded order event; courier tracking is unavailable. --}}
                                 <button
                                     type="button"
                                     class="tracking-toggle-btn h-8 px-3 rounded-lg
@@ -1049,82 +1053,13 @@
                                     <x-lucide-map-pin class="w-3 h-3" />
 
                                     <span data-tracking-label>
-                                        View Tracking
+                                            Order Details
                                     </span>
 
                                 </button>
 
 
-                                @if ($order['status'] === 'to-pay')
-
-                                    <button
-                                        type="button"
-                                        class="h-8 px-3 rounded-lg bg-teal hover:bg-teal-dark
-                                               text-white text-[9.5px] font-semibold transition"
-                                    >
-                                        Complete Payment
-                                    </button>
-
-                                @endif
-
-
-                                @if (in_array($order['status'], ['to-ship', 'to-receive']))
-
-                                    <button
-                                        type="button"
-                                        class="h-8 px-3 rounded-lg border border-teal
-                                               text-teal-dark hover:bg-teal-light
-                                               text-[9.5px] font-semibold transition"
-                                    >
-                                        Contact Seller
-                                    </button>
-
-                                @endif
-
-
-                                @if ($order['status'] === 'completed')
-
-                                    <button
-                                        type="button"
-                                        class="h-8 px-3 rounded-lg border border-gray-border
-                                               text-navy/60 hover:border-teal/40 hover:text-teal-dark
-                                               text-[9.5px] font-semibold transition"
-                                    >
-                                        Buy Again
-                                    </button>
-
-                                @endif
-
-
-                                @if ($order['can_report'])
-
-                                    <button
-                                        type="button"
-                                        class="report-order-btn h-8 px-3 rounded-lg border border-red-200
-                                               bg-red-50/70 text-red-500 hover:bg-red-50
-                                               text-[9.5px] font-semibold transition
-                                               inline-flex items-center gap-1.5"
-                                        data-order-id="{{ $order['id'] }}"
-                                        data-order-shop="{{ $order['shop'] }}"
-                                    >
-
-                                        <x-lucide-flag class="w-3 h-3" />
-
-                                        Report Issue
-
-                                    </button>
-
-                                @endif
-
-
-                                <button
-                                    type="button"
-                                    class="h-8 px-3 rounded-lg border border-gray-border
-                                           text-navy/50 hover:text-teal-dark hover:border-teal/40
-                                           text-[9.5px] font-semibold transition"
-                                >
-                                    Order Details
-                                </button>
+                                {{-- Payment, contact, repeat-purchase, and report actions have no route or persistence contract. --}}
 
                             </div>
 
@@ -1172,443 +1107,7 @@
 </section>
 
 
-{{-- =========================================================
-    REPORT ISSUE MODAL
-    REPORT ONLY — NO REFUND
-========================================================= --}}
-<div
-    id="reportOrderModal"
-    class="hidden fixed inset-0 z-100 items-center justify-center p-4"
-    aria-hidden="true"
->
-
-    <div
-        data-report-backdrop
-        class="absolute inset-0 bg-navy/45 backdrop-blur-[2px]"
-    ></div>
-
-
-    <div
-        class="relative w-full max-w-130 max-h-[90vh] overflow-y-auto
-               bg-white rounded-2xl border border-gray-border shadow-2xl"
-    >
-
-        {{-- Modal header --}}
-        <div class="flex items-start justify-between gap-3 px-4 py-3 border-b border-gray-border">
-
-            <div class="flex items-center gap-2">
-
-                <span class="w-8 h-8 rounded-lg bg-red-50 text-red-500 flex items-center justify-center">
-
-                    <x-lucide-flag class="w-4 h-4" />
-
-                </span>
-
-
-                <div>
-
-                    <p class="text-[12px] font-bold text-navy">
-
-                        Report an Order Issue
-
-                    </p>
-
-
-                    <p class="text-[9px] text-navy/40 mt-0.5">
-
-                        Order
-                        <span
-                            id="reportOrderNumber"
-                            class="font-semibold text-navy/60"
-                        ></span>
-
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <button
-                type="button"
-                data-close-report
-                class="w-7 h-7 rounded-lg flex items-center justify-center
-                       text-navy/35 hover:text-navy hover:bg-gray-bg transition"
-                aria-label="Close report modal"
-            >
-
-                <x-lucide-x class="w-3.5 h-3.5" />
-
-            </button>
-
-        </div>
-
-
-        <form
-            id="reportOrderForm"
-            class="p-4"
-        >
-
-            <input
-                type="hidden"
-                id="reportOrderId"
-                name="order_id"
-            >
-
-
-            {{-- Order context --}}
-            <div class="grid grid-cols-2 gap-2 mb-3">
-
-                <div class="rounded-xl bg-gray-bg px-3 py-2.5">
-
-                    <p class="text-[8px] text-navy/30">
-                        Courier
-                    </p>
-
-                    <p
-                        id="reportCourier"
-                        class="text-[9px] font-semibold text-navy mt-0.5"
-                    >
-                        —
-                    </p>
-
-                </div>
-
-
-                <div class="rounded-xl bg-gray-bg px-3 py-2.5">
-
-                    <p class="text-[8px] text-navy/30">
-                        Tracking Number
-                    </p>
-
-                    <p
-                        id="reportTracking"
-                        class="text-[9px] font-semibold text-navy mt-0.5 break-all"
-                    >
-                        —
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div class="rounded-xl bg-[#EAF9F5] border border-teal/10 p-3 mb-4">
-
-                <div class="flex gap-2">
-
-                    <x-lucide-info class="w-3.5 h-3.5 text-teal-dark shrink-0 mt-0.5" />
-
-
-                    <p class="text-[9px] leading-relaxed text-navy/50">
-
-                        This report is sent to ShopHop support for review.
-                        <span class="font-semibold text-navy">
-                            It does not request a refund.
-                        </span>
-
-                    </p>
-
-                </div>
-
-            </div>
-
-
-            <div>
-
-                <label
-                    for="reportReason"
-                    class="text-[10px] font-semibold text-navy/60 block mb-1.5"
-                >
-                    What is the problem?
-                    <span class="text-red-500">*</span>
-                </label>
-
-
-                <select
-                    id="reportReason"
-                    name="reason"
-                    required
-                    class="w-full h-10 rounded-xl border border-gray-border bg-white
-                           px-3 text-[10.5px] text-navy outline-none
-                           focus:border-teal focus:ring-1 focus:ring-teal/10"
-                >
-
-                    <option value="">
-                        Select a problem
-                    </option>
-
-                    <option value="damaged">
-                        Item arrived damaged
-                    </option>
-
-                    <option value="wrong-item">
-                        Wrong item received
-                    </option>
-
-                    <option value="missing-item">
-                        Missing item or parts
-                    </option>
-
-                    <option value="defective">
-                        Item is defective / not working
-                    </option>
-
-                    <option value="delivery-status">
-                        Marked delivered but not received
-                    </option>
-
-                    <option value="proof-concern">
-                        Delivery photo / proof concern
-                    </option>
-
-                    <option value="rider-concern">
-                        Courier / rider concern
-                    </option>
-
-                    <option value="seller-concern">
-                        Seller / parcel concern
-                    </option>
-
-                    <option value="other">
-                        Other concern
-                    </option>
-
-                </select>
-
-            </div>
-
-
-            <div class="mt-3">
-
-                <label
-                    for="reportDescription"
-                    class="text-[10px] font-semibold text-navy/60 block mb-1.5"
-                >
-                    Tell us what happened
-                    <span class="text-red-500">*</span>
-                </label>
-
-
-                <textarea
-                    id="reportDescription"
-                    name="description"
-                    rows="4"
-                    maxlength="500"
-                    required
-                    placeholder="Describe the issue clearly so ShopHop support can review it."
-                    class="w-full rounded-xl border border-gray-border
-                           px-3 py-2.5 text-[10.5px] leading-relaxed text-navy
-                           placeholder:text-navy/30 outline-none resize-none
-                           focus:border-teal focus:ring-1 focus:ring-teal/10"
-                ></textarea>
-
-
-                <div class="flex items-center justify-between mt-1">
-
-                    <span class="text-[8.5px] text-navy/35">
-
-                        Do not share passwords or payment PINs.
-
-                    </span>
-
-
-                    <span
-                        id="reportCharacterCount"
-                        class="text-[8.5px] text-navy/35"
-                    >
-                        0 / 500
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <div class="mt-3">
-
-                <label class="text-[10px] font-semibold text-navy/60 block mb-1.5">
-
-                    Evidence
-
-                    <span class="font-normal text-navy/30">
-                        (optional)
-                    </span>
-
-                </label>
-
-
-                <label
-                    for="reportEvidence"
-                    class="flex items-center gap-2.5 min-h-11 rounded-xl
-                           border border-dashed border-gray-border
-                           px-3 py-2 cursor-pointer
-                           hover:border-teal hover:bg-teal-light/20 transition"
-                >
-
-                    <span class="w-7 h-7 rounded-lg bg-gray-bg text-navy/40 flex items-center justify-center shrink-0">
-
-                        <x-lucide-upload class="w-3.5 h-3.5" />
-
-                    </span>
-
-
-                    <div class="min-w-0">
-
-                        <p
-                            id="reportEvidenceLabel"
-                            class="text-[10px] font-medium text-navy/55 truncate"
-                        >
-
-                            Add photo or screenshot
-
-                        </p>
-
-
-                        <p class="text-[8.5px] text-navy/35 mt-0.5">
-
-                            JPG, PNG, WEBP · up to 5 MB
-
-                        </p>
-
-                    </div>
-
-                </label>
-
-
-                <input
-                    id="reportEvidence"
-                    type="file"
-                    name="evidence"
-                    accept="image/jpeg,image/png,image/webp"
-                    class="hidden"
-                >
-
-            </div>
-
-
-            <label class="flex items-start gap-2 mt-4 cursor-pointer">
-
-                <input
-                    id="reportConfirm"
-                    type="checkbox"
-                    required
-                    class="w-3.5 h-3.5 mt-0.5 accent-teal shrink-0"
-                >
-
-
-                <span class="text-[9.5px] leading-relaxed text-navy/50">
-
-                    I confirm that the information in this report is accurate to the best of my knowledge.
-
-                </span>
-
-            </label>
-
-
-            <div class="flex items-center justify-end gap-2 mt-5 pt-4 border-t border-gray-border">
-
-                <button
-                    type="button"
-                    data-close-report
-                    class="h-9 px-3.5 rounded-xl border border-gray-border
-                           text-[10px] font-semibold text-navy/55
-                           hover:border-teal/40 hover:text-teal-dark transition"
-                >
-                    Cancel
-                </button>
-
-
-                <button
-                    type="submit"
-                    class="h-9 px-4 rounded-xl bg-teal hover:bg-teal-dark
-                           text-white text-[10px] font-semibold
-                           inline-flex items-center gap-1.5 transition"
-                >
-
-                    <x-lucide-send class="w-3 h-3" />
-
-                    Submit Report
-
-                </button>
-
-            </div>
-
-        </form>
-
-    </div>
-
-</div>
-
-
-{{-- =========================================================
-    PROOF OF DELIVERY LIGHTBOX
-========================================================= --}}
-<div
-    id="proofPhotoModal"
-    class="hidden fixed inset-0 z-105 items-center justify-center p-4"
-    aria-hidden="true"
->
-
-    <div
-        data-proof-backdrop
-        class="absolute inset-0 bg-navy/80 backdrop-blur-sm"
-    ></div>
-
-
-    <div class="relative w-full max-w-3xl">
-
-        <button
-            type="button"
-            data-close-proof
-            class="absolute -top-10 right-0 w-8 h-8 rounded-full
-                   bg-white/10 text-white hover:bg-white/20
-                   flex items-center justify-center transition"
-            aria-label="Close proof photo"
-        >
-
-            <x-lucide-x class="w-4 h-4" />
-
-        </button>
-
-
-        <div class="overflow-hidden rounded-2xl bg-white shadow-2xl">
-
-            <img
-                id="proofPhotoImage"
-                src=""
-                alt="Proof of delivery"
-                class="w-full max-h-[72vh] object-contain bg-black"
-            >
-
-
-            <div class="px-4 py-3">
-
-                <p class="text-[11px] font-bold text-navy">
-
-                    Proof of Delivery
-
-                </p>
-
-
-                <p class="text-[9px] text-navy/40 mt-0.5">
-
-                    Rider-uploaded delivery evidence for order
-                    <span
-                        id="proofPhotoOrder"
-                        class="font-semibold text-navy/60"
-                    ></span>.
-
-                </p>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
+{{-- Issue reports and delivery proof have no persisted backend contract, so their modals are unavailable. --}}
 
 {{-- Toast --}}
 <div
@@ -1720,8 +1219,8 @@ document.addEventListener('DOMContentLoaded', function () {
             'to-ship',
             'to-receive',
             'completed',
-            'cancelled',
-            'reported'
+            // Only persisted order statuses participate in filtering; report simulation was removed.
+            'cancelled'
         ];
 
 
@@ -1936,8 +1435,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
                             if (otherLabel) {
+                                // Closing another order panel restores its truthful details label.
                                 otherLabel.textContent =
-                                    'View Tracking';
+                                    'Order Details';
                             }
                         }
                     });
@@ -1963,10 +1463,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (label) {
 
+                    // The panel is order history until real courier events exist.
                     label.textContent =
                         willOpen
-                            ? 'Hide Tracking'
-                            : 'View Tracking';
+                            ? 'Hide Details'
+                            : 'Order Details';
 
                 }
 
@@ -2027,452 +1528,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
 
-    /*
-    |--------------------------------------------------------------------------
-    | PROOF OF DELIVERY PHOTO MODAL
-    |--------------------------------------------------------------------------
-    */
-
-    const proofModal =
-        document.getElementById('proofPhotoModal');
-
-    const proofImage =
-        document.getElementById('proofPhotoImage');
-
-    const proofOrder =
-        document.getElementById('proofPhotoOrder');
-
-
-    function openProofModal(imageUrl, orderId) {
-
-        proofImage.src =
-            imageUrl;
-
-
-        proofOrder.textContent =
-            orderId;
-
-
-        proofModal.classList.remove(
-            'hidden'
-        );
-
-
-        proofModal.classList.add(
-            'flex'
-        );
-
-
-        proofModal.setAttribute(
-            'aria-hidden',
-            'false'
-        );
-
-
-        document.body.classList.add(
-            'overflow-hidden'
-        );
-    }
-
-
-    function closeProofModal() {
-
-        proofModal.classList.add(
-            'hidden'
-        );
-
-
-        proofModal.classList.remove(
-            'flex'
-        );
-
-
-        proofModal.setAttribute(
-            'aria-hidden',
-            'true'
-        );
-
-
-        document.body.classList.remove(
-            'overflow-hidden'
-        );
-
-
-        proofImage.src = '';
-    }
-
-
-    document.querySelectorAll('.proof-photo-btn')
-        .forEach(function (button) {
-
-            button.addEventListener('click', function () {
-
-                openProofModal(
-                    button.dataset.proofImage,
-                    button.dataset.proofOrder
-                );
-            });
-        });
-
-
-    document.querySelectorAll('[data-close-proof]')
-        .forEach(function (button) {
-
-            button.addEventListener(
-                'click',
-                closeProofModal
-            );
-        });
-
-
-    document.querySelector('[data-proof-backdrop]')
-        ?.addEventListener(
-            'click',
-            closeProofModal
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | REPORT MODAL
-    |--------------------------------------------------------------------------
-    */
-
-    const reportModal =
-        document.getElementById('reportOrderModal');
-
-    const reportForm =
-        document.getElementById('reportOrderForm');
-
-    const reportOrderId =
-        document.getElementById('reportOrderId');
-
-    const reportOrderNumber =
-        document.getElementById('reportOrderNumber');
-
-    const reportCourier =
-        document.getElementById('reportCourier');
-
-    const reportTracking =
-        document.getElementById('reportTracking');
-
-    const reportReason =
-        document.getElementById('reportReason');
-
-    const reportDescription =
-        document.getElementById('reportDescription');
-
-    const reportCharacterCount =
-        document.getElementById('reportCharacterCount');
-
-    const reportEvidence =
-        document.getElementById('reportEvidence');
-
-    const reportEvidenceLabel =
-        document.getElementById('reportEvidenceLabel');
-
-
-    function openReportModal(card) {
-
-        const orderId =
-            card.dataset.orderId;
-
-
-        reportForm.reset();
-
-
-        reportOrderId.value =
-            orderId;
-
-
-        reportOrderNumber.textContent =
-            orderId;
-
-
-        reportCourier.textContent =
-            card.dataset.courier || 'Not available';
-
-
-        reportTracking.textContent =
-            card.dataset.trackingNumber || 'Not available';
-
-
-        reportEvidenceLabel.textContent =
-            'Add photo or screenshot';
-
-
-        reportCharacterCount.textContent =
-            '0 / 500';
-
-
-        reportModal.classList.remove(
-            'hidden'
-        );
-
-
-        reportModal.classList.add(
-            'flex'
-        );
-
-
-        reportModal.setAttribute(
-            'aria-hidden',
-            'false'
-        );
-
-
-        document.body.classList.add(
-            'overflow-hidden'
-        );
-
-
-        setTimeout(function () {
-            reportReason.focus();
-        }, 60);
-    }
-
-
-    function closeReportModal() {
-
-        reportModal.classList.add(
-            'hidden'
-        );
-
-
-        reportModal.classList.remove(
-            'flex'
-        );
-
-
-        reportModal.setAttribute(
-            'aria-hidden',
-            'true'
-        );
-
-
-        document.body.classList.remove(
-            'overflow-hidden'
-        );
-    }
-
-
-    document.querySelectorAll('.report-order-btn')
-        .forEach(function (button) {
-
-            button.addEventListener('click', function () {
-
-                const card =
-                    button.closest('.order-card');
-
-
-                if (card) {
-                    openReportModal(card);
-                }
-            });
-        });
-
-
-    document.querySelectorAll('[data-close-report]')
-        .forEach(function (button) {
-
-            button.addEventListener(
-                'click',
-                closeReportModal
-            );
-        });
-
-
-    document.querySelector('[data-report-backdrop]')
-        ?.addEventListener(
-            'click',
-            closeReportModal
-        );
-
-
-    document.addEventListener(
-        'keydown',
-        function (event) {
-
-            if (event.key !== 'Escape') {
-                return;
-            }
-
-
-            if (
-                reportModal &&
-                !reportModal.classList.contains('hidden')
-            ) {
-                closeReportModal();
-            }
-
-
-            if (
-                proofModal &&
-                !proofModal.classList.contains('hidden')
-            ) {
-                closeProofModal();
-            }
-        }
-    );
-
-
-    reportDescription?.addEventListener(
-        'input',
-        function () {
-
-            reportCharacterCount.textContent =
-                reportDescription.value.length +
-                ' / 500';
-
-        }
-    );
-
-
-    reportEvidence?.addEventListener(
-        'change',
-        function () {
-
-            const file =
-                reportEvidence.files?.[0];
-
-
-            reportEvidenceLabel.textContent =
-                file
-                    ? file.name
-                    : 'Add photo or screenshot';
-
-        }
-    );
-
-
-    reportForm?.addEventListener(
-        'submit',
-        function (event) {
-
-            event.preventDefault();
-
-
-            const orderId =
-                reportOrderId.value;
-
-
-            const card =
-                document.querySelector(
-                    '.order-card[data-order-id="' +
-                    orderId +
-                    '"]'
-                );
-
-
-            if (!card) {
-
-                closeReportModal();
-
-                return;
-            }
-
-
-            /*
-             * FRONTEND PREVIEW ONLY
-             * ---------------------------------------------
-             * Replace this block later with:
-             *
-             * POST /buyer/orders/{order}/report
-             *
-             * and save to an order_reports table.
-             */
-
-            card.dataset.orderStatus =
-                'reported';
-
-
-            const statusBadge =
-                card.querySelector(
-                    '.order-status-badge'
-                );
-
-
-            const statusLabel =
-                card.querySelector(
-                    '[data-order-status-label]'
-                );
-
-
-            if (statusBadge) {
-
-                statusBadge.className =
-                    'order-status-badge inline-flex items-center gap-1 px-2 py-1 rounded-full text-[9px] font-bold bg-amber-50 text-amber-600';
-
-            }
-
-
-            if (statusLabel) {
-
-                statusLabel.textContent =
-                    'Report Submitted';
-
-            }
-
-
-            const statusNote =
-                card.querySelector(
-                    '[data-order-status-note]'
-                );
-
-
-            if (statusNote) {
-
-                statusNote.textContent =
-                    'Your report was submitted to ShopHop support and is waiting for review.';
-
-            }
-
-
-            const reportButton =
-                card.querySelector(
-                    '.report-order-btn'
-                );
-
-
-            if (reportButton) {
-
-                reportButton.disabled = true;
-
-
-                reportButton.innerHTML =
-                    '<span class="inline-flex items-center gap-1.5">' +
-                    '<span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>' +
-                    'Report Submitted' +
-                    '</span>';
-
-
-                reportButton.className =
-                    'report-order-btn h-8 px-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-600 text-[9.5px] font-semibold cursor-default';
-
-            }
-
-
-            updateTabCounts();
-
-
-            closeReportModal();
-
-
-            const reportTab =
-                document.querySelector(
-                    '[data-order-tab="reported"]'
-                );
-
-
-            reportTab?.click();
-
-
-            showToast(
-                'Report submitted. ShopHop support will review your concern.'
-            );
-        }
-    );
-
+    // No proof or report modal handlers exist until those records and actions are persisted.
 
     updateTabCounts();
     filterOrders();

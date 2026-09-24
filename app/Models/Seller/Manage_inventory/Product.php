@@ -47,7 +47,8 @@ class Product extends Model
 
     public function seller(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\Seller::class, 'seller_id');
+        // Inventory stores the seller's users.id; resolve the profile by its user_id, not sellers.id.
+        return $this->belongsTo(\App\Models\Seller::class, 'seller_id', 'user_id');
     }
 
     public function images(): HasMany

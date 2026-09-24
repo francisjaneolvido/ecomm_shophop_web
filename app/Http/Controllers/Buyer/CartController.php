@@ -3,12 +3,16 @@
 namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
+use App\Models\Seller;
 use App\Models\Buyer\Cart\CartItem;
+use App\Models\Seller\Manage_inventory\Product;
+use App\Models\Seller\Manage_inventory\ProductVariant;
 use App\Models\Seller\Manage_inventory\Voucher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
@@ -35,6 +39,7 @@ class CartController extends Controller
 
     public function add(Request $request)
     {
+        // Only canonical active merchandise may become a persisted cart line; client price and stock are ignored.
         $data = $request->validate([
             'product_id'         => 'required|exists:products,id',
             'variant_id'         => 'nullable|exists:product_variants,id',
@@ -42,20 +47,37 @@ class CartController extends Controller
         ]);
 
         $buyer = Auth::user()->buyer;
+        $product = Product::with('seller')->findOrFail($data['product_id']);
+        $variant = isset($data['variant_id']) ? ProductVariant::findOrFail($data['variant_id']) : null;
+        // Seller Inventory's Product stock is the aggregate cap for variant additions.
+        $stock = $variant
+            ? min((int) $variant->stock, (int) $product->stock)
+            : (int) $product->stock;
+
+        // Variant identity must match the Product's variant mode and owner; both inventory levels follow its active gate.
+        if ($product->status !== 'active' || ! $product->seller || (int) $product->stock <= 0
+            || ($product->has_variants && ! $variant)
+            || (! $product->has_variants && $variant)
+            || ($variant && ((int) $variant->product_id !== (int) $product->id
+                || $variant->status !== 'active' || $variant->price === null))
+            || $stock <= 0) {
+            throw ValidationException::withMessages(['product_id' => 'This product or variant is unavailable.']);
+        }
 
         $existing = CartItem::where('buyer_id', $buyer->id)
             ->where('product_id', $data['product_id'])
             ->where('product_variant_id', $data['variant_id'] ?? null)
             ->first();
 
-        $stock = $data['variant_id']
-            ? \App\Models\Seller\Manage_inventory\ProductVariant::findOrFail($data['variant_id'])->stock
-            : \App\Models\Seller\Manage_inventory\Product::findOrFail($data['product_id'])->stock;
+        $qty = (int) ($data['qty'] ?? 1);
 
-        $qty = max(1, (int) ($data['qty'] ?? 1));
+        // Reject excess quantity instead of reporting a successful add with a silently reduced quantity.
+        if ($qty + ($existing?->quantity ?? 0) > $stock) {
+            throw ValidationException::withMessages(['qty' => "Only {$stock} left in stock."]);
+        }
 
         if ($existing) {
-            $existing->quantity = min($stock, $existing->quantity + $qty);
+            $existing->quantity += $qty;
             $existing->save();
             $cartItem = $existing;
         } else {
@@ -63,7 +85,7 @@ class CartController extends Controller
                 'buyer_id'           => $buyer->id,
                 'product_id'         => $data['product_id'],
                 'product_variant_id' => $data['variant_id'] ?? null,
-                'quantity'           => min($stock, $qty),
+                'quantity'           => $qty,
             ]);
         }
 
@@ -84,13 +106,20 @@ class CartController extends Controller
 
         $cartItem = CartItem::with(['product', 'variant'])
             ->where('buyer_id', $buyer->id)
-            ->find($lineKey);
+            ->findOrFail($lineKey);
 
-        if ($cartItem) {
-            $max = $cartItem->availableStock() ?: 99;
-            $cartItem->quantity = max(1, min($max, $data['qty']));
-            $cartItem->save();
+        // An owned Cart line still needs current active Product, variant mode, and stock; no fallback is invented.
+        if (! $cartItem->product || $cartItem->product->status !== 'active'
+            || (int) $cartItem->product->stock <= 0
+            || ($cartItem->product->has_variants !== (bool) $cartItem->product_variant_id)
+            || ($cartItem->product_variant_id && (! $cartItem->variant
+                || (int) $cartItem->variant->product_id !== (int) $cartItem->product_id
+                || $cartItem->variant->status !== 'active'))
+            || $data['qty'] > $cartItem->availableStock()) {
+            throw ValidationException::withMessages(['qty' => 'This quantity is no longer available.']);
         }
+        $cartItem->quantity = $data['qty'];
+        $cartItem->save();
 
         return response()->json([
             'ok'         => true,
@@ -195,12 +224,16 @@ class CartController extends Controller
         return Voucher::whereHas('products', function ($query) use ($productIds) {
                 $query->whereIn('products.id', $productIds);
             })
+            // Cart suggestions must not advertise exhausted or out-of-window codes.
             ->where('status', 'active')
             ->where(function ($query) {
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
             })
             ->where(function ($query) {
                 $query->whereNull('ends_at')->orWhere('ends_at', '>=', now());
+            })
+            ->where(function ($query) {
+                $query->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit');
             })
             ->get()
             ->map(fn ($voucher) => [
@@ -211,7 +244,10 @@ class CartController extends Controller
                 'value'        => (float) $voucher->value,
                 'min_spend'    => (float) $voucher->min_order_amount,
                 'max_discount' => null,
-                'seller_id'    => $voucher->seller_id,
+                // Voucher ownership stores users.id while grouped cart shops use sellers.id.
+                'seller_id'    => Seller::where('user_id', $voucher->seller_id)->value('id'),
+                // Assignment IDs keep the Cart preview within this Voucher's eligible Products.
+                'product_ids'  => $voucher->products()->pluck('products.id')->all(),
             ]);
     }
 

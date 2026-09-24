@@ -4,8 +4,9 @@
 
 @php
     // Data comes straight from CartController@index:
-    //   $cartGroups   -> session cart grouped by shop (line_key based)
-    //   $vouchers     -> static voucher list
+    // Persisted CartItem IDs and assigned active Voucher rows now supply these groups and suggestions.
+    //   $cartGroups   -> database cart grouped by seller profile
+    //   $vouchers     -> current Product-specific Voucher suggestions
     //   $cartItemCount
     //   $buyNowLineKey -> line_key of the item that came from "Buy Now", if any
 @endphp
@@ -170,6 +171,9 @@
                                 <article class="cart-item px-3.5 sm:px-4 py-3.5"
                                          data-line-key="{{ $item['line_key'] }}"
                                          data-shop="{{ $groupIndex }}"
+                                         {{-- Cart voucher preview uses Product and seller identity, never shop subtotal alone. --}}
+                                         data-product-id="{{ $item['product_id'] }}"
+                                         data-seller-id="{{ $group['shop']['id'] }}"
                                          data-price="{{ $item['price'] }}"
                                          data-original-price="{{ $item['original_price'] ?? $item['price'] }}">
 
@@ -202,12 +206,13 @@
 
                                             <div class="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2">
                                                 <span class="text-[12px] sm:text-[13px] font-bold text-teal-dark">
-                                                    ₱{{ number_format($item['price']) }}
+                                                    {{-- Cart shows the canonical line price with cents before Checkout reloads it. --}}
+                                                    ₱{{ number_format($item['price'], 2) }}
                                                 </span>
 
                                                 @if ($item['original_price'])
                                                     <span class="text-[9px] text-navy/30 line-through">
-                                                        ₱{{ number_format($item['original_price']) }}
+                                                        ₱{{ number_format($item['original_price'], 2) }}
                                                     </span>
 
                                                     <span class="text-[8px] font-bold text-teal-dark bg-teal-light px-1.5 py-0.5 rounded">
@@ -338,7 +343,10 @@
                                  data-voucher-type="{{ $voucher['type'] }}"
                                  data-voucher-value="{{ $voucher['value'] }}"
                                  data-voucher-min="{{ $voucher['min_spend'] }}"
-                                 data-voucher-max="{{ $voucher['max_discount'] ?? '' }}">
+                                 data-voucher-max="{{ $voucher['max_discount'] ?? '' }}"
+                                 {{-- A suggested voucher still applies only to its assigned Product IDs. --}}
+                                 data-voucher-seller="{{ $voucher['seller_id'] }}"
+                                 data-voucher-products='@json($voucher['product_ids'])'>
 
                                 <div class="flex gap-2.5">
                                     <div class="w-9 h-9 rounded-lg bg-[#EAF9F5] text-teal-dark flex items-center justify-center shrink-0">
@@ -548,7 +556,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function money(value) {
-        return '₱' + Math.max(0, Math.round(value)).toLocaleString('en-PH');
+        // Keep Cart estimates at currency precision; the server still recalculates the purchase total.
+        return '₱' + Math.max(0, Number(value) || 0)
+            .toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
 
@@ -649,7 +659,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 : raw;
         }
 
-        return Number(activeVoucher.value || 0);
+        // Fixed discounts cannot exceed the assigned merchandise subtotal.
+        return Math.min(Number(activeVoucher.value || 0), subtotal);
     }
 
 
@@ -700,12 +711,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!card) return;
 
                 const minimum = Number(card.dataset.voucherMin || 0);
-
-                if (currentSubtotal < minimum) {
-                    showToast('Spend ' + money(minimum) + ' to use ' + card.dataset.voucherCode + '.');
-                    return;
-                }
-
+                // Recalculation checks selected eligible Products instead of total Cart spend.
                 activeVoucher = {
                     code: card.dataset.voucherCode,
                     title: card.dataset.voucherTitle,
@@ -713,10 +719,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     value: Number(card.dataset.voucherValue || 0),
                     min: minimum,
                     max: Number(card.dataset.voucherMax || 0),
+                    sellerId: card.dataset.voucherSeller,
+                    productIds: JSON.parse(card.dataset.voucherProducts || '[]'),
                 };
 
                 recalc();
-                showToast(activeVoucher.code + ' applied.');
+                // A selected code is not a redeemed discount until eligible spend reaches its minimum.
+                showToast(currentVoucherDiscount > 0
+                    ? activeVoucher.code + ' selected for Checkout.'
+                    : 'Select eligible items and meet the voucher minimum.');
             });
         });
 
@@ -865,6 +876,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let selectedCount = 0;
         let subtotal = 0;
         let savings = 0;
+        let eligibleSubtotal = 0;
 
         itemCheckboxes.forEach(function (cb) {
             if (!cb.checked) return;
@@ -877,11 +889,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const originalPrice = Number(row?.dataset.originalPrice || price);
 
             subtotal += price * qty;
+            // Seller and Product assignment bound the Cart preview; Checkout validates again on the server.
+            if (activeVoucher && String(row?.dataset.sellerId) === String(activeVoucher.sellerId)
+                && activeVoucher.productIds.includes(Number(row?.dataset.productId))) {
+                eligibleSubtotal += price * qty;
+            }
             savings += Math.max(0, originalPrice - price) * qty;
         });
 
         currentSubtotal = subtotal;
-        currentVoucherDiscount = calculateVoucherDiscount(subtotal);
+        currentVoucherDiscount = calculateVoucherDiscount(eligibleSubtotal);
 
         // If subtotal drops below minimum, keep voucher selected but discount becomes 0.
         const total = Math.max(0, subtotal - currentVoucherDiscount);

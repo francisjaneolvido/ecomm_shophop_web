@@ -31,8 +31,10 @@
     ];
 
     $notificationCount = collect($notifications)->where('unread', true)->count();
-    // CartController's cart_count uses session-line cardinality, which chrome mirrors.
-    $cartItemCount = $cartItemCount ?? count(session('shophop_cart', []));
+    // Shared buyer chrome reads the persisted Cart when a page does not pass its own count.
+    $cartItemCount = $cartItemCount ?? (\Illuminate\Support\Facades\Schema::hasTable('cart_items')
+        ? \App\Models\Buyer\Cart\CartItem::where('buyer_id', auth()->user()?->buyer?->id)->count()
+        : 0);
 @endphp
 
 <header class="bg-white border-b border-gray-border sticky top-0 z-50">
