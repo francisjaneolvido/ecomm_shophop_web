@@ -22,11 +22,11 @@ class OrderController extends Controller
             return $this->mapOrder($order);
         });
 
-        // Count only persisted Order statuses; issue reports have no backend state.
+        // Seller preparation remains in the Buyer's To Ship group while its exact persisted label stays visible.
         $orderCounts = [
             'all'        => $orders->count(),
             'to-pay'     => $orders->where('status', Order::STATUS_TO_PAY)->count(),
-            'to-ship'    => $orders->where('status', Order::STATUS_TO_SHIP)->count(),
+            'to-ship'    => $orders->where('status_group', Order::STATUS_TO_SHIP)->count(),
             'to-receive' => $orders->where('status', Order::STATUS_TO_RECEIVE)->count(),
             'completed'  => $orders->where('status', Order::STATUS_COMPLETED)->count(),
             'cancelled'  => $orders->where('status', Order::STATUS_CANCELLED)->count(),
@@ -47,6 +47,8 @@ class OrderController extends Controller
             'id' => $displayId,
             'raw_id' => $order->id,
             'status' => $order->status,
+            // The Order owns the status mapping; no second Buyer fulfillment state is stored.
+            'status_group' => $order->buyerStatusGroup(),
             'status_label' => $order->statusLabel(),
             'status_note' => $order->statusNote(),
 

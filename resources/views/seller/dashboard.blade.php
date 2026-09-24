@@ -61,9 +61,7 @@
     $newOrders = (int) ($newOrders ?? 0);
     $ordersToPrepare = (int) ($ordersToPrepare ?? 0);
     $readyForPickup = (int) ($readyForPickup ?? 0);
-    $pickedUpOrders = (int) ($pickedUpOrders ?? 0);
-    $inTransitOrders = (int) ($inTransitOrders ?? 0);
-    $deliveredOrders = (int) ($deliveredOrders ?? 0);
+    // Dashboard fulfillment stops at Seller readiness; Logistics has no pickup or delivery records yet.
 
     $totalProducts = (int) ($totalProducts ?? 0);
     $activeProducts = (int) ($activeProducts ?? 0);
@@ -86,15 +84,12 @@
     $recentFeedback = collect($recentFeedback ?? []);
     $recentMessages = collect($recentMessages ?? []);
 
-    $orderPipeline = array_merge([
+    // These counts come from the authenticated Seller's persisted Order statuses.
+    $orderPipeline = [
         'placed' => $newOrders,
-        'confirmed' => 0,
         'preparing' => $ordersToPrepare,
         'ready' => $readyForPickup,
-        'picked_up' => $pickedUpOrders,
-        'delivery' => $inTransitOrders,
-        'completed' => $deliveredOrders,
-    ], $orderPipeline ?? []);
+    ];
 
     $attentionCount =
         $newOrders +
@@ -115,12 +110,7 @@
             'color' => 'bg-teal/10 text-teal-dark',
             'bar' => 'bg-teal',
         ],
-        'confirmed' => [
-            'label' => 'Confirmed',
-            'icon' => 'badge-check',
-            'color' => 'bg-sky/10 text-sky',
-            'bar' => 'bg-sky',
-        ],
+        // No separate confirmation state exists between COD placement and preparation.
         'preparing' => [
             'label' => 'Preparing',
             'icon' => 'box',
@@ -133,30 +123,14 @@
             'color' => 'bg-coral/10 text-coral',
             'bar' => 'bg-coral',
         ],
-        'picked_up' => [
-            'label' => 'Picked Up',
-            'icon' => 'truck',
-            'color' => 'bg-navy/10 text-navy',
-            'bar' => 'bg-navy',
-        ],
-        'delivery' => [
-            'label' => 'In Transit',
-            'icon' => 'map-pin',
-            'color' => 'bg-sky/10 text-sky',
-            'bar' => 'bg-sky',
-        ],
-        'completed' => [
-            'label' => 'Delivered',
-            'icon' => 'circle-check',
-            'color' => 'bg-teal-light text-teal-dark',
-            'bar' => 'bg-teal',
-        ],
+        // Courier and delivery stages await Logistics Operations, so no fabricated zero counts are shown.
     ];
 
     $taskItems = collect([
         [
             'count' => $newOrders,
-            'label' => 'orders waiting for confirmation',
+            // COD placement is already accepted; the Seller starts preparation directly.
+            'label' => 'new orders waiting for preparation',
             'action' => 'Review Orders',
             'route' => 'seller.orders.notifications',
             'icon' => 'bell-ring',
@@ -173,7 +147,8 @@
         [
             'count' => $readyForPickup,
             'label' => 'parcels ready for courier pickup',
-            'action' => 'Hand Over',
+            // Readiness does not claim Rider pickup or a handover transaction.
+            'action' => 'View Ready Orders',
             'route' => 'seller.orders.courier',
             'icon' => 'truck',
             'tone' => 'sky',
@@ -492,7 +467,7 @@
                 </h2>
 
                 <p class="text-[12px] text-navy/40 mt-0.5">
-                    From new order to successful delivery.
+                    From new Order to Seller readiness; pickup awaits Logistics.
                 </p>
             </div>
 
@@ -618,51 +593,11 @@
                         <tbody class="divide-y divide-gray-border">
                             @foreach ($recentOrders->take(6) as $order)
                                 @php
-                                    $status = strtolower((string) ($order['status'] ?? 'placed'));
-
-                                    $statusMeta = match ($status) {
-                                        'confirmed' => [
-                                            'label' => 'Confirmed',
-                                            'class' => 'bg-sky/10 text-sky',
-                                            'action' => 'Prepare',
-                                            'route' => 'seller.orders.prepare',
-                                        ],
-                                        'preparing' => [
-                                            'label' => 'Preparing',
-                                            'class' => 'bg-yellow/20 text-amber-700',
-                                            'action' => 'Continue',
-                                            'route' => 'seller.orders.prepare',
-                                        ],
-                                        'ready', 'ready_for_pickup' => [
-                                            'label' => 'Ready Pickup',
-                                            'class' => 'bg-coral/10 text-coral',
-                                            'action' => 'Handover',
-                                            'route' => 'seller.orders.courier',
-                                        ],
-                                        'picked_up', 'in_transit', 'delivery', 'out_for_delivery' => [
-                                            'label' => 'In Transit',
-                                            'class' => 'bg-navy/10 text-navy',
-                                            'action' => 'Track',
-                                            'route' => 'seller.orders.courier',
-                                        ],
-                                        'completed', 'delivered' => [
-                                            'label' => 'Delivered',
-                                            'class' => 'bg-teal/10 text-teal-dark',
-                                            'action' => 'View',
-                                            'route' => 'seller.orders.confirm',
-                                        ],
-                                        'cancelled' => [
-                                            'label' => 'Cancelled',
-                                            'class' => 'bg-red-50 text-red-600',
-                                            'action' => 'View',
-                                            'route' => 'seller.orders.notifications',
-                                        ],
-                                        default => [
-                                            'label' => 'New',
-                                            'class' => 'bg-teal/10 text-teal-dark',
-                                            'action' => 'Review',
-                                            'route' => 'seller.orders.notifications',
-                                        ],
+                                    // Recent rows use the Order's label and open its scoped details, never a preview stage.
+                                    $statusClass = match ($order['status']) {
+                                        \App\Models\Buyer\Order\Order::STATUS_PREPARING => 'bg-yellow/20 text-amber-700',
+                                        \App\Models\Buyer\Order\Order::STATUS_READY_FOR_PICKUP => 'bg-coral/10 text-coral',
+                                        default => 'bg-teal/10 text-teal-dark',
                                     };
                                 @endphp
 
@@ -700,17 +635,17 @@
                                     </td>
 
                                     <td class="px-5 py-3.5">
-                                        <span class="px-2 py-1 rounded-full text-[10px] font-bold {{ $statusMeta['class'] }}">
-                                            {{ $statusMeta['label'] }}
+                                        <span class="px-2 py-1 rounded-full text-[10px] font-bold {{ $statusClass }}">
+                                            {{ $order['status_label'] }}
                                         </span>
                                     </td>
 
                                     <td class="px-5 py-3.5 text-right">
                                         <a
-                                            href="{{ route($statusMeta['route']) }}"
+                                            href="{{ route('seller.orders.show', $order['id']) }}"
                                             class="text-[11px] font-bold text-teal-dark hover:text-teal transition"
                                         >
-                                            {{ $statusMeta['action'] }} →
+                                            View →
                                         </a>
                                     </td>
                                 </tr>
@@ -971,7 +906,7 @@
                     </h2>
 
                     <p class="text-[12px] text-navy/40 mt-0.5">
-                        Courier and delivery progress.
+                        Seller readiness. Courier activity awaits Logistics.
                     </p>
                 </div>
 
@@ -994,47 +929,7 @@
                     </strong>
                 </div>
 
-                <div class="flex items-center justify-between p-3 rounded-xl bg-navy/10">
-                    <div class="flex items-center gap-2">
-                        <x-lucide-truck class="w-4 h-4 text-navy" />
-
-                        <span class="text-[12px] text-navy/60">
-                            Picked Up
-                        </span>
-                    </div>
-
-                    <strong class="text-sm text-navy">
-                        {{ number_format($pickedUpOrders) }}
-                    </strong>
-                </div>
-
-                <div class="flex items-center justify-between p-3 rounded-xl bg-sky/10">
-                    <div class="flex items-center gap-2">
-                        <x-lucide-map-pin class="w-4 h-4 text-sky" />
-
-                        <span class="text-[12px] text-navy/60">
-                            In Transit
-                        </span>
-                    </div>
-
-                    <strong class="text-sm text-sky">
-                        {{ number_format($inTransitOrders) }}
-                    </strong>
-                </div>
-
-                <div class="flex items-center justify-between p-3 rounded-xl bg-teal/10">
-                    <div class="flex items-center gap-2">
-                        <x-lucide-circle-check class="w-4 h-4 text-teal-dark" />
-
-                        <span class="text-[12px] text-navy/60">
-                            Delivered
-                        </span>
-                    </div>
-
-                    <strong class="text-sm text-teal-dark">
-                        {{ number_format($deliveredOrders) }}
-                    </strong>
-                </div>
+                {{-- Courier pickup, transit, and delivery counts have no persisted Logistics source yet. --}}
 
             </div>
 
@@ -1042,7 +937,7 @@
                 href="{{ route('seller.orders.courier') }}"
                 class="mt-4 inline-flex items-center gap-1 text-[11px] font-bold text-teal-dark hover:text-teal transition"
             >
-                View Shipments
+                View Ready Orders
                 <x-lucide-arrow-right class="w-3 h-3" />
             </a>
 

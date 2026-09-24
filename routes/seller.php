@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Auth\SellerEmailVerificationController;
 use App\Http\Controllers\Seller\InventoryController;
+use App\Http\Controllers\Seller\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -67,7 +68,8 @@ Route::prefix('seller')
             |--------------------------------------------------------------------------
             */
 
-            Route::view('/dashboard', 'seller.dashboard')
+            // Dashboard fulfillment counts follow this Seller's persisted Orders.
+            Route::get('/dashboard', [OrderController::class, 'dashboard'])
                 ->name('dashboard');
 
 
@@ -131,25 +133,21 @@ Route::prefix('seller')
             |--------------------------------------------------------------------------
             */
 
-            Route::view(
-                '/orders/notifications',
-                'seller.orders.notifications'
-            )->name('orders.notifications');
-
-            Route::view(
-                '/orders/prepare',
-                'seller.orders.prepare'
-            )->name('orders.prepare');
-
-            Route::view(
-                '/orders/courier',
-                'seller.orders.courier'
-            )->name('orders.courier');
-
-            Route::view(
-                '/orders/confirm',
-                'seller.orders.confirm'
-            )->name('orders.confirm');
+            // Seller pages now read seller-scoped Orders; only preparation and readiness accept CSRF-protected mutations.
+            Route::get('/orders/notifications', [OrderController::class, 'index'])
+                ->name('orders.notifications');
+            Route::get('/orders/prepare', [OrderController::class, 'prepare'])
+                ->name('orders.prepare');
+            Route::get('/orders/courier', [OrderController::class, 'courier'])
+                ->name('orders.courier');
+            Route::get('/orders/confirm', [OrderController::class, 'confirm'])
+                ->name('orders.confirm');
+            Route::get('/orders/{order}', [OrderController::class, 'show'])
+                ->name('orders.show');
+            Route::patch('/orders/{order}/prepare', [OrderController::class, 'startPreparation'])
+                ->name('orders.start-preparation');
+            Route::patch('/orders/{order}/ready', [OrderController::class, 'markReady'])
+                ->name('orders.mark-ready');
 
 
             /*
