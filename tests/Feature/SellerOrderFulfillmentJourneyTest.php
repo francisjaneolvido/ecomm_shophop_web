@@ -20,13 +20,14 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
     {
         parent::setUp();
 
-        // Disposable commerce tables avoid the older duplicate order_items migration without touching runtime data.
+        // Keep the focused disposable Commerce schema aligned with the Logistics milestone Seller Orders now reads.
         Schema::dropAllTables();
         foreach ([
             '0001_01_01_000000_create_users_table.php',
             '2026_08_31_000001_add_account_type_and_status_to_users_table.php',
             '2026_08_29_000001_create_buyers_table.php',
             '2026_08_29_000002_create_sellers_table.php',
+            '2026_08_29_000003_create_logistics_partners_table.php',
             '0001_01_01_000003_create_products_table.php',
             'Seller/Manage_inventory/2025_01_15_000001_add_inventory_fields_to_products_table.php',
             'Seller/Manage_inventory/2025_01_15_000003_create_product_variants_table.php',
@@ -36,6 +37,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
             'Buyer/2026_09_12_102228_create_order_items_table.php',
             'Buyer/2026_09_23_065258_add_checkout_fields_to_orders_table.php',
             'Buyer/2026_09_23_065410_create_cart_items_table.php',
+            // Seller details now reads partner-owned Delivery milestones when present.
+            '2026_09_24_000001_create_logistics_operations_tables.php',
         ] as $path) {
             (require database_path('migrations/' . $path))->up();
         }

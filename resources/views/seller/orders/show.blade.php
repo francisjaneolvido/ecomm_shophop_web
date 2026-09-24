@@ -15,6 +15,11 @@
             <span class="rounded-full bg-teal/10 px-3 py-1 text-sm font-semibold text-teal-dark">{{ $order->statusLabel() }}</span>
         </div>
 
+        {{-- Logistics owns these persisted milestones after Seller readiness; the Seller has no transition control. --}}
+        @if ($order->delivery)
+            <p class="mt-3 text-sm text-navy/65">Logistics: {{ str_replace('_', ' ', ucfirst($order->delivery->status)) }} · Rider: {{ $order->delivery->rider?->name ?? 'Unavailable' }}</p>
+        @endif
+
         @if (session('status'))
             <p role="status" class="mt-5 rounded-lg bg-teal/10 p-3 text-sm text-teal-dark">{{ session('status') }}</p>
         @endif

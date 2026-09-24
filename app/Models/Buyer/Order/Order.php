@@ -5,9 +5,12 @@ namespace App\Models\Buyer\Order;
 use App\Models\Buyer;
 use App\Models\Seller;
 use App\Models\Seller\Manage_inventory\Voucher;
+// Delivery adds Logistics milestones to the shared Order without becoming a second Buyer status store.
+use App\Models\Logistics\Delivery;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
 {
@@ -60,6 +63,12 @@ class Order extends Model
         return $this->hasMany(OrderItem::class);
     }
 
+    public function delivery(): HasOne
+    {
+        // One Seller Order has one Logistics assignment; checkout_group_id never merges packages.
+        return $this->hasOne(Delivery::class);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Status helpers
@@ -98,8 +107,15 @@ class Order extends Model
             self::STATUS_TO_SHIP => 'Awaiting seller fulfillment.',
             // These Seller states report preparation only; neither proves courier pickup or delivery.
             self::STATUS_PREPARING => 'The seller is preparing this order.',
-            self::STATUS_READY_FOR_PICKUP => 'Ready for pickup; courier assignment and pickup are pending Logistics.',
-            self::STATUS_TO_RECEIVE => 'Courier details are unavailable.',
+            // Assignment is visible after persistence, while Seller readiness alone cannot imply collection.
+            self::STATUS_READY_FOR_PICKUP => $this->delivery?->status === 'assigned'
+                ? 'Rider assigned; pickup is pending.' : 'Ready for pickup; courier assignment and pickup are pending Logistics.',
+            // Only an attached persisted Delivery can justify pickup or transit messaging.
+            self::STATUS_TO_RECEIVE => match ($this->delivery?->status) {
+                'picked_up' => 'Package picked up by Logistics.',
+                'in_transit' => 'Package in transit with Logistics.',
+                default => 'Courier details are unavailable.',
+            },
             // Completion records only a status; there is no issue-report action or delivery proof yet.
             self::STATUS_COMPLETED => 'Order marked delivered.',
             self::STATUS_CANCELLED => 'This order was cancelled.',

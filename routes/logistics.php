@@ -80,15 +80,8 @@ Route::prefix('logistics-partner')
             'index'
         ])->name('riders.index');
 
-        Route::post('/riders/{rider}/approve', [
-            RiderController::class,
-            'approve'
-        ])->name('riders.approve');
-
-        Route::post('/riders/{rider}/disapprove', [
-            RiderController::class,
-            'disapprove'
-        ])->name('riders.disapprove');
+        // Operators create real Rider records; preview approval and warning endpoints have no application contract.
+        Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
 
         Route::post('/riders/{rider}/suspend', [
             RiderController::class,
@@ -100,10 +93,6 @@ Route::prefix('logistics-partner')
             'activate'
         ])->name('riders.activate');
 
-        Route::post('/riders/{rider}/warn', [
-            RiderController::class,
-            'warn'
-        ])->name('riders.warn');
 
 
         /*
@@ -117,10 +106,11 @@ Route::prefix('logistics-partner')
             'board'
         ])->name('deliveries.board');
 
-        Route::post('/deliveries/{delivery}/assign', [
-            DeliveryController::class,
-            'assign'
-        ])->name('deliveries.assign');
+        // Every transition is a server-owned POST for one Seller Order, never a DOM-only board move.
+        Route::post('/deliveries/{order}/assign', [DeliveryController::class, 'assign'])->name('deliveries.assign');
+        Route::post('/deliveries/{order}/pickup', [DeliveryController::class, 'pickup'])->name('deliveries.pickup');
+        Route::post('/deliveries/{order}/transit', [DeliveryController::class, 'transit'])->name('deliveries.transit');
+        Route::post('/deliveries/{order}/complete', [DeliveryController::class, 'complete'])->name('deliveries.complete');
 
 
         /*

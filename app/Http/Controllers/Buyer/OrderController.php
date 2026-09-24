@@ -13,7 +13,8 @@ class OrderController extends Controller
     {
         $buyer = Auth::user()->buyer;
 
-        $realOrders = Order::with(['items.product', 'items.variant', 'seller'])
+        // Buyer cards read the same Delivery milestones that Logistics persisted on the Seller Order.
+        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery'])
             ->where('buyer_id', $buyer->id)
             ->latest()
             ->get();

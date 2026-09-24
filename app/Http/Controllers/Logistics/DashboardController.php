@@ -3,50 +3,29 @@
 namespace App\Http\Controllers\Logistics;
 
 use App\Http\Controllers\Controller;
+use App\Models\Logistics\Delivery;
+use App\Models\Logistics\Rider;
+use App\Models\LogisticsPartner;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        // TODO: scope all of this to the logged-in Logistics Partner,
-        // e.g. auth()->user()->logisticsPartner()->...
-
+        // The approved profile owns all counters; former sample revenue and performance figures have no source.
+        $partner = LogisticsPartner::with('coverageAreas')->where('user_id', $request->user()->id)->first()
+            ?? abort(403, 'Logistics profile unavailable.');
+        $counts = Delivery::where('logistics_partner_id', $partner->id)
+            ->selectRaw('status, COUNT(*) total')->groupBy('status')->pluck('total', 'status');
         $stats = [
-            ['label' => 'Active riders', 'value' => 142, 'trend' => '+6 this week', 'tone' => 'up'],
-            ['label' => 'Deliveries today', 'value' => 318, 'trend' => 'On track', 'tone' => 'up'],
-            ['label' => 'In transit', 'value' => 57, 'trend' => 'Peak hour', 'tone' => 'warn'],
-            ['label' => 'Pending applications', 'value' => 9, 'trend' => 'Needs review', 'tone' => 'warn'],
+            ['label' => 'Ready in coverage', 'value' => DeliveryController::readyFor($partner)->count()],
+            ['label' => 'Assigned', 'value' => $counts['assigned'] ?? 0],
+            ['label' => 'Active delivery', 'value' => ($counts['picked_up'] ?? 0) + ($counts['in_transit'] ?? 0)],
+            ['label' => 'Delivered', 'value' => $counts['delivered'] ?? 0],
+            ['label' => 'Active Riders', 'value' => Rider::where('logistics_partner_id', $partner->id)->where('status', 'active')->count()],
         ];
 
-        $weeklyDeliveries = [
-            ['label' => 'Mon', 'value' => 52],
-            ['label' => 'Tue', 'value' => 68],
-            ['label' => 'Wed', 'value' => 44],
-            ['label' => 'Thu', 'value' => 78],
-            ['label' => 'Fri', 'value' => 60],
-            ['label' => 'Sat', 'value' => 90],
-            ['label' => 'Sun', 'value' => 71],
-        ];
-
-        $topRiders = [
-            ['name' => 'Miguel R.', 'deliveries' => 14],
-            ['name' => 'Angela C.', 'deliveries' => 12],
-            ['name' => 'Jerome D.', 'deliveries' => 11],
-            ['name' => 'Kaye P.', 'deliveries' => 9],
-        ];
-
-        $pendingApplications = [
-            ['name' => 'Miguel Reyes', 'vehicle' => 'Motorcycle · NGA-2231', 'complete' => true],
-            ['name' => 'Angela Cruz', 'vehicle' => 'Motorcycle · KLM-8842', 'complete' => true],
-            ['name' => 'Jerome Delos Santos', 'vehicle' => 'Tricycle · TRC-0917', 'complete' => false],
-        ];
-
-        return view('logistics.dashboard', compact(
-            'stats',
-            'weeklyDeliveries',
-            'topRiders',
-            'pendingApplications'
-        ));
+        return view('logistics.dashboard', compact('stats'));
     }
 }

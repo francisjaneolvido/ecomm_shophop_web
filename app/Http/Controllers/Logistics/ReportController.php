@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Logistics;
 
 use App\Http\Controllers\Controller;
+use App\Models\Logistics\Delivery;
+use App\Models\LogisticsPartner;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,43 +13,35 @@ class ReportController extends Controller
 {
     public function index(Request $request): View
     {
-        $from = $request->date('from') ?? now()->startOfMonth();
-        $to = $request->date('to') ?? now();
+        // Reports use partner-owned Delivery facts; no revenue, SLA, or Rider score can be inferred from them.
+        $partner = LogisticsPartner::where('user_id', $request->user()->id)->first()
+            ?? abort(403, 'Logistics profile unavailable.');
+        $data = $request->validate([
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', 'after_or_equal:from'],
+        ]);
+        $query = Delivery::with(['order', 'rider'])->where('logistics_partner_id', $partner->id);
+        if (isset($data['from'])) {
+            $query->whereDate('assigned_at', '>=', $data['from']);
+        }
+        if (isset($data['to'])) {
+            $query->whereDate('assigned_at', '<=', $data['to']);
+        }
+        $deliveries = $query->latest()->get();
+        $counts = $deliveries->countBy('status');
 
-        // TODO: replace with a real aggregation over the $from – $to range,
-        // scoped to the logged-in Logistics Partner.
-
-        $summary = [
-            'total_deliveries' => 4812,
-            'on_time_rate' => 96.4,
-            'gross_fees' => 361900,
-            'commission' => 36190,
-        ];
-
-        $riders = [
-            ['name' => 'Miguel Reyes', 'deliveries' => 214, 'on_time' => 98, 'earnings' => 16050, 'status' => 'paid'],
-            ['name' => 'Angela Cruz', 'deliveries' => 189, 'on_time' => 97, 'earnings' => 14175, 'status' => 'paid'],
-            ['name' => 'Jerome Delos Santos', 'deliveries' => 171, 'on_time' => 94, 'earnings' => 12825, 'status' => 'pending'],
-        ];
-
-        return view('logistics.reports', compact('from', 'to', 'summary', 'riders'));
+        return view('logistics.reports', compact('deliveries', 'counts', 'data'));
     }
 
-    public function export(Request $request): Response
-    {
-        // TODO: stream a CSV built from the same rows shown in index(),
-        // filtered by $request->date('from') / $request->date('to').
-        abort(501, 'CSV export not implemented yet.');
-    }
-
-    // Keep registered PDF URLs explicit until reports have a persisted source.
     public function exportPdf(): Response
     {
+        // An export engine and verified report format are absent; an explicit 501 avoids a fake PDF.
         abort(501, 'PDF report export is unavailable.');
     }
 
     public function exportRiderPdf(string $rider): Response
     {
+        // Rider PDF remains unavailable even though delivery counts now persist.
         abort(501, 'Rider PDF export is unavailable.');
     }
 }
