@@ -8,18 +8,25 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-            $table->foreignId('buyer_id')->after('id')->constrained('buyers')->cascadeOnDelete();
-            $table->string('status')->after('buyer_id')->default('pending');
-            $table->decimal('total_amount', 12, 2)->after('status')->default(0);
+        // Existing Orders schemas may already carry these purchase fields; preserve them during upgrades.
+        $missing = array_filter(['buyer_id', 'status', 'total_amount'],
+            fn (string $column) => ! Schema::hasColumn('orders', $column));
+
+        Schema::table('orders', function (Blueprint $table) use ($missing) {
+            if (in_array('buyer_id', $missing, true)) {
+                $table->foreignId('buyer_id')->after('id')->constrained('buyers')->cascadeOnDelete();
+            }
+            if (in_array('status', $missing, true)) {
+                $table->string('status')->after('buyer_id')->default('pending');
+            }
+            if (in_array('total_amount', $missing, true)) {
+                $table->decimal('total_amount', 12, 2)->after('status')->default(0);
+            }
         });
     }
 
     public function down(): void
     {
-        Schema::table('orders', function (Blueprint $table) {
-            $table->dropForeign(['buyer_id']);
-            $table->dropColumn(['buyer_id', 'status', 'total_amount']);
-        });
+        // The canonical create migration owns these columns, so rollback must preserve existing Orders.
     }
 };

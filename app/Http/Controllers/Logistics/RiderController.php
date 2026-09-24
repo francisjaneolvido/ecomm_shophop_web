@@ -3,196 +3,61 @@
 namespace App\Http\Controllers\Logistics;
 
 use App\Http\Controllers\Controller;
+use App\Models\Logistics\Rider;
+use App\Models\LogisticsPartner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class RiderController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        // TODO: replace with real queries, e.g.
-        // $applications = $partner->riders()->pending()->get();
-        // $activeRiders = $partner->riders()->active()->get();
+        // Only the authenticated partner's persisted Riders appear; HR preview records are unavailable.
+        $partner = $this->partner($request);
+        $riders = Rider::where('logistics_partner_id', $partner->id)->orderBy('name')->get();
 
-        $applications = [
-            [
-                'id' => 1,
-                'name' => 'Miguel Reyes',
-                'vehicle' => 'Motorcycle',
-                'plate_number' => 'NGA-2231',
-                'docs' => ['ID' => true, 'License' => true, 'OR/CR' => true],
-                'doc_files' => [
-                    'ID' => null,
-                    'License' => null,
-                    'OR/CR' => null,
-                ],
-                'last_name' => 'Reyes', 'first_name' => 'Miguel', 'middle_initial' => 'S',
-                'sex' => 'Male', 'email' => 'miguel.reyes@example.com', 'contact_no' => '0917 123 4567',
-                'birthday' => 'March 14, 1997', 'age' => 29,
-                'province' => 'Cavite', 'municipality' => 'Bacoor', 'barangay' => 'Molino IV',
-                'street' => 'Molino Blvd.', 'house_number' => '12',
-                'submitted_at' => 'Aug 20, 2026',
-            ],
-            [
-                'id' => 2,
-                'name' => 'Angela Cruz',
-                'vehicle' => 'Motorcycle',
-                'plate_number' => 'KLM-8842',
-                'docs' => ['ID' => true, 'License' => true, 'OR/CR' => true],
-                'doc_files' => [
-                    'ID' => null,
-                    'License' => null,
-                    'OR/CR' => null,
-                ],
-                'last_name' => 'Cruz', 'first_name' => 'Angela', 'middle_initial' => 'M',
-                'sex' => 'Female', 'email' => 'angela.cruz@example.com', 'contact_no' => '0918 234 5678',
-                'birthday' => 'July 2, 1999', 'age' => 27,
-                'province' => 'Cavite', 'municipality' => 'Imus', 'barangay' => 'Anabu I-A',
-                'street' => 'Aguinaldo Hwy.', 'house_number' => '45',
-                'submitted_at' => 'Aug 21, 2026',
-            ],
-            [
-                'id' => 3,
-                'name' => 'Jerome Delos Santos',
-                'vehicle' => 'Tricycle',
-                'plate_number' => 'TRC-0917',
-                'docs' => ['ID' => true, 'License' => true, 'OR/CR' => false],
-                'doc_files' => [
-                    'ID' => null,
-                    'License' => null,
-                    'OR/CR' => null,
-                ],
-                'last_name' => 'Delos Santos', 'first_name' => 'Jerome', 'middle_initial' => 'P',
-                'sex' => 'Male', 'email' => 'jerome.delossantos@example.com', 'contact_no' => '0919 345 6789',
-                'birthday' => 'Nov 9, 1995', 'age' => 30,
-                'province' => 'Cavite', 'municipality' => 'Dasmariñas', 'barangay' => 'Zone II',
-                'street' => 'Congressional Rd.', 'house_number' => '78',
-                'submitted_at' => 'Aug 19, 2026',
-            ],
-            [
-                'id' => 4,
-                'name' => 'Kaye Perez',
-                'vehicle' => 'Motorcycle',
-                'plate_number' => 'PQR-4470',
-                'docs' => ['ID' => true, 'License' => true, 'OR/CR' => true],
-                'doc_files' => [
-                    'ID' => null,
-                    'License' => null,
-                    'OR/CR' => null,
-                ],
-                'last_name' => 'Perez', 'first_name' => 'Kaye', 'middle_initial' => 'L',
-                'sex' => 'Female', 'email' => 'kaye.perez@example.com', 'contact_no' => '0920 456 7890',
-                'birthday' => 'Jan 25, 1998', 'age' => 28,
-                'province' => 'Cavite', 'municipality' => 'Bacoor', 'barangay' => 'Salinas III',
-                'street' => 'Tirona Hwy.', 'house_number' => '9',
-                'submitted_at' => 'Aug 22, 2026',
-            ],
-        ];
-
-        $activeRiders = [
-            [
-                'id' => 11,
-                'name' => 'Ramon Villanueva',
-                'vehicle' => 'Motorcycle',
-                'plate_number' => 'MNB-1123',
-                'zone' => 'Bacoor, Cavite',
-                'completion' => 98,
-                'rating' => 4.9,
-                'status' => 'active',
-                'deliveries' => [
-                    ['date' => '2026-08-20', 'order_id' => 'SH-10231', 'customer' => 'Liza Fernandez', 'status' => 'Delivered'],
-                    ['date' => '2026-08-18', 'order_id' => 'SH-10198', 'customer' => 'Noel Aquino', 'status' => 'Delivered'],
-                    ['date' => '2026-07-30', 'order_id' => 'SH-09877', 'customer' => 'Bea Santiago', 'status' => 'Delivered'],
-                ],
-                'documents' => [
-                    ['label' => 'OR/CR', 'url' => null],
-                    ['label' => "Driver's License", 'url' => null],
-                ],
-                'warnings' => [],
-            ],
-            [
-                'id' => 12,
-                'name' => 'Carla Mendoza',
-                'vehicle' => 'Motorcycle',
-                'plate_number' => 'JKL-7765',
-                'zone' => 'Imus, Cavite',
-                'completion' => 96,
-                'rating' => 4.8,
-                'status' => 'active',
-                'deliveries' => [
-                    ['date' => '2026-08-21', 'order_id' => 'SH-10245', 'customer' => 'Mark Villareal', 'status' => 'Delivered'],
-                    ['date' => '2026-08-15', 'order_id' => 'SH-10150', 'customer' => 'Grace Ong', 'status' => 'Delivered'],
-                ],
-                'documents' => [
-                    ['label' => 'OR/CR', 'url' => null],
-                    ['label' => "Driver's License", 'url' => null],
-                ],
-                'warnings' => [],
-            ],
-            [
-                'id' => 13,
-                'name' => 'Paolo Ramos',
-                'vehicle' => 'Tricycle',
-                'plate_number' => 'TRC-4402',
-                'zone' => 'Dasmariñas, Cavite',
-                'completion' => 89,
-                'rating' => 4.4,
-                'status' => 'suspended',
-                'deliveries' => [
-                    ['date' => '2026-08-19', 'order_id' => 'SH-10220', 'customer' => 'Tessa Uy', 'status' => 'Failed'],
-                    ['date' => '2026-08-10', 'order_id' => 'SH-10077', 'customer' => 'Rico Salazar', 'status' => 'Delivered'],
-                    ['date' => '2026-07-22', 'order_id' => 'SH-09754', 'customer' => 'Jean Cabrera', 'status' => 'Delivered'],
-                ],
-                'documents' => [
-                    ['label' => 'OR/CR', 'url' => null],
-                    ['label' => "Driver's License", 'url' => null],
-                ],
-                'warnings' => [
-                    ['type' => 'Late Delivery', 'date' => '2026-08-05', 'details' => 'Delivered 40 minutes past the committed window.', 'severity' => 'minor'],
-                    ['type' => 'Customer Complaint', 'date' => '2026-07-28', 'details' => 'Customer reported rude behavior during handoff.', 'severity' => 'major'],
-                ],
-            ],
-        ];
-
-        return view('logistics.riders', compact('applications', 'activeRiders'));
+        return view('logistics.riders', compact('riders'));
     }
 
-    public function approve(Request $request, int $rider): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        // TODO: mark the rider application approved, notify by email.
-        return back()->with('notice', 'Preview only: rider approval was not saved.');
-    }
+        // The form supplies Rider details, while partner ownership comes only from the approved session.
+        $partner = $this->partner($request);
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'vehicle_type' => ['required', 'string', 'max:80'],
+        ]);
+        Rider::create($data + ['logistics_partner_id' => $partner->id, 'status' => 'active']);
 
-    public function disapprove(Request $request, int $rider): RedirectResponse
-    {
-        // TODO: mark the rider application disapproved, notify by email.
-        return back()->with('notice', 'Preview only: rider disapproval was not saved.');
+        return redirect()->route('logistics.riders.index')->with('status', 'Rider added.');
     }
 
     public function suspend(Request $request, int $rider): RedirectResponse
     {
-        // TODO: suspend the rider's account.
-        return back()->with('notice', 'Preview only: rider suspension was not saved.');
+        return $this->setStatus($request, $rider, 'active', 'suspended');
     }
 
     public function activate(Request $request, int $rider): RedirectResponse
     {
-        // TODO: reactivate the rider's account.
-        return back()->with('notice', 'Preview only: rider activation was not saved.');
+        return $this->setStatus($request, $rider, 'suspended', 'active');
     }
 
-    public function warn(Request $request, int $rider): RedirectResponse
+    private function setStatus(Request $request, int $riderId, string $from, string $to): RedirectResponse
     {
-        $request->validate([
-            'type' => 'required|string|max:100',
-            'severity' => 'required|in:minor,major',
-            'details' => 'required|string|max:500',
-        ]);
+        // A foreign Rider is invisible, and stale/repeated availability changes cannot silently succeed.
+        $partner = $this->partner($request);
+        $rider = Rider::where('logistics_partner_id', $partner->id)->findOrFail($riderId);
+        if (Rider::whereKey($rider->id)->where('status', $from)->update(['status' => $to]) !== 1) {
+            return back()->withErrors(['rider' => 'Rider status changed. Refresh and review it.']);
+        }
 
-        // TODO: persist this to a rider_warnings table once the Rider model exists, e.g.
-        // Rider::findOrFail($rider)->warnings()->create($request->only('type', 'severity', 'details'));
+        return back()->with('status', 'Rider status updated.');
+    }
 
-        return back()->with('notice', 'Preview only: the rider warning was not saved.');
+    private function partner(Request $request): LogisticsPartner
+    {
+        // An approved Logistics role alone does not prove a registered partner profile exists.
+        return LogisticsPartner::where('user_id', $request->user()->id)->first() ?? abort(403, 'Logistics profile unavailable.');
     }
 }
