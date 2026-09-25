@@ -83,6 +83,9 @@ Route::prefix('logistics-partner')
         // Operators create real Rider records; preview approval and warning endpoints have no application contract.
         Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
 
+        // Legacy records require explicit provisioning by their owning partner before Rider login.
+        Route::post('/riders/{rider}/credentials', [RiderController::class, 'provision'])->name('riders.provision');
+
         Route::post('/riders/{rider}/suspend', [
             RiderController::class,
             'suspend'
@@ -108,9 +111,7 @@ Route::prefix('logistics-partner')
 
         // Every transition is a server-owned POST for one Seller Order, never a DOM-only board move.
         Route::post('/deliveries/{order}/assign', [DeliveryController::class, 'assign'])->name('deliveries.assign');
-        Route::post('/deliveries/{order}/pickup', [DeliveryController::class, 'pickup'])->name('deliveries.pickup');
-        Route::post('/deliveries/{order}/transit', [DeliveryController::class, 'transit'])->name('deliveries.transit');
-        Route::post('/deliveries/{order}/complete', [DeliveryController::class, 'complete'])->name('deliveries.complete');
+        // After assignment, only authenticated Rider routes own pickup, transit, and evidenced completion.
 
 
         /*

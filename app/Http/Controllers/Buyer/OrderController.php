@@ -14,7 +14,7 @@ class OrderController extends Controller
         $buyer = Auth::user()->buyer;
 
         // Buyer cards read the same Delivery milestones that Logistics persisted on the Seller Order.
-        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery'])
+        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery.rider', 'delivery.deliveredRider'])
             ->where('buyer_id', $buyer->id)
             ->latest()
             ->get();
@@ -61,11 +61,16 @@ class OrderController extends Controller
             'payment' => $this->paymentLabel($order),
             'shipping' => $order->shipping_method === 'express' ? 'Express Delivery' : 'Standard Delivery',
 
-            // No courier, rider, or delivery estimate is persisted by this milestone.
+            // Only assigned Rider name and vehicle are exposed; no contact, plate, or ETA is inferred.
             'tracking_no' => null,
             'courier' => null,
             'estimated_delivery' => 'Delivery estimate unavailable',
-            'rider' => null,
+            'rider' => $order->delivery?->rider ? [
+                'name' => $order->delivery->rider->name,
+                'vehicle' => $order->delivery->rider->vehicle_type,
+                'plate' => 'Unavailable', 'phone' => 'Unavailable',
+                'status' => ucfirst(str_replace('_', ' ', $order->delivery->status)),
+            ] : null,
 
             'total' => (float) $order->total_amount,
             'shipping_fee' => (float) $order->shipping_fee,
@@ -95,7 +100,14 @@ class OrderController extends Controller
                 'date' => $order->created_at->format('M j, Y'),
                 'time' => $order->created_at->format('g:i A'),
             ]],
-            'delivery_proof' => null,
+            // Private proof URLs work only for this Order's Buyer after server-side authorization.
+            'delivery_proof' => $order->delivery?->proof_path ? [
+                'photo' => route('delivery.proof', $order->delivery),
+                'delivered_at' => $order->delivery->delivered_at?->format('M j, Y g:i A'),
+                'uploaded_by' => $order->delivery->deliveredRider?->name ?? 'Rider',
+                'received_by' => 'Not collected',
+                'delivery_note' => 'Rider-submitted delivery photo.',
+            ] : null,
             'can_report' => $order->canReport(),
         ];
     }

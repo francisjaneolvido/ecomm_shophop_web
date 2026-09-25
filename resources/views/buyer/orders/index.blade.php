@@ -923,8 +923,9 @@
 
                                             <div class="flex items-start justify-between gap-2">
 
+                                                {{-- A Rider photo does not establish recipient acknowledgement. --}}
                                                 <span class="text-[9px] text-navy/40">
-                                                    Received by
+                                                    Recipient acknowledgement
                                                 </span>
 
                                                 <span class="text-[9.5px] font-medium text-navy/65 text-right">
@@ -958,7 +959,8 @@
 
                                         <p class="text-[8.5px] leading-relaxed text-amber-600 bg-amber-50 rounded-lg px-2 py-1.5 mt-2">
 
-                                            Demo image only. Replace this with the rider-uploaded delivery photo from storage later.
+                                            {{-- Private proof is a persisted Rider photo; no recipient acknowledgement is claimed. --}}
+                                            Rider-submitted delivery photo.
 
                                         </p>
 
