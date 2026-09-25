@@ -42,6 +42,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        // Rider sessions reuse Laravel authentication but cannot masquerade as a marketplace User.
+        'rider' => [
+            'driver' => 'session',
+            'provider' => 'riders',
+        ],
     ],
 
     /*
@@ -65,6 +70,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+        // Operational Rider credentials belong to partner-owned Rider rows, including legacy nullable identities.
+        'riders' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\Logistics\Rider::class,
         ],
 
         // 'users' => [

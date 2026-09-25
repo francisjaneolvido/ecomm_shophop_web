@@ -12,7 +12,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Collection;
-use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class DeliveryController extends Controller
@@ -22,9 +21,12 @@ class DeliveryController extends Controller
         $partner = $this->partner($request);
         // Unclaimed COD Orders are visible only inside registered destination coverage; claimed work is partner-owned.
         $ready = self::readyFor($partner);
-        $deliveries = Delivery::with(['order.seller', 'order.items.product', 'rider'])
+        // Actor relations render the event performer, not a potentially later assignment label.
+        $deliveries = Delivery::with(['order.seller', 'order.items.product', 'rider', 'pickupRider', 'deliveredRider'])
             ->where('logistics_partner_id', $partner->id)->latest()->get();
-        $riders = Rider::where('logistics_partner_id', $partner->id)->where('status', 'active')->orderBy('name')->get();
+        // Assignment offers only Riders with active, provisioned identities capable of owning the next event.
+        $riders = Rider::where('logistics_partner_id', $partner->id)->where('status', 'active')
+            ->whereNotNull('email')->whereNotNull('password')->orderBy('name')->get();
 
         return view('logistics.delivery-board', compact('ready', 'deliveries', 'riders'));
     }
@@ -35,7 +37,8 @@ class DeliveryController extends Controller
         $data = $request->validate(['rider_id' => ['required', 'integer']]);
         // Submitted Rider IDs are scoped to this partner and must still be available at assignment time.
         $rider = Rider::where('logistics_partner_id', $partner->id)
-            ->where('status', 'active')->findOrFail($data['rider_id']);
+            ->where('status', 'active')->whereNotNull('email')->whereNotNull('password')
+            ->findOrFail($data['rider_id']);
 
         try {
             return DB::transaction(function () use ($partner, $rider, $order) {
@@ -43,7 +46,8 @@ class DeliveryController extends Controller
                 $ready = Order::whereKey($order)->lockForUpdate()->firstOrFail();
                 if ($ready->status !== Order::STATUS_READY_FOR_PICKUP || $ready->payment_method !== 'cod'
                     || ! self::covers($partner, $ready) || Delivery::where('order_id', $order)->exists()
-                    || ! Rider::whereKey($rider->id)->where('status', 'active')->exists()) {
+                    || ! Rider::whereKey($rider->id)->where('status', 'active')
+                        ->whereNotNull('email')->whereNotNull('password')->exists()) {
                     return $this->stale();
                 }
                 Delivery::create([
@@ -60,51 +64,6 @@ class DeliveryController extends Controller
             }
             throw $exception;
         }
-    }
-
-    public function pickup(Request $request, int $order): RedirectResponse
-    {
-        return $this->transition($request, $order, 'assigned', 'picked_up', Order::STATUS_READY_FOR_PICKUP,
-            Order::STATUS_TO_RECEIVE, 'picked_up_at');
-    }
-
-    public function transit(Request $request, int $order): RedirectResponse
-    {
-        return $this->transition($request, $order, 'picked_up', 'in_transit', Order::STATUS_TO_RECEIVE,
-            Order::STATUS_TO_RECEIVE, 'in_transit_at');
-    }
-
-    public function complete(Request $request, int $order): RedirectResponse
-    {
-        return $this->transition($request, $order, 'in_transit', 'delivered', Order::STATUS_TO_RECEIVE,
-            Order::STATUS_COMPLETED, 'delivered_at');
-    }
-
-    private function transition(Request $request, int $orderId, string $from, string $to, string $orderFrom,
-        string $orderTo, string $timestamp): RedirectResponse
-    {
-        $partner = $this->partner($request);
-
-        return DB::transaction(function () use ($partner, $orderId, $from, $to, $orderFrom, $orderTo, $timestamp) {
-            // Only the assigned partner may establish pickup, transit, or completion after Seller readiness.
-            $delivery = Delivery::where('logistics_partner_id', $partner->id)
-                ->where('order_id', $orderId)->lockForUpdate()->firstOrFail();
-            if ($delivery->status !== $from || ($from === 'assigned'
-                && ! Rider::whereKey($delivery->rider_id)->where('logistics_partner_id', $partner->id)
-                    ->where('status', 'active')->exists())) {
-                return $this->stale();
-            }
-            // Both records change atomically; conditional predicates reject repeat and out-of-order requests.
-            if (Order::whereKey($orderId)->where('status', $orderFrom)->where('payment_method', 'cod')
-                    ->update(['status' => $orderTo]) !== 1
-                || Delivery::whereKey($delivery->id)->where('status', $from)
-                    ->update(['status' => $to, $timestamp => now()]) !== 1) {
-                // Throwing rolls back an Order update if a competing request changed the Delivery row.
-                throw ValidationException::withMessages(['delivery' => 'This delivery changed. Refresh and review it.']);
-            }
-
-            return redirect()->route('logistics.deliveries.board')->with('status', 'Delivery updated.');
-        });
     }
 
     public static function readyFor(LogisticsPartner $partner): Collection

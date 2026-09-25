@@ -6,7 +6,8 @@
 {{-- Every card comes from a Seller Order or partner-owned Delivery; forms replace preview drag and fake waybills. --}}
 <div class="mb-6">
     <h1 class="text-navy text-2xl sm:text-3xl font-bold">Deliveries</h1>
-    <p class="text-navy/55 text-sm mt-1">Persisted pickup and delivery milestones. Live GPS and delivery proof are unavailable.</p>
+    {{-- The board reflects Rider events and private proof; live GPS remains outside this workflow. --}}
+    <p class="text-navy/55 text-sm mt-1">Persisted Rider milestones and delivery proof. Live GPS is unavailable.</p>
 </div>
 
 @if (session('status')) <p role="status" class="mb-4 rounded-xl bg-teal-light p-3 text-teal-dark">{{ session('status') }}</p> @endif
@@ -66,14 +67,10 @@
                         @if ($delivery->in_transit_at) <li>In transit {{ $delivery->in_transit_at->format('M j, Y g:i A') }}</li> @endif
                         @if ($delivery->delivered_at) <li>Delivered {{ $delivery->delivered_at->format('M j, Y g:i A') }}</li> @endif
                     </ol>
-                    {{-- Legal next actions are explicit POSTs; refresh reads the persisted Delivery and Order state. --}}
-                    @if ($delivery->status === 'assigned')
-                        <form method="POST" action="{{ route('logistics.deliveries.pickup', $delivery->order_id) }}" class="mt-3">@csrf<button class="rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-teal">Confirm pickup</button></form>
-                    @elseif ($delivery->status === 'picked_up')
-                        <form method="POST" action="{{ route('logistics.deliveries.transit', $delivery->order_id) }}" class="mt-3">@csrf<button class="rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-teal">Mark in transit</button></form>
-                    @elseif ($delivery->status === 'in_transit')
-                        <form method="POST" action="{{ route('logistics.deliveries.complete', $delivery->order_id) }}" class="mt-3">@csrf<button class="rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-teal">Mark delivered</button></form>
-                    @endif
+                    {{-- The operator observes Rider-owned events and proof without a competing mutation path. --}}
+                    @if ($delivery->pickup_rider_id) <p class="text-xs text-navy/60">Pickup by {{ $delivery->pickupRider?->name }}</p> @endif
+                    @if ($delivery->delivered_rider_id) <p class="text-xs text-navy/60">Completed by {{ $delivery->deliveredRider?->name }}</p> @endif
+                    @if ($delivery->proof_path) <a class="text-xs text-teal underline" href="{{ route('delivery.proof', $delivery) }}">View delivery proof</a> @endif
                 </article>
             @empty
                 <p class="text-sm text-navy/50">No assignments yet.</p>

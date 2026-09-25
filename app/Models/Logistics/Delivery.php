@@ -22,4 +22,15 @@ class Delivery extends Model
     {
         return $this->belongsTo(Rider::class);
     }
+
+    public function pickupRider(): BelongsTo
+    {
+        // Event actor relationships remain historical facts even if assignment data changes later.
+        return $this->belongsTo(Rider::class, 'pickup_rider_id');
+    }
+
+    public function deliveredRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'delivered_rider_id');
+    }
 }

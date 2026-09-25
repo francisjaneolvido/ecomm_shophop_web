@@ -17,7 +17,11 @@
 
         {{-- Logistics owns these persisted milestones after Seller readiness; the Seller has no transition control. --}}
         @if ($order->delivery)
-            <p class="mt-3 text-sm text-navy/65">Logistics: {{ str_replace('_', ' ', ucfirst($order->delivery->status)) }} · Rider: {{ $order->delivery->rider?->name ?? 'Unavailable' }}</p>
+        <p class="mt-3 text-sm text-navy/65">Logistics: {{ str_replace('_', ' ', ucfirst($order->delivery->status)) }} · Rider: {{ $order->delivery->rider?->name ?? 'Unavailable' }}</p>
+        {{-- Seller reads the completed Rider event and private proof for its own Order only. --}}
+        @if ($order->delivery->picked_up_at) <p class="text-sm text-navy/65">Picked up {{ $order->delivery->picked_up_at->format('M j, Y g:i A') }}</p> @endif
+        @if ($order->delivery->delivered_at) <p class="text-sm text-navy/65">Delivered {{ $order->delivery->delivered_at->format('M j, Y g:i A') }} by {{ $order->delivery->deliveredRider?->name ?? 'Rider' }}</p> @endif
+        @if ($order->delivery->proof_path) <a class="text-sm text-teal underline" href="{{ route('delivery.proof', $order->delivery) }}">View delivery proof</a> @endif
         @endif
 
         @if (session('status'))

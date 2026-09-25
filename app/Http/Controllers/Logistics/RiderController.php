@@ -7,6 +7,8 @@ use App\Models\Logistics\Rider;
 use App\Models\LogisticsPartner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class RiderController extends Controller
@@ -27,10 +29,30 @@ class RiderController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'vehicle_type' => ['required', 'string', 'max:80'],
+            // New Riders receive partner-provisioned credentials without a predictable default password.
+            'email' => ['required', 'email', 'max:255', Rule::unique('riders', 'email')],
+            'password' => ['required', 'string', 'min:12', 'confirmed'],
         ]);
+        $data['password'] = Hash::make($data['password']);
         Rider::create($data + ['logistics_partner_id' => $partner->id, 'status' => 'active']);
 
         return redirect()->route('logistics.riders.index')->with('status', 'Rider added.');
+    }
+
+    public function provision(Request $request, int $rider): RedirectResponse
+    {
+        // Only the owning partner may turn a legacy Rider into an identity, and this action cannot rotate credentials.
+        $partner = $this->partner($request);
+        $ownedRider = Rider::where('logistics_partner_id', $partner->id)->findOrFail($rider);
+        $data = $request->validate([
+            'email' => ['required', 'email', 'max:255', Rule::unique('riders', 'email')],
+            'password' => ['required', 'string', 'min:12', 'confirmed'],
+        ]);
+        if (Rider::whereKey($ownedRider->id)->whereNull('email')->whereNull('password')
+            ->update(['email' => $data['email'], 'password' => Hash::make($data['password'])]) !== 1) {
+            return back()->withErrors(['rider' => 'Credentials already provisioned.']);
+        }
+        return back()->with('status', 'Rider credentials provisioned.');
     }
 
     public function suspend(Request $request, int $rider): RedirectResponse

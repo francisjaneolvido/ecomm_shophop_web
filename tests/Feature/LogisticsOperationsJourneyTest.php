@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Buyer\Order\Order;
+use App\Models\Logistics\Delivery;
+use App\Models\Logistics\Rider;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductVariant;
@@ -10,6 +12,8 @@ use App\Models\Seller\Manage_inventory\Voucher;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class LogisticsOperationsJourneyTest extends TestCase
@@ -18,6 +22,8 @@ class LogisticsOperationsJourneyTest extends TestCase
 
     public function test_ready_order_assignment_and_delivery_persist_for_buyer_and_seller(): void
     {
+        // A fake private disk verifies the real Rider-owned completion without touching runtime files.
+        Storage::fake('local');
         // A Seller-scoped Order is the fulfillment unit; Logistics transitions must survive separate HTTP requests.
         $buyer = $this->user('buyer');
         $seller = $this->user('seller');
@@ -49,29 +55,36 @@ class LogisticsOperationsJourneyTest extends TestCase
         $this->actingAs($seller)->patch(route('seller.orders.start-preparation', $order))->assertRedirect();
         $this->patch(route('seller.orders.mark-ready', $order))->assertRedirect();
         $this->actingAs($operator)->get(route('logistics.deliveries.board'))->assertOk()
-            ->assertSee('Order #'.$order->id)->assertSee('Live GPS and delivery proof are unavailable.')
+            ->assertSee('Order #'.$order->id)->assertSee('Live GPS is unavailable.')
             ->assertDontSee('SPXPH');
-        $this->post(route('logistics.riders.store'), ['name' => 'Test Rider', 'vehicle_type' => 'Motorcycle'])
+        $this->post(route('logistics.riders.store'), ['name' => 'Test Rider', 'vehicle_type' => 'Motorcycle',
+            'email' => 'rider@example.test', 'password' => 'LongSecretPassword123!',
+            'password_confirmation' => 'LongSecretPassword123!'])
             ->assertRedirect();
         $riderId = DB::table('riders')->value('id');
         $this->post(route('logistics.deliveries.assign', $order), ['rider_id' => $riderId])->assertRedirect();
         $this->assertDatabaseHas('deliveries', ['order_id' => $order->id, 'rider_id' => $riderId, 'status' => 'assigned']);
         $this->get(route('logistics.deliveries.board'))->assertOk()->assertSee('Test Rider');
         $this->actingAs($buyer)->get(route('buyer.orders'))->assertOk()->assertSee('Rider assigned; pickup is pending.');
-        $this->actingAs($operator);
-        $this->post(route('logistics.deliveries.pickup', $order))->assertRedirect();
+        // Operator controls end at assignment; the authenticated Rider performs the remaining events.
+        $this->post(route('logout'));
+        $this->post(route('rider.login.store'), ['email' => 'rider@example.test',
+            'password' => 'LongSecretPassword123!'])->assertRedirect();
+        $delivery = Delivery::where('order_id', $order->id)->firstOrFail();
+        $this->post(route('rider.deliveries.pickup', $delivery))->assertRedirect();
         $this->assertSame(Order::STATUS_TO_RECEIVE, $order->fresh()->status);
-        $this->actingAs($buyer)->get(route('buyer.orders'))->assertOk()->assertSee('Package picked up by Logistics.');
-        $this->actingAs($seller)->get(route('seller.orders.show', $order))->assertOk()->assertSee('Picked up');
-        $this->actingAs($operator);
-        $this->post(route('logistics.deliveries.transit', $order))->assertRedirect();
-        $this->actingAs($buyer)->get(route('buyer.orders'))->assertOk()->assertSee('Package in transit with Logistics.');
-        $this->actingAs($operator);
-        $this->post(route('logistics.deliveries.complete', $order))->assertRedirect();
+        $this->post(route('rider.deliveries.transit', $delivery))->assertRedirect();
+        $this->post(route('rider.deliveries.complete', $delivery), [
+            'proof' => UploadedFile::fake()->create('proof.jpg', 2, 'image/jpeg'),
+        ])->assertRedirect();
         $this->assertSame(Order::STATUS_COMPLETED, $order->fresh()->status);
         $deliveredAt = DB::table('deliveries')->where('order_id', $order->id)->value('delivered_at');
-        $this->post(route('logistics.deliveries.complete', $order))->assertSessionHasErrors('delivery');
+        $this->post(route('rider.deliveries.complete', $delivery), [
+            'proof' => UploadedFile::fake()->create('again.jpg', 2, 'image/jpeg'),
+        ])->assertSessionHasErrors('delivery');
         $this->assertSame($deliveredAt, DB::table('deliveries')->where('order_id', $order->id)->value('delivered_at'));
+        $this->post(route('rider.logout'));
+        $this->actingAs($operator, 'web');
         $this->get(route('logistics.dashboard'))->assertOk()->assertSee('Delivered');
         $this->get(route('logistics.reports.index'))->assertOk()->assertSee('Order #'.$order->id);
         // Delivery actions have no inventory, voucher, price, fee, or Cart side effects.
@@ -123,13 +136,14 @@ class LogisticsOperationsJourneyTest extends TestCase
         $this->post(route('logistics.riders.activate', $rider))->assertRedirect();
         $this->post(route('logistics.deliveries.assign', $ready), ['rider_id' => $rider])->assertRedirect();
         $this->post(route('logistics.deliveries.assign', $ready), ['rider_id' => $rider])->assertSessionHasErrors('delivery');
-        $this->actingAs($otherOperator)->post(route('logistics.deliveries.pickup', $ready))->assertNotFound();
+        // No Logistics operator retains a pickup mutation route after Rider ownership begins.
+        $this->actingAs($otherOperator)->post('/logistics-partner/deliveries/'.$ready->id.'/pickup')->assertNotFound();
         $this->assertDatabaseCount('deliveries', 1);
     }
 
     public function test_transitions_reject_skips_repeats_and_stale_order_state(): void
     {
-        // Only the assigned partner can advance one legal stage at a time; repeats do not rewrite event times.
+        // Only the assigned Rider advances legal stages; repeats cannot rewrite event times.
         $buyer = $this->user('buyer');
         $seller = $this->user('seller');
         $operator = $this->user('logistics');
@@ -139,17 +153,24 @@ class LogisticsOperationsJourneyTest extends TestCase
         $order = $this->order($buyerId, $sellerId);
         $rider = $this->rider($partnerId);
         $this->actingAs($operator);
-        $this->post(route('logistics.deliveries.pickup', $order))->assertNotFound();
+        $this->post('/logistics-partner/deliveries/'.$order->id.'/pickup')->assertNotFound();
         $this->post(route('logistics.deliveries.assign', $order), ['rider_id' => $rider])->assertRedirect();
-        $this->post(route('logistics.deliveries.complete', $order))->assertSessionHasErrors('delivery');
-        $this->post(route('logistics.deliveries.transit', $order))->assertSessionHasErrors('delivery');
-        $this->post(route('logistics.deliveries.pickup', $order))->assertRedirect();
+        $delivery = Delivery::where('order_id', $order->id)->firstOrFail();
+        $this->post(route('logout'));
+        $this->actingAs(Rider::findOrFail($rider), 'rider');
+        $this->post(route('rider.deliveries.complete', $delivery), [
+            'proof' => UploadedFile::fake()->create('early.jpg', 2, 'image/jpeg'),
+        ])->assertSessionHasErrors('delivery');
+        $this->post(route('rider.deliveries.transit', $delivery))->assertSessionHasErrors('delivery');
+        $this->post(route('rider.deliveries.pickup', $delivery))->assertRedirect();
         $pickupAt = DB::table('deliveries')->where('order_id', $order->id)->value('picked_up_at');
-        $this->post(route('logistics.deliveries.pickup', $order))->assertSessionHasErrors('delivery');
+        $this->post(route('rider.deliveries.pickup', $delivery))->assertSessionHasErrors('delivery');
         $this->assertSame($pickupAt, DB::table('deliveries')->where('order_id', $order->id)->value('picked_up_at'));
-        $this->post(route('logistics.deliveries.transit', $order))->assertRedirect();
+        $this->post(route('rider.deliveries.transit', $delivery))->assertRedirect();
         $order->update(['status' => Order::STATUS_CANCELLED]);
-        $this->post(route('logistics.deliveries.complete', $order))->assertSessionHasErrors('delivery');
+        $this->post(route('rider.deliveries.complete', $delivery), [
+            'proof' => UploadedFile::fake()->create('stale.jpg', 2, 'image/jpeg'),
+        ])->assertSessionHasErrors('delivery');
         $this->assertDatabaseHas('deliveries', ['order_id' => $order->id, 'status' => 'in_transit', 'delivered_at' => null]);
     }
 
@@ -177,9 +198,11 @@ class LogisticsOperationsJourneyTest extends TestCase
         $this->actingAs($operatorB)->post(route('logistics.deliveries.assign', $second), ['rider_id' => $riderB])->assertRedirect();
         $this->assertDatabaseHas('deliveries', ['order_id' => $first->id, 'logistics_partner_id' => $partnerAId]);
         $this->assertDatabaseHas('deliveries', ['order_id' => $second->id, 'logistics_partner_id' => $partnerBId]);
-        $this->post(route('logistics.deliveries.pickup', $first))->assertNotFound();
+        // Checkout correlation never grants a partner or Seller another Delivery's Rider route.
+        $firstDelivery = Delivery::where('order_id', $first->id)->firstOrFail();
+        $this->post('/logistics-partner/deliveries/'.$first->id.'/pickup')->assertNotFound();
         $this->actingAs($sellerA)->get(route('seller.orders.show', $second))->assertNotFound();
-        $this->actingAs($sellerA)->post(route('logistics.deliveries.pickup', $first))->assertForbidden();
+        $this->actingAs($sellerA)->post(route('rider.deliveries.pickup', $firstDelivery))->assertForbidden();
     }
 
     private function order(int $buyerId, int $sellerId, string $status = Order::STATUS_READY_FOR_PICKUP,
@@ -194,8 +217,10 @@ class LogisticsOperationsJourneyTest extends TestCase
     private function rider(int $partnerId): int
     {
         // Distinct partner Rider IDs expose cross-partner assignment mistakes.
+        // Assignment fixtures must have credentials because operational responsibility now belongs to Riders.
         return DB::table('riders')->insertGetId(['logistics_partner_id' => $partnerId,
-            'name' => 'Test Rider '.$partnerId, 'vehicle_type' => 'Motorcycle', 'status' => 'active']);
+            'name' => 'Test Rider '.$partnerId, 'vehicle_type' => 'Motorcycle', 'status' => 'active',
+            'email' => uniqid('rider', true).'@example.test', 'password' => bcrypt('LongSecretPassword123!')]);
     }
 
     private function user(string $role): User
