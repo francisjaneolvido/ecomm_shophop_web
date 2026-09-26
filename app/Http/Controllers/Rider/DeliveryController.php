@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Rider;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
 use App\Models\Logistics\Delivery;
+use App\Models\Logistics\CodSettlement;
 use App\Models\Logistics\Rider;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,7 +21,7 @@ class DeliveryController extends Controller
     {
         // Rider list is scoped by both assignment and partner, never by a submitted identity field.
         $rider = $request->user('rider');
-        $deliveries = Delivery::with(['order.seller'])
+        $deliveries = Delivery::with(['order.seller', 'codSettlement'])
             ->where('rider_id', $rider->id)->where('logistics_partner_id', $rider->logistics_partner_id)
             ->latest()->get();
 
@@ -30,7 +31,7 @@ class DeliveryController extends Controller
     public function show(Request $request, int $delivery): View
     {
         // The assigned Rider may see only this Delivery's destination and persisted events.
-        $owned = $this->owned($request, $delivery)->load(['order.seller']);
+        $owned = $this->owned($request, $delivery)->load(['order.seller', 'codSettlement']);
 
         return view('rider.show', ['delivery' => $owned]);
     }
@@ -52,7 +53,11 @@ class DeliveryController extends Controller
         // Foreign Deliveries are denied before upload validation; the lock below rechecks a stale assignment.
         $this->owned($request, $delivery);
         // Photo bytes are validated before any state change and stored on the private local disk.
-        $request->validate(['proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120']]);
+        // COD completion needs the Rider's explicit cash declaration as well as separate photo evidence.
+        $request->validate([
+            'cash_collected' => ['required', 'accepted'],
+            'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
         $path = null;
         try {
             return DB::transaction(function () use ($request, $delivery, &$path) {
@@ -61,7 +66,8 @@ class DeliveryController extends Controller
                 // Suspension between middleware and the locked write cannot complete an old Rider page.
                 $this->assertActive($rider->id, $owned->logistics_partner_id);
                 if ($owned->status !== 'in_transit' || $owned->order?->status !== Order::STATUS_TO_RECEIVE
-                    || $owned->proof_path || $owned->delivered_at) {
+                    || $owned->order->payment_method !== 'cod' || $owned->proof_path || $owned->delivered_at
+                    || CodSettlement::where('delivery_id', $owned->id)->exists()) {
                     return $this->stale();
                 }
                 $path = $request->file('proof')->store('delivery-proofs', 'local');
@@ -79,7 +85,17 @@ class DeliveryController extends Controller
                     throw ValidationException::withMessages(['delivery' => 'Delivery changed. Refresh and review it.']);
                 }
 
-                return redirect()->route('rider.deliveries.show', $owned)->with('status', 'Delivery completed.');
+                // Snapshot the persisted final Buyer amount in the same transaction as fulfillment and proof.
+                CodSettlement::create([
+                    'order_id' => $owned->order_id, 'delivery_id' => $owned->id,
+                    'logistics_partner_id' => $owned->logistics_partner_id,
+                    'expected_amount' => $owned->order->total_amount,
+                    'collected_amount' => $owned->order->total_amount,
+                    'status' => CodSettlement::COLLECTED,
+                    'collected_by_rider_id' => $rider->id, 'collected_at' => now(),
+                ]);
+
+                return redirect()->route('rider.deliveries.show', $owned)->with('status', 'Delivery completed and COD cash collection recorded.');
             });
         } catch (Throwable $exception) {
             if ($path) {

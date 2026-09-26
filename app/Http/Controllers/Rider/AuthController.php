@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Rider;
 
 use App\Http\Controllers\Controller;
 use App\Models\Logistics\Rider;
+use App\Models\Logistics\CodSettlement;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,13 +29,19 @@ class AuthController extends Controller
             abort(403);
         }
         $rider = Rider::with('partner.user')->where('email', $credentials['email'])->first();
-        if (! $rider || $rider->status !== 'active' || $rider->partner?->user?->status !== 'approved'
+        // Suspension blocks delivery work but cannot strand cash this Rider already collected.
+        $cashReturnOnly = $rider && $rider->status === 'suspended'
+            && CodSettlement::where('collected_by_rider_id', $rider->id)
+                ->where('logistics_partner_id', $rider->logistics_partner_id)
+                ->where('status', CodSettlement::COLLECTED)->exists();
+        if (! $rider || ($rider->status !== 'active' && ! $cashReturnOnly)
+            || $rider->partner?->user?->status !== 'approved'
             || ! Auth::guard('rider')->attempt($credentials)) {
             return back()->withErrors(['email' => 'Rider credentials are unavailable.'])->onlyInput('email');
         }
         $request->session()->regenerate();
 
-        return redirect()->route('rider.deliveries.index');
+        return redirect()->route($cashReturnOnly ? 'rider.settlements.index' : 'rider.deliveries.index');
     }
 
     public function destroy(Request $request): RedirectResponse

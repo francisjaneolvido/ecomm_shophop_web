@@ -98,7 +98,8 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
             'email' => 'a@example.test', 'password' => 'LongSecretPassword123!',
         ])->assertRedirect(route('rider.deliveries.index'));
         $this->get(route('rider.deliveries.show', $delivery))->assertOk()->assertSee('Test Buyer');
-        $this->post(route('rider.deliveries.complete', $delivery), ['proof' => UploadedFile::fake()->create('early.jpg', 2, 'image/jpeg')])
+        // Cash acknowledgement does not let the Rider skip pickup or transit.
+        $this->post(route('rider.deliveries.complete', $delivery), ['cash_collected' => '1', 'proof' => UploadedFile::fake()->create('early.jpg', 2, 'image/jpeg')])
             ->assertSessionHasErrors('delivery');
         $this->post(route('rider.deliveries.pickup', $delivery))->assertRedirect();
         $this->post(route('rider.deliveries.pickup', $delivery))->assertSessionHasErrors('delivery');
@@ -115,6 +116,8 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
             'proof' => UploadedFile::fake()->create('huge.jpg', 6000, 'image/jpeg'),
         ])->assertSessionHasErrors('proof');
         $this->post(route('rider.deliveries.complete', $delivery), [
+            // Current COD completion records an explicit cash actor alongside immutable delivery proof.
+            'cash_collected' => '1',
             'proof' => UploadedFile::fake()->create('proof.jpg', 2, 'image/jpeg'),
         ])->assertRedirect();
         $completed = $delivery->fresh();
@@ -125,6 +128,8 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
         $this->assertSame(Order::STATUS_COMPLETED, $order->fresh()->status);
         $this->assertSame(200, $this->get(route('delivery.proof', $delivery))->getStatusCode(), 'Rider proof access');
         $this->post(route('rider.deliveries.complete', $delivery), [
+            // A repeated cash declaration cannot replace an already completed delivery event.
+            'cash_collected' => '1',
             'proof' => UploadedFile::fake()->create('replacement.jpg', 2, 'image/jpeg'),
         ])->assertSessionHasErrors('delivery');
         $this->assertSame($completed->proof_path, $delivery->fresh()->proof_path);

@@ -75,11 +75,15 @@ class LogisticsOperationsJourneyTest extends TestCase
         $this->assertSame(Order::STATUS_TO_RECEIVE, $order->fresh()->status);
         $this->post(route('rider.deliveries.transit', $delivery))->assertRedirect();
         $this->post(route('rider.deliveries.complete', $delivery), [
+            // Logistics regressions now cross the Rider's explicit COD collection boundary.
+            'cash_collected' => '1',
             'proof' => UploadedFile::fake()->create('proof.jpg', 2, 'image/jpeg'),
         ])->assertRedirect();
         $this->assertSame(Order::STATUS_COMPLETED, $order->fresh()->status);
         $deliveredAt = DB::table('deliveries')->where('order_id', $order->id)->value('delivered_at');
         $this->post(route('rider.deliveries.complete', $delivery), [
+            // Repeating the declaration cannot replace the original cash or proof event.
+            'cash_collected' => '1',
             'proof' => UploadedFile::fake()->create('again.jpg', 2, 'image/jpeg'),
         ])->assertSessionHasErrors('delivery');
         $this->assertSame($deliveredAt, DB::table('deliveries')->where('order_id', $order->id)->value('delivered_at'));
@@ -159,6 +163,8 @@ class LogisticsOperationsJourneyTest extends TestCase
         $this->post(route('logout'));
         $this->actingAs(Rider::findOrFail($rider), 'rider');
         $this->post(route('rider.deliveries.complete', $delivery), [
+            // A cash claim cannot skip Rider pickup and transit.
+            'cash_collected' => '1',
             'proof' => UploadedFile::fake()->create('early.jpg', 2, 'image/jpeg'),
         ])->assertSessionHasErrors('delivery');
         $this->post(route('rider.deliveries.transit', $delivery))->assertSessionHasErrors('delivery');
@@ -169,6 +175,8 @@ class LogisticsOperationsJourneyTest extends TestCase
         $this->post(route('rider.deliveries.transit', $delivery))->assertRedirect();
         $order->update(['status' => Order::STATUS_CANCELLED]);
         $this->post(route('rider.deliveries.complete', $delivery), [
+            // A stale Order state still blocks completion and collection together.
+            'cash_collected' => '1',
             'proof' => UploadedFile::fake()->create('stale.jpg', 2, 'image/jpeg'),
         ])->assertSessionHasErrors('delivery');
         $this->assertDatabaseHas('deliveries', ['order_id' => $order->id, 'status' => 'in_transit', 'delivered_at' => null]);

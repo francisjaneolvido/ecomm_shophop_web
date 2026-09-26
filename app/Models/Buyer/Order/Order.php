@@ -7,6 +7,7 @@ use App\Models\Seller;
 use App\Models\Seller\Manage_inventory\Voucher;
 // Delivery adds Logistics milestones to the shared Order without becoming a second Buyer status store.
 use App\Models\Logistics\Delivery;
+use App\Models\Logistics\CodSettlement;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -67,6 +68,12 @@ class Order extends Model
     {
         // One Seller Order has one Logistics assignment; checkout_group_id never merges packages.
         return $this->hasOne(Delivery::class);
+    }
+
+    public function codSettlement(): HasOne
+    {
+        // Missing relation on an old completed COD Order means cash settlement was never recorded.
+        return $this->hasOne(CodSettlement::class);
     }
 
     /*

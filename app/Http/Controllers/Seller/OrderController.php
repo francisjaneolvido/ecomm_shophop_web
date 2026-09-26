@@ -25,8 +25,8 @@ class OrderController extends Controller
     {
         // Resolve through the authenticated Seller profile before exposing any Order or Buyer details.
         $ownedOrder = $this->ownedOrder($request, $order);
-        // Seller may observe its Order's Logistics milestone without gaining any delivery mutation route.
-        $ownedOrder->load(['buyer', 'items.product', 'items.variant', 'delivery.rider', 'delivery.deliveredRider']);
+        // Seller may observe its Order's delivery and cash collection without a settlement mutation route.
+        $ownedOrder->load(['buyer', 'items.product', 'items.variant', 'delivery.rider', 'delivery.deliveredRider', 'codSettlement']);
 
         return view('seller.orders.show', ['order' => $ownedOrder]);
     }

@@ -20,7 +20,7 @@ class BuyerRealCommerceJourneyTest extends TestCase
     {
         parent::setUp();
 
-        // Keep the focused disposable Commerce schema aligned with the Delivery relation now read by Buyer Orders.
+        // Keep the focused disposable Commerce schema aligned with Buyer delivery and collection reads.
         Schema::dropAllTables();
         foreach ([
             '0001_01_01_000000_create_users_table.php',
@@ -39,6 +39,8 @@ class BuyerRealCommerceJourneyTest extends TestCase
             'Buyer/2026_09_23_065410_create_cart_items_table.php',
             // Buyer Orders now reads Delivery milestones when present.
             '2026_09_24_000001_create_logistics_operations_tables.php',
+            // Buyer Orders may load COD collection while older delivered Orders have no record.
+            '2026_09_26_000001_create_cod_settlements_table.php',
         ] as $path) {
             (require database_path('migrations/' . $path))->up();
         }

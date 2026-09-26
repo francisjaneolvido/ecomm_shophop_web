@@ -5,6 +5,7 @@ namespace App\Models\Logistics;
 use App\Models\Buyer\Order\Order;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Delivery extends Model
 {
@@ -21,6 +22,12 @@ class Delivery extends Model
     public function rider(): BelongsTo
     {
         return $this->belongsTo(Rider::class);
+    }
+
+    public function codSettlement(): HasOne
+    {
+        // Delivery proof and cash settlement remain distinct one-to-one records.
+        return $this->hasOne(CodSettlement::class);
     }
 
     public function pickupRider(): BelongsTo
