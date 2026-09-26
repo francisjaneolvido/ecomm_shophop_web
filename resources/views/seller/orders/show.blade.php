@@ -37,8 +37,19 @@
             <div><dt class="text-navy/50">Recipient</dt><dd class="font-semibold text-navy">{{ $order->delivery_name ?: 'Unavailable' }}</dd></div>
             <div><dt class="text-navy/50">Delivery address</dt><dd class="font-semibold text-navy">{{ $order->delivery_address ?: 'Unavailable' }}</dd></div>
             <div><dt class="text-navy/50">Shipping</dt><dd class="font-semibold text-navy">{{ ucfirst($order->shipping_method ?? 'Unavailable') }}</dd></div>
-            {{-- COD is due at delivery; this Order has no persisted paid or verified payment flag. --}}
-            <div><dt class="text-navy/50">Payment</dt><dd class="font-semibold text-navy">{{ $order->payment_method === 'cod' ? 'Cash on Delivery; payment due on delivery' : 'Payment verification unavailable' }}</dd></div>
+            {{-- Seller sees recorded COD custody only; Logistics receipt does not mean Seller payout. --}}
+            <div><dt class="text-navy/50">Payment</dt><dd class="font-semibold text-navy">
+                @if ($order->payment_method !== 'cod')
+                    Payment verification unavailable
+                @elseif ($cash = $order->codSettlement)
+                    COD collected · ₱{{ number_format((float) $cash->collected_amount, 2) }} at {{ $cash->collected_at->format('M j, Y g:i A') }}
+                    @if ($cash->status === \App\Models\Logistics\CodSettlement::RECONCILED) · Logistics receipt confirmed @endif
+                @elseif ($order->status === \App\Models\Buyer\Order\Order::STATUS_COMPLETED)
+                    Cash on Delivery · collection not recorded
+                @else
+                    Cash on Delivery · payment due on delivery
+                @endif
+            </dd></div>
             @if ($order->note)
                 <div><dt class="text-navy/50">Buyer note</dt><dd class="font-semibold text-navy">{{ $order->note }}</dd></div>
             @endif

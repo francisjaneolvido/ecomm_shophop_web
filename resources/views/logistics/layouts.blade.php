@@ -339,6 +339,14 @@
                     'icon' => 'package-check',
                 ],
 
+                // COD custody is a distinct persisted operation beside delivery fulfillment.
+                [
+                    'label' => 'COD Settlements',
+                    'route' => 'logistics.settlements.index',
+                    'pattern' => 'logistics.settlements.*',
+                    'icon' => 'wallet',
+                ],
+
             ],
         ],
 

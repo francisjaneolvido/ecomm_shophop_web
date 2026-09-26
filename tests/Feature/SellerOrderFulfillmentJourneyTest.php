@@ -20,7 +20,7 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
     {
         parent::setUp();
 
-        // Keep the focused disposable Commerce schema aligned with the Logistics milestone Seller Orders now reads.
+        // Keep the focused disposable Commerce schema aligned with Seller's delivery and COD settlement reads.
         Schema::dropAllTables();
         foreach ([
             '0001_01_01_000000_create_users_table.php',
@@ -39,6 +39,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
             'Buyer/2026_09_23_065410_create_cart_items_table.php',
             // Seller details now reads partner-owned Delivery milestones when present.
             '2026_09_24_000001_create_logistics_operations_tables.php',
+            // Seller details may load recorded COD cash without treating a legacy Order as paid.
+            '2026_09_26_000001_create_cod_settlements_table.php',
         ] as $path) {
             (require database_path('migrations/' . $path))->up();
         }

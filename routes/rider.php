@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Rider\AuthController;
 use App\Http\Controllers\Rider\DeliveryController;
+use App\Http\Controllers\Rider\CodSettlementController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DeliveryProofController;
 
@@ -10,6 +11,12 @@ Route::prefix('rider')->name('rider.')->group(function () {
     Route::get('/login', [AuthController::class, 'create'])->name('login');
     Route::post('/login', [AuthController::class, 'store'])->middleware('throttle:6,1')->name('login.store');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+
+    // Authenticated collectors may return already held cash even after a narrow Rider suspension.
+    Route::middleware('auth:rider')->group(function () {
+        Route::get('/settlements', [CodSettlementController::class, 'index'])->name('settlements.index');
+        Route::post('/settlements/{delivery}/remit', [CodSettlementController::class, 'remit'])->name('settlements.remit');
+    });
 
     Route::middleware('active.rider')->group(function () {
         Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');

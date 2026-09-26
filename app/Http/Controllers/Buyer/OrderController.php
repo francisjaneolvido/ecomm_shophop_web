@@ -13,8 +13,8 @@ class OrderController extends Controller
     {
         $buyer = Auth::user()->buyer;
 
-        // Buyer cards read the same Delivery milestones that Logistics persisted on the Seller Order.
-        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery.rider', 'delivery.deliveredRider'])
+        // Buyer cards read persisted delivery and collection facts scoped to the authenticated Buyer.
+        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery.rider', 'delivery.deliveredRider', 'codSettlement'])
             ->where('buyer_id', $buyer->id)
             ->latest()
             ->get();
@@ -115,6 +115,14 @@ class OrderController extends Controller
     private function paymentLabel(Order $order): string
     {
         if ($order->payment_method === 'cod') {
+            // Buyer sees only recorded collection, never internal remittance or inferred legacy payment.
+            if ($order->codSettlement) {
+                return 'Cash on Delivery · ₱'.number_format((float) $order->codSettlement->collected_amount, 2)
+                    .' collected '.$order->codSettlement->collected_at->format('M j, Y g:i A');
+            }
+            if ($order->status === Order::STATUS_COMPLETED) {
+                return 'Cash on Delivery · collection not recorded';
+            }
             return 'Cash on Delivery';
         }
 

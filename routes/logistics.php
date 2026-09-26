@@ -7,6 +7,7 @@ use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardCont
 use App\Http\Controllers\Logistics\RiderController;
 use App\Http\Controllers\Logistics\DeliveryController;
 use App\Http\Controllers\Logistics\ReportController;
+use App\Http\Controllers\Logistics\CodSettlementController;
 
 
 /*
@@ -112,6 +113,10 @@ Route::prefix('logistics-partner')
         // Every transition is a server-owned POST for one Seller Order, never a DOM-only board move.
         Route::post('/deliveries/{order}/assign', [DeliveryController::class, 'assign'])->name('deliveries.assign');
         // After assignment, only authenticated Rider routes own pickup, transit, and evidenced completion.
+
+        // Only the owning approved partner confirms receipt of recorded Rider-remitted COD cash.
+        Route::get('/settlements', [CodSettlementController::class, 'index'])->name('settlements.index');
+        Route::post('/settlements/{delivery}/reconcile', [CodSettlementController::class, 'reconcile'])->name('settlements.reconcile');
 
 
         /*
