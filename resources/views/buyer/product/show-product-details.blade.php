@@ -626,9 +626,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
 
     const CART_ADD_URL = @json(route('buyer.cart.add'));
+    const CART_URL = @json(url('/buyer/cart'));
 
     // Base info for THIS product, used to build the cart payload when
-    // clicking either of the main "Add to Cart" buttons.
+    // clicking either of the main "Add to Cart" buttons, or Buy Now.
     const productBase = {
         id: @json($product['id']),
         name: @json($product['name']),
@@ -667,6 +668,26 @@ document.addEventListener('DOMContentLoaded', function () {
         return value;
     }
 
+    // Builds the same payload shape used by "Add to Cart", so it can be
+    // reused by Buy Now.
+    function buildCartPayload(qty) {
+        return {
+            product_id: productBase.id,
+            variant_id: selectedVariant ? selectedVariant.id : null,
+            variant_label: selectedVariant ? selectedVariant.label : 'Standard',
+            name: productBase.name,
+            image: productBase.image,
+            price: selectedVariant ? selectedVariant.price : productBase.price,
+            original_price: productBase.originalPrice,
+            stock: selectedVariant ? selectedVariant.stock : productBase.stock,
+            qty: qty,
+            shop_id: productBase.shopId,
+            shop_name: productBase.shopName,
+            shop_response_rate: productBase.shopResponseRate,
+            shop_preferred: productBase.shopPreferred,
+        };
+    }
+
     function updateSelectionSummary() {
         const qty = clampQuantity();
         const label = selectedVariant ? selectedVariant.label : 'Standard';
@@ -677,6 +698,9 @@ document.addEventListener('DOMContentLoaded', function () {
             priceDisplay.textContent = '₱' + price.toLocaleString();
         }
 
+        // Buy Now links no longer rely on query params to communicate the
+        // cart payload — the click handler below builds it fresh. We keep
+        // the href in sync anyway as a fallback / for "open in new tab".
         buyNowLinks.forEach(function (link) {
             let href = link.dataset.buyNowBase + '&qty=' + qty;
             if (selectedVariant) href += '&variant_id=' + selectedVariant.id;
@@ -761,6 +785,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Returns true on success, false on failure — so Buy Now can decide
+    // whether it's safe to navigate to checkout.
     async function postAddToCart(payload, triggerButtons) {
         triggerButtons.forEach(function (btn) { btn.disabled = true; });
 
@@ -787,9 +813,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showToast('Added ' + payload.qty + ' item(s) to cart');
+            return true;
         } catch (error) {
             console.error(error);
             showToast('Could not add to cart. Please try again.');
+            return false;
         } finally {
             triggerButtons.forEach(function (btn) { btn.disabled = false; });
         }
@@ -799,24 +827,29 @@ document.addEventListener('DOMContentLoaded', function () {
     addToCartButtons.forEach(function (button) {
         button.addEventListener('click', function () {
             const qty = clampQuantity();
-
-            const payload = {
-                product_id: productBase.id,
-                variant_id: selectedVariant ? selectedVariant.id : null,
-                variant_label: selectedVariant ? selectedVariant.label : 'Standard',
-                name: productBase.name,
-                image: productBase.image,
-                price: selectedVariant ? selectedVariant.price : productBase.price,
-                original_price: productBase.originalPrice,
-                stock: selectedVariant ? selectedVariant.stock : productBase.stock,
-                qty: qty,
-                shop_id: productBase.shopId,
-                shop_name: productBase.shopName,
-                shop_response_rate: productBase.shopResponseRate,
-                shop_preferred: productBase.shopPreferred,
-            };
-
+            const payload = buildCartPayload(qty);
             postAddToCart(payload, Array.from(addToCartButtons));
+        });
+    });
+
+    // Buy Now: add the item to the cart first (same endpoint as
+    // "Add to Cart"), then navigate to the cart/checkout page only if
+    // the add succeeded. This fixes Buy Now not actually adding anything.
+    buyNowLinks.forEach(function (link) {
+        link.addEventListener('click', async function (event) {
+            event.preventDefault();
+
+            const qty = clampQuantity();
+            const payload = buildCartPayload(qty);
+            const destination = link.href; // already kept in sync by updateSelectionSummary()
+
+            link.classList.add('opacity-60', 'pointer-events-none');
+            const success = await postAddToCart(payload, []);
+            link.classList.remove('opacity-60', 'pointer-events-none');
+
+            if (success) {
+                window.location.href = destination;
+            }
         });
     });
 
@@ -888,4 +921,3 @@ document.addEventListener('DOMContentLoaded', function () {
     applyReviewFilter('all');
 });
 </script>
-@endpush

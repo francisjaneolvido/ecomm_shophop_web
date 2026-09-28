@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
+use App\Http\Controllers\Admin\ProductComplianceController;
 // use App\Http\Controllers\Admin\CommissionController;
 
 
@@ -51,6 +52,18 @@ Route::prefix('admin')
         Route::get('/seller-compliance', function () {
             return view('admin.seller-compliance');
         })->name('compliance');
+
+        Route::get('/product-compliance', [ProductComplianceController::class, 'index'])
+            ->name('product-compliance');
+
+        Route::get('/product-compliance/{product}', [ProductComplianceController::class, 'show'])
+            ->name('product-compliance.show');
+
+        Route::patch('/product-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])
+            ->name('product-compliance.approve');
+
+        Route::patch('/product-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])
+            ->name('product-compliance.reject');
 
         Route::get('/complaints-disputes', function () {
             return view('admin.complaints-disputes');

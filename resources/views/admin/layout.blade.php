@@ -289,6 +289,12 @@
                     'icon' => 'badge-check',
                 ],
                 [
+                    'label' => 'Product Compliance',
+                    'route' => 'admin.product-compliance',
+                    'pattern' => 'admin.product-compliance*',
+                    'icon' => 'package-check',
+                ],
+                [
                     'label' => 'Complaints & Disputes',
                     'route' => 'admin.disputes',
                     'pattern' => 'admin.disputes*',
@@ -394,7 +400,7 @@
                    shrink-0"
         >
 
-            <a
+            
                 id="adminBrandLink"
                 href="{{ route('admin.dashboard') }}"
                 class="flex items-center gap-3 min-w-0"
@@ -500,7 +506,7 @@
 
                             <div class="relative group">
 
-                                <a
+                                
                                     href="{{ route($item['route']) }}"
                                     class="sidebar-nav-link
                                            relative
@@ -738,7 +744,7 @@
                 @include('partials.theme-toggle')
 
                 {{-- Visit site --}}
-                <a
+                
                     href="{{ route('home') }}"
                     target="_blank"
                     class="hidden md:inline-flex
@@ -915,7 +921,7 @@
 
                         <div class="p-1.5">
 
-                            <a
+                            
                                 href="{{ route('admin.accounts') }}"
                                 class="flex items-center gap-2.5
                                        px-2.5 py-2 rounded-lg
@@ -928,7 +934,7 @@
                             </a>
 
 
-                            <a
+                            
                                 href="{{ route('admin.settings') }}"
                                 class="flex items-center gap-2.5
                                        px-2.5 py-2 rounded-lg
@@ -1166,7 +1172,7 @@
                 @foreach ($adminNavigation as $section)
                     @foreach ($section['items'] as $item)
 
-                        <a
+                        
                             href="{{ route($item['route']) }}"
                             data-admin-command-item
                             data-search-text="{{ strtolower($item['label'] . ' ' . $section['label']) }}"

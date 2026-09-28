@@ -133,9 +133,17 @@ class InventoryController extends Controller
             $hasVariants
         ) {
             if ($product) {
+                // Naka-edit ang existing product — ibalik sa review queue,
+                // lalo na kung dati itong na-reject.
+                $payload['compliance_status'] = 'pending_review';
+                $payload['submitted_at'] = now();
+                $payload['rejection_reason'] = null;
+                $payload['rejection_notes'] = null;
                 $product->update($payload);
             } else {
                 $payload['status'] = 'active';
+                $payload['compliance_status'] = 'pending_review';
+                $payload['submitted_at'] = now();
                 $product = Product::create($payload);
             }
 
@@ -146,8 +154,8 @@ class InventoryController extends Controller
         return redirect()
             ->route('seller.inventory')
             ->with('status', $product->wasRecentlyCreated
-                ? 'Product added successfully.'
-                : 'Product updated successfully.');
+                ? 'Product added successfully. It will be reviewed by our team before it goes live.'
+                : 'Product updated successfully. It will be reviewed again before it goes live.');
     }
 
     /**

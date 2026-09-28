@@ -4,6 +4,7 @@ namespace App\Models\Seller\Manage_inventory;
 
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Buyer\Review\Review;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,13 @@ class Product extends Model
         'has_variants',
         'status',
         'image',
+        // Product compliance
+        'compliance_status',
+        'rejection_reason',
+        'rejection_notes',
+        'submitted_at',
+        'reviewed_at',
+        'reviewed_by',
     ];
 
     protected $casts = [
@@ -35,6 +43,8 @@ class Product extends Model
         'discount' => 'integer',
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',
+        'submitted_at' => 'datetime',
+        'reviewed_at' => 'datetime',
     ];
 
     public function scopePubliclyDiscoverable(Builder $query): Builder
@@ -42,6 +52,7 @@ class Product extends Model
         // Buyer discovery and public Search must never drift into separate catalogues.
         return $query
             ->where('status', 'active')
+            ->where('compliance_status', 'approved')
             ->where('stock', '>', 0);
     }
 
@@ -74,5 +85,10 @@ class Product extends Model
     public function orderItems(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    public function reviewedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }
