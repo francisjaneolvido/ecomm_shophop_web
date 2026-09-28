@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
+use App\Http\Controllers\Admin\ManualCashlessPaymentReviewController;
 // use App\Http\Controllers\Admin\CommissionController;
 
 
@@ -23,6 +24,12 @@ Route::prefix('admin')
 
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
+
+        // Cashless proof decisions have their own Admin queue and locked group review.
+        Route::get('/payments', [ManualCashlessPaymentReviewController::class, 'index'])->name('payments.index');
+        Route::get('/payments/{payment}', [ManualCashlessPaymentReviewController::class, 'show'])->name('payments.show');
+        Route::post('/payments/{payment}/verify', [ManualCashlessPaymentReviewController::class, 'verify'])->name('payments.verify');
+        Route::post('/payments/{payment}/reject', [ManualCashlessPaymentReviewController::class, 'reject'])->name('payments.reject');
 
         Route::get('/registration', [AdminRegistrationController::class, 'index'])
             ->name('registrations');

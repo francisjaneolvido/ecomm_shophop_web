@@ -41,6 +41,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
             '2026_09_24_000001_create_logistics_operations_tables.php',
             // Seller details may load recorded COD cash without treating a legacy Order as paid.
             '2026_09_26_000001_create_cod_settlements_table.php',
+            // Seller payment-eligible queues now read the manual group payment contract.
+            '2026_09_28_000001_create_manual_cashless_payments_table.php',
         ] as $path) {
             (require database_path('migrations/' . $path))->up();
         }

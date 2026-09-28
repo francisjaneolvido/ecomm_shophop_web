@@ -194,7 +194,7 @@
 
                 <article
                     class="order-card bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm"
-                    {{-- Preparation stays in To Ship filtering while the card shows the persisted Seller status. --}}
+                    {{-- Payment review stays in To Pay; later Seller preparation stays in To Ship. --}}
                     data-order-status="{{ $order['status_group'] }}"
                     data-order-original-status="{{ $order['status'] }}"
                     data-order-search="{{ strtolower(
@@ -1006,6 +1006,10 @@
                                     <p class="text-[10.5px] font-medium text-navy/65 mt-0.5">
                                         {{ $order['payment'] }}
                                     </p>
+                                    {{-- A Buyer can return to the same private group payment without placing Commerce again. --}}
+                                    @if ($order['payment_url'])
+                                        <a class="text-[10.5px] font-semibold text-teal-dark underline" href="{{ $order['payment_url'] }}">View payment</a>
+                                    @endif
 
                                 </div>
 

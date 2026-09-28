@@ -35,7 +35,8 @@ class OrderController extends Controller
     {
         // The preparation queue contains only new and in-progress Seller-owned Orders.
         $orders = $this->ordersFor($this->seller($request))
-            ->whereIn('status', [Order::STATUS_TO_SHIP, Order::STATUS_PREPARING])
+            // Only payment-eligible Orders are actionable in the preparation queue.
+            ->paymentEligible()->whereIn('status', [Order::STATUS_TO_SHIP, Order::STATUS_PREPARING])
             ->with(['buyer', 'items.product', 'items.variant'])
             ->latest()->get();
 
@@ -46,7 +47,7 @@ class OrderController extends Controller
     {
         // Ready means Seller preparation ended; assignment, pickup, and tracking require Logistics state.
         $orders = $this->ordersFor($this->seller($request))
-            ->where('status', Order::STATUS_READY_FOR_PICKUP)
+            ->paymentEligible()->where('status', Order::STATUS_READY_FOR_PICKUP)
             ->with(['buyer', 'items.product', 'items.variant'])
             ->latest()->get();
 
@@ -64,7 +65,8 @@ class OrderController extends Controller
     {
         // Only fulfillment indicators backed by this Seller's persisted Orders replace dashboard defaults.
         $orders = $this->ordersFor($this->seller($request));
-        $counts = (clone $orders)->selectRaw('status, COUNT(*) as total')
+        // Actionable counters exclude unresolved cashless payment; monthly placed Orders still count all.
+        $counts = (clone $orders)->paymentEligible()->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')->pluck('total', 'status');
         // The existing monthly Order count also has a direct Seller-owned persisted source.
         $monthlyOrderCount = (clone $orders)->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count();
@@ -105,10 +107,10 @@ class OrderController extends Controller
     {
         $order = $this->ownedOrder($request, $orderId);
 
-        // GCash lacks verified payment, and a guarded update rejects repeats, skips, and stale competing requests.
-        if ($order->payment_method !== 'cod' || $this->ordersFor($this->seller($request))
+        // One central payment rule gates both Seller steps; the conditional update rejects stale Order state.
+        if (! $order->isPaymentEligible() || $this->ordersFor($this->seller($request))
             ->whereKey($order->id)->where('status', $expected)
-            ->where('payment_method', 'cod')->update(['status' => $next]) !== 1) {
+            ->paymentEligible()->update(['status' => $next]) !== 1) {
             return redirect()->route('seller.orders.show', $order)
                 ->withErrors(['status' => 'This Order cannot move from its current persisted state. Refresh and review it.']);
         }

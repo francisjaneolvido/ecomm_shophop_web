@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\BuyerRegistrationController;
 use App\Http\Controllers\Auth\SellerRegistrationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\BuyerEmailVerificationController;
+use App\Http\Controllers\PaymentReceiptController;
 
 
 /*
@@ -105,3 +106,7 @@ Route::post('/buyer/verify-email/resend', [
 ])
     ->middleware('throttle:6,1')
     ->name('buyer.verify-email.resend');
+
+// Private receipts require a web identity and a second record-level Buyer/Admin check.
+Route::get('/payment-receipts/{payment}', [PaymentReceiptController::class, 'show'])
+    ->middleware('auth')->name('payments.receipt');

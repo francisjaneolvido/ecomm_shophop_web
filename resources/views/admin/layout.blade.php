@@ -276,6 +276,13 @@
                     'pattern' => 'admin.registrations*',
                     'icon' => 'user-round-plus',
                 ],
+                // Manual payment evidence has its own Admin review queue and decision contract.
+                [
+                    'label' => 'Payment Review',
+                    'route' => 'admin.payments.index',
+                    'pattern' => 'admin.payments*',
+                    'icon' => 'wallet',
+                ],
                 [
                     'label' => 'User Accounts',
                     'route' => 'admin.users',

@@ -21,7 +21,8 @@
         @endforeach
     </ul>
     <div class="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-gray-border pt-3 text-sm">
-        <span class="text-navy/60">{{ ucfirst($order->shipping_method ?? 'Shipping unavailable') }} · {{ $order->payment_method === 'cod' ? 'Cash on Delivery' : 'Payment verification unavailable' }}</span>
+        {{-- Seller cards distinguish Admin-verified cashless from unresolved payment work. --}}
+        <span class="text-navy/60">{{ ucfirst($order->shipping_method ?? 'Shipping unavailable') }} · {{ $order->payment_method === 'cod' ? 'Cash on Delivery' : ($order->isPaymentEligible() ? 'Verified by ShopHop Admin' : $order->statusLabel()) }}</span>
         <strong class="text-navy">Order total ₱{{ number_format((float) $order->total_amount, 2) }}</strong>
     </div>
     <a href="{{ route('seller.orders.show', $order) }}" class="mt-4 inline-block text-sm font-semibold text-teal-dark hover:underline">View Order details</a>
