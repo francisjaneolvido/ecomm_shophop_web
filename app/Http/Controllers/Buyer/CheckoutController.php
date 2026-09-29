@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Buyer\Order\ManualCashlessPayment;
 use App\Models\Seller;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductVariant;
@@ -100,13 +101,13 @@ class CheckoutController extends Controller
     {
         $buyer = Auth::user()->buyer;
 
-        // COD is the only supported payment contract; an uploaded reference cannot verify GCash.
+        // Online placement creates an unverified group payment; proof and Admin review happen afterward.
         $data = $request->validate([
             'items'                     => 'required|array|min:1',
             'items.*.quantity'          => 'required|integer|min:1',
             'shipping_method'           => 'required|array',
             'shipping_method.*'         => 'required|in:standard,express',
-            'payment_method'            => 'required|in:cod',
+            'payment_method'            => 'required|in:cod,online',
             'voucher_code'              => 'nullable|string',
             'groups'                    => 'nullable|array',
             'groups.*.note'             => 'nullable|string|max:500',
@@ -119,7 +120,7 @@ class CheckoutController extends Controller
         }
 
         // Lock selected lines and canonical inventory in one transaction so totals, stock, orders, and cart removal agree.
-        DB::transaction(function () use ($buyer, $data) {
+        $paymentId = DB::transaction(function () use ($buyer, $data) {
             $cartItemIds = array_keys($data['items']);
             $cartItems = CartItem::where('buyer_id', $buyer->id)
                 ->whereIn('id', $cartItemIds)
@@ -186,7 +187,8 @@ class CheckoutController extends Controller
                 $merchandiseSubtotal = $items->sum(fn ($item) => $item->unitPrice() * $item->quantity);
                 $shippingFee = self::STANDARD_SHIPPING_FEE
                     + ($shippingMethod === 'express' ? self::EXPRESS_SHIPPING_SURCHARGE : 0);
-                $codFee = self::COD_FEE;
+                // Cashless delivery keeps normal shipping but has no COD handling fee.
+                $codFee = $data['payment_method'] === 'cod' ? self::COD_FEE : 0;
 
                 $voucherDiscount = 0;
                 $appliedVoucherId = null;
@@ -220,7 +222,7 @@ class CheckoutController extends Controller
                     'total_amount'      => max(0, $totalAmount),
                     'shipping_method'   => $shippingMethod,
                     'shipping_fee'      => $shippingFee,
-                    'payment_method'    => 'cod',
+                    'payment_method'    => $data['payment_method'],
                     'cod_fee'           => $codFee,
                     'voucher_id'        => $appliedVoucherId,
                     'voucher_discount'  => $voucherDiscount,
@@ -266,7 +268,27 @@ class CheckoutController extends Controller
             CartItem::where('buyer_id', $buyer->id)
                 ->whereIn('id', $cartItemIds)
                 ->delete();
+
+            // The payment and every commerce mutation commit once in this existing Checkout transaction.
+            if ($data['payment_method'] === 'online') {
+                $payment = ManualCashlessPayment::create([
+                    'buyer_id' => $buyer->id, 'checkout_group_id' => $checkoutGroupId,
+                    // The persisted deadline starts when this one group payment is created.
+                    'status' => ManualCashlessPayment::AWAITING_PROOF,
+                    'expires_at' => now()->addDay(),
+                ]);
+                // Link exactly the Orders this checkout just placed; group UUID remains correlation only.
+                Order::where('buyer_id', $buyer->id)->where('checkout_group_id', $checkoutGroupId)
+                    ->update(['manual_cashless_payment_id' => $payment->id]);
+                return $payment->id;
+            }
+            return null;
         });
+
+        if ($paymentId) {
+            return redirect()->route('buyer.payments.show', $paymentId)
+                ->with('status', 'Orders placed. Submit your payment reference and receipt for Admin review.');
+        }
 
         return redirect()
             ->route('buyer.orders')

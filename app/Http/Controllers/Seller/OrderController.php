@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
+use App\Models\Buyer\Order\ManualCashlessPayment;
 use App\Models\Seller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -35,7 +37,8 @@ class OrderController extends Controller
     {
         // The preparation queue contains only new and in-progress Seller-owned Orders.
         $orders = $this->ordersFor($this->seller($request))
-            ->whereIn('status', [Order::STATUS_TO_SHIP, Order::STATUS_PREPARING])
+            // Only payment-eligible Orders are actionable in the preparation queue.
+            ->paymentEligible()->whereIn('status', [Order::STATUS_TO_SHIP, Order::STATUS_PREPARING])
             ->with(['buyer', 'items.product', 'items.variant'])
             ->latest()->get();
 
@@ -46,7 +49,7 @@ class OrderController extends Controller
     {
         // Ready means Seller preparation ended; assignment, pickup, and tracking require Logistics state.
         $orders = $this->ordersFor($this->seller($request))
-            ->where('status', Order::STATUS_READY_FOR_PICKUP)
+            ->paymentEligible()->where('status', Order::STATUS_READY_FOR_PICKUP)
             ->with(['buyer', 'items.product', 'items.variant'])
             ->latest()->get();
 
@@ -64,7 +67,8 @@ class OrderController extends Controller
     {
         // Only fulfillment indicators backed by this Seller's persisted Orders replace dashboard defaults.
         $orders = $this->ordersFor($this->seller($request));
-        $counts = (clone $orders)->selectRaw('status, COUNT(*) as total')
+        // Actionable counters exclude unresolved cashless payment; monthly placed Orders still count all.
+        $counts = (clone $orders)->paymentEligible()->selectRaw('status, COUNT(*) as total')
             ->groupBy('status')->pluck('total', 'status');
         // The existing monthly Order count also has a direct Seller-owned persisted source.
         $monthlyOrderCount = (clone $orders)->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->count();
@@ -103,19 +107,27 @@ class OrderController extends Controller
 
     private function transition(Request $request, int $orderId, string $expected, string $next): RedirectResponse
     {
-        $order = $this->ownedOrder($request, $orderId);
+        return DB::transaction(function () use ($request, $orderId, $expected, $next) {
+            $order = $this->ownedOrder($request, $orderId);
+            // Online Seller release takes the payment lock before the Order lock, matching closure and review.
+            if ($order->payment_method === 'online' && $order->manual_cashless_payment_id) {
+                ManualCashlessPayment::whereKey($order->manual_cashless_payment_id)->lockForUpdate()->first();
+            }
+            $order = $this->ordersFor($this->seller($request))->whereKey($orderId)
+                ->lockForUpdate()->firstOrFail();
 
-        // GCash lacks verified payment, and a guarded update rejects repeats, skips, and stale competing requests.
-        if ($order->payment_method !== 'cod' || $this->ordersFor($this->seller($request))
-            ->whereKey($order->id)->where('status', $expected)
-            ->where('payment_method', 'cod')->update(['status' => $next]) !== 1) {
+            // A cancelled group or stale Order can never resume fulfillment after the locked recheck.
+            if (! $order->isPaymentEligible() || $this->ordersFor($this->seller($request))
+                ->whereKey($order->id)->where('status', $expected)
+                ->paymentEligible()->update(['status' => $next]) !== 1) {
+                return redirect()->route('seller.orders.show', $order)
+                    ->withErrors(['status' => 'This Order cannot move from its current persisted state. Refresh and review it.']);
+            }
+
+            // Checkout already deducted Product and Variant stock and recorded prices, totals, vouchers, and Cart state.
             return redirect()->route('seller.orders.show', $order)
-                ->withErrors(['status' => 'This Order cannot move from its current persisted state. Refresh and review it.']);
-        }
-
-        // Checkout already deducted Product and Variant stock and recorded prices, totals, vouchers, and Cart state.
-        return redirect()->route('seller.orders.show', $order)
-            ->with('status', 'Order status updated.');
+                ->with('status', 'Order status updated.');
+        });
     }
 
     private function ownedOrder(Request $request, int $orderId): Order

@@ -41,6 +41,8 @@ class BuyerRealCommerceJourneyTest extends TestCase
             '2026_09_24_000001_create_logistics_operations_tables.php',
             // Buyer Orders may load COD collection while older delivered Orders have no record.
             '2026_09_26_000001_create_cod_settlements_table.php',
+            // Buyer Order cards now combine Seller fulfillment with a group-level Online Payment state.
+            '2026_09_28_000001_create_manual_cashless_payments_table.php',
         ] as $path) {
             (require database_path('migrations/' . $path))->up();
         }
@@ -403,16 +405,16 @@ class BuyerRealCommerceJourneyTest extends TestCase
             ->assertDontSee('Buy Again');
     }
 
-    public function test_gcash_has_no_verified_provider_and_cannot_place_an_order(): void
+    public function test_historical_gcash_input_is_rejected_while_generic_online_payment_is_available(): void
     {
         $buyer = $this->buyer();
         $seller = $this->seller('seller-nine@example.test');
-        $product = $this->product($seller, 'COD Only', '100.00', 5);
+        $product = $this->product($seller, 'Checkout Product', '100.00', 5);
         $line = $this->cartLine($buyer, $product, 1);
 
-        // A client supplied reference or image cannot prove payment without a provider or review contract.
+        // Generic Online Payment has manual Admin review; historical GCash input remains unsupported.
         $this->actingAs($buyer->user)->get(route('buyer.cart.checkout'))
-            ->assertOk()->assertSee('GCash (unavailable)')->assertDontSee('0917 123 4567');
+            ->assertOk()->assertSee('Online Payment')->assertDontSee('0917 123 4567');
         $this->post(route('buyer.checkout.place'), [
             'items' => [$line->id => ['quantity' => 1]],
             'shipping_method' => [$seller->id => 'standard'],

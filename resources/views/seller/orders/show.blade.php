@@ -39,8 +39,10 @@
             <div><dt class="text-navy/50">Shipping</dt><dd class="font-semibold text-navy">{{ ucfirst($order->shipping_method ?? 'Unavailable') }}</dd></div>
             {{-- Seller sees recorded COD custody only; Logistics receipt does not mean Seller payout. --}}
             <div><dt class="text-navy/50">Payment</dt><dd class="font-semibold text-navy">
-                @if ($order->payment_method !== 'cod')
-                    Payment verification unavailable
+                @if ($order->payment_method === 'online' && $order->isPaymentEligible())
+                    Online Payment · Verified by ShopHop Admin
+                @elseif ($order->payment_method !== 'cod')
+                    {{ $order->statusLabel() }}
                 @elseif ($cash = $order->codSettlement)
                     COD collected · ₱{{ number_format((float) $cash->collected_amount, 2) }} at {{ $cash->collected_at->format('M j, Y g:i A') }}
                     @if ($cash->status === \App\Models\Logistics\CodSettlement::RECONCILED) · Logistics receipt confirmed @endif
@@ -72,15 +74,15 @@
             <div class="flex justify-between border-t border-gray-border pt-3 font-bold text-navy"><dt>Recorded Order total</dt><dd>₱{{ number_format((float) $order->total_amount, 2) }}</dd></div>
         </dl>
 
-        {{-- Only COD Orders can use the two Seller-owned transitions; forms use server status and CSRF protection. --}}
+        {{-- Only payment-eligible Orders can use Seller transitions; the server repeats this check. --}}
         <div class="mt-7 border-t border-gray-border pt-5">
-            @if ($order->payment_method === 'cod' && $order->status === \App\Models\Buyer\Order\Order::STATUS_TO_SHIP)
+            @if ($order->isPaymentEligible() && $order->status === \App\Models\Buyer\Order\Order::STATUS_TO_SHIP)
                 <form method="POST" action="{{ route('seller.orders.start-preparation', $order) }}">
                     @csrf
                     @method('PATCH')
                     <button class="rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark">Start Preparation</button>
                 </form>
-            @elseif ($order->payment_method === 'cod' && $order->status === \App\Models\Buyer\Order\Order::STATUS_PREPARING)
+            @elseif ($order->isPaymentEligible() && $order->status === \App\Models\Buyer\Order\Order::STATUS_PREPARING)
                 <form method="POST" action="{{ route('seller.orders.mark-ready', $order) }}">
                     @csrf
                     @method('PATCH')

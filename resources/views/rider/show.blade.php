@@ -16,6 +16,10 @@
             <p>Legacy delivery: cash collection was not recorded.</p>
         @endif
         <a class="text-teal underline" href="{{ route('rider.settlements.index') }}">COD settlements</a>
+    @elseif ($delivery->order?->isPaymentEligible())
+        {{-- The Rider sees Admin verification but has no payment review or cash custody action. --}}
+        <p class="mt-3 font-semibold">Payment: Verified by ShopHop Admin</p>
+        <p>Amount to Collect: ₱0.00</p>
     @endif
     {{-- Recipient contact comes from the assigned Order snapshot and is needed for this delivery only. --}}
     <dl class="mt-5 space-y-2"><div><dt class="font-semibold">Recipient</dt><dd>{{ $delivery->order?->delivery_name ?: 'Unavailable' }}</dd></div>
@@ -33,13 +37,18 @@
         <form method="POST" action="{{ route('rider.deliveries.transit', $delivery) }}" class="mt-5">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Mark in transit</button></form>
     @elseif ($delivery->status === 'in_transit')
 
-        @if ($delivery->order?->payment_method === 'cod')
+        @if ($delivery->order?->isPaymentEligible())
         {{-- Delivery completion requires one private photo tied to the authenticated Rider event. --}}
         <form method="POST" enctype="multipart/form-data" action="{{ route('rider.deliveries.complete', $delivery) }}" class="mt-5 space-y-3">@csrf
             <label for="proof" class="block">Delivery photo</label><input id="proof" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required>
+            @if ($delivery->order->payment_method === 'cod')
             {{-- The explicit Rider declaration is required; delivery photo alone never records payment. --}}
             <label class="flex items-center gap-2"><input name="cash_collected" type="checkbox" value="1" required> I collected ₱{{ number_format((float) $delivery->order->total_amount, 2) }} in COD cash.</label>
             <button class="block rounded bg-navy px-5 py-2 text-white">Complete delivery and record COD collection</button>
+            @else
+            {{-- Verified cashless completion records proof and zero collection, without a COD settlement. --}}
+            <button class="block rounded bg-navy px-5 py-2 text-white">Complete delivery</button>
+            @endif
         </form>
         @else
             {{-- A forged historical non-COD Delivery cannot enter the COD completion form. --}}
