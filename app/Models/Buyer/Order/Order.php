@@ -129,6 +129,10 @@ class Order extends Model
 
     public function statusLabel(): string
     {
+        // A closed Online group has a real terminal Order status, even though it is never payment eligible.
+        if ($this->status === self::STATUS_CANCELLED) {
+            return 'Cancelled';
+        }
         // An unverified Online Order remains placed, but Buyer and Seller must see payment state first.
         if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
             return match ($this->manualCashlessPayment?->status) {
@@ -153,6 +157,11 @@ class Order extends Model
 
     public function statusNote(): string
     {
+        // The payment preserves the closure reason while the Order stops showing proof instructions.
+        if ($this->status === self::STATUS_CANCELLED) {
+            return $this->manualCashlessPayment?->status === ManualCashlessPayment::EXPIRED
+                ? 'The payment deadline passed and this order expired.' : 'This order was cancelled.';
+        }
         // Seller fulfillment messaging cannot conceal an unresolved Buyer payment review.
         if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
             return 'Submit or correct payment proof for ShopHop Admin review.';
@@ -184,15 +193,16 @@ class Order extends Model
      */
     public function progressSteps(): array
     {
-        // The payment step is incomplete until the one group decision is verified.
-        if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
-            return [['label' => 'Order Placed', 'done' => true], ['label' => 'Payment', 'done' => false]];
-        }
+        // Terminal cancellation wins over unresolved payment progress.
         if ($this->status === self::STATUS_CANCELLED) {
             return [
                 ['label' => 'Order Placed', 'done' => true],
                 ['label' => 'Cancelled', 'done' => true],
             ];
+        }
+        // The payment step is incomplete until the one group decision is verified.
+        if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
+            return [['label' => 'Order Placed', 'done' => true], ['label' => 'Payment', 'done' => false]];
         }
 
         $order = [
@@ -235,6 +245,10 @@ class Order extends Model
 
     public function buyerStatusGroup(): string
     {
+        // Closed groups move to Cancelled instead of remaining actionable in To Pay.
+        if ($this->status === self::STATUS_CANCELLED) {
+            return self::STATUS_CANCELLED;
+        }
         // Buyer tabs keep unresolved Online Orders in To Pay despite their placed Order status.
         if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
             return self::STATUS_TO_PAY;

@@ -397,6 +397,348 @@ class ManualCashlessPaymentJourneyTest extends TestCase
         $this->assertSame(1, Order::count());
     }
 
+    public function test_buyer_cancellation_restores_mixed_seller_inventory_and_one_voucher_use_without_recreating_cart(): void
+    {
+        // The persisted OrderItems and one discounted Order own restoration for the entire linked checkout group.
+        $buyer = $this->buyer();
+        $first = $this->seller('close-first@example.test');
+        $second = $this->seller('close-second@example.test');
+        $product = $this->product($first, 'Closing variant', '100.00');
+        $product->update(['has_variants' => true]);
+        $variant = ProductVariant::create(['product_id' => $product->id, 'name' => 'Large',
+            'price' => '120.00', 'stock' => 5, 'status' => 'active']);
+        $otherProduct = $this->product($second, 'Closing standard', '200.00');
+        $voucher = Voucher::create(['seller_id' => $first->user_id, 'name' => 'CLOSE20',
+            'code' => 'CLOSE20', 'type' => 'percent', 'value' => '20.00',
+            'min_order_amount' => '0', 'usage_limit' => 2, 'used_count' => 0, 'status' => 'active']);
+        $voucher->products()->attach($product);
+        $firstLine = CartItem::create(['buyer_id' => $buyer->id, 'product_id' => $product->id,
+            'product_variant_id' => $variant->id, 'quantity' => 1]);
+        $secondLine = $this->line($buyer, $otherProduct);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$firstLine->id => ['quantity' => 2], $secondLine->id => ['quantity' => 1]],
+            'shipping_method' => [$first->id => 'standard', $second->id => 'standard'],
+            'payment_method' => 'online', 'voucher_code' => 'CLOSE20',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $orders = Order::orderBy('id')->get();
+        $this->assertCount(2, $orders);
+        $this->assertSame(3, $product->fresh()->stock);
+        $this->assertSame(3, $variant->fresh()->stock);
+        $this->assertSame(4, $otherProduct->fresh()->stock);
+        $this->assertSame(1, $voucher->fresh()->used_count);
+        $this->assertSame(0, CartItem::count());
+        $buyerOrders = $this->get(route('buyer.orders'))->assertOk()->assertSee('Awaiting Payment Proof');
+        $this->assertSame(2, $buyerOrders->viewData('orderCounts')['to-pay']);
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertRedirect();
+        $this->assertDatabaseHas('manual_cashless_payments', ['id' => $payment->id,
+            'status' => 'cancelled', 'closed_by_user_id' => $buyer->user_id]);
+        $this->assertNotNull(DB::table('manual_cashless_payments')->find($payment->id)->closed_at);
+        $this->assertSame(['cancelled', 'cancelled'], $orders->map(fn ($order) => $order->fresh()->status)->all());
+        $this->assertSame(5, $product->fresh()->stock);
+        $this->assertSame(5, $variant->fresh()->stock);
+        $this->assertSame(5, $otherProduct->fresh()->stock);
+        $this->assertSame(0, $voucher->fresh()->used_count);
+        $this->assertSame(0, CartItem::count());
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertSessionHasErrors('payment');
+        $this->assertSame(5, $product->fresh()->stock);
+        $this->assertSame(0, $voucher->fresh()->used_count);
+        $this->get(route('buyer.payments.show', $payment->id))->assertOk()
+            ->assertSee(' · Cancelled</span>', false)
+            ->assertDontSee('Submit for Admin review')->assertDontSee('Cancel Order');
+        $buyerOrders = $this->get(route('buyer.orders'))->assertOk()->assertSee('Cancelled');
+        $this->assertSame(0, $buyerOrders->viewData('orderCounts')['to-pay']);
+        $this->assertSame(2, $buyerOrders->viewData('orderCounts')['cancelled']);
+        $this->assertSame('cancelled', $orders[0]->fresh()->buyerStatusGroup());
+    }
+
+    public function test_admin_can_cancel_pending_review_with_reason_and_terminal_payment_rejects_stale_actions(): void
+    {
+        // Review and closure compete for one locked payment; a stale review page cannot revive the group.
+        Storage::fake('local');
+        $buyer = $this->buyer();
+        $other = $this->buyer('close-other@example.test');
+        $seller = $this->seller('close-seller@example.test');
+        $product = $this->product($seller, 'Closing item', '100.00');
+        $line = $this->line($buyer, $product);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $order = Order::sole();
+        $this->actingAs($other->user)->post(route('buyer.payments.cancel', $payment->id))->assertNotFound();
+        $this->actingAs($buyer->user)->post(route('buyer.payments.submit', $payment->id), [
+            'reference' => 'CLOSE-1', 'receipt' => UploadedFile::fake()->create('proof.png', 2, 'image/png'),
+        ])->assertRedirect();
+        $receipt = DB::table('manual_cashless_payments')->find($payment->id)->receipt_path;
+        $admin = $this->user('close-admin@example.test', 'admin');
+        $this->actingAs($admin)->post(route('admin.payments.cancel', $payment->id), [])->assertSessionHasErrors('reason');
+        $this->post(route('admin.payments.cancel', $payment->id), ['reason' => 'Buyer requested closure'])
+            ->assertRedirect();
+        $this->assertDatabaseHas('manual_cashless_payments', ['id' => $payment->id, 'status' => 'cancelled',
+            'closed_by_user_id' => $admin->id, 'closure_reason' => 'Buyer requested closure']);
+        Storage::disk('local')->assertExists($receipt);
+        $this->post(route('admin.payments.verify', $payment->id))->assertSessionHasErrors('payment');
+        $this->post(route('admin.payments.reject', $payment->id), ['reason' => 'Stale'])->assertSessionHasErrors('payment');
+        $this->get(route('admin.payments.index'))->assertOk()->assertDontSee('CLOSE-1');
+        $this->actingAs($buyer->user)->post(route('buyer.payments.submit', $payment->id), [
+            'reference' => 'CLOSE-2', 'receipt' => UploadedFile::fake()->create('proof.png', 2, 'image/png'),
+        ])->assertSessionHasErrors('payment');
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertSessionHasErrors('payment');
+        $this->actingAs($seller->user)->patch(route('seller.orders.start-preparation', $order))
+            ->assertSessionHasErrors('status');
+        $this->assertSame(5, $product->fresh()->stock);
+    }
+
+    public function test_due_expiry_is_repeatable_and_pending_review_waits_for_a_new_rejection_deadline(): void
+    {
+        // The command reads a persisted deadline and never closes proof already under Admin review.
+        Storage::fake('local');
+        $buyer = $this->buyer();
+        $seller = $this->seller('expiry-seller@example.test');
+        $product = $this->product($seller, 'Expiring item', '100.00');
+        $line = $this->line($buyer, $product);
+        $placedAt = now();
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $this->assertNotNull($payment->expires_at);
+        $this->assertSame($placedAt->copy()->addDay()->format('Y-m-d H:i'),
+            \Carbon\Carbon::parse($payment->expires_at)->format('Y-m-d H:i'));
+        $this->travel(25)->hours();
+        $this->artisan('payments:expire')->assertSuccessful();
+        $this->assertDatabaseHas('manual_cashless_payments', ['id' => $payment->id, 'status' => 'expired',
+            'closed_by_user_id' => null]);
+        $this->assertSame('cancelled', Order::sole()->status);
+        $this->assertSame(5, $product->fresh()->stock);
+        $this->artisan('payments:expire')->assertSuccessful();
+        $this->assertSame(5, $product->fresh()->stock);
+        $this->actingAs($buyer->user)->get(route('buyer.payments.show', $payment->id))
+            ->assertOk()->assertSee('Expired')->assertDontSee('Submit for Admin review');
+        $this->post(route('buyer.payments.submit', $payment->id), [
+            'reference' => 'TOO-LATE', 'receipt' => UploadedFile::fake()->create('proof.png', 2, 'image/png'),
+        ])->assertSessionHasErrors('payment');
+        $admin = $this->user('expired-admin@example.test', 'admin');
+        $this->actingAs($admin)->post(route('admin.payments.verify', $payment->id))
+            ->assertSessionHasErrors('payment');
+    }
+
+    public function test_pending_review_pauses_expiry_and_rejection_starts_fresh_window_that_can_expire(): void
+    {
+        // Admin review pauses the clock; rejection persists a new full Buyer resubmission window.
+        Storage::fake('local');
+        $buyer = $this->buyer();
+        $seller = $this->seller('reject-expiry@example.test');
+        $product = $this->product($seller, 'Review window item', '100.00');
+        $line = $this->line($buyer, $product);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $this->post(route('buyer.payments.submit', $payment->id), [
+            'reference' => 'WINDOW-1', 'receipt' => UploadedFile::fake()->create('proof.png', 2, 'image/png'),
+        ])->assertRedirect();
+        $this->assertNull(DB::table('manual_cashless_payments')->find($payment->id)->expires_at);
+        $this->travel(3)->days();
+        $this->artisan('payments:expire')->assertSuccessful();
+        $this->assertDatabaseHas('manual_cashless_payments', ['id' => $payment->id, 'status' => 'pending_review']);
+        $admin = $this->user('window-admin@example.test', 'admin');
+        $rejectedAt = now();
+        $this->actingAs($admin)->post(route('admin.payments.reject', $payment->id), ['reason' => 'Unreadable'])
+            ->assertRedirect();
+        $rejected = DB::table('manual_cashless_payments')->find($payment->id);
+        $this->assertSame('rejected', $rejected->status);
+        $this->assertSame($rejectedAt->copy()->addDay()->format('Y-m-d H:i'),
+            \Carbon\Carbon::parse($rejected->expires_at)->format('Y-m-d H:i'));
+        $this->artisan('payments:expire')->assertSuccessful();
+        $this->assertSame('rejected', DB::table('manual_cashless_payments')->find($payment->id)->status);
+        $this->travel(25)->hours();
+        $this->artisan('payments:expire')->assertSuccessful();
+        $this->assertDatabaseHas('manual_cashless_payments', ['id' => $payment->id, 'status' => 'expired']);
+        $this->assertSame(5, $product->fresh()->stock);
+    }
+
+    public function test_rejected_payment_can_be_cancelled_but_verified_payment_cannot_close(): void
+    {
+        // Rejection keeps checkout open; verification ends all closure authority.
+        Storage::fake('local');
+        $buyer = $this->buyer();
+        $seller = $this->seller('terminal-seller@example.test');
+        $product = $this->product($seller, 'Terminal item', '100.00');
+        $line = $this->line($buyer, $product);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $this->post(route('buyer.payments.submit', $payment->id), [
+            'reference' => 'TERMINAL-1', 'receipt' => UploadedFile::fake()->create('proof.png', 2, 'image/png'),
+        ])->assertRedirect();
+        $admin = $this->user('terminal-admin@example.test', 'admin');
+        $this->actingAs($admin)->post(route('admin.payments.reject', $payment->id), ['reason' => 'Wrong image'])
+            ->assertRedirect();
+        $this->actingAs($buyer->user)->post(route('buyer.payments.cancel', $payment->id))->assertRedirect();
+        $this->assertSame('cancelled', DB::table('manual_cashless_payments')->find($payment->id)->status);
+        $this->assertSame(5, $product->fresh()->stock);
+
+        $newLine = $this->line($buyer, $product);
+        $this->post(route('buyer.checkout.place'), [
+            'items' => [$newLine->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+        ])->assertRedirect();
+        $newPayment = DB::table('manual_cashless_payments')->orderByDesc('id')->first();
+        $this->post(route('buyer.payments.submit', $newPayment->id), [
+            'reference' => 'TERMINAL-2', 'receipt' => UploadedFile::fake()->create('proof.png', 2, 'image/png'),
+        ])->assertRedirect();
+        $this->actingAs($admin)->post(route('admin.payments.verify', $newPayment->id))->assertRedirect();
+        $this->actingAs($buyer->user)->post(route('buyer.payments.cancel', $newPayment->id))
+            ->assertSessionHasErrors('payment');
+        $this->actingAs($admin)->post(route('admin.payments.cancel', $newPayment->id), ['reason' => 'Too late'])
+            ->assertSessionHasErrors('payment');
+        DB::table('manual_cashless_payments')->where('id', $newPayment->id)->update(['expires_at' => now()->subMinute()]);
+        $this->artisan('payments:expire')->assertSuccessful();
+        $this->assertSame('verified', DB::table('manual_cashless_payments')->find($newPayment->id)->status);
+        $this->assertSame(4, $product->fresh()->stock);
+    }
+
+    public function test_closure_fails_closed_for_inconsistent_group_and_existing_delivery(): void
+    {
+        // A missing explicit link or any delivery blocks every stock, Voucher, and Order mutation.
+        $buyer = $this->buyer();
+        $seller = $this->seller('inconsistent-seller@example.test');
+        $product = $this->product($seller, 'Guarded closing item', '100.00');
+        $line = $this->line($buyer, $product);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $order = Order::sole();
+        $order->update(['manual_cashless_payment_id' => null]);
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertSessionHasErrors('payment');
+        $this->assertSame(4, $product->fresh()->stock);
+        $order->update(['manual_cashless_payment_id' => $payment->id]);
+        $operator = $this->user('close-operator@example.test', 'logistics');
+        $partnerId = $this->partner($operator);
+        $rider = Rider::create(['logistics_partner_id' => $partnerId, 'name' => 'Closure Rider',
+            'vehicle_type' => 'Motorcycle', 'status' => 'active', 'email' => 'closure-rider@example.test',
+            'password' => bcrypt('LongSecretPassword123!')]);
+        Delivery::create(['order_id' => $order->id, 'logistics_partner_id' => $partnerId,
+            'rider_id' => $rider->id, 'status' => 'assigned', 'assigned_at' => now()]);
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertSessionHasErrors('payment');
+        $this->assertSame('awaiting_proof', DB::table('manual_cashless_payments')->find($payment->id)->status);
+        $this->assertSame(Order::STATUS_TO_SHIP, $order->fresh()->status);
+        $this->assertSame(4, $product->fresh()->stock);
+        DB::table('manual_cashless_payments')->where('id', $payment->id)
+            ->update(['expires_at' => now()->subMinute()]);
+        $this->artisan('payments:expire')->assertFailed();
+        $this->assertSame('awaiting_proof', DB::table('manual_cashless_payments')->find($payment->id)->status);
+        $this->assertSame(4, $product->fresh()->stock);
+    }
+
+    public function test_buyer_can_cancel_pending_review_and_closed_payment_never_enables_forged_fulfillment(): void
+    {
+        // Even stale or forged downstream rows cannot turn a terminal payment into fulfillment authority.
+        Storage::fake('local');
+        $buyer = $this->buyer();
+        $seller = $this->seller('closed-guard@example.test');
+        $product = $this->product($seller, 'Closed guard item', '100.00');
+        $line = $this->line($buyer, $product);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $order = Order::sole();
+        $this->post(route('buyer.payments.submit', $payment->id), [
+            'reference' => 'CLOSED-GUARD', 'receipt' => UploadedFile::fake()->create('proof.png', 2, 'image/png'),
+        ])->assertRedirect();
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertRedirect();
+        $this->assertSame('cancelled', $order->fresh()->status);
+        $this->assertFalse($order->fresh()->isPaymentEligible());
+        $this->actingAs($seller->user)->get(route('seller.orders.prepare'))->assertOk()->assertDontSee('Closed guard item');
+        $this->patch(route('seller.orders.start-preparation', $order))->assertSessionHasErrors('status');
+        $operator = $this->user('closed-guard-operator@example.test', 'logistics');
+        $partnerId = $this->partner($operator);
+        $rider = Rider::create(['logistics_partner_id' => $partnerId, 'name' => 'Closed Guard Rider',
+            'vehicle_type' => 'Motorcycle', 'status' => 'active', 'email' => 'closed-guard-rider@example.test',
+            'password' => bcrypt('LongSecretPassword123!')]);
+        $order->update(['status' => Order::STATUS_READY_FOR_PICKUP]);
+        $this->actingAs($operator)->get(route('logistics.deliveries.board'))->assertOk()->assertDontSee('Closed guard item');
+        $this->post(route('logistics.deliveries.assign', $order), ['rider_id' => $rider->id])
+            ->assertSessionHasErrors('delivery');
+        $delivery = Delivery::create(['order_id' => $order->id, 'logistics_partner_id' => $partnerId,
+            'rider_id' => $rider->id, 'status' => 'assigned', 'assigned_at' => now()]);
+        $this->post(route('logout'));
+        $this->actingAs($rider, 'rider')->post(route('rider.deliveries.pickup', $delivery))
+            ->assertSessionHasErrors('delivery');
+        $this->assertSame('assigned', $delivery->fresh()->status);
+        $this->assertSame(5, $product->fresh()->stock);
+    }
+
+    public function test_missing_voucher_usage_blocks_closure_without_partial_stock_restoration(): void
+    {
+        // A consumed Voucher that cannot be decremented means the entire group remains unresolved.
+        $buyer = $this->buyer();
+        $seller = $this->seller('voucher-guard@example.test');
+        $product = $this->product($seller, 'Voucher guarded item', '100.00');
+        $voucher = Voucher::create(['seller_id' => $seller->user_id, 'name' => 'GUARD10',
+            'code' => 'GUARD10', 'type' => 'fixed', 'value' => '10.00',
+            'min_order_amount' => '0', 'usage_limit' => 2, 'used_count' => 0, 'status' => 'active']);
+        $voucher->products()->attach($product);
+        $line = $this->line($buyer, $product);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+            'voucher_code' => 'GUARD10',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $this->assertSame(1, $voucher->fresh()->used_count);
+        $this->assertSame($voucher->id, Order::sole()->voucher_id);
+        // Checkout incremented the database row; mutate that row to model inconsistent legacy usage.
+        DB::table('vouchers')->where('id', $voucher->id)->update(['used_count' => 0]);
+        $this->assertSame(0, $voucher->fresh()->used_count);
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertSessionHasErrors('payment');
+        $this->assertSame(4, $product->fresh()->stock);
+        $this->assertSame(0, $voucher->fresh()->used_count);
+        $this->assertSame(Order::STATUS_TO_SHIP, Order::sole()->status);
+        $this->assertSame('awaiting_proof', DB::table('manual_cashless_payments')->find($payment->id)->status);
+    }
+
+    public function test_foreign_seller_voucher_link_cannot_decrement_another_voucher(): void
+    {
+        // Voucher ID alone is insufficient if a stale or forged Order points at another Seller's usage.
+        $buyer = $this->buyer();
+        $seller = $this->seller('voucher-owner@example.test');
+        $otherSeller = $this->seller('voucher-foreign@example.test');
+        $product = $this->product($seller, 'Voucher owner item', '100.00');
+        $applied = Voucher::create(['seller_id' => $seller->user_id, 'name' => 'OWNER10',
+            'code' => 'OWNER10', 'type' => 'fixed', 'value' => '10.00',
+            'min_order_amount' => '0', 'usage_limit' => 2, 'used_count' => 0, 'status' => 'active']);
+        $applied->products()->attach($product);
+        $foreign = Voucher::create(['seller_id' => $otherSeller->user_id, 'name' => 'FOREIGN10',
+            'code' => 'FOREIGN10', 'type' => 'fixed', 'value' => '10.00',
+            'min_order_amount' => '0', 'usage_limit' => 2, 'used_count' => 1, 'status' => 'active']);
+        $line = $this->line($buyer, $product);
+        $this->actingAs($buyer->user)->post(route('buyer.checkout.place'), [
+            'items' => [$line->id => ['quantity' => 1]],
+            'shipping_method' => [$seller->id => 'standard'], 'payment_method' => 'online',
+            'voucher_code' => 'OWNER10',
+        ])->assertRedirect();
+        $payment = DB::table('manual_cashless_payments')->first();
+        $order = Order::sole();
+        $order->update(['voucher_id' => $foreign->id]);
+        $this->post(route('buyer.payments.cancel', $payment->id))->assertSessionHasErrors('payment');
+        $this->assertSame(4, $product->fresh()->stock);
+        $this->assertSame(1, $applied->fresh()->used_count);
+        $this->assertSame(1, $foreign->fresh()->used_count);
+        $this->assertSame(Order::STATUS_TO_SHIP, $order->fresh()->status);
+    }
+
     private function buyer(string $email = 'buyer@example.test'): Buyer
     {
         // Approved real profiles exercise the HTTP role boundary and the persisted delivery snapshot.

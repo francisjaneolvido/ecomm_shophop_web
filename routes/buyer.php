@@ -142,6 +142,8 @@ Route::prefix('buyer')
         // Payment IDs are scoped again to the authenticated Buyer in the controller.
         Route::get('/payments/{payment}', [ManualCashlessPaymentController::class, 'show'])->name('payments.show');
         Route::post('/payments/{payment}/submit', [ManualCashlessPaymentController::class, 'submit'])->name('payments.submit');
+        // Buyer cancellation closes the complete linked checkout group after ownership and state checks.
+        Route::post('/payments/{payment}/cancel', [ManualCashlessPaymentController::class, 'cancel'])->name('payments.cancel');
 
 
         /*

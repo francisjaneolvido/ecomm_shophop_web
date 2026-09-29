@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
+use App\Models\Buyer\Order\ManualCashlessPayment;
 use App\Models\Seller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class OrderController extends Controller
@@ -105,19 +107,27 @@ class OrderController extends Controller
 
     private function transition(Request $request, int $orderId, string $expected, string $next): RedirectResponse
     {
-        $order = $this->ownedOrder($request, $orderId);
+        return DB::transaction(function () use ($request, $orderId, $expected, $next) {
+            $order = $this->ownedOrder($request, $orderId);
+            // Online Seller release takes the payment lock before the Order lock, matching closure and review.
+            if ($order->payment_method === 'online' && $order->manual_cashless_payment_id) {
+                ManualCashlessPayment::whereKey($order->manual_cashless_payment_id)->lockForUpdate()->first();
+            }
+            $order = $this->ordersFor($this->seller($request))->whereKey($orderId)
+                ->lockForUpdate()->firstOrFail();
 
-        // One central payment rule gates both Seller steps; the conditional update rejects stale Order state.
-        if (! $order->isPaymentEligible() || $this->ordersFor($this->seller($request))
-            ->whereKey($order->id)->where('status', $expected)
-            ->paymentEligible()->update(['status' => $next]) !== 1) {
+            // A cancelled group or stale Order can never resume fulfillment after the locked recheck.
+            if (! $order->isPaymentEligible() || $this->ordersFor($this->seller($request))
+                ->whereKey($order->id)->where('status', $expected)
+                ->paymentEligible()->update(['status' => $next]) !== 1) {
+                return redirect()->route('seller.orders.show', $order)
+                    ->withErrors(['status' => 'This Order cannot move from its current persisted state. Refresh and review it.']);
+            }
+
+            // Checkout already deducted Product and Variant stock and recorded prices, totals, vouchers, and Cart state.
             return redirect()->route('seller.orders.show', $order)
-                ->withErrors(['status' => 'This Order cannot move from its current persisted state. Refresh and review it.']);
-        }
-
-        // Checkout already deducted Product and Variant stock and recorded prices, totals, vouchers, and Cart state.
-        return redirect()->route('seller.orders.show', $order)
-            ->with('status', 'Order status updated.');
+                ->with('status', 'Order status updated.');
+        });
     }
 
     private function ownedOrder(Request $request, int $orderId): Order

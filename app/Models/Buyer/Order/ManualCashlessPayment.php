@@ -14,12 +14,17 @@ class ManualCashlessPayment extends Model
     public const PENDING_REVIEW = 'pending_review';
     public const REJECTED = 'rejected';
     public const VERIFIED = 'verified';
+    // Closure terminates every explicitly linked Seller Order and cannot return to review.
+    public const CANCELLED = 'cancelled';
+    public const EXPIRED = 'expired';
 
     protected $fillable = ['buyer_id', 'checkout_group_id', 'status', 'reference',
         'normalized_reference', 'receipt_path', 'submitted_at', 'reviewer_user_id',
-        'decision', 'reviewed_at', 'rejection_reason'];
+        'decision', 'reviewed_at', 'rejection_reason', 'expires_at', 'closed_at',
+        'closed_by_user_id', 'closure_reason'];
 
-    protected $casts = ['submitted_at' => 'datetime', 'reviewed_at' => 'datetime'];
+    protected $casts = ['submitted_at' => 'datetime', 'reviewed_at' => 'datetime',
+        'expires_at' => 'datetime', 'closed_at' => 'datetime'];
 
     public function buyer(): BelongsTo
     {

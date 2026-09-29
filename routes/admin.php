@@ -30,6 +30,8 @@ Route::prefix('admin')
         Route::get('/payments/{payment}', [ManualCashlessPaymentReviewController::class, 'show'])->name('payments.show');
         Route::post('/payments/{payment}/verify', [ManualCashlessPaymentReviewController::class, 'verify'])->name('payments.verify');
         Route::post('/payments/{payment}/reject', [ManualCashlessPaymentReviewController::class, 'reject'])->name('payments.reject');
+        // Cancellation restores Checkout effects and is distinct from correctable proof rejection.
+        Route::post('/payments/{payment}/cancel', [ManualCashlessPaymentReviewController::class, 'cancel'])->name('payments.cancel');
 
         Route::get('/registration', [AdminRegistrationController::class, 'index'])
             ->name('registrations');

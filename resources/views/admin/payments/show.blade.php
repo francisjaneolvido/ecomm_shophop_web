@@ -19,6 +19,8 @@
     @if ($payment->receipt_path)<a class="mt-4 inline-block text-teal underline" href="{{ route('payments.receipt', $payment) }}">View private receipt</a>@endif
     @if ($payment->reviewed_at)<p class="mt-3">Decision: {{ $payment->decision }} by {{ $payment->reviewer?->email ?? 'Admin' }} at {{ $payment->reviewed_at->format('M j, Y g:i A') }}</p>@endif
     @if ($payment->status === 'rejected' && $payment->rejection_reason)<p class="mt-2">Reason: {{ $payment->rejection_reason }}</p>@endif
+    {{-- Closure records the human actor and reason separately from proof review. --}}
+    @if ($payment->closed_at)<p class="mt-2">Closed {{ $payment->closed_at->format('M j, Y g:i A') }}: {{ $payment->closure_reason }}</p>@endif
     @if (session('status'))<p role="status" class="mt-3 text-teal">{{ session('status') }}</p>@endif
     @if ($errors->any())<p role="alert" class="mt-3 text-red-700">{{ $errors->first() }}</p>@endif
     @if ($payment->status === 'pending_review')
@@ -26,7 +28,14 @@
         <form method="POST" action="{{ route('admin.payments.verify', $payment) }}" class="mt-6">@csrf<button class="rounded bg-teal px-5 py-2 text-white">Verify by ShopHop Admin</button></form>
         <form method="POST" action="{{ route('admin.payments.reject', $payment) }}" class="mt-4 space-y-2">@csrf
             <label class="block">Rejection reason<textarea name="reason" required maxlength="1000" class="mt-1 block w-full rounded border p-2"></textarea></label>
-            <button class="rounded bg-red-700 px-5 py-2 text-white">Reject proof</button>
+            <button class="rounded bg-red-700 px-5 py-2 text-white">Reject Proof</button>
+        </form>
+    @endif
+    @if (in_array($payment->status, ['awaiting_proof', 'pending_review', 'rejected'], true))
+        {{-- Admin cancellation terminates the group; rejection above leaves Buyer resubmission open. --}}
+        <form method="POST" action="{{ route('admin.payments.cancel', $payment) }}" class="mt-6 space-y-2">@csrf
+            <label class="block">Cancellation reason<textarea name="reason" required maxlength="1000" class="mt-1 block w-full rounded border p-2"></textarea></label>
+            <button class="rounded border border-red-700 px-5 py-2 text-red-700">Cancel Payment / Orders</button>
         </form>
     @endif
 </main>

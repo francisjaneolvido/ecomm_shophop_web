@@ -273,7 +273,9 @@ class CheckoutController extends Controller
             if ($data['payment_method'] === 'online') {
                 $payment = ManualCashlessPayment::create([
                     'buyer_id' => $buyer->id, 'checkout_group_id' => $checkoutGroupId,
+                    // The persisted deadline starts when this one group payment is created.
                     'status' => ManualCashlessPayment::AWAITING_PROOF,
+                    'expires_at' => now()->addDay(),
                 ]);
                 // Link exactly the Orders this checkout just placed; group UUID remains correlation only.
                 Order::where('buyer_id', $buyer->id)->where('checkout_group_id', $checkoutGroupId)

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\ManualCashlessPayment;
+use App\Services\CloseManualCashlessPayment;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,8 @@ class ManualCashlessPaymentController extends Controller
             DB::transaction(function () use ($request, $payment, $data, $normalized, &$newPath, &$oldPath) {
                 $owned = $this->owned($request, $payment, true);
                 // Verified and pending submissions are immutable; a rejected payment may correct its own proof.
-                if (! in_array($owned->status, [ManualCashlessPayment::AWAITING_PROOF, ManualCashlessPayment::REJECTED], true)) {
+                if (! in_array($owned->status, [ManualCashlessPayment::AWAITING_PROOF, ManualCashlessPayment::REJECTED], true)
+                    || ! $owned->expires_at || ! $owned->expires_at->isFuture()) {
                     throw ValidationException::withMessages(['payment' => 'This payment is no longer open for submission.']);
                 }
                 if (ManualCashlessPayment::where('normalized_reference', $normalized)
@@ -63,7 +65,8 @@ class ManualCashlessPaymentController extends Controller
                     'receipt_path' => $newPath, 'submitted_at' => now(),
                     'status' => ManualCashlessPayment::PENDING_REVIEW,
                     'reviewer_user_id' => null, 'decision' => null,
-                    'reviewed_at' => null, 'rejection_reason' => null,
+                    // Submitted proof pauses the deadline until Admin decides it.
+                    'reviewed_at' => null, 'rejection_reason' => null, 'expires_at' => null,
                 ]);
             });
         } catch (Throwable $exception) {
@@ -83,6 +86,16 @@ class ManualCashlessPaymentController extends Controller
         }
         return redirect()->route('buyer.payments.show', $payment)
             ->with('status', 'Payment proof submitted for ShopHop Admin review.');
+    }
+
+    public function cancel(Request $request, int $payment, CloseManualCashlessPayment $closure): RedirectResponse
+    {
+        // Ownership is checked before the service locks and revalidates the whole checkout group.
+        $this->owned($request, $payment);
+        $closure->close($payment, ManualCashlessPayment::CANCELLED, $request->user()->id, 'Cancelled by Buyer');
+
+        return redirect()->route('buyer.payments.show', $payment)
+            ->with('status', 'All Orders in this checkout group were cancelled.');
     }
 
     private function owned(Request $request, int $payment, bool $lock = false): ManualCashlessPayment

@@ -11,7 +11,8 @@
     <p class="mt-2">Expected amount: <strong>₱{{ number_format((float) $payment->expectedAmount(), 2) }}</strong></p>
     <ul class="mt-3 divide-y border-y">
         @foreach ($payment->orders as $order)
-            <li class="flex justify-between py-2"><span>Order #{{ $order->id }} · {{ $order->seller?->business_name ?? 'Shop' }}</span><span>₱{{ number_format((float) $order->total_amount, 2) }}</span></li>
+            {{-- Each Seller Order shows its persisted terminal state after group closure. --}}
+            <li class="flex justify-between py-2"><span>Order #{{ $order->id }} · {{ $order->seller?->business_name ?? 'Shop' }} · {{ $order->statusLabel() }}</span><span>₱{{ number_format((float) $order->total_amount, 2) }}</span></li>
         @endforeach
     </ul>
     {{-- ShopHop Admin reviews submitted evidence; no bank, wallet, or provider confirmation is claimed. --}}
@@ -20,10 +21,19 @@
         'pending_review' => 'Pending Payment Verification',
         'rejected' => 'Payment Rejected / Resubmission Required',
         'verified' => 'Verified by ShopHop Admin',
+        'cancelled' => 'Cancelled',
+        'expired' => 'Expired',
         default => 'Payment status unavailable',
     } }}</p>
     @if ($payment->status === 'rejected' && $payment->rejection_reason)
         <p class="mt-2 text-red-700">Reason: {{ $payment->rejection_reason }}</p>
+    @endif
+    {{-- The persisted deadline is paused during review and removed after a terminal decision. --}}
+    @if ($payment->expires_at && in_array($payment->status, ['awaiting_proof', 'rejected'], true))
+        <p class="mt-2 text-sm">Submit proof by {{ $payment->expires_at->format('M j, Y g:i A') }}.</p>
+    @endif
+    @if (in_array($payment->status, ['cancelled', 'expired'], true))
+        <p class="mt-2 text-sm">All Seller Orders in this checkout group are closed.</p>
     @endif
     @if (session('status')) <p role="status" class="mt-3 text-teal">{{ session('status') }}</p> @endif
     @if ($errors->any()) <p role="alert" class="mt-3 text-red-700">{{ $errors->first() }}</p> @endif
@@ -38,6 +48,13 @@
             <label class="block">Payment reference<input name="reference" value="{{ old('reference', $payment->reference) }}" maxlength="120" required class="mt-1 block w-full rounded border p-2"></label>
             <label class="block">Receipt image (JPEG, PNG, or WebP; up to 5 MiB)<input name="receipt" type="file" accept="image/jpeg,image/png,image/webp" required class="mt-1 block w-full"></label>
             <button class="rounded bg-teal px-5 py-2 text-white">Submit for Admin review</button>
+        </form>
+    @endif
+    @if (in_array($payment->status, ['awaiting_proof', 'pending_review', 'rejected'], true))
+        {{-- One confirmation closes every Seller Order in the checkout group and cannot be repeated. --}}
+        <form method="POST" action="{{ route('buyer.payments.cancel', $payment) }}" class="mt-6" onsubmit="return confirm('Cancel all Seller Orders in this checkout group? This cannot be undone.');">@csrf
+            <p class="mb-2 text-sm">Cancel Order closes all Seller Orders in this checkout group.</p>
+            <button class="rounded border border-red-700 px-5 py-2 text-red-700">Cancel Order</button>
         </form>
     @endif
 </div></main>
