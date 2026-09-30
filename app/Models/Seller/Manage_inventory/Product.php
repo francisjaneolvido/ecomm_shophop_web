@@ -27,6 +27,8 @@ class Product extends Model
         'has_variants',
         'status',
         'image',
+        // Submission and Admin review persist one lifecycle alongside independent inventory status.
+        'compliance_status', 'submitted_at', 'reviewed_at', 'reviewed_by', 'rejection_reason', 'rejection_notes',
     ];
 
     protected $casts = [
@@ -35,6 +37,8 @@ class Product extends Model
         'discount' => 'integer',
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',
+        // Review timestamps are dates while reviewer identity remains the canonical users.id.
+        'submitted_at' => 'datetime', 'reviewed_at' => 'datetime', 'reviewed_by' => 'integer',
     ];
 
     public function scopePubliclyDiscoverable(Builder $query): Builder
@@ -42,6 +46,7 @@ class Product extends Model
         // Buyer discovery and public Search must never drift into separate catalogues.
         return $query
             ->where('status', 'active')
+            ->where('compliance_status', 'approved')
             ->where('stock', '>', 0);
     }
 

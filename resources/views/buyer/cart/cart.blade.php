@@ -159,9 +159,10 @@
 
                             @foreach ($group['items'] as $item)
                                 @php
-                                    $isPreselected = $buyNowLineKey
+                                    // A persisted Cart line may lose approval; unavailable merchandise starts unselected.
+                                    $isPreselected = $item['stock'] > 0 && ($buyNowLineKey
                                         ? ((string) $item['line_key'] === (string) $buyNowLineKey)
-                                        : true;
+                                        : true);
 
                                     $discountPercent = $item['original_price']
                                         ? max(0, (int) round((1 - ($item['price'] / $item['original_price'])) * 100))
@@ -183,6 +184,8 @@
                                                class="item-checkbox w-3.5 h-3.5 rounded accent-teal mt-1 shrink-0"
                                                data-line-key="{{ $item['line_key'] }}"
                                                data-shop="{{ $groupIndex }}"
+                                               {{-- Hidden merchandise cannot be selected through ordinary Cart controls. --}}
+                                               @disabled($item['stock'] <= 0)
                                                {{ $isPreselected ? 'checked' : '' }}>
 
                                         <a href="#"
@@ -615,7 +618,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function currentItemCheckboxes() {
-        return document.querySelectorAll('.item-checkbox');
+        // Bulk selection must not reselect Cart merchandise whose approval or inventory became unavailable.
+        return document.querySelectorAll('.item-checkbox:not(:disabled)');
     }
 
 

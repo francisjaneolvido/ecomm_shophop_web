@@ -12,7 +12,8 @@ class ShowProductDetails_Controller extends Controller
      */
     public function show(Product $product)
     {
-        abort_if($product->status !== 'active', 404);
+        // Route binding can resolve hidden IDs; direct detail shares the public catalogue authority.
+        abort_unless(Product::publiclyDiscoverable()->whereKey($product->id)->exists(), 404);
 
         $product->load(['seller', 'images', 'variants', 'vouchers']);
 
@@ -107,7 +108,8 @@ class ShowProductDetails_Controller extends Controller
         // ---- Seller stats ----
         $seller = $product->seller;
         $sellerName = $seller?->business_name ?? 'ShopHop Seller';
-        $sellerProductsCount = $seller?->products()->count() ?? 0;
+        // Buyer-facing shop merchandise counts only items the Buyer can actually discover.
+        $sellerProductsCount = $seller?->products()->publiclyDiscoverable()->count() ?? 0;
         $sellerJoined = $seller?->created_at?->diffForHumans() ?? '—';
 
         $sellerRating = $seller
@@ -138,10 +140,9 @@ class ShowProductDetails_Controller extends Controller
             'seller_joined' => $sellerJoined,
         ];
 
-        // ---- Related products (same category, active, in stock) ----
+        // Recommendations use the same approval, archive, and stock gates as direct discovery.
         $relatedProducts = Product::query()
-            ->where('status', 'active')
-            ->where('stock', '>', 0)
+            ->publiclyDiscoverable()
             ->where('category', $product->category)
             ->where('id', '!=', $product->id)
             ->withAvg('reviews as avg_rating', 'rating')

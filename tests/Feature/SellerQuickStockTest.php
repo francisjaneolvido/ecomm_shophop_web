@@ -20,6 +20,8 @@ class SellerQuickStockTest extends TestCase
             '2026_08_31_000001_add_account_type_and_status_to_users_table.php',
             '0001_01_01_000003_create_products_table.php',
             'Seller/Manage_inventory/2025_01_15_000001_add_inventory_fields_to_products_table.php',
+            // Commerce fixtures include the current approval schema rather than a pre-compliance catalogue.
+            'Seller/Manage_inventory/2026_09_30_000001_add_product_compliance.php',
             'Seller/Manage_inventory/2025_01_15_000002_create_product_images_table.php',
             'Seller/Manage_inventory/2025_01_15_000003_create_product_variants_table.php',
             'Seller/Manage_inventory/2025_01_15_000004_create_vouchers_table.php',
@@ -214,6 +216,8 @@ class SellerQuickStockTest extends TestCase
     private function product(User $seller, string $name = 'Original Product'): Product
     {
         return Product::create([
+            // Existing happy-path fixtures explicitly represent approved merchandise.
+            'compliance_status' => 'approved',
             'seller_id' => $seller->id,
             'name' => $name,
             'sku' => $name === 'Original Product' ? 'ORIGINAL-001' : 'OTHER-001',

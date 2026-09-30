@@ -30,6 +30,8 @@ class BuyerRealCommerceJourneyTest extends TestCase
             '2026_08_29_000003_create_logistics_partners_table.php',
             '0001_01_01_000003_create_products_table.php',
             'Seller/Manage_inventory/2025_01_15_000001_add_inventory_fields_to_products_table.php',
+            // Commerce fixtures include the current approval schema rather than a pre-compliance catalogue.
+            'Seller/Manage_inventory/2026_09_30_000001_add_product_compliance.php',
             'Seller/Manage_inventory/2025_01_15_000003_create_product_variants_table.php',
             'Seller/Manage_inventory/2025_01_15_000004_create_vouchers_table.php',
             'Seller/Manage_inventory/2025_01_15_000005_create_voucher_product_table.php',
@@ -481,6 +483,8 @@ class BuyerRealCommerceJourneyTest extends TestCase
     {
         // Products and vouchers currently store the seller user ID, unlike orders.seller_id.
         return Product::create([
+            // Existing happy-path fixtures explicitly represent approved merchandise.
+            'compliance_status' => 'approved',
             'seller_id' => $seller->user_id, 'name' => $name, 'category' => 'Home',
             'price' => $price, 'discount' => $discount, 'stock' => $stock,
             'description' => 'Test product', 'status' => 'active',
