@@ -297,9 +297,9 @@ class CheckoutController extends Controller
 
     private function isAvailable(CartItem $item): bool
     {
-        // Product variant mode and the chosen variant must agree, remain active, related, priced, and stocked.
+        // Cart can outlive approval; GET and placement's locked Product recheck compliance before financial effects.
         $product = $item->product;
-        if (! $product || $product->status !== 'active' || ! $product->seller
+        if (! $product || $product->compliance_status !== 'approved' || $product->status !== 'active' || ! $product->seller
             || (int) $product->stock <= 0) {
             return false;
         }

@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
 use App\Http\Controllers\Admin\ManualCashlessPaymentReviewController;
+// Product review uses the same current Admin identity and middleware boundary as payment review.
+use App\Http\Controllers\Admin\ProductComplianceController;
 // use App\Http\Controllers\Admin\CommissionController;
 
 
@@ -24,6 +26,12 @@ Route::prefix('admin')
 
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
+
+        // Compliance reads and mutations require an authenticated approved Admin, never a route prefix alone.
+        Route::get('/product-compliance', [ProductComplianceController::class, 'index'])->name('product-compliance.index');
+        Route::get('/product-compliance/{product}', [ProductComplianceController::class, 'show'])->name('product-compliance.show');
+        Route::patch('/product-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])->name('product-compliance.approve');
+        Route::patch('/product-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])->name('product-compliance.reject');
 
         // Cashless proof decisions have their own Admin queue and locked group review.
         Route::get('/payments', [ManualCashlessPaymentReviewController::class, 'index'])->name('payments.index');

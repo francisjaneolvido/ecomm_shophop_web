@@ -283,6 +283,13 @@
                     'pattern' => 'admin.payments*',
                     'icon' => 'wallet',
                 ],
+                // Merchandise review coexists with payment review inside the unchanged shared navigation renderer.
+                [
+                    'label' => 'Product Compliance',
+                    'route' => 'admin.product-compliance.index',
+                    'pattern' => 'admin.product-compliance*',
+                    'icon' => 'package-check',
+                ],
                 [
                     'label' => 'User Accounts',
                     'route' => 'admin.users',

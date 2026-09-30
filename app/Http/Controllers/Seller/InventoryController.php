@@ -113,6 +113,13 @@ class InventoryController extends Controller
             : (int) ($validated['stock'] ?? 0);
 
         $payload = [
+            // Full content submissions invalidate old review identity and rejection history, including approved edits.
+            'compliance_status' => 'pending_review',
+            'submitted_at' => now(),
+            'reviewed_at' => null,
+            'reviewed_by' => null,
+            'rejection_reason' => null,
+            'rejection_notes' => null,
             'seller_id' => Auth::id(),
             'name' => $validated['name'],
             'sku' => $validated['sku'] ?? null,
@@ -145,9 +152,10 @@ class InventoryController extends Controller
 
         return redirect()
             ->route('seller.inventory')
+            // Persistence succeeds before review; neither creation nor full edit promises Buyer visibility.
             ->with('status', $product->wasRecentlyCreated
-                ? 'Product added successfully.'
-                : 'Product updated successfully.');
+                ? 'Product added. Awaiting compliance review before Buyer visibility.'
+                : 'Product updated and resubmitted for compliance review.');
     }
 
     /**

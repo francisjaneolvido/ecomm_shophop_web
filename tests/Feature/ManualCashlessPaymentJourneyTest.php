@@ -778,7 +778,10 @@ class ManualCashlessPaymentJourneyTest extends TestCase
     private function product(Seller $seller, string $name, string $price): Product
     {
         // Canonical inventory and price are loaded by Checkout, never accepted from the browser.
-        return Product::create(['seller_id' => $seller->user_id, 'name' => $name,
+        return Product::create([
+            // Existing happy-path fixtures explicitly represent approved merchandise.
+            'compliance_status' => 'approved',
+            'seller_id' => $seller->user_id, 'name' => $name,
             'category' => 'Home', 'price' => $price, 'discount' => 0, 'stock' => 5,
             'description' => 'Test item', 'status' => 'active']);
     }

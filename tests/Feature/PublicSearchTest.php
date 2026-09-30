@@ -19,6 +19,8 @@ class PublicSearchTest extends TestCase
             '0001_01_01_000000_create_users_table.php',
             '2026_08_31_000001_add_account_type_and_status_to_users_table.php',
             '0001_01_01_000003_create_products_table.php',
+            // Search eligibility uses the current approval schema even in this minimal disposable catalogue.
+            'Seller/Manage_inventory/2026_09_30_000001_add_product_compliance.php',
         ]);
     }
 
@@ -131,6 +133,8 @@ class PublicSearchTest extends TestCase
         ])->save();
 
         return Product::query()->create([
+            // Existing happy-path fixtures explicitly represent approved merchandise.
+            'compliance_status' => 'approved',
             'seller_id' => $seller->id,
             'name' => $name,
             'category' => $category,

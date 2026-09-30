@@ -40,6 +40,10 @@ class CartItem extends Model
 
     public function availableStock(): int
     {
+        // Existing Cart lines survive review changes but must render unavailable until approval returns.
+        if (! $this->product || $this->product->compliance_status !== 'approved' || $this->product->status !== 'active') {
+            return 0;
+        }
         // Seller Inventory stores Product stock as the variant aggregate, so either row can cap a variant line.
         return $this->variant
             ? min((int) $this->variant->stock, (int) $this->product->stock)

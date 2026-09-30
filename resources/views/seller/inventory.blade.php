@@ -601,6 +601,12 @@
                                                     {{ $product->name }}
                                                 </p>
 
+                                                {{-- Seller inventory retains hidden merchandise and explains the correction/resubmission state. --}}
+                                                <p class="text-[10px] text-navy/60">Compliance: {{ ucwords(str_replace('_', ' ', $product->compliance_status)) }}</p>
+                                                @if ($product->compliance_status === 'rejected')
+                                                    <p class="text-[10px] text-navy/60">{{ ucwords(str_replace('_', ' ', $product->rejection_reason ?? '')) }}@if($product->rejection_notes): {{ $product->rejection_notes }}@endif</p>
+                                                @endif
+
 
                                                 <div class="mt-1 flex flex-wrap items-center gap-1.5">
 
@@ -769,7 +775,8 @@
                                             <button
                                                 type="button"
                                                 data-open-product-modal
-                                                data-product="{{ e(json_encode($productJson)) }}"
+                                                {{-- Blade escapes once; double escaping makes JSON invalid and prevents compliance correction/resubmission. --}}
+                                                data-product="{{ json_encode($productJson) }}"
                                                 class="h-8 px-2.5 rounded-lg border border-gray-border text-xs font-semibold text-navy/55 hover:text-teal-dark hover:border-teal/30 hover:bg-teal-light transition"
                                             >
                                                 Edit
