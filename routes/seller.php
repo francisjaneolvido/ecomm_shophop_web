@@ -195,10 +195,11 @@ Route::prefix('seller')
 
             /*
             |--------------------------------------------------------------------------
-            | Storefront Management
+            | Storefront Availability
             |--------------------------------------------------------------------------
             */
 
+            // Retain the approved-Seller destination as information only until a real Storefront management contract exists.
             Route::view('/storefront', 'seller.storefront')
                 ->name('storefront');
         });

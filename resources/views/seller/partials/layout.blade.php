@@ -749,7 +749,7 @@
 
                 @include('partials.theme-toggle')
 
-                {{-- Visit storefront --}}
+                {{-- The destination explains availability; it does not preview a live shop or offer Storefront management. --}}
                 <a
                     href="{{ route('seller.storefront') }}"
                     target="_blank"
@@ -761,7 +761,7 @@
                            transition"
                 >
                     <x-lucide-external-link class="w-3.5 h-3.5" />
-                    View Storefront
+                    Storefront availability
                 </a>
 
 
