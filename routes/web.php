@@ -77,6 +77,7 @@ Route::get('/create-account', function () {
 //     ->name('deals');
 
 
+// Retain public Store URLs as availability destinations; the legacy parameter has no defined public Seller lookup.
 Route::get('/buyer/store/{slug?}', function ($slug = null) {
     return view('buyer.store.show');
 })->name('buyer.store.show');
