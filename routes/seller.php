@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\SellerEmailVerificationController;
 use App\Http\Controllers\Seller\InventoryController;
 use App\Http\Controllers\Seller\OrderController;
+// Account reads and writes reuse the authenticated Seller profile within the existing approved-role group.
+use App\Http\Controllers\Seller\AccountController;
 
 /*
 |--------------------------------------------------------------------------
@@ -186,8 +188,9 @@ Route::prefix('seller')
             |--------------------------------------------------------------------------
             */
 
-            Route::view('/account', 'seller.account')
-                ->name('account');
+            // Core profile changes persist through CSRF-protected HTTP; no client-supplied Seller ID is accepted.
+            Route::get('/account', [AccountController::class, 'show'])->name('account');
+            Route::patch('/account', [AccountController::class, 'update'])->name('account.update');
 
 
             /*
