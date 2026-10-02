@@ -60,6 +60,52 @@ class BuyerProfileRenderingTest extends TestCase
             ->assertOk();
     }
 
+    public function test_rendered_profile_keeps_supported_hooks_and_a_parseable_initializer(): void
+    {
+        // Validate the rendered client boundary: Blade compilation alone cannot catch a broken initializer.
+        $response = $this->actingAs($this->createBuyer())->get(route('buyer.profile'))->assertOk();
+        foreach (['data-tab-btn="address"', 'data-tab-content="profile"', 'id="settingsMobileSelect"',
+            'id="birthdayInput"', 'id="ageInput"', 'data-confirm-action="logout"', 'id="confirmCancelBtn"',
+            'id="confirmActionBtn"', 'id="logoutForm"', route('buyer.settings.profile.update')] as $hook) {
+            $response->assertSee($hook, false);
+        }
+
+        preg_match_all('/<script\b[^>]*>(.*?)<\/script>/si', $response->getContent(), $scripts);
+        $profileScripts = array_values(array_filter($scripts[1], fn ($script) => str_contains($script, 'const CONFIRM_ACTIONS')));
+        $this->assertCount(1, $profileScripts);
+        $syntax = new \Symfony\Component\Process\Process(['node', '--check'], base_path());
+        $syntax->setInput($profileScripts[0]);
+        $syntax->run();
+        $this->assertTrue($syntax->isSuccessful(), $syntax->getErrorOutput());
+    }
+
+    public function test_profile_preserves_role_approval_verification_and_rider_guard_boundaries(): void
+    {
+        // Exercise Profile's own route so restored client behavior cannot mask a changed access boundary.
+        $user = $this->createBuyer();
+        foreach (['seller', 'admin', 'logistics'] as $role) {
+            $user->forceFill(['account_type' => $role])->save();
+            $this->actingAs($user)->get(route('buyer.profile'))->assertForbidden();
+        }
+        foreach (['pending', 'rejected', 'suspended'] as $status) {
+            $user->forceFill(['account_type' => 'buyer', 'status' => $status])->save();
+            $this->actingAs($user)->get(route('buyer.profile'))
+                ->assertRedirect(route('home'))->assertSessionHas('login_notice');
+            $this->assertGuest('web');
+        }
+        $user->forceFill(['status' => 'approved', 'email_verified_at' => null])->save();
+        $this->actingAs($user)->get(route('buyer.profile'))->assertRedirect(route('buyer.verify-email.show'));
+        $this->assertGuest('web');
+
+        // A genuine separate Rider identity must not satisfy the web Buyer guard.
+        $rider = new \App\Models\Logistics\Rider();
+        $rider->forceFill(['id' => 991, 'name' => 'Profile Guard Rider', 'status' => 'active']);
+        $this->actingAs($rider, 'rider');
+        \Illuminate\Support\Facades\Auth::shouldUse('web');
+        $this->assertAuthenticatedAs($rider, 'rider');
+        $this->get(route('buyer.profile'))->assertRedirect(route('login'));
+    }
+
     private function createBuyer(): User
     {
         $user = new User();
