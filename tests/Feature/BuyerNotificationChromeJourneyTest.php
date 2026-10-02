@@ -62,6 +62,24 @@ class BuyerNotificationChromeJourneyTest extends TestCase
         }
     }
 
+    // Without a persisted message feed, both shared navigation links must expose only the destination, never unread state.
+    public function test_shared_messages_links_have_no_fabricated_count(): void
+    {
+        $this->actingAs($this->user());
+        foreach (['/buyer/dashboard', '/buyer/messages'] as $path) {
+            $response = $this->get($path)->assertOk();
+            $document = new \DOMDocument();
+            @$document->loadHTML($response->getContent());
+            $xpath = new \DOMXPath($document);
+            $links = $xpath->query('//header//a[@href="'.route('buyer.messages').'"]');
+            $this->assertSame(2, $links->length, 'Desktop and mobile Messages destinations must remain available.');
+            foreach ($links as $link) {
+                $this->assertSame('Messages', preg_replace('/\s+/', ' ', trim($link->textContent)),
+                    'Messages navigation must not imply an unsupported unread count.');
+            }
+        }
+    }
+
     // The representative shared-chrome route retains normal guest, approval and Buyer email-verification gates.
     public function test_guest_and_unapproved_or_unverified_buyers_are_denied(): void
     {
