@@ -89,6 +89,7 @@
                         <button
                             type="button"
                             data-wishlist-unavailable
+                            data-product-id="{{ $product['id'] }}"
                             disabled
                             title="Wishlist is unavailable: saved items are not available yet"
                             aria-label="Wishlist unavailable: saved items are not available yet"
@@ -118,9 +119,9 @@
                             Share product
                         </button>
 
-                        <button type="button" data-wishlist-unavailable disabled title="Wishlist is unavailable: saved items are not available yet" aria-label="Wishlist unavailable: saved items are not available yet" class="wishlist-toggle inline-flex items-center gap-1.5 text-navy/45 cursor-not-allowed opacity-55">
+                        <button type="button" data-wishlist-unavailable data-product-id="{{ $product['id'] }}" disabled title="Wishlist is unavailable: saved items are not available yet" aria-label="Wishlist unavailable: saved items are not available yet" class="wishlist-toggle inline-flex items-center gap-1.5 text-navy/45 cursor-not-allowed opacity-55">
                             <x-lucide-heart class="w-3.5 h-3.5" />
-                            Wishlist unavailable
+                            <span data-favorite-label>Add to My Likes</span>
                         </button>
                     </div>
                 </div>
@@ -567,7 +568,7 @@
 {{-- MOBILE PURCHASE BAR --}}
 <div class="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t border-gray-border px-3 py-2 shadow-[0_-8px_24px_rgba(15,27,61,.08)]">
     <div class="max-w-310 mx-auto grid grid-cols-[auto_1fr_1fr] gap-2">
-        <button type="button" data-wishlist-unavailable disabled title="Wishlist is unavailable: saved items are not available yet" class="wishlist-toggle w-10 h-10 rounded-lg border border-gray-border flex items-center justify-center text-navy/45 cursor-not-allowed opacity-55" aria-label="Wishlist unavailable: saved items are not available yet">
+        <button type="button" data-wishlist-unavailable data-product-id="{{ $product['id'] }}" disabled title="Wishlist is unavailable: saved items are not available yet" class="wishlist-toggle w-10 h-10 rounded-lg border border-gray-border flex items-center justify-center text-navy/45 cursor-not-allowed opacity-55" aria-label="Wishlist unavailable: saved items are not available yet">
             <x-lucide-heart class="w-4 h-4" />
         </button>
         <button type="button" data-add-to-cart="{{ $product['id'] }}" data-selected-variant="{{ $firstVariant['id'] ?? '' }}" class="h-10 rounded-lg border border-teal bg-teal-light text-teal-dark text-[10px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed">

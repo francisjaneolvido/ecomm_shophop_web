@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Cart\CartItem;
+use App\Models\Buyer\Favorite\Favorite;
 use App\Models\Seller\Manage_inventory\Product;
 use Illuminate\Support\Facades\Schema;
 
@@ -32,6 +33,10 @@ class DashboardController extends Controller
             ? CartItem::where('buyer_id', auth()->user()?->buyer?->id)->count()
             : 0;
 
+        $favoriteCount = Schema::hasTable('favorites')
+            ? Favorite::where('buyer_id', auth()->user()?->buyer?->id)->count()
+            : 0;
+
         return view('buyer.dashboard.dashboard', compact(
             'buyerName',
             'categories',
@@ -43,7 +48,8 @@ class DashboardController extends Controller
             'recommendedProducts',
             'dealProducts',
             'newArrivals',
-            'cartItemCount'
+            'cartItemCount',
+            'favoriteCount'
         ));
     }
 

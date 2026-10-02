@@ -10,6 +10,7 @@ use App\Http\Controllers\Buyer\CheckoutController as BuyerCheckoutController;
 use App\Http\Controllers\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Buyer\BuyerProfileController;
 use App\Http\Controllers\Buyer\ManualCashlessPaymentController;
+use App\Http\Controllers\Buyer\FavoriteController as BuyerFavoriteController;
 
 
 /*
@@ -73,6 +74,29 @@ Route::prefix('buyer')
             BuyerProductController::class,
             'show',
         ])->name('product.show');
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | My Likes / Favorites
+        |--------------------------------------------------------------------------
+        | Shared with the Flutter mobile app through the same favorites table.
+        */
+
+        Route::get('/likes', [
+            BuyerFavoriteController::class,
+            'index',
+        ])->name('likes');
+
+        Route::post('/likes/{product}', [
+            BuyerFavoriteController::class,
+            'store',
+        ])->whereNumber('product')->name('likes.store');
+
+        Route::delete('/likes/{product}', [
+            BuyerFavoriteController::class,
+            'destroy',
+        ])->whereNumber('product')->name('likes.destroy');
 
 
         /*

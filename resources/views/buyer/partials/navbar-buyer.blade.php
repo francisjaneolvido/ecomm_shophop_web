@@ -11,6 +11,22 @@
     $cartItemCount = $cartItemCount ?? (\Illuminate\Support\Facades\Schema::hasTable('cart_items')
         ? \App\Models\Buyer\Cart\CartItem::where('buyer_id', auth()->user()?->buyer?->id)->count()
         : 0);
+
+
+    $favoriteRows = collect();
+    if (\Illuminate\Support\Facades\Schema::hasTable('favorites') && auth()->user()?->buyer?->id) {
+        $favoriteRows = \App\Models\Buyer\Favorite\Favorite::query()
+            ->where('buyer_id', auth()->user()->buyer->id)
+            ->get(['product_id']);
+    }
+
+    $likedProductIds = $likedProductIds ?? $favoriteRows
+        ->pluck('product_id')
+        ->map(fn ($id) => (int) $id)
+        ->values()
+        ->all();
+
+    $favoriteCount = $favoriteCount ?? count($likedProductIds);
 @endphp
 
 <header class="bg-white border-b border-gray-border sticky top-0 z-50">
@@ -49,12 +65,11 @@
 
             <div class="ml-auto md:ml-0 flex items-center gap-1.5 shrink-0">
 
-                {{-- Wishlist persistence does not exist yet, so this must not imply otherwise. --}}
-                <button type="button" data-wishlist-unavailable disabled title="Wishlist is unavailable"
-                   aria-label="Wishlist unavailable: saved items are not available yet"
-                   class="hidden sm:flex w-8 h-8 items-center justify-center rounded-full text-navy/40 cursor-not-allowed opacity-55">
+                <a href="{{ Route::has('buyer.likes') ? route('buyer.likes') : '#' }}" title="My Likes" aria-label="My Likes"
+                   class="relative hidden sm:flex w-8 h-8 items-center justify-center rounded-full text-navy hover:bg-gray-bg hover:text-rose-500 transition">
                     <x-lucide-heart class="w-4.5 h-4.5" />
-                </button>
+                    <span data-favorite-count class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-rose-500 text-white text-[7px] font-bold">{{ $favoriteCount }}</span>
+                </a>
 
                 {{-- CART — points to the real cart route --}}
                 <a data-buyer-cart-link href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" title="Shopping Cart" aria-label="Shopping Cart"
@@ -157,11 +172,14 @@
 
                 <div class="my-2 border-t border-gray-border"></div>
 
-                <span data-wishlist-unavailable aria-disabled="true" title="Wishlist is unavailable"
-                    class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-navy/45 cursor-not-allowed">
-                    <x-lucide-heart class="w-4 h-4" />
-                    Wishlist unavailable
-                </span>
+                <a href="{{ Route::has('buyer.likes') ? route('buyer.likes') : '#' }}"
+                    class="flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg hover:text-rose-500 transition">
+                    <span class="flex items-center gap-2.5">
+                        <x-lucide-heart class="w-4 h-4" />
+                        My Likes
+                    </span>
+                    <span data-favorite-count class="min-w-5 h-5 px-1.5 rounded-full bg-rose-50 text-rose-600 text-[9px] font-bold flex items-center justify-center">{{ $favoriteCount }}</span>
+                </a>
 
                 {{-- CART — points to the real cart route --}}
                 <a data-buyer-cart-link href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
@@ -207,6 +225,8 @@
         </div>
     </div>
 </header>
+
+@include('buyer.partials.favorite-scripts')
 
 {{-- Anchor the small-screen availability panel to the viewport because the bell sits inside the narrow action cluster. --}}
 @push('styles')
