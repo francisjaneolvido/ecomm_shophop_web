@@ -13,7 +13,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
+// Legacy Admin-facing accessor must obey the same private record/slot contract as active controllers.
+use App\Services\RegistrationDocuments;
 
 #[Fillable([
     'email', 'password', 'account_type', 'status',
@@ -95,35 +96,11 @@ class User extends Authenticatable
 
     /**
      * Normalized list of role-specific submitted documents.
-     * Each doc: label, path (nullable), status (submitted|missing).
+     * Each doc: label, status, protected URL (nullable), and preview MIME.
      */
     public function getRegistrationDocumentsAttribute(): array
     {
-        return match ($this->account_type) {
-            'buyer' => [
-                $this->docEntry('Valid ID', $this->buyer?->valid_id_path),
-            ],
-            'seller' => [
-                $this->docEntry('Valid ID', $this->seller?->valid_id_path),
-                $this->docEntry('Business Permit', $this->seller?->business_permit_path),
-            ],
-            'logistics' => [
-                $this->docEntry('Representative Valid ID', $this->logisticsPartner?->rep_valid_id_path),
-                $this->docEntry('Business Permit', $this->logisticsPartner?->business_permit_path),
-                $this->docEntry('Signed Agreement', $this->logisticsPartner?->agreement_signature_path),
-                $this->docEntry('Accreditation Docs', $this->logisticsPartner?->accreditation_docs_path),
-            ],
-            default => [],
-        };
-    }
-
-    private function docEntry(string $label, ?string $path): array
-    {
-        return [
-            'label' => $label,
-            'path' => $path,
-            'status' => $path ? 'submitted' : 'missing',
-            'url' => $path ? Storage::disk('public')->url($path) : null,
-        ];
+        // Stored paths stay server-side; this accessor cannot resurrect public registration document links.
+        return RegistrationDocuments::entries($this);
     }
 }

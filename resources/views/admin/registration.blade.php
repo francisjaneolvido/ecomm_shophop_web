@@ -598,19 +598,21 @@
             (r.documents || []).forEach(doc => {
                 const dBadge = docStatusBadge[doc.status] || docStatusBadge.missing;
                 const isMissing = doc.status === 'missing';
-                const wrapper = document.createElement(isMissing ? 'div' : 'a');
-                if (!isMissing) {
-                    wrapper.href = doc.url || '#';
+                // Stored references can await migration or lack files; only available private documents are actionable.
+                const unavailable = !doc.url;
+                const wrapper = document.createElement(unavailable ? 'div' : 'a');
+                if (!unavailable) {
+                    wrapper.href = doc.url;
                     wrapper.target = '_blank';
                     wrapper.rel = 'noopener noreferrer';
                 }
                 wrapper.className = 'block group';
                 wrapper.innerHTML = `
-                    <div class="w-full aspect-square rounded-lg border border-dashed ${isMissing ? 'border-slate-200 bg-slate-100/60' : 'border-slate-300 bg-slate-50/60'} flex flex-col items-center justify-center gap-1 text-slate-400 ${isMissing ? '' : 'cursor-pointer transition group-hover:border-mint group-hover:bg-mint/5 group-hover:text-mint-dark'}">
+                    <div class="w-full aspect-square rounded-lg border border-dashed ${unavailable ? 'border-slate-200 bg-slate-100/60' : 'border-slate-300 bg-slate-50/60'} flex flex-col items-center justify-center gap-1 text-slate-400 ${unavailable ? '' : 'cursor-pointer transition group-hover:border-mint group-hover:bg-mint/5 group-hover:text-mint-dark'}">
                         ${docFileIconSvg}
-                        <span class="text-[9px] font-medium uppercase tracking-wide">${isMissing ? 'No File' : 'Preview'}</span>
+                        <span class="text-[9px] font-medium uppercase tracking-wide">${isMissing ? 'No File' : unavailable ? 'Unavailable' : 'Preview'}</span>
                     </div>
-                    <p class="text-[10px] text-slate-500 mt-1 text-center truncate ${isMissing ? '' : 'transition group-hover:text-mint-dark'}">${doc.label}</p>
+                    <p class="text-[10px] text-slate-500 mt-1 text-center truncate ${unavailable ? '' : 'transition group-hover:text-mint-dark'}">${doc.label}</p>
                     <div class="flex justify-center mt-1">
                         <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${dBadge.bg} ${dBadge.text}">${dBadge.label}</span>
                     </div>

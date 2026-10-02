@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Logistics;
 use App\Http\Controllers\Controller;
 use App\Models\LogisticsPartner;
 use App\Models\User;
+// Logistics registration artifacts use the same private review contract as Buyer/Seller IDs.
+use App\Services\RegistrationDocuments;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -68,11 +70,12 @@ class RegistrationController extends Controller
                 'status' => 'pending',
             ]);
 
-            $signaturePath = $request->file('agreement_signature')->store('signatures', 'public');
-            $repValidIdPath = $request->file('rep_valid_id')->store('valid_ids/logistics', 'public');
-            $businessPermitPath = $request->file('business_permit')->store('business_permits/logistics', 'public');
+            // Signature, ID, permit and optional accreditation must never become public assets.
+            $signaturePath = RegistrationDocuments::store($user, 'agreement_signature', $request->file('agreement_signature'));
+            $repValidIdPath = RegistrationDocuments::store($user, 'rep_valid_id', $request->file('rep_valid_id'));
+            $businessPermitPath = RegistrationDocuments::store($user, 'business_permit', $request->file('business_permit'));
             $accreditationDocsPath = $request->hasFile('accreditation_docs')
-                ? $request->file('accreditation_docs')->store('accreditation_docs', 'public')
+                ? RegistrationDocuments::store($user, 'accreditation_docs', $request->file('accreditation_docs'))
                 : null;
 
             $partner = LogisticsPartner::create([

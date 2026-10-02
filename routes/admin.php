@@ -47,6 +47,10 @@ Route::prefix('admin')
         Route::get('/registration/{user}', [AdminRegistrationController::class, 'show'])
             ->name('registrations.show');
 
+        // Sensitive files reuse the approved Admin boundary and accept a record/slot, never a filesystem path.
+        Route::get('/registration/{user}/documents/{document}', [AdminRegistrationController::class, 'document'])
+            ->name('registrations.documents.show');
+
         Route::get('/users', [UserAccountController::class, 'index'])
             ->name('users');
 

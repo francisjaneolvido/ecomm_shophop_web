@@ -8,7 +8,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
-use Illuminate\Support\Facades\Storage;
+// Account review uses the same private record/slot links as registration review.
+use App\Services\RegistrationDocuments;
 use Illuminate\View\View;
 
 class UserAccountController extends Controller
@@ -79,7 +80,8 @@ class UserAccountController extends Controller
      */
     private function toJsUser(User $user): array
     {
-        $fileUrl = fn (?string $path) => $path ? Storage::disk('public')->url($path) : null;
+        // Resolve all sensitive document links from the account profile, never from public storage URLs.
+        $documents = RegistrationDocuments::entries($user);
 
         $phone = null;
         $address = null;
@@ -88,7 +90,6 @@ class UserAccountController extends Controller
         $age = null;
         $businessName = null;
         $businessCategory = null;
-        $documents = [];
 
         if ($user->account_type === 'buyer' && $user->buyer) {
             $b = $user->buyer;
@@ -98,9 +99,6 @@ class UserAccountController extends Controller
             $sex = $b->sex;
             $birthday = $b->birthday?->format('M d, Y');
             $age = $b->birthday?->age;
-            $documents = [
-                ['label' => 'Valid ID', 'url' => $fileUrl($b->valid_id_path)],
-            ];
         }
 
         if ($user->account_type === 'seller' && $user->seller) {
@@ -113,10 +111,6 @@ class UserAccountController extends Controller
             $age = $s->birthday?->age;
             $businessName = $s->business_name;
             $businessCategory = $s->business_category;
-            $documents = [
-                ['label' => 'Valid ID', 'url' => $fileUrl($s->valid_id_path)],
-                ['label' => 'Business Permit', 'url' => $fileUrl($s->business_permit_path)],
-            ];
         }
 
         if ($user->account_type === 'logistics' && $user->logisticsPartner) {
@@ -129,12 +123,6 @@ class UserAccountController extends Controller
             $age = $l->rep_birthday?->age;
             $businessName = $l->company_name;
             $businessCategory = str_replace('_', ' ', $l->line_of_business ?? '');
-            $documents = [
-                ['label' => 'Representative Valid ID', 'url' => $fileUrl($l->rep_valid_id_path)],
-                ['label' => 'Business Permit', 'url' => $fileUrl($l->business_permit_path)],
-                ['label' => 'Accreditation Docs', 'url' => $fileUrl($l->accreditation_docs_path)],
-                ['label' => 'Agreement Signature', 'url' => $fileUrl($l->agreement_signature_path)],
-            ];
         }
 
         return [
@@ -174,7 +162,8 @@ class UserAccountController extends Controller
         abort_unless($this->isModeratable($user, ['approved', 'suspended']), 404);
         $user->load(['buyer', 'seller', 'logisticsPartner.coverageAreas']);
 
-        $fileUrl = fn (?string $path) => $path ? Storage::disk('public')->url($path) : null;
+        // Later account detail retains its eligibility while sharing protected document URLs and MIME metadata.
+        $files = RegistrationDocuments::entries($user);
 
         $data = [
             'id' => $user->id,
@@ -183,6 +172,7 @@ class UserAccountController extends Controller
             'status' => $user->status,
             'display_name' => $user->display_name,
             'created_at' => $user->created_at->format('M d, Y g:i A'),
+            'files' => $files,
         ];
 
         if ($user->account_type === 'buyer' && $user->buyer) {
@@ -198,9 +188,6 @@ class UserAccountController extends Controller
                 ['label' => 'Municipality/City', 'value' => $b->municipality_name],
                 ['label' => 'Barangay', 'value' => $b->barangay_name],
                 ['label' => 'Street Address', 'value' => $b->street_address],
-            ];
-            $data['files'] = [
-                ['label' => 'Valid ID', 'url' => $fileUrl($b->valid_id_path)],
             ];
         }
 
@@ -219,10 +206,6 @@ class UserAccountController extends Controller
                 ['label' => 'Street Address', 'value' => $s->street_address],
                 ['label' => 'Business Name', 'value' => $s->business_name],
                 ['label' => 'Business Category', 'value' => $s->business_category],
-            ];
-            $data['files'] = [
-                ['label' => 'Valid ID', 'url' => $fileUrl($s->valid_id_path)],
-                ['label' => 'Business Permit', 'url' => $fileUrl($s->business_permit_path)],
             ];
         }
 
@@ -246,12 +229,6 @@ class UserAccountController extends Controller
                 ['label' => 'Agreement Signed By', 'value' => $l->agreement_rep_name],
                 ['label' => 'Agreement Date', 'value' => $l->agreement_date->format('M d, Y')],
                 ['label' => 'Coverage Areas', 'value' => $l->coverageAreas->pluck('area_name')->join(', ') ?: '—'],
-            ];
-            $data['files'] = [
-                ['label' => 'Representative Valid ID', 'url' => $fileUrl($l->rep_valid_id_path)],
-                ['label' => 'Business Permit', 'url' => $fileUrl($l->business_permit_path)],
-                ['label' => 'Accreditation Docs', 'url' => $fileUrl($l->accreditation_docs_path)],
-                ['label' => 'Agreement Signature', 'url' => $fileUrl($l->agreement_signature_path)],
             ];
         }
 
