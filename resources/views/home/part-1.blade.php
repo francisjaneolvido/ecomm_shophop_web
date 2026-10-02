@@ -353,11 +353,12 @@
 
         <div class="relative" data-landing-category-slider>
 
+            {{-- Keep mobile controls inside the category container; desktop gutters support the outward half-width offset. --}}
             <button
                 type="button"
                 data-landing-category-prev
                 aria-label="Previous categories"
-                class="hidden absolute left-0 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white border border-gray-border shadow-lg items-center justify-center text-navy hover:text-teal-dark hover:border-teal/30 transition"
+                class="hidden absolute left-0 top-1/2 sm:-translate-x-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white border border-gray-border shadow-lg items-center justify-center text-navy hover:text-teal-dark hover:border-teal/30 transition"
             >
                 <x-lucide-chevron-left class="w-4 h-4" />
             </button>
@@ -440,11 +441,12 @@
             </div>
 
 
+            {{-- The next control uses the same mobile containment instead of widening the document. --}}
             <button
                 type="button"
                 data-landing-category-next
                 aria-label="Next categories"
-                class="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white border border-gray-border shadow-lg flex items-center justify-center text-navy hover:text-teal-dark hover:border-teal/30 transition"
+                class="absolute right-0 top-1/2 sm:translate-x-1/2 -translate-y-1/2 z-20 w-9 h-9 rounded-full bg-white border border-gray-border shadow-lg flex items-center justify-center text-navy hover:text-teal-dark hover:border-teal/30 transition"
             >
                 <x-lucide-chevron-right class="w-4 h-4" />
             </button>

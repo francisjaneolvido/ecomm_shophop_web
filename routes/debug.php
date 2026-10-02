@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
+// All developer previews share TEST's local-only boundary; production and testing must not register them.
+if (! app()->environment('local')) {
+    return;
+}
 
 /*
 |--------------------------------------------------------------------------

@@ -99,10 +99,10 @@
                                 <x-lucide-package class="w-4 h-4" />
                                 My Orders
                             </a>
+                            {{-- No persisted message feed exists, so navigation must not imply unread state. --}}
                             <a href="{{ Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                                 <x-lucide-message-circle class="w-4 h-4" />
                                 <span class="flex-1">Messages</span>
-                                <span class="min-w-4 h-4 px-1 rounded-full bg-teal text-white text-[7px] font-bold flex items-center justify-center">3</span>
                             </a>
                             <div class="my-1.5 border-t border-gray-border"></div>
                            <form method="POST" action="{{ route('logout') }}">
@@ -180,10 +180,10 @@
                     My Orders
                 </a>
 
+                {{-- Mobile navigation shares the same unavailable message feed and cannot advertise a count. --}}
                 <a href="{{ Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
                     <x-lucide-message-circle class="w-4 h-4" />
                     Messages
-                    <span class="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-teal text-white text-[9px] font-bold flex items-center justify-center">3</span>
                 </a>
 
                 <a href="{{ Route::has('buyer.profile') ? route('buyer.profile') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
