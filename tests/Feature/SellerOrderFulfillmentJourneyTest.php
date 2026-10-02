@@ -35,6 +35,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
             '2026_08_29_000003_create_logistics_partners_table.php',
             '0001_01_01_000003_create_products_table.php',
             'Seller/Manage_inventory/2025_01_15_000001_add_inventory_fields_to_products_table.php',
+            // Real Checkout requires the current compliance schema even in this focused fulfillment fixture.
+            'Seller/Manage_inventory/2026_09_30_000001_add_product_compliance.php',
             'Seller/Manage_inventory/2025_01_15_000003_create_product_variants_table.php',
             'Seller/Manage_inventory/2025_01_15_000004_create_vouchers_table.php',
             'Seller/Manage_inventory/2025_01_15_000005_create_voucher_product_table.php',
@@ -76,6 +78,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
         $seller = $this->seller('checkout-seller@example.test');
         $otherSeller = $this->seller('other-seller@example.test');
         $product = $this->product($seller, 'Real Checkout Product');
+        // Exercise successful COD placement with eligible merchandise; pending Products must remain rejected.
+        $product->update(['compliance_status' => 'approved']);
         $line = CartItem::create(['buyer_id' => $buyer->id, 'product_id' => $product->id, 'quantity' => 1]);
 
         // Exercise the real placement seam: checkout creates the Seller Order and deducts stock once.
@@ -87,6 +91,11 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
         $order = Order::sole();
         $this->assertSame($seller->id, $order->seller_id);
         $this->assertSame(Order::STATUS_TO_SHIP, $order->status);
+        // COD has no cashless payment membership; its recorded amount and consumed Cart must remain canonical.
+        $this->assertSame('cod', $order->payment_method);
+        $this->assertNull($order->manual_cashless_payment_id);
+        $this->assertSame('178.00', $order->total_amount);
+        $this->assertFalse(CartItem::whereKey($line->id)->exists());
         $this->assertSame(4, $product->fresh()->stock);
 
         // A different approved Seller cannot discover the newly placed Order.
