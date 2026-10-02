@@ -49,42 +49,8 @@
                 </p>
 
 
-                {{-- SOCIAL MEDIA --}}
-                <div class="flex items-center gap-3 mt-5">
-
-                    {{-- FACEBOOK --}}
-                    <a
-                        href="#"
-                        title="Facebook"
-                        aria-label="Facebook"
-                        class="flex items-center justify-center w-9 h-9 rounded-full bg-white text-navy/60 hover:bg-teal hover:text-white transition-all duration-200"
-                    >
-                        <x-lucide-facebook class="w-4 h-4" />
-                    </a>
-
-
-                    {{-- INSTAGRAM --}}
-                    <a
-                        href="#"
-                        title="Instagram"
-                        aria-label="Instagram"
-                        class="flex items-center justify-center w-9 h-9 rounded-full bg-white text-navy/60 hover:bg-teal hover:text-white transition-all duration-200"
-                    >
-                        <x-lucide-instagram class="w-4 h-4" />
-                    </a>
-
-
-                    {{-- TWITTER / X --}}
-                    <a
-                        href="#"
-                        title="Twitter"
-                        aria-label="Twitter"
-                        class="flex items-center justify-center w-9 h-9 rounded-full bg-white text-navy/60 hover:bg-teal hover:text-white transition-all duration-200"
-                    >
-                        <x-lucide-twitter class="w-4 h-4" />
-                    </a>
-
-                </div>
+                {{-- No social destinations are configured, so icons cannot imply links to marketplace accounts. --}}
+                <p class="text-xs text-navy/60 mt-5">Social links unavailable.</p>
 
             </div>
 
@@ -98,14 +64,10 @@
                     Shop
                 </h4>
 
+                {{-- Unsupported destinations stay non-interactive rather than linking to dead placeholders. --}}
                 <div class="space-y-3">
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        All Products
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">All Products (unavailable)</span>
 
                     <a
                         href="{{ route('home') }}#categories"
@@ -140,37 +102,19 @@
 
                 <h4 class="text-navy font-semibold text-sm mb-4">
                     Help
+                    <span class="text-xs font-normal text-navy/60">(unavailable)</span>
                 </h4>
 
+                {{-- Unsupported destinations stay non-interactive rather than linking to dead placeholders. --}}
                 <div class="space-y-3">
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        Customer Support
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">Customer Support</span>
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        Shipping & Delivery
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">Shipping & Delivery</span>
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        Returns & Refunds
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">Returns & Refunds</span>
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        FAQs
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">FAQs</span>
 
                 </div>
 
@@ -184,37 +128,19 @@
 
                 <h4 class="text-navy font-semibold text-sm mb-4">
                     Company
+                    <span class="text-xs font-normal text-navy/60">(unavailable)</span>
                 </h4>
 
+                {{-- Unsupported destinations stay non-interactive rather than linking to dead placeholders. --}}
                 <div class="space-y-3">
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        About ShopHop
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">About ShopHop</span>
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        Contact Us
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">Contact Us</span>
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        Terms & Conditions
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">Terms & Conditions</span>
 
-                    <a
-                        href="#"
-                        class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200"
-                    >
-                        Privacy Policy
-                    </a>
+                    <span data-footer-unavailable class="block text-sm text-navy/60">Privacy Policy</span>
 
                 </div>
 
