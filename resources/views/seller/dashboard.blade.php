@@ -73,7 +73,7 @@
     $salesGrowthPct = (float) ($salesGrowthPct ?? $revenueChangePct ?? 0);
     $monthlyOrderCount = (int) ($monthlyOrderCount ?? 0);
 
-    $unreadMessages = (int) ($unreadMessages ?? 0);
+    // Messaging has no persisted feed, so no unread default may imply that an inbox was queried.
     $averageRating = $averageRating ?? null;
     $reviewCount = (int) ($reviewCount ?? 0);
 
@@ -82,7 +82,7 @@
     $topProducts = collect($topProducts ?? []);
     $weeklySales = collect($weeklySales ?? []);
     $recentFeedback = collect($recentFeedback ?? []);
-    $recentMessages = collect($recentMessages ?? []);
+    // Messaging availability is rendered directly below rather than inferred from an empty collection.
 
     // These counts come from the authenticated Seller's persisted Order statuses.
     $orderPipeline = [
@@ -1090,7 +1090,7 @@
         </div>
 
 
-        {{-- Messages --}}
+        {{-- Messaging has no persisted feed, so this card must not claim an empty or unread state. --}}
         <div class="bg-white border border-gray-border rounded-xl overflow-hidden">
 
             <div class="px-5 py-4 border-b border-gray-border flex items-center justify-between gap-2">
@@ -1100,67 +1100,37 @@
                     </h2>
 
                     <p class="text-[12px] text-navy/40 mt-0.5">
-                        Buyer inquiries and order chats.
+                        {{-- Inquiry delivery and order conversations are unavailable. --}}
+                        Messaging availability.
                     </p>
                 </div>
 
-                @if ($unreadMessages > 0)
-                    <span class="px-2 py-1 rounded-full bg-coral/10 text-coral text-[10px] font-bold">
-                        {{ $unreadMessages }} unread
-                    </span>
-                @else
-                    <x-lucide-messages-square class="w-4 h-4 text-teal-dark" />
-                @endif
+                {{-- The icon identifies the informational section without manufacturing unread state. --}}
+                <x-lucide-messages-square class="w-4 h-4 text-teal-dark" />
             </div>
 
-            @if ($recentMessages->isEmpty())
+            {{-- No conversation collection can be supplied until a real messaging contract exists. --}}
                 <div class="px-5 py-10 text-center">
                     <div class="w-10 h-10 mx-auto rounded-xl bg-gray-bg text-navy/25 flex items-center justify-center">
                         <x-lucide-message-square class="w-4 h-4" />
                     </div>
 
                     <p class="mt-3 text-[12px] font-semibold text-navy/45">
-                        No unread messages.
+                        Messaging unavailable
                     </p>
 
                     <p class="mt-1 text-[11px] text-navy/30">
-                        Customer messages will appear here.
+                        No live message feed or unread state is available.
                     </p>
                 </div>
-            @else
-                <div class="divide-y divide-gray-border">
-                    @foreach ($recentMessages->take(4) as $message)
-                        <div class="px-5 py-3 flex items-start gap-3">
-                            <div class="w-8 h-8 rounded-full bg-teal/10 text-teal-dark flex items-center justify-center shrink-0">
-                                <x-lucide-user class="w-3.5 h-3.5" />
-                            </div>
-
-                            <div class="min-w-0 flex-1">
-                                <div class="flex items-center justify-between gap-2">
-                                    <p class="text-[12px] font-semibold text-navy truncate">
-                                        {{ $message['sender_name'] ?? 'Buyer' }}
-                                    </p>
-
-                                    <span class="text-[10px] text-navy/25 shrink-0">
-                                        {{ $message['time'] ?? '' }}
-                                    </span>
-                                </div>
-
-                                <p class="text-[11px] text-navy/40 mt-0.5 truncate">
-                                    {{ $message['message'] ?? '' }}
-                                </p>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            @endif
+            {{-- Keep the existing Chat destination as an explanation of the unavailable backend. --}}
 
             <div class="px-5 py-3 border-t border-gray-border">
                 <a
                     href="{{ route('seller.chat') }}"
                     class="text-[11px] font-bold text-teal-dark hover:text-teal transition"
                 >
-                    Open Messages →
+                    Messaging availability →
                 </a>
             </div>
 
