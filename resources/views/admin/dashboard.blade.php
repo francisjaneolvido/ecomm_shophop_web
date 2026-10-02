@@ -13,8 +13,7 @@
     */
     $pendingRegistrations = $pendingRegistrations ?? 0;
     $activeUserAccounts = $activeUserAccounts ?? 0;
-    $openDisputes = $openDisputes ?? 0;
-    $commissionThisMonth = $commissionThisMonth ?? 0;
+    // No dispute or Commission domain exists; availability cards must not accept fabricated metric defaults.
     $recentRegistrations = collect($recentRegistrations ?? []);
 
     $authUser = auth()->user();
@@ -24,7 +23,8 @@
         ?? ($authUser?->email ? explode('@', $authUser->email)[0] : null)
         ?? 'Admin';
 
-    $needsAttention = $pendingRegistrations + $openDisputes;
+    // Attention reflects queried registrations only, never an assumed absence of disputes.
+    $needsAttention = $pendingRegistrations;
 
     $registrationMix = [
         'buyer' => $recentRegistrations->where('account_type', 'buyer')->count(),
@@ -200,7 +200,8 @@
                                    text-[9px] font-semibold"
                         >
                             <x-lucide-circle-check class="w-3 h-3" />
-                            All clear
+                            {{-- A queried registration queue cannot establish platform-wide dispute clearance. --}}
+                            No pending registrations
                         </span>
                     @endif
 
@@ -208,7 +209,8 @@
 
 
                 <p class="text-xs sm:text-sm text-navy/45 mt-1 max-w-2xl">
-                    Monitor registrations, accounts, disputes, and platform activity from one workspace.
+                    {{-- Unsupported dispute monitoring is represented by availability, not live platform state. --}}
+                    Monitor registrations and accounts, and check workflow availability.
                 </p>
 
             </div>
@@ -422,7 +424,7 @@
             </a>
 
 
-            {{-- Open Disputes --}}
+            {{-- No dispute domain exists, so this card exposes availability instead of a fabricated live count. --}}
             <a
                 href="{{ route('admin.disputes') }}"
                 class="group relative overflow-hidden
@@ -453,29 +455,20 @@
                     </div>
 
 
-                    @if ($openDisputes > 0)
-                        <span
-                            class="inline-flex items-center gap-1
-                                   text-[9px] font-semibold
-                                   text-red-600 bg-red-50
-                                   px-2 py-1 rounded-full"
-                        >
-                            <span class="w-1 h-1 rounded-full bg-red-500"></span>
-                            Attention
-                        </span>
-                    @endif
+                    {{-- Urgency cannot be inferred without persisted dispute state. --}}
 
                 </div>
 
 
                 <div class="mt-3">
 
-                    <p class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
-                        {{ number_format($openDisputes) }}
+                    {{-- Availability remains visible even when compact density hides supporting copy. --}}
+                    <p class="text-lg sm:text-xl font-bold text-navy">
+                        Unavailable
                     </p>
 
                     <p class="text-[10px] sm:text-xs font-medium text-navy/55 mt-0.5">
-                        Open Complaints & Disputes
+                        Complaints & Disputes
                     </p>
 
                 </div>
@@ -487,7 +480,8 @@
                            text-[9px] sm:text-[10px] text-navy/35"
                 >
                     <span>
-                        {{ $openDisputes > 0 ? 'Needs resolution' : 'No urgent cases' }}
+                        {{-- There is no authoritative live case count or resolution workflow. --}}
+                        Dispute workflow unavailable
                     </span>
 
                     <x-lucide-arrow-up-right
@@ -501,7 +495,7 @@
             </a>
 
 
-            {{-- Commission --}}
+            {{-- Commission accounting is unavailable, so this card must not imply calculated monthly earnings. --}}
             <a
                 href="{{ route('admin.commission') }}"
                 class="group relative overflow-hidden
@@ -532,25 +526,20 @@
                     </div>
 
 
-                    <span
-                        class="text-[9px] font-semibold
-                               text-amber-700 bg-amber-50
-                               px-2 py-1 rounded-full"
-                    >
-                        10%
-                    </span>
+                    {{-- No configured commission rate or ledger supports an earnings badge. --}}
 
                 </div>
 
 
                 <div class="mt-3">
 
-                    <p class="text-xl sm:text-2xl font-bold text-navy tabular-nums">
-                        ₱{{ number_format($commissionThisMonth) }}
+                    {{-- No monthly financial amount is calculated by this application. --}}
+                    <p class="text-lg sm:text-xl font-bold text-navy">
+                        Unavailable
                     </p>
 
                     <p class="text-[10px] sm:text-xs font-medium text-navy/55 mt-0.5">
-                        Commission This Month
+                        Commission accounting unavailable
                     </p>
 
                 </div>
@@ -561,7 +550,8 @@
                            flex items-center mt-2
                            text-[9px] sm:text-[10px] text-navy/35"
                 >
-                    <span>Platform earnings</span>
+                    {{-- The destination explains the absent accounting and payout contract. --}}
+                    <span>Accounting and payouts unavailable</span>
 
                     <x-lucide-arrow-up-right
                         class="w-3 h-3 ml-auto
@@ -610,7 +600,8 @@
                     <div class="flex flex-wrap items-center gap-2">
 
                         <h2 class="text-sm sm:text-base font-bold text-white">
-                            Needs Attention
+                            {{-- The count below covers registrations, not unsupported dispute state. --}}
+                            Registration attention
                         </h2>
 
 
@@ -631,7 +622,8 @@
                                        px-2 py-0.5 rounded-full"
                             >
                                 <x-lucide-circle-check class="w-3 h-3" />
-                                All clear
+                                {{-- Clearance is limited to the persisted registration queue. --}}
+                                No pending registrations
                             </span>
                         @endif
 
@@ -639,7 +631,8 @@
 
 
                     <p class="text-[10px] sm:text-xs text-white/45 mt-1 max-w-md">
-                        Review items that may require an approval, decision, or follow-up.
+                        {{-- Dispute availability stays explicit beside the real registration attention count. --}}
+                        Review pending registrations. Dispute workflow is unavailable.
                     </p>
 
                 </div>
@@ -713,7 +706,8 @@
                         </p>
 
                         <p class="text-xs font-semibold text-white truncate">
-                            {{ $openDisputes }} open
+                            {{-- The shortcut cannot report an open count without a dispute domain. --}}
+                            Unavailable
                         </p>
 
                     </div>
@@ -1140,7 +1134,8 @@
                         ],
                         [
                             'route' => 'admin.disputes',
-                            'label' => 'Resolve Disputes',
+                            // The existing destination explains availability; it cannot resolve cases.
+                            'label' => 'Dispute availability',
                             'icon' => 'message-square-warning',
                             'classes' => 'bg-red-50 text-red-500',
                         ],
@@ -1236,7 +1231,8 @@
                 [
                     'route' => 'admin.commission',
                     'label' => 'Commission',
-                    'desc' => 'Review platform earnings',
+                    // No ledger supports earnings review; preserve the truthful informational destination.
+                    'desc' => 'Accounting availability',
                     'icon' => 'landmark',
                 ],
                 [

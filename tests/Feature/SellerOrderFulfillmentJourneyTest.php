@@ -11,6 +11,8 @@ use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductVariant;
 use App\Models\Seller\Manage_inventory\Voucher;
 use App\Models\User;
+// Destructive dashboard fixture setup must remain confined to PHPUnit's in-memory connection.
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -20,6 +22,9 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
     {
         parent::setUp();
 
+        // Fail closed before dropping tables if the disposable PHPUnit configuration is lost.
+        $this->assertSame('sqlite', DB::getDefaultConnection());
+        $this->assertSame(':memory:', DB::connection()->getDatabaseName());
         // Keep the focused disposable Commerce schema aligned with Seller's delivery and COD settlement reads.
         Schema::dropAllTables();
         foreach ([
@@ -232,6 +237,9 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
 
         // The visible pipeline must count Seller-owned Order states, not checkout siblings or Logistics fixtures.
         $response = $this->actingAs($seller->user)->get(route('seller.dashboard'))->assertOk();
+        // No persisted message feed exists, so the same dashboard must disclose availability instead of an empty inbox.
+        $response->assertDontSee('No unread messages')->assertDontSee('Customer messages will appear here')
+            ->assertSee('Messaging unavailable');
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());
         $xpath = new \DOMXPath($document);
@@ -247,6 +255,13 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
         $this->assertSame('3', trim($monthly->item(0)->textContent));
         $this->assertStringContainsString(route('seller.orders.show', $ready), $response->getContent());
         $this->assertStringNotContainsString(route('seller.orders.show', $foreign), $response->getContent());
+        // The preserved Chat link must reach the existing informational surface without claiming inbox or delivery state.
+        $messages = $xpath->query('//div[div/div/h2[normalize-space()="Messages"]]')->item(0);
+        $this->assertNotNull($messages);
+        $this->assertDoesNotMatchRegularExpression('/\b\d+\s+unread\b/i', $messages->textContent);
+        $this->assertStringContainsString(route('seller.chat'), $document->saveHTML($messages));
+        $this->get(route('seller.chat'))->assertOk()->assertSee('Live messaging is unavailable.')
+            ->assertSee('Messages are not sent or stored here.');
     }
 
     private function buyer(): Buyer

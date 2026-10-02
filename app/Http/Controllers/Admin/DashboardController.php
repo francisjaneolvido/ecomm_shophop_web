@@ -16,10 +16,7 @@ class DashboardController extends Controller
             ->where('account_type', '!=', 'admin')
             ->count();
 
-        // TODO: replace with real counts once a disputes table and an
-        // orders/commissions table exist.
-        $openDisputes = 0;
-        $commissionThisMonth = 0;
+        // Dispute and Commission domains are unavailable; only persisted registration/account metrics are supplied.
 
         $recentRegistrations = User::with(['buyer', 'seller', 'logisticsPartner'])
             ->where('account_type', '!=', 'admin')
@@ -30,8 +27,7 @@ class DashboardController extends Controller
         return view('admin.dashboard', compact(
             'pendingRegistrations',
             'activeUserAccounts',
-            'openDisputes',
-            'commissionThisMonth',
+            // Availability is disclosed in Blade without fabricated dispute counts or calculated earnings.
             'recentRegistrations',
         ));
     }
