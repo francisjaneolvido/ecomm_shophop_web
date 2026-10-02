@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+// Slot resolution is shared with private uploads and legacy movement, never request-supplied paths.
+use App\Services\RegistrationDocuments;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -139,25 +142,8 @@ class RegistrationController extends Controller
 
         $user->load(['buyer', 'seller', 'logisticsPartner']);
 
-        // Registration files live on role profiles; User has no document or decision-history relation.
-        $files = match ($user->account_type) {
-            'buyer' => ['Valid ID' => $user->buyer?->valid_id_path],
-            'seller' => [
-                'Valid ID' => $user->seller?->valid_id_path,
-                'Business Permit' => $user->seller?->business_permit_path,
-            ],
-            'logistics' => [
-                'Representative Valid ID' => $user->logisticsPartner?->rep_valid_id_path,
-                'Business Permit' => $user->logisticsPartner?->business_permit_path,
-                'Accreditation Docs' => $user->logisticsPartner?->accreditation_docs_path,
-                'Agreement Signature' => $user->logisticsPartner?->agreement_signature_path,
-            ],
-        };
-        $docs = collect($files)->map(fn ($path, $label) => [
-            'label' => $label,
-            'status' => $path ? 'submitted' : 'missing',
-            'url' => $path ? Storage::disk('public')->url($path) : null,
-        ])->values();
+        // The existing modal receives protected URLs only for available private files, never stored paths.
+        $docs = collect(RegistrationDocuments::entries($user));
         $submittedCount = collect($docs)->where('status', 'submitted')->count();
         $totalCount = $docs->count();
 
@@ -195,6 +181,34 @@ class RegistrationController extends Controller
             'activity' => [],
             'reports' => [],
         ]);
+    }
+
+    public function document(User $user, string $document): StreamedResponse
+    {
+        // Registration and later account review share Admin authorization while retaining their target eligibility.
+        abort_unless(
+            in_array($user->account_type, self::ROLES, true)
+                && in_array($user->status, ['pending', 'approved', 'rejected', 'suspended'], true)
+                && (in_array($user->status, ['approved', 'suspended'], true)
+                    || $user->account_type === 'logistics' || $user->email_verified_at !== null),
+            404
+        );
+
+        // The route binds a User and allowlisted slot; only its authoritative private reference is served.
+        $path = RegistrationDocuments::scopedPath($user, $document);
+        $disk = Storage::disk(RegistrationDocuments::DISK);
+        abort_unless($path && $disk->exists($path), 404);
+
+        // Inline review keeps the existing preview UX; names are generated, MIME is constrained and caching disabled.
+        $mime = $disk->mimeType($path);
+        $safeMime = in_array($mime, ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'], true)
+            ? $mime : 'application/octet-stream';
+        return $disk->response($path, 'registration-'.$user->id.'-'.$document.'.'.pathinfo($path, PATHINFO_EXTENSION), [
+            'Content-Type' => $safeMime,
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+            'Content-Security-Policy' => "sandbox; default-src 'none'",
+        ], 'inline');
     }
 
     private function buildAddress(User $user): ?string

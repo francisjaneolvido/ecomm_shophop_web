@@ -8,6 +8,8 @@ use App\Models\Seller;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+// Moderation fixtures now exercise private document links without touching normal storage.
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AdminModerationJourneyTest extends TestCase
@@ -17,6 +19,9 @@ class AdminModerationJourneyTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Registration access fixtures remain isolated while approve/reject/suspend semantics stay unchanged.
+        Storage::fake('registration_documents');
 
         Schema::dropAllTables();
         foreach ([
@@ -55,7 +60,8 @@ class AdminModerationJourneyTest extends TestCase
             ->assertJsonPath('name', 'Applicant Buyer')
             ->assertJsonPath('docs_summary.value', '1/1')
             ->assertJsonPath('documents.0.status', 'submitted')
-            ->assertJsonPath('documents.0.url', config('filesystems.disks.public.url').'/registration/valid-id.png');
+            // Registration documents are now served only through the protected account/slot route.
+            ->assertJsonPath('documents.0.url', route('admin.registrations.documents.show', [$pending, 'valid_id']));
     }
 
     public function test_approve_and_reject_change_only_eligible_pending_users_and_refresh_admin_views(): void
@@ -158,7 +164,8 @@ class AdminModerationJourneyTest extends TestCase
         $suspendedList->assertSee($email);
         $this->assertTrue($suspendedList->viewData('usersForJs')->firstWhere('id', $buyer->id)['verified']);
         $this->assertSame(
-            config('filesystems.disks.public.url').'/registration/valid-id.png',
+            // Suspension does not prevent an approved Admin from reviewing this account's private ID.
+            route('admin.registrations.documents.show', [$buyer, 'valid_id']),
             $suspendedList->viewData('usersForJs')->firstWhere('id', $buyer->id)['documents'][0]['url']
         );
         $this->get(route('admin.users.show', $buyer))->assertJsonPath('status', 'suspended');
@@ -234,6 +241,8 @@ class AdminModerationJourneyTest extends TestCase
 
     private function buyerProfile(User $user): Buyer
     {
+        // A real disposable private file makes document-link assertions independent of missing legacy fixtures.
+        Storage::disk('registration_documents')->put($user->id.'/valid_id/fixture.png', 'Fixture only');
         return Buyer::query()->create([
             'user_id' => $user->id,
             'first_name' => 'Applicant',
@@ -248,7 +257,8 @@ class AdminModerationJourneyTest extends TestCase
             'barangay_code' => 'B1',
             'barangay_name' => 'Barangay',
             'street_address' => '1 Main Street',
-            'valid_id_path' => 'registration/valid-id.png',
+            // The stored reference is bound to this applicant and document slot.
+            'valid_id_path' => $user->id.'/valid_id/fixture.png',
         ]);
     }
 }
