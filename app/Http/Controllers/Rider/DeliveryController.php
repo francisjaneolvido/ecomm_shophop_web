@@ -51,11 +51,15 @@ class DeliveryController extends Controller
     public function complete(Request $request, int $delivery): RedirectResponse
     {
         // Foreign Deliveries are denied before upload validation; the lock below rechecks a stale assignment.
-        $this->owned($request, $delivery);
+        $order = $this->owned($request, $delivery)->order;
+        // Historical or forged non-COD assignments fail before upload or cash-field validation.
+        if (! $order?->isPaymentEligible()) {
+            return $this->stale();
+        }
         // Photo bytes are validated before any state change and stored on the private local disk.
-        // COD completion needs the Rider's explicit cash declaration as well as separate photo evidence.
+        // COD needs cash confirmation; verified cashless collects zero and accepts only delivery proof.
         $request->validate([
-            'cash_collected' => ['required', 'accepted'],
+            'cash_collected' => $order?->payment_method === 'cod' ? ['required', 'accepted'] : ['prohibited'],
             'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
         $path = null;
@@ -66,7 +70,7 @@ class DeliveryController extends Controller
                 // Suspension between middleware and the locked write cannot complete an old Rider page.
                 $this->assertActive($rider->id, $owned->logistics_partner_id);
                 if ($owned->status !== 'in_transit' || $owned->order?->status !== Order::STATUS_TO_RECEIVE
-                    || $owned->order->payment_method !== 'cod' || $owned->proof_path || $owned->delivered_at
+                    || ! $owned->order->isPaymentEligible() || $owned->proof_path || $owned->delivered_at
                     || CodSettlement::where('delivery_id', $owned->id)->exists()) {
                     return $this->stale();
                 }
@@ -76,7 +80,7 @@ class DeliveryController extends Controller
                 }
                 // Order completion and immutable Rider proof commit together; failed DB writes remove the uploaded file.
                 if (Order::whereKey($owned->order_id)->where('status', Order::STATUS_TO_RECEIVE)
-                    ->where('payment_method', 'cod')->update(['status' => Order::STATUS_COMPLETED]) !== 1
+                    ->paymentEligible()->update(['status' => Order::STATUS_COMPLETED]) !== 1
                     || Delivery::whereKey($owned->id)->where('status', 'in_transit')->whereNull('proof_path')
                         ->where('rider_id', $rider->id)->update([
                             'status' => 'delivered', 'delivered_at' => now(),
@@ -85,17 +89,21 @@ class DeliveryController extends Controller
                     throw ValidationException::withMessages(['delivery' => 'Delivery changed. Refresh and review it.']);
                 }
 
-                // Snapshot the persisted final Buyer amount in the same transaction as fulfillment and proof.
-                CodSettlement::create([
-                    'order_id' => $owned->order_id, 'delivery_id' => $owned->id,
-                    'logistics_partner_id' => $owned->logistics_partner_id,
-                    'expected_amount' => $owned->order->total_amount,
-                    'collected_amount' => $owned->order->total_amount,
-                    'status' => CodSettlement::COLLECTED,
-                    'collected_by_rider_id' => $rider->id, 'collected_at' => now(),
-                ]);
+                if ($owned->order->payment_method === 'cod') {
+                    // Only COD snapshots the persisted Buyer amount into Rider cash custody.
+                    CodSettlement::create([
+                        'order_id' => $owned->order_id, 'delivery_id' => $owned->id,
+                        'logistics_partner_id' => $owned->logistics_partner_id,
+                        'expected_amount' => $owned->order->total_amount,
+                        'collected_amount' => $owned->order->total_amount,
+                        'status' => CodSettlement::COLLECTED,
+                        'collected_by_rider_id' => $rider->id, 'collected_at' => now(),
+                    ]);
+                }
 
-                return redirect()->route('rider.deliveries.show', $owned)->with('status', 'Delivery completed and COD cash collection recorded.');
+                return redirect()->route('rider.deliveries.show', $owned)->with('status',
+                    $owned->order->payment_method === 'cod'
+                        ? 'Delivery completed and COD cash collection recorded.' : 'Delivery completed. Amount collected: ₱0.00.');
             });
         } catch (Throwable $exception) {
             if ($path) {
@@ -113,10 +121,11 @@ class DeliveryController extends Controller
             $owned = $this->owned($request, $deliveryId, true);
             $this->assertActive($rider->id, $owned->logistics_partner_id);
             // A locked Delivery and conditional Order update reject repeats, skips, and stale assignment races.
-            if ($owned->status !== $from || $owned->order?->status !== $orderFrom) {
+            if ($owned->status !== $from || $owned->order?->status !== $orderFrom
+                || ! $owned->order->isPaymentEligible()) {
                 return $this->stale();
             }
-            if (Order::whereKey($owned->order_id)->where('status', $orderFrom)->where('payment_method', 'cod')
+            if (Order::whereKey($owned->order_id)->where('status', $orderFrom)->paymentEligible()
                 ->update(['status' => $orderTo]) !== 1
                 || Delivery::whereKey($owned->id)->where('status', $from)->where('rider_id', $rider->id)
                     ->update(['status' => $to, $timestamp => now(), $actorColumn => $rider->id]) !== 1) {

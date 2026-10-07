@@ -1411,14 +1411,7 @@
         const docPreviewBody       = document.getElementById('docPreviewBody');
         const docPreviewOpenNewTab = document.getElementById('docPreviewOpenNewTab');
 
-        function isImageUrl(url) {
-            return /\.(jpe?g|png|gif|webp|bmp|svg)(\?.*)?$/i.test(url || '');
-        }
-
-        function isPdfUrl(url) {
-            return /\.pdf(\?.*)?$/i.test(url || '');
-        }
-
+        // Private preview type comes from server MIME metadata, so URL-extension inference is no longer authoritative.
         function openDocPreview(doc) {
             const url = doc.url || '';
             docPreviewLabel.textContent = doc.label || 'Document';
@@ -1427,13 +1420,14 @@
 
             if (!url) {
                 docPreviewBody.innerHTML = '<p class="text-xs text-slate-400 p-6">No file available for this document.</p>';
-            } else if (isImageUrl(url)) {
+            // Protected routes carry no filename extension; server-derived MIME preserves the existing preview UX.
+            } else if (doc.mime?.startsWith('image/')) {
                 const img = document.createElement('img');
                 img.src = url;
                 img.alt = doc.label || 'Document preview';
                 img.className = 'max-w-full max-h-[65vh] object-contain';
                 docPreviewBody.appendChild(img);
-            } else if (isPdfUrl(url)) {
+            } else if (doc.mime === 'application/pdf') {
                 const iframe = document.createElement('iframe');
                 iframe.src = url;
                 iframe.className = 'w-full h-[65vh]';

@@ -276,6 +276,20 @@
                     'pattern' => 'admin.registrations*',
                     'icon' => 'user-round-plus',
                 ],
+                // Manual payment evidence has its own Admin review queue and decision contract.
+                [
+                    'label' => 'Payment Review',
+                    'route' => 'admin.payments.index',
+                    'pattern' => 'admin.payments*',
+                    'icon' => 'wallet',
+                ],
+                // Merchandise review coexists with payment review inside the unchanged shared navigation renderer.
+                [
+                    'label' => 'Product Compliance',
+                    'route' => 'admin.product-compliance.index',
+                    'pattern' => 'admin.product-compliance*',
+                    'icon' => 'package-check',
+                ],
                 [
                     'label' => 'User Accounts',
                     'route' => 'admin.users',

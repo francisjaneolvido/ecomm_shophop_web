@@ -533,20 +533,19 @@
                         </label>
 
 
-                        {{-- GCash has no provider or verified manual-review contract, so it cannot be selected. --}}
+                        {{-- Generic Online Payment starts a private manual proof review after real Order placement. --}}
                         <label
-                            data-payment-option="gcash"
+                            data-payment-option="online"
                             class="payment-option flex items-center justify-between gap-3
                                    border border-gray-border rounded-xl px-3 py-2.5
-                                   opacity-50 cursor-not-allowed"
+                                   cursor-pointer transition"
                         >
                             <div class="flex items-center gap-2.5">
 
                                 <input
                                     type="radio"
                                     name="payment_method"
-                                    value="gcash"
-                                    disabled
+                                    value="online"
                                     class="accent-teal-dark w-3.5 h-3.5"
                                 >
 
@@ -557,24 +556,24 @@
 
                                 <div>
                                     <p class="text-[10.5px] font-semibold text-navy">
-                                        GCash (unavailable)
+                                        Online Payment
                                     </p>
 
                                     <p class="text-[8.5px] text-navy/40 mt-0.5">
-                                        Payment setup is pending
+                                        Submit a reference and receipt for ShopHop Admin review
                                     </p>
                                 </div>
                             </div>
 
                             <span class="text-[8px] font-semibold text-navy/35">
-                                Unavailable
+                                No COD fee
                             </span>
                         </label>
 
                     </div>
 
 
-                    {{-- Unsupported payment instructions and proof entry were removed; COD remains the only placement path. --}}
+                    {{-- Proof submission follows Order placement; this page cannot claim a transfer was verified. --}}
                     </div>
 
                 </section>
@@ -770,8 +769,8 @@
 
                     <div class="bg-white border border-gray-border rounded-xl px-2 py-2.5 text-center">
                         <x-lucide-lock class="w-3.5 h-3.5 text-teal-dark mx-auto" />
-                        {{-- Checkout currently accepts COD only; no online payment is processed here. --}}
-                        <p class="text-[7.5px] text-navy/45 mt-1">Cash on Delivery</p>
+                        {{-- Checkout offers COD and manual Online Payment with separate server contracts. --}}
+                        <p class="text-[7.5px] text-navy/45 mt-1">Secure checkout</p>
                     </div>
 
                 </section>
@@ -856,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const mobileSummaryTotal = document.getElementById('mobileSummaryTotal');
 
-    // Only COD is interactive until a real GCash verification contract exists.
+    // Both choices preview fees; server placement remains the authority for every total.
     const paymentOptions = document.querySelectorAll('[data-payment-option]');
 
     const voucherInput = document.getElementById('voucherInput');
@@ -1146,8 +1145,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         option.addEventListener('click', function () {
 
-            // Disabled payment choices must not be re-enabled by label click handling.
-            if (radio.disabled) return;
+            // The selected radio drives the displayed fee preview and the posted method.
 
             radio.checked = true;
 

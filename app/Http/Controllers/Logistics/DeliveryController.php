@@ -19,7 +19,7 @@ class DeliveryController extends Controller
     public function board(Request $request): View
     {
         $partner = $this->partner($request);
-        // Unclaimed COD Orders are visible only inside registered destination coverage; claimed work is partner-owned.
+        // Only paid-eligible unclaimed Orders inside coverage enter the assignment board.
         $ready = self::readyFor($partner);
         // Actor relations render the event performer, not a potentially later assignment label.
         $deliveries = Delivery::with(['order.seller', 'order.items.product', 'rider', 'pickupRider', 'deliveredRider'])
@@ -44,7 +44,7 @@ class DeliveryController extends Controller
             return DB::transaction(function () use ($partner, $rider, $order) {
                 // The unique order_id constraint closes concurrent claims across partners and checkout groups grant no access.
                 $ready = Order::whereKey($order)->lockForUpdate()->firstOrFail();
-                if ($ready->status !== Order::STATUS_READY_FOR_PICKUP || $ready->payment_method !== 'cod'
+                if ($ready->status !== Order::STATUS_READY_FOR_PICKUP || ! $ready->isPaymentEligible()
                     || ! self::covers($partner, $ready) || Delivery::where('order_id', $order)->exists()
                     || ! Rider::whereKey($rider->id)->where('status', 'active')
                         ->whereNotNull('email')->whereNotNull('password')->exists()) {
@@ -70,7 +70,7 @@ class DeliveryController extends Controller
     {
         // Dashboard and Board share one eligibility rule so their waiting counts cannot diverge.
         return Order::with(['seller', 'items.product'])
-            ->where('status', Order::STATUS_READY_FOR_PICKUP)->where('payment_method', 'cod')
+            ->where('status', Order::STATUS_READY_FOR_PICKUP)->paymentEligible()
             ->whereNotIn('id', Delivery::select('order_id'))->latest()->get()
             ->filter(fn (Order $order) => self::covers($partner, $order));
     }

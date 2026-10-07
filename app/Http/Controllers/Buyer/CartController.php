@@ -54,8 +54,8 @@ class CartController extends Controller
             ? min((int) $variant->stock, (int) $product->stock)
             : (int) $product->stock;
 
-        // Variant identity must match the Product's variant mode and owner; both inventory levels follow its active gate.
-        if ($product->status !== 'active' || ! $product->seller || (int) $product->stock <= 0
+        // Forged adds must recheck approval as well as canonical inventory and variant ownership.
+        if ($product->compliance_status !== 'approved' || $product->status !== 'active' || ! $product->seller || (int) $product->stock <= 0
             || ($product->has_variants && ! $variant)
             || (! $product->has_variants && $variant)
             || ($variant && ((int) $variant->product_id !== (int) $product->id
@@ -108,8 +108,8 @@ class CartController extends Controller
             ->where('buyer_id', $buyer->id)
             ->findOrFail($lineKey);
 
-        // An owned Cart line still needs current active Product, variant mode, and stock; no fallback is invented.
-        if (! $cartItem->product || $cartItem->product->status !== 'active'
+        // Cart can outlive approval; ownership cannot authorize a newly hidden Product quantity update.
+        if (! $cartItem->product || $cartItem->product->compliance_status !== 'approved' || $cartItem->product->status !== 'active'
             || (int) $cartItem->product->stock <= 0
             || ($cartItem->product->has_variants !== (bool) $cartItem->product_variant_id)
             || ($cartItem->product_variant_id && (! $cartItem->variant

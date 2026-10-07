@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\EmailVerificationCode;
 use App\Models\Seller;
 use App\Models\User;
+// Seller identity and permit uploads share the Admin review storage boundary.
+use App\Services\RegistrationDocuments;
 use App\Notifications\SellerVerificationCodeNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -193,13 +195,9 @@ class SellerRegistrationController extends Controller
             |--------------------------------------------------------------------------
             */
 
-            $validIdPath = $request
-                ->file('valid_id')
-                ->store('valid_ids/sellers', 'public');
-
-            $businessPermitPath = $request
-                ->file('business_permit')
-                ->store('business_permits/sellers', 'public');
+            // Both required registration artifacts are private and bound to their account/document slots.
+            $validIdPath = RegistrationDocuments::store($user, 'valid_id', $request->file('valid_id'));
+            $businessPermitPath = RegistrationDocuments::store($user, 'business_permit', $request->file('business_permit'));
 
 
             /*

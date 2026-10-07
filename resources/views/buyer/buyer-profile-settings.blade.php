@@ -675,7 +675,8 @@
                 <div data-tab-content="address" class="settings-panel hidden">
                     <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
 
-                        <div class="flex items-start justify-between gap-4 mb-4">
+                        {{-- Keep the read-only address disclosure contained when mobile navigation reveals this panel. --}}
+                        <div class="flex flex-wrap sm:flex-nowrap items-start justify-between gap-4 mb-4">
                             <div>
                                 <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Address Book</h2>
                                 <p class="text-sm text-navy/55">
@@ -1649,6 +1650,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /* =====================================================
        GENERIC CONFIRM MODAL
     ===================================================== */
+    // Keep confirmation actions inside the shared initializer so navigation, derived age and logout all initialize.
     const CONFIRM_ACTIONS = {
         logout: {
             title: 'Log Out',
@@ -1720,8 +1722,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // TODO:
                 // Submit a real DELETE request when the address route exists.
             },
-        },
-        },
         },
     };
 

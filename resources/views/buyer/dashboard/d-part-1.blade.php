@@ -238,20 +238,18 @@
             </div>
 
             <div class="grid grid-cols-3 gap-2 w-full sm:w-auto">
-                <div
-                    data-wishlist-unavailable
-                    aria-disabled="true"
-                    title="Wishlist is unavailable: saved items are not available yet"
-                    class="min-w-0 sm:w-28 rounded-xl border border-gray-border bg-white px-3 py-2.5 text-navy/45"
+                <a
+                    href="{{ Route::has('buyer.likes') ? route('buyer.likes') : '#' }}"
+                    class="min-w-0 sm:w-28 rounded-xl border border-gray-border bg-white px-3 py-2.5 hover:border-rose-200 hover:shadow-sm transition"
                 >
                     <div class="flex items-center gap-2">
-                        <x-lucide-heart class="w-3.5 h-3.5 text-teal-dark shrink-0" />
+                        <x-lucide-heart class="w-3.5 h-3.5 text-rose-500 shrink-0" />
                         <div class="min-w-0">
-                            <p class="text-[9px] font-semibold leading-none">Unavailable</p>
-                            <p class="text-[8px] text-navy/35 mt-1 truncate">Wishlist</p>
+                            <p data-favorite-count class="text-sm font-bold leading-none text-navy">{{ $favoriteCount ?? 0 }}</p>
+                            <p class="text-[8px] text-navy/35 mt-1 truncate">My Likes</p>
                         </div>
                     </div>
-                </div>
+                </a>
 
                 <a
                     data-buyer-cart-link

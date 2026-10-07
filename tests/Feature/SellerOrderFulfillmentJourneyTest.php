@@ -11,6 +11,8 @@ use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductVariant;
 use App\Models\Seller\Manage_inventory\Voucher;
 use App\Models\User;
+// Destructive dashboard fixture setup must remain confined to PHPUnit's in-memory connection.
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -20,6 +22,9 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
     {
         parent::setUp();
 
+        // Fail closed before dropping tables if the disposable PHPUnit configuration is lost.
+        $this->assertSame('sqlite', DB::getDefaultConnection());
+        $this->assertSame(':memory:', DB::connection()->getDatabaseName());
         // Keep the focused disposable Commerce schema aligned with Seller's delivery and COD settlement reads.
         Schema::dropAllTables();
         foreach ([
@@ -30,6 +35,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
             '2026_08_29_000003_create_logistics_partners_table.php',
             '0001_01_01_000003_create_products_table.php',
             'Seller/Manage_inventory/2025_01_15_000001_add_inventory_fields_to_products_table.php',
+            // Real Checkout requires the current compliance schema even in this focused fulfillment fixture.
+            'Seller/Manage_inventory/2026_09_30_000001_add_product_compliance.php',
             'Seller/Manage_inventory/2025_01_15_000003_create_product_variants_table.php',
             'Seller/Manage_inventory/2025_01_15_000004_create_vouchers_table.php',
             'Seller/Manage_inventory/2025_01_15_000005_create_voucher_product_table.php',
@@ -41,6 +48,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
             '2026_09_24_000001_create_logistics_operations_tables.php',
             // Seller details may load recorded COD cash without treating a legacy Order as paid.
             '2026_09_26_000001_create_cod_settlements_table.php',
+            // Seller payment-eligible queues now read the manual group payment contract.
+            '2026_09_28_000001_create_manual_cashless_payments_table.php',
         ] as $path) {
             (require database_path('migrations/' . $path))->up();
         }
@@ -69,6 +78,8 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
         $seller = $this->seller('checkout-seller@example.test');
         $otherSeller = $this->seller('other-seller@example.test');
         $product = $this->product($seller, 'Real Checkout Product');
+        // Exercise successful COD placement with eligible merchandise; pending Products must remain rejected.
+        $product->update(['compliance_status' => 'approved']);
         $line = CartItem::create(['buyer_id' => $buyer->id, 'product_id' => $product->id, 'quantity' => 1]);
 
         // Exercise the real placement seam: checkout creates the Seller Order and deducts stock once.
@@ -80,6 +91,11 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
         $order = Order::sole();
         $this->assertSame($seller->id, $order->seller_id);
         $this->assertSame(Order::STATUS_TO_SHIP, $order->status);
+        // COD has no cashless payment membership; its recorded amount and consumed Cart must remain canonical.
+        $this->assertSame('cod', $order->payment_method);
+        $this->assertNull($order->manual_cashless_payment_id);
+        $this->assertSame('178.00', $order->total_amount);
+        $this->assertFalse(CartItem::whereKey($line->id)->exists());
         $this->assertSame(4, $product->fresh()->stock);
 
         // A different approved Seller cannot discover the newly placed Order.
@@ -230,6 +246,9 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
 
         // The visible pipeline must count Seller-owned Order states, not checkout siblings or Logistics fixtures.
         $response = $this->actingAs($seller->user)->get(route('seller.dashboard'))->assertOk();
+        // No persisted message feed exists, so the same dashboard must disclose availability instead of an empty inbox.
+        $response->assertDontSee('No unread messages')->assertDontSee('Customer messages will appear here')
+            ->assertSee('Messaging unavailable');
         $document = new \DOMDocument();
         @$document->loadHTML($response->getContent());
         $xpath = new \DOMXPath($document);
@@ -245,6 +264,13 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
         $this->assertSame('3', trim($monthly->item(0)->textContent));
         $this->assertStringContainsString(route('seller.orders.show', $ready), $response->getContent());
         $this->assertStringNotContainsString(route('seller.orders.show', $foreign), $response->getContent());
+        // The preserved Chat link must reach the existing informational surface without claiming inbox or delivery state.
+        $messages = $xpath->query('//div[div/div/h2[normalize-space()="Messages"]]')->item(0);
+        $this->assertNotNull($messages);
+        $this->assertDoesNotMatchRegularExpression('/\b\d+\s+unread\b/i', $messages->textContent);
+        $this->assertStringContainsString(route('seller.chat'), $document->saveHTML($messages));
+        $this->get(route('seller.chat'))->assertOk()->assertSee('Live messaging is unavailable.')
+            ->assertSee('Messages are not sent or stored here.');
     }
 
     private function buyer(): Buyer

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Buyer;
 use App\Models\EmailVerificationCode;
 use App\Models\User;
+// Mobile registration must not bypass the web registration document privacy contract.
+use App\Services\RegistrationDocuments;
 use App\Notifications\BuyerVerificationCodeNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -136,9 +138,8 @@ class MobileBuyerAuthController extends Controller
                 'status' => 'pending',
             ]);
 
-            $validIdPath = $request
-                ->file('valid_id')
-                ->store('valid_ids/buyers', 'public');
+            // Mobile IDs use the same account-scoped private storage as web Buyer registration.
+            $validIdPath = RegistrationDocuments::store($user, 'valid_id', $request->file('valid_id'));
 
             Buyer::create([
                 'user_id' => $user->id,

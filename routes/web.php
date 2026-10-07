@@ -11,6 +11,7 @@ use App\Http\Controllers\Auth\BuyerRegistrationController;
 use App\Http\Controllers\Auth\SellerRegistrationController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\BuyerEmailVerificationController;
+use App\Http\Controllers\PaymentReceiptController;
 
 
 /*
@@ -76,6 +77,7 @@ Route::get('/create-account', function () {
 //     ->name('deals');
 
 
+// Retain public Store URLs as availability destinations; the legacy parameter has no defined public Seller lookup.
 Route::get('/buyer/store/{slug?}', function ($slug = null) {
     return view('buyer.store.show');
 })->name('buyer.store.show');
@@ -105,3 +107,7 @@ Route::post('/buyer/verify-email/resend', [
 ])
     ->middleware('throttle:6,1')
     ->name('buyer.verify-email.resend');
+
+// Private receipts require a web identity and a second record-level Buyer/Admin check.
+Route::get('/payment-receipts/{payment}', [PaymentReceiptController::class, 'show'])
+    ->middleware('auth')->name('payments.receipt');

@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 
+// All developer previews share TEST's local-only boundary; production and testing must not register them.
+if (! app()->environment('local')) {
+    return;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -68,7 +72,8 @@ if (app()->environment('local')) {
                 Route::view('/seller/feedback', 'seller.feedback')->name('seller.feedback');
                 Route::view('/seller/reports', 'seller.reports')->name('seller.reports');
                 Route::view('/seller/chat', 'seller.chat')->name('seller.chat');
-                Route::view('/seller/account', 'seller.account')->name('seller.account');
+                // Account identity requires the real approved Seller session even when entered through local TEST navigation.
+                Route::redirect('/seller/account', '/seller/account')->name('seller.account');
                 Route::view('/seller/storefront', 'seller.storefront')->name('seller.storefront');
 
                 Route::view('/admin/dashboard', 'admin.dashboard')->name('admin.dashboard');

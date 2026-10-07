@@ -44,7 +44,6 @@ class Seller extends Model
 
     public function products(): HasMany
     {
-        // products.seller_id stores users.id, so match it against sellers.user_id (not sellers.id).
-        return $this->hasMany(Product::class, 'seller_id', 'user_id');
+        return $this->hasMany(Product::class);
     }
 }

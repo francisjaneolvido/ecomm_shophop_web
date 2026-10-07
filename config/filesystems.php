@@ -30,6 +30,14 @@ return [
 
     'disks' => [
 
+        // Registration identity/business documents have no URL, serving route or public storage mapping.
+        'registration_documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/registration-documents'),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

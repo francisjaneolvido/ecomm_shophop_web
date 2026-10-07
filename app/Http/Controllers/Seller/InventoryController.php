@@ -19,7 +19,7 @@ class InventoryController extends Controller
 {
     /**
      * Categories are hardcoded for now since there's no categories
-     * table yet - same placeholder list used in the seller
+     * table yet — same placeholder list used in the seller
      * registration modal. Swap this for a real query once a
      * categories table exists.
      */
@@ -113,6 +113,13 @@ class InventoryController extends Controller
             : (int) ($validated['stock'] ?? 0);
 
         $payload = [
+            // Full content submissions invalidate old review identity and rejection history, including approved edits.
+            'compliance_status' => 'pending_review',
+            'submitted_at' => now(),
+            'reviewed_at' => null,
+            'reviewed_by' => null,
+            'rejection_reason' => null,
+            'rejection_notes' => null,
             'seller_id' => Auth::id(),
             'name' => $validated['name'],
             'sku' => $validated['sku'] ?? null,
@@ -133,17 +140,9 @@ class InventoryController extends Controller
             $hasVariants
         ) {
             if ($product) {
-                // Edited existing product: send it back to the review queue,
-                // especially if it was previously rejected.
-                $payload['compliance_status'] = 'pending_review';
-                $payload['submitted_at'] = now();
-                $payload['rejection_reason'] = null;
-                $payload['rejection_notes'] = null;
                 $product->update($payload);
             } else {
                 $payload['status'] = 'active';
-                $payload['compliance_status'] = 'pending_review';
-                $payload['submitted_at'] = now();
                 $product = Product::create($payload);
             }
 
@@ -153,14 +152,15 @@ class InventoryController extends Controller
 
         return redirect()
             ->route('seller.inventory')
+            // Persistence succeeds before review; neither creation nor full edit promises Buyer visibility.
             ->with('status', $product->wasRecentlyCreated
-                ? 'Product added successfully. It will be reviewed by our team before it goes live.'
-                : 'Product updated successfully. It will be reviewed again before it goes live.');
+                ? 'Product added. Awaiting compliance review before Buyer visibility.'
+                : 'Product updated and resubmitted for compliance review.');
     }
 
     /**
      * Handles the quick +/- stock editor on the inventory table row.
-     * Only allowed for simple products (no variants) - variant stock
+     * Only allowed for simple products (no variants) — variant stock
      * is derived automatically from the variant rows instead.
      */
     public function updateStock(Request $request, Product $product): RedirectResponse

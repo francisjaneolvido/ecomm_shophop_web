@@ -72,14 +72,6 @@
         ];
     };
 
-    $complianceMeta = function ($product) {
-        return match ($product->compliance_status) {
-            'approved' => ['label' => 'Approved', 'class' => 'bg-teal/10 text-teal-dark'],
-            'rejected' => ['label' => 'Rejected', 'class' => 'bg-red-50 text-red-600'],
-            default => ['label' => 'Pending Review', 'class' => 'bg-yellow/20 text-amber-700'],
-        };
-    };
-
     $sellingPrice = function ($product) {
         $price = (float) $product->price;
         $discount = (int) $product->discount;
@@ -504,7 +496,7 @@
             @else
 
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[1250px]" id="inventoryTable">
+                    <table class="w-full min-w-[1100px]" id="inventoryTable">
 
                         <thead>
                             <tr class="border-b border-gray-border bg-gray-bg/40">
@@ -514,7 +506,6 @@
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Price</th>
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Stock</th>
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Status</th>
-                                <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Compliance</th>
                                 <th class="px-4 py-3 text-right text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Actions</th>
                             </tr>
                         </thead>
@@ -526,7 +517,6 @@
 
                                 @php
                                     $meta = $stockMeta($product);
-                                    $compliance = $complianceMeta($product);
                                     $finalPrice = $sellingPrice($product);
 
                                     $primaryImage =
@@ -610,6 +600,12 @@
                                                 <p class="text-xs font-semibold text-navy truncate max-w-[240px]">
                                                     {{ $product->name }}
                                                 </p>
+
+                                                {{-- Seller inventory retains hidden merchandise and explains the correction/resubmission state. --}}
+                                                <p class="text-[10px] text-navy/60">Compliance: {{ ucwords(str_replace('_', ' ', $product->compliance_status)) }}</p>
+                                                @if ($product->compliance_status === 'rejected')
+                                                    <p class="text-[10px] text-navy/60">{{ ucwords(str_replace('_', ' ', $product->rejection_reason ?? '')) }}@if($product->rejection_notes): {{ $product->rejection_notes }}@endif</p>
+                                                @endif
 
 
                                                 <div class="mt-1 flex flex-wrap items-center gap-1.5">
@@ -771,20 +767,6 @@
                                     </td>
 
 
-                                    {{-- Compliance --}}
-                                    <td class="px-4 py-3">
-                                        <span class="inline-flex text-[10px] font-bold px-2 py-1 rounded-full {{ $compliance['class'] }}">
-                                            {{ $compliance['label'] }}
-                                        </span>
-
-                                        @if ($product->compliance_status === 'rejected' && $product->rejection_reason)
-                                            <p class="text-[9px] text-red-500 mt-1 max-w-[160px]">
-                                                {{ \Illuminate\Support\Str::of($product->rejection_reason)->replace('_', ' ')->title() }}
-                                            </p>
-                                        @endif
-                                    </td>
-
-
                                     {{-- Actions --}}
                                     <td class="px-4 py-3">
 
@@ -793,7 +775,8 @@
                                             <button
                                                 type="button"
                                                 data-open-product-modal
-                                                data-product="{{ e(json_encode($productJson)) }}"
+                                                {{-- Blade escapes once; double escaping makes JSON invalid and prevents compliance correction/resubmission. --}}
+                                                data-product="{{ json_encode($productJson) }}"
                                                 class="h-8 px-2.5 rounded-lg border border-gray-border text-xs font-semibold text-navy/55 hover:text-teal-dark hover:border-teal/30 hover:bg-teal-light transition"
                                             >
                                                 Edit

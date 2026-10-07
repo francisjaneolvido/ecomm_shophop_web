@@ -6,35 +6,27 @@
     $buyerName = $buyer?->first_name ?? 'Buyer';
     $buyerInitial = strtoupper(substr($buyerName, 0, 1));
 
-    $notifications = [
-        [
-            'title' => 'Order shipped',
-            'message' => 'Your Wireless Earbuds Pro is on the way.',
-            'time' => '5 min ago',
-            'icon' => 'truck',
-            'unread' => true,
-        ],
-        [
-            'title' => 'New voucher available',
-            'message' => 'You received a ₱100 ShopHop voucher.',
-            'time' => '1 hour ago',
-            'icon' => 'ticket',
-            'unread' => true,
-        ],
-        [
-            'title' => 'Price dropped',
-            'message' => 'An item from your wishlist is now cheaper.',
-            'time' => '3 hours ago',
-            'icon' => 'badge-percent',
-            'unread' => true,
-        ],
-    ];
-
-    $notificationCount = collect($notifications)->where('unread', true)->count();
+    // No persisted notification feed exists; fixture account records and unread counts cannot be advertised.
     // Shared buyer chrome reads the persisted Cart when a page does not pass its own count.
     $cartItemCount = $cartItemCount ?? (\Illuminate\Support\Facades\Schema::hasTable('cart_items')
         ? \App\Models\Buyer\Cart\CartItem::where('buyer_id', auth()->user()?->buyer?->id)->count()
         : 0);
+
+
+    $favoriteRows = collect();
+    if (\Illuminate\Support\Facades\Schema::hasTable('favorites') && auth()->user()?->buyer?->id) {
+        $favoriteRows = \App\Models\Buyer\Favorite\Favorite::query()
+            ->where('buyer_id', auth()->user()->buyer->id)
+            ->get(['product_id']);
+    }
+
+    $likedProductIds = $likedProductIds ?? $favoriteRows
+        ->pluck('product_id')
+        ->map(fn ($id) => (int) $id)
+        ->values()
+        ->all();
+
+    $favoriteCount = $favoriteCount ?? count($likedProductIds);
 @endphp
 
 <header class="bg-white border-b border-gray-border sticky top-0 z-50">
@@ -73,12 +65,11 @@
 
             <div class="ml-auto md:ml-0 flex items-center gap-1.5 shrink-0">
 
-                {{-- Wishlist persistence does not exist yet, so this must not imply otherwise. --}}
-                <button type="button" data-wishlist-unavailable disabled title="Wishlist is unavailable"
-                   aria-label="Wishlist unavailable: saved items are not available yet"
-                   class="hidden sm:flex w-8 h-8 items-center justify-center rounded-full text-navy/40 cursor-not-allowed opacity-55">
+                <a href="{{ Route::has('buyer.likes') ? route('buyer.likes') : '#' }}" title="My Likes" aria-label="My Likes"
+                   class="relative hidden sm:flex w-8 h-8 items-center justify-center rounded-full text-navy hover:bg-gray-bg hover:text-rose-500 transition">
                     <x-lucide-heart class="w-4.5 h-4.5" />
-                </button>
+                    <span data-favorite-count class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-rose-500 text-white text-[7px] font-bold">{{ $favoriteCount }}</span>
+                </a>
 
                 {{-- CART — points to the real cart route --}}
                 <a data-buyer-cart-link href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" title="Shopping Cart" aria-label="Shopping Cart"
@@ -87,62 +78,16 @@
                     <span data-cart-count class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-teal text-white text-[7px] font-bold">{{ $cartItemCount }}</span>
                 </a>
 
-                {{-- NOTIFICATIONS --}}
+                {{-- Only availability is disclosed because notification records and read-state persistence are unsupported. --}}
                 <div class="relative" data-hover-menu data-notification-menu>
-                    <button type="button" data-hover-menu-toggle aria-haspopup="true" aria-expanded="false" title="Notifications" aria-label="Notifications"
+                    <button type="button" data-hover-menu-toggle aria-haspopup="true" aria-expanded="false" title="Notifications unavailable" aria-label="Notifications unavailable"
                             class="relative w-8 h-8 flex items-center justify-center rounded-full text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                         <x-lucide-bell class="w-4.5 h-4.5" />
-                        @if ($notificationCount > 0)
-                            <span data-notification-badge class="absolute -top-0.5 -right-0.5 min-w-3.5 h-3.5 px-1 flex items-center justify-center rounded-full bg-teal text-white text-[7px] font-bold">{{ $notificationCount }}</span>
-                        @endif
                     </button>
-
                     <div data-hover-menu-panel class="hidden absolute right-0 top-full pt-2 z-60 w-80 max-w-[calc(100vw-2rem)]">
-                        <div class="bg-white border border-gray-border rounded-2xl shadow-xl shadow-navy/10 overflow-hidden">
-                            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-border">
-                                <div>
-                                    <p class="text-[13px] font-bold text-navy">Notifications</p>
-                                    <p data-notification-summary class="text-[10px] text-navy/45 mt-0.5">{{ $notificationCount }} unread</p>
-                                </div>
-                                <button type="button" data-mark-all-read class="text-[10px] font-semibold text-teal-dark hover:text-teal transition">Mark all as read</button>
-                            </div>
-
-                            <div class="max-h-80 overflow-y-auto">
-                                @forelse ($notifications as $index => $notification)
-                                    <button type="button" data-notification-item
-                                            class="w-full text-left flex items-start gap-3 px-4 py-3.5 border-b border-gray-border last:border-b-0 {{ $notification['unread'] ? 'bg-teal-light/25' : 'bg-white' }} hover:bg-gray-bg transition">
-                                        <div class="w-9 h-9 rounded-xl bg-teal-light text-teal-dark flex items-center justify-center shrink-0">
-                                            @if ($notification['icon'] === 'truck')
-                                                <x-lucide-truck class="w-4 h-4" />
-                                            @elseif ($notification['icon'] === 'ticket')
-                                                <x-lucide-ticket class="w-4 h-4" />
-                                            @else
-                                                <x-lucide-badge-percent class="w-4 h-4" />
-                                            @endif
-                                        </div>
-                                        <div class="flex-1 min-w-0">
-                                            <div class="flex items-start gap-2">
-                                                <p class="text-[11px] font-semibold text-navy flex-1">{{ $notification['title'] }}</p>
-                                                @if ($notification['unread'])
-                                                    <span data-unread-dot class="w-1.5 h-1.5 mt-1 rounded-full bg-teal shrink-0"></span>
-                                                @endif
-                                            </div>
-                                            <p class="text-[10px] text-navy/55 leading-relaxed mt-0.5">{{ $notification['message'] }}</p>
-                                            <p class="text-[9px] text-navy/35 mt-1">{{ $notification['time'] }}</p>
-                                        </div>
-                                    </button>
-                                @empty
-                                    <div class="px-4 py-8 text-center">
-                                        <x-lucide-bell-off class="w-7 h-7 text-navy/25 mx-auto mb-2" />
-                                        <p class="text-[11px] text-navy/45">No notifications yet.</p>
-                                    </div>
-                                @endforelse
-                            </div>
-
-                            <a href="#" class="flex items-center justify-center gap-1.5 px-4 py-3 border-t border-gray-border text-[11px] font-semibold text-teal-dark hover:bg-gray-bg transition">
-                                View all notifications
-                                <x-lucide-chevron-right class="w-3.5 h-3.5" />
-                            </a>
+                        <div class="bg-white border border-gray-border rounded-2xl shadow-xl shadow-navy/10 px-4 py-5">
+                            <p class="text-[13px] font-bold text-navy">Notifications unavailable</p>
+                            <p class="text-[11px] text-navy/60 leading-relaxed mt-2">No notification feed is available yet.</p>
                         </div>
                     </div>
                 </div>
@@ -169,10 +114,10 @@
                                 <x-lucide-package class="w-4 h-4" />
                                 My Orders
                             </a>
+                            {{-- No persisted message feed exists, so navigation must not imply unread state. --}}
                             <a href="{{ Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-[12px] text-navy hover:bg-gray-bg hover:text-teal-dark transition">
                                 <x-lucide-message-circle class="w-4 h-4" />
                                 <span class="flex-1">Messages</span>
-                                <span class="min-w-4 h-4 px-1 rounded-full bg-teal text-white text-[7px] font-bold flex items-center justify-center">3</span>
                             </a>
                             <div class="my-1.5 border-t border-gray-border"></div>
                            <form method="POST" action="{{ route('logout') }}">
@@ -227,11 +172,14 @@
 
                 <div class="my-2 border-t border-gray-border"></div>
 
-                <span data-wishlist-unavailable aria-disabled="true" title="Wishlist is unavailable"
-                    class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-navy/45 cursor-not-allowed">
-                    <x-lucide-heart class="w-4 h-4" />
-                    Wishlist unavailable
-                </span>
+                <a href="{{ Route::has('buyer.likes') ? route('buyer.likes') : '#' }}"
+                    class="flex items-center justify-between gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg hover:text-rose-500 transition">
+                    <span class="flex items-center gap-2.5">
+                        <x-lucide-heart class="w-4 h-4" />
+                        My Likes
+                    </span>
+                    <span data-favorite-count class="min-w-5 h-5 px-1.5 rounded-full bg-rose-50 text-rose-600 text-[9px] font-bold flex items-center justify-center">{{ $favoriteCount }}</span>
+                </a>
 
                 {{-- CART — points to the real cart route --}}
                 <a data-buyer-cart-link href="{{ Route::has('buyer.cart') ? route('buyer.cart') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
@@ -239,23 +187,21 @@
                     Shopping Cart
                 </a>
 
-                <a href="#" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
+                {{-- No mobile notification destination exists, so this availability label stays non-interactive. --}}
+                <span data-notifications-unavailable class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-navy/60">
                     <x-lucide-bell class="w-4 h-4" />
-                    Notifications
-                    @if ($notificationCount > 0)
-                        <span class="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-teal text-white text-[9px] font-bold flex items-center justify-center">{{ $notificationCount }}</span>
-                    @endif
-                </a>
+                    Notifications unavailable
+                </span>
 
                 <a href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
                     <x-lucide-package class="w-4 h-4" />
                     My Orders
                 </a>
 
+                {{-- Mobile navigation shares the same unavailable message feed and cannot advertise a count. --}}
                 <a href="{{ Route::has('buyer.messages') ? route('buyer.messages') : url('/buyer/messages') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
                     <x-lucide-message-circle class="w-4 h-4" />
                     Messages
-                    <span class="ml-auto min-w-5 h-5 px-1.5 rounded-full bg-teal text-white text-[9px] font-bold flex items-center justify-center">3</span>
                 </a>
 
                 <a href="{{ Route::has('buyer.profile') ? route('buyer.profile') : '#' }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-bg">
@@ -279,6 +225,23 @@
         </div>
     </div>
 </header>
+
+@include('buyer.partials.favorite-scripts')
+
+{{-- Anchor the small-screen availability panel to the viewport because the bell sits inside the narrow action cluster. --}}
+@push('styles')
+<style>
+    @media (max-width: 639px) {
+        [data-notification-menu] > [data-hover-menu-panel] {
+            position: fixed;
+            top: 3.5rem;
+            left: 1rem;
+            right: 1rem;
+            width: auto;
+        }
+    }
+</style>
+@endpush
 
 {{-- =============================================================
     NAVBAR SCRIPTS
@@ -363,25 +326,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    const markAllReadButton = document.querySelector('[data-mark-all-read]');
-    const notificationBadge = document.querySelector('[data-notification-badge]');
-    const notificationSummary = document.querySelector('[data-notification-summary]');
-
-    if (markAllReadButton) {
-        markAllReadButton.addEventListener('click', function () {
-            document.querySelectorAll('[data-notification-item]').forEach(function (item) {
-                item.classList.remove('bg-teal-light/25');
-                item.classList.add('bg-white');
-            });
-            document.querySelectorAll('[data-unread-dot]').forEach(function (dot) { dot.remove(); });
-            if (notificationBadge) notificationBadge.remove();
-            if (notificationSummary) notificationSummary.textContent = 'You’re all caught up';
-            markAllReadButton.textContent = 'All read';
-            markAllReadButton.disabled = true;
-            markAllReadButton.classList.add('opacity-50', 'cursor-default');
-        });
-    }
-
+    // Notification chrome only discloses availability; no read-state mutation is supported.
     const mobileToggle = document.querySelector('[data-mobile-menu-toggle]');
     const mobilePanel = document.querySelector('[data-mobile-menu-panel]');
 

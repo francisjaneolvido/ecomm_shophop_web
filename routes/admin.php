@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
+use App\Http\Controllers\Admin\ManualCashlessPaymentReviewController;
+// Product review uses the same current Admin identity and middleware boundary as payment review.
 use App\Http\Controllers\Admin\ProductComplianceController;
 // use App\Http\Controllers\Admin\CommissionController;
 
@@ -25,11 +27,29 @@ Route::prefix('admin')
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
+        // Compliance reads and mutations require an authenticated approved Admin, never a route prefix alone.
+        Route::get('/product-compliance', [ProductComplianceController::class, 'index'])->name('product-compliance.index');
+        Route::get('/product-compliance/{product}', [ProductComplianceController::class, 'show'])->name('product-compliance.show');
+        Route::patch('/product-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])->name('product-compliance.approve');
+        Route::patch('/product-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])->name('product-compliance.reject');
+
+        // Cashless proof decisions have their own Admin queue and locked group review.
+        Route::get('/payments', [ManualCashlessPaymentReviewController::class, 'index'])->name('payments.index');
+        Route::get('/payments/{payment}', [ManualCashlessPaymentReviewController::class, 'show'])->name('payments.show');
+        Route::post('/payments/{payment}/verify', [ManualCashlessPaymentReviewController::class, 'verify'])->name('payments.verify');
+        Route::post('/payments/{payment}/reject', [ManualCashlessPaymentReviewController::class, 'reject'])->name('payments.reject');
+        // Cancellation restores Checkout effects and is distinct from correctable proof rejection.
+        Route::post('/payments/{payment}/cancel', [ManualCashlessPaymentReviewController::class, 'cancel'])->name('payments.cancel');
+
         Route::get('/registration', [AdminRegistrationController::class, 'index'])
             ->name('registrations');
 
         Route::get('/registration/{user}', [AdminRegistrationController::class, 'show'])
             ->name('registrations.show');
+
+        // Sensitive files reuse the approved Admin boundary and accept a record/slot, never a filesystem path.
+        Route::get('/registration/{user}/documents/{document}', [AdminRegistrationController::class, 'document'])
+            ->name('registrations.documents.show');
 
         Route::get('/users', [UserAccountController::class, 'index'])
             ->name('users');
@@ -49,16 +69,9 @@ Route::prefix('admin')
         Route::post('/users/{user}/reactivate', [UserAccountController::class, 'reactivate'])
             ->name('users.reactivate');
 
-        // Seller Compliance = admin review of products submitted by verified sellers.
-        // (Seller document verification happens on the Account Registrations page.)
-        Route::get('/seller-compliance', [ProductComplianceController::class, 'index'])
-            ->name('compliance');
-
-        Route::post('/seller-compliance/products/{product}/approve', [ProductComplianceController::class, 'approve'])
-            ->name('compliance.products.approve');
-
-        Route::post('/seller-compliance/products/{product}/reject', [ProductComplianceController::class, 'reject'])
-            ->name('compliance.products.reject');
+        Route::get('/seller-compliance', function () {
+            return view('admin.seller-compliance');
+        })->name('compliance');
 
         Route::get('/complaints-disputes', function () {
             return view('admin.complaints-disputes');
