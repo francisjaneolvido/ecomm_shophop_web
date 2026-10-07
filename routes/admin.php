@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
+use App\Http\Controllers\Admin\ProductComplianceController;
 // use App\Http\Controllers\Admin\CommissionController;
 
 
@@ -48,9 +49,16 @@ Route::prefix('admin')
         Route::post('/users/{user}/reactivate', [UserAccountController::class, 'reactivate'])
             ->name('users.reactivate');
 
-        Route::get('/seller-compliance', function () {
-            return view('admin.seller-compliance');
-        })->name('compliance');
+        // Seller Compliance = admin review of products submitted by verified sellers.
+        // (Seller document verification happens on the Account Registrations page.)
+        Route::get('/seller-compliance', [ProductComplianceController::class, 'index'])
+            ->name('compliance');
+
+        Route::post('/seller-compliance/products/{product}/approve', [ProductComplianceController::class, 'approve'])
+            ->name('compliance.products.approve');
+
+        Route::post('/seller-compliance/products/{product}/reject', [ProductComplianceController::class, 'reject'])
+            ->name('compliance.products.reject');
 
         Route::get('/complaints-disputes', function () {
             return view('admin.complaints-disputes');

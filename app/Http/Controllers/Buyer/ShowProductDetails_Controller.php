@@ -12,7 +12,7 @@ class ShowProductDetails_Controller extends Controller
      */
     public function show(Product $product)
     {
-        abort_if($product->status !== 'active', 404);
+        abort_if($product->status !== 'active' || $product->compliance_status !== 'approved', 404);
 
         $product->load(['seller', 'images', 'variants', 'vouchers']);
 
@@ -138,10 +138,9 @@ class ShowProductDetails_Controller extends Controller
             'seller_joined' => $sellerJoined,
         ];
 
-        // ---- Related products (same category, active, in stock) ----
+        // ---- Related products (same category, publicly discoverable) ----
         $relatedProducts = Product::query()
-            ->where('status', 'active')
-            ->where('stock', '>', 0)
+            ->publiclyDiscoverable()
             ->where('category', $product->category)
             ->where('id', '!=', $product->id)
             ->withAvg('reviews as avg_rating', 'rating')

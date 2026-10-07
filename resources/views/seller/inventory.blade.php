@@ -72,6 +72,14 @@
         ];
     };
 
+    $complianceMeta = function ($product) {
+        return match ($product->compliance_status) {
+            'approved' => ['label' => 'Approved', 'class' => 'bg-teal/10 text-teal-dark'],
+            'rejected' => ['label' => 'Rejected', 'class' => 'bg-red-50 text-red-600'],
+            default => ['label' => 'Pending Review', 'class' => 'bg-yellow/20 text-amber-700'],
+        };
+    };
+
     $sellingPrice = function ($product) {
         $price = (float) $product->price;
         $discount = (int) $product->discount;
@@ -496,7 +504,7 @@
             @else
 
                 <div class="overflow-x-auto">
-                    <table class="w-full min-w-[1100px]" id="inventoryTable">
+                    <table class="w-full min-w-[1250px]" id="inventoryTable">
 
                         <thead>
                             <tr class="border-b border-gray-border bg-gray-bg/40">
@@ -506,6 +514,7 @@
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Price</th>
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Stock</th>
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Status</th>
+                                <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Compliance</th>
                                 <th class="px-4 py-3 text-right text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Actions</th>
                             </tr>
                         </thead>
@@ -517,6 +526,7 @@
 
                                 @php
                                     $meta = $stockMeta($product);
+                                    $compliance = $complianceMeta($product);
                                     $finalPrice = $sellingPrice($product);
 
                                     $primaryImage =
@@ -758,6 +768,20 @@
                                         <span class="inline-flex text-[10px] font-bold px-2 py-1 rounded-full {{ $meta['class'] }}">
                                             {{ $meta['label'] }}
                                         </span>
+                                    </td>
+
+
+                                    {{-- Compliance --}}
+                                    <td class="px-4 py-3">
+                                        <span class="inline-flex text-[10px] font-bold px-2 py-1 rounded-full {{ $compliance['class'] }}">
+                                            {{ $compliance['label'] }}
+                                        </span>
+
+                                        @if ($product->compliance_status === 'rejected' && $product->rejection_reason)
+                                            <p class="text-[9px] text-red-500 mt-1 max-w-[160px]">
+                                                {{ \Illuminate\Support\Str::of($product->rejection_reason)->replace('_', ' ')->title() }}
+                                            </p>
+                                        @endif
                                     </td>
 
 
