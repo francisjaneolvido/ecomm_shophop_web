@@ -16,13 +16,27 @@ class EnsureApprovedRole
     ): Response {
         /*
         |--------------------------------------------------------------------------
+        | WHERE TO SEND GUESTS / BLOCKED USERS
+        |--------------------------------------------------------------------------
+        |
+        | Kapag nasa logistics subdomain, sa logistics login babalik.
+        | Kapag nasa main site, sa home page (gaya ng dati).
+        |
+        */
+
+        $loginRedirect = fn () => $request->getHost() === config('app.logistics_domain')
+            ? redirect()->route('logistics.login')
+            : redirect()->route('home');
+
+
+        /*
+        |--------------------------------------------------------------------------
         | MUST BE LOGGED IN
         |--------------------------------------------------------------------------
         */
 
         if (! Auth::check()) {
-            return redirect()
-                ->route('home')
+            return $loginRedirect()
                 ->with('open_modal', 'login')
                 ->with('login_notice', [
                     'type' => 'warning',
@@ -134,9 +148,7 @@ class EnsureApprovedRole
                 ],
             };
 
-            return redirect()
-                ->route('home')
-                ->with('login_notice', $notice);
+            return $loginRedirect()->with('login_notice', $notice);
         }
 
 

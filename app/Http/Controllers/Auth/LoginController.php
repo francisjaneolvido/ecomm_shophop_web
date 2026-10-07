@@ -53,6 +53,32 @@ class LoginController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+        | LOGISTICS USERS SIGN IN ON THE LOGISTICS SUBDOMAIN
+        |--------------------------------------------------------------------------
+        |
+        | Ang session cookie ay naka-save sa main domain, hindi sa subdomain.
+        | Kaya i-logout dito at ipadala sa logistics login page.
+        |
+        */
+
+        if ($user->account_type === 'logistics') {
+            Auth::logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()
+                ->route('logistics.login')
+                ->with('login_notice', [
+                    'type' => 'warning',
+                    'title' => 'Use the Logistics Portal',
+                    'message' => 'Logistics partners sign in through the logistics portal.',
+                ]);
+        }
+
+
+        /*
+        |--------------------------------------------------------------------------
         | EMAIL VERIFICATION CHECK
         |--------------------------------------------------------------------------
         |
@@ -212,9 +238,6 @@ class LoginController extends Controller
 
             'seller' =>
                 redirect()->route('seller.dashboard'),
-
-            'logistics' =>
-                redirect()->route('logistics.dashboard'),
 
             default =>
                 redirect()->route('home'),

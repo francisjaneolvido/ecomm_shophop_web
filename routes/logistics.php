@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
+use App\Http\Controllers\Logistics\AuthController as LogisticsAuthController;
 use App\Http\Controllers\Logistics\RegistrationController as LogisticsRegistrationController;
 use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
 use App\Http\Controllers\Logistics\RiderController;
@@ -16,7 +17,7 @@ use App\Http\Controllers\Logistics\SortingCenterController;
 | Logistics Routes
 |--------------------------------------------------------------------------
 |
-| Public routes for logistics partner registration.
+| Public routes for logistics partner registration (main site).
 |
 */
 
@@ -53,7 +54,32 @@ Route::prefix('logistics-partner')
 
 /*
 |--------------------------------------------------------------------------
-| Logistics Partner Console
+| Logistics Subdomain: Sign In / Sign Out
+|--------------------------------------------------------------------------
+|
+| Nasa subdomain mismo ang login para dito mase-save ang session cookie.
+|
+*/
+
+Route::domain(config('app.logistics_domain'))
+    ->name('logistics.')
+    ->group(function () {
+
+        Route::get('/sign-in', [LogisticsAuthController::class, 'showLogin'])
+            ->name('login');
+
+        Route::post('/sign-in', [LogisticsAuthController::class, 'login'])
+            ->middleware('throttle:10,1')
+            ->name('login.submit');
+
+        Route::post('/sign-out', [LogisticsAuthController::class, 'logout'])
+            ->name('logout');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Logistics Partner Console (Subdomain)
 |--------------------------------------------------------------------------
 |
 | Console routes require the same approved role boundary as the other
@@ -61,7 +87,7 @@ Route::prefix('logistics-partner')
 |
 */
 
-Route::prefix('logistics-partner')
+Route::domain(config('app.logistics_domain'))
     ->name('logistics.')
     ->middleware([
         'auth',
@@ -129,7 +155,6 @@ Route::prefix('logistics-partner')
             RiderController::class,
             'activate'
         ])->name('riders.activate');
-
 
 
         /*
