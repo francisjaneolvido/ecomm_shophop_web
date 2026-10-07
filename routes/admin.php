@@ -49,21 +49,16 @@ Route::prefix('admin')
         Route::post('/users/{user}/reactivate', [UserAccountController::class, 'reactivate'])
             ->name('users.reactivate');
 
-        Route::get('/seller-compliance', function () {
-            return view('admin.seller-compliance');
-        })->name('compliance');
+        // Seller Compliance = admin review of products submitted by verified sellers.
+        // (Seller document verification happens on the Account Registrations page.)
+        Route::get('/seller-compliance', [ProductComplianceController::class, 'index'])
+            ->name('compliance');
 
-        Route::get('/product-compliance', [ProductComplianceController::class, 'index'])
-            ->name('product-compliance');
+        Route::post('/seller-compliance/products/{product}/approve', [ProductComplianceController::class, 'approve'])
+            ->name('compliance.products.approve');
 
-        Route::get('/product-compliance/{product}', [ProductComplianceController::class, 'show'])
-            ->name('product-compliance.show');
-
-        Route::patch('/product-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])
-            ->name('product-compliance.approve');
-
-        Route::patch('/product-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])
-            ->name('product-compliance.reject');
+        Route::post('/seller-compliance/products/{product}/reject', [ProductComplianceController::class, 'reject'])
+            ->name('compliance.products.reject');
 
         Route::get('/complaints-disputes', function () {
             return view('admin.complaints-disputes');

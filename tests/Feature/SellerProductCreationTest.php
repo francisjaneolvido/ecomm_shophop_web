@@ -24,6 +24,7 @@ class SellerProductCreationTest extends TestCase
             'Seller/Manage_inventory/2025_01_15_000003_create_product_variants_table.php',
             'Seller/Manage_inventory/2025_01_15_000004_create_vouchers_table.php',
             'Seller/Manage_inventory/2025_01_15_000005_create_voucher_product_table.php',
+            'Seller/Manage_inventory/2026_09_27_000001_add_compliance_fields_to_products_table.php',
         ]);
     }
 
@@ -67,7 +68,7 @@ class SellerProductCreationTest extends TestCase
 
         $response
             ->assertRedirect(route('seller.inventory'))
-            ->assertSessionHas('status', 'Product added successfully.');
+            ->assertSessionHas('status', 'Product added successfully. It will be reviewed by our team before it goes live.');
 
         $this->assertDatabaseCount('products', 1);
 
@@ -75,6 +76,7 @@ class SellerProductCreationTest extends TestCase
 
         $this->assertSame($seller->id, $product->seller_id);
         $this->assertSame('active', $product->status);
+        $this->assertSame('pending_review', $product->compliance_status);
         $this->assertSame(12, $product->stock);
         $this->assertSame('Inventory flow desk lamp', $product->name);
         $this->assertSame('Home & Living', $product->category);
