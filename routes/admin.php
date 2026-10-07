@@ -27,11 +27,11 @@ Route::prefix('admin')
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        // Compliance reads and mutations require an authenticated approved Admin, never a route prefix alone.
-        Route::get('/product-compliance', [ProductComplianceController::class, 'index'])->name('product-compliance.index');
-        Route::get('/product-compliance/{product}', [ProductComplianceController::class, 'show'])->name('product-compliance.show');
-        Route::patch('/product-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])->name('product-compliance.approve');
-        Route::patch('/product-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])->name('product-compliance.reject');
+        // Seller Compliance: review ng products bago makita ng buyers.
+        Route::get('/seller-compliance', [ProductComplianceController::class, 'index'])->name('compliance');
+        Route::get('/seller-compliance/{product}', [ProductComplianceController::class, 'show'])->name('compliance.show');
+        Route::patch('/seller-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])->name('compliance.approve');
+        Route::patch('/seller-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])->name('compliance.reject');
 
         // Cashless proof decisions have their own Admin queue and locked group review.
         Route::get('/payments', [ManualCashlessPaymentReviewController::class, 'index'])->name('payments.index');
@@ -68,10 +68,6 @@ Route::prefix('admin')
 
         Route::post('/users/{user}/reactivate', [UserAccountController::class, 'reactivate'])
             ->name('users.reactivate');
-
-        Route::get('/seller-compliance', function () {
-            return view('admin.seller-compliance');
-        })->name('compliance');
 
         Route::get('/complaints-disputes', function () {
             return view('admin.complaints-disputes');

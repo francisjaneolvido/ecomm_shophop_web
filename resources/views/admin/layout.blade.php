@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="UTF-8">
@@ -21,14 +21,6 @@
             theme: {
                 extend: {
                     colors: {
-                        /*
-                        |--------------------------------------------------------------------------
-                        | SHOPHOP CORE PALETTE
-                        |--------------------------------------------------------------------------
-                        | teal/teal-dark aliases are intentionally kept together
-                        | with mint/mint-dark so older admin pages and newer pages
-                        | can share one visual system.
-                        */
                         navy: '#0F2C3F',
                         'navy-light': '#173B52',
                         'navy-soft': '#244B61',
@@ -283,19 +275,13 @@
                     'pattern' => 'admin.payments*',
                     'icon' => 'wallet',
                 ],
-                // Merchandise review coexists with payment review inside the unchanged shared navigation renderer.
-                [
-                    'label' => 'Product Compliance',
-                    'route' => 'admin.product-compliance.index',
-                    'pattern' => 'admin.product-compliance*',
-                    'icon' => 'package-check',
-                ],
                 [
                     'label' => 'User Accounts',
                     'route' => 'admin.users',
                     'pattern' => 'admin.users*',
                     'icon' => 'users',
                 ],
+                // Product review now lives under Seller Compliance.
                 [
                     'label' => 'Seller Compliance',
                     'route' => 'admin.compliance',
@@ -416,12 +402,12 @@
                 title="Go to Admin Dashboard"
             >
                 <div class="w-9 h-9 flex items-center justify-center shrink-0">
-    <img
-        src="{{ asset('images/logo.png') }}"
-        alt="ShopHop Logo"
-        class="w-9 h-9 object-contain"
-    >
-</div>
+                    <img
+                        src="{{ asset('images/logo.png') }}"
+                        alt="ShopHop Logo"
+                        class="w-9 h-9 object-contain"
+                    >
+                </div>
 
 
                 <div class="sidebar-expanded-only min-w-0">
@@ -645,32 +631,32 @@
             </div>
 
 
-                {{-- Reuse Laravel's CSRF-protected POST logout instead of a GET-only redirect. --}}
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button
-                        type="submit"
-                        class="sidebar-nav-link
-                               group
-                               flex w-full items-center gap-3
-                               px-3 py-2.5 rounded-xl
-                               text-left text-[12px] font-medium
-                               text-white/45
-                               hover:bg-red-400/10 hover:text-red-300
-                               transition"
-                    >
-                <span
-                    class="w-8 h-8 rounded-lg
-                           flex items-center justify-center
-                           group-hover:bg-red-400/10
+            {{-- Reuse Laravel's CSRF-protected POST logout instead of a GET-only redirect. --}}
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button
+                    type="submit"
+                    class="sidebar-nav-link
+                           group
+                           flex w-full items-center gap-3
+                           px-3 py-2.5 rounded-xl
+                           text-left text-[12px] font-medium
+                           text-white/45
+                           hover:bg-red-400/10 hover:text-red-300
                            transition"
                 >
-                    <x-lucide-log-out class="w-4 h-4" />
-                </span>
+                    <span
+                        class="w-8 h-8 rounded-lg
+                               flex items-center justify-center
+                               group-hover:bg-red-400/10
+                               transition"
+                    >
+                        <x-lucide-log-out class="w-4 h-4" />
+                    </span>
 
-                <span class="sidebar-expanded-only">
-                    Log Out
-                </span>
+                    <span class="sidebar-expanded-only">
+                        Log Out
+                    </span>
                 </button>
             </form>
 
@@ -959,20 +945,20 @@
 
                         <div class="p-1.5 border-t border-gray-border">
 
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-                    <button
-                        type="submit"
-                        class="flex w-full items-center gap-2.5
-                               px-2.5 py-2 rounded-lg
-                               text-left text-[10px] font-medium text-red-500
-                               hover:bg-red-50
-                               transition"
-                    >
-                        <x-lucide-log-out class="w-3.5 h-3.5" />
-                        Log Out
-                    </button>
-                </form>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button
+                                    type="submit"
+                                    class="flex w-full items-center gap-2.5
+                                           px-2.5 py-2 rounded-lg
+                                           text-left text-[10px] font-medium text-red-500
+                                           hover:bg-red-50
+                                           transition"
+                                >
+                                    <x-lucide-log-out class="w-3.5 h-3.5" />
+                                    Log Out
+                                </button>
+                            </form>
 
                         </div>
                     </div>
