@@ -1,0 +1,96 @@
+    public function store(Request $request): RedirectResponse
+    {
+        $product = null;
+
+        if ($request->filled('product_id')) {
+            $product = Product::where('seller_id', Auth::id())
+                ->findOrFail($request->input('product_id'));
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'sku' => [
+                'nullable',
+                'string',
+                'max:100',
+                $product
+                    ? 'unique:products,sku,' . $product->id
+                    : 'unique:products,sku',
+            ],
+            'category' => ['required', 'string', 'max:255'],
+            'price' => ['required', 'numeric', 'min:0'],
+            'discount' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'stock' => ['nullable', 'integer', 'min:0'],
+            'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
+            'description' => ['nullable', 'string'],
+            'has_variants' => ['nullable', 'boolean'],
+
+            'images' => ['nullable', 'array', 'max:8'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_image_ids' => ['nullable', 'array'],
+            'remove_image_ids.*' => ['integer'],
+            'primary_image_id' => ['nullable', 'integer'],
+
+            'variants' => ['nullable', 'array'],
+            'variants.*.id' => ['nullable', 'integer'],
+            'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
+            'variants.*.sku' => ['nullable', 'string', 'max:100'],
+            'variants.*.price' => ['nullable', 'numeric', 'min:0'],
+            'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
+            'variants.*.status' => ['nullable', 'string', 'in:active,archived'],
+        ]);
+
+        $hasVariants = $request->boolean('has_variants');
+        $variantsInput = collect($request->input('variants', []));
+
+        $stock = $hasVariants
+            ? $variantsInput
+                ->filter(fn ($variant) => ($variant['status'] ?? 'active') === 'active')
+                ->sum(fn ($variant) => (int) ($variant['stock'] ?? 0))
+            : (int) ($validated['stock'] ?? 0);
+
+        $payload = [
+            'seller_id' => Auth::id(),
+            'name' => $validated['name'],
+            'sku' => $validated['sku'] ?? null,
+            'category' => $validated['category'],
+            'price' => $validated['price'],
+            'discount' => $validated['discount'] ?? 0,
+            'stock' => $stock,
+            'low_stock_threshold' => $validated['low_stock_threshold'] ?? null,
+            'description' => $validated['description'] ?? null,
+            'has_variants' => $hasVariants,
+        ];
+
+        DB::transaction(function () use (
+            &$product,
+            $payload,
+            $request,
+            $variantsInput,
+            $hasVariants
+        ) {
+            if ($product) {
+                // Naka-edit ang existing product — ibalik sa review queue,
+                // lalo na kung dati itong na-reject.
+                $payload['compliance_status'] = 'pending_review';
+                $payload['submitted_at'] = now();
+                $payload['rejection_reason'] = null;
+                $payload['rejection_notes'] = null;
+                $product->update($payload);
+            } else {
+                $payload['status'] = 'active';
+                $payload['compliance_status'] = 'pending_review';
+                $payload['submitted_at'] = now();
+                $product = Product::create($payload);
+            }
+
+            $this->syncImages($product, $request);
+            $this->syncVariants($product, $hasVariants ? $variantsInput : collect());
+        });
+
+        return redirect()
+            ->route('seller.inventory')
+            ->with('status', $product->wasRecentlyCreated
+                ? 'Product added successfully. It will be reviewed by our team before it goes live.'
+                : 'Product updated successfully. It will be reviewed again before it goes live.');
+    }
