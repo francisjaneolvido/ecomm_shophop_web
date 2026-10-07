@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Notifications\LogisticsApplicationDecisionNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -215,7 +216,7 @@ class UserAccountController extends Controller
                 ['label' => 'Company Name', 'value' => $l->company_name],
                 ['label' => 'Business Registration No.', 'value' => $l->business_registration_no],
                 ['label' => 'Line of Business', 'value' => str_replace('_', ' ', $l->line_of_business)],
-                ['label' => 'Representative Name', 'value' => trim("{$l->rep_first_name} {$l->rep_last_name}")],
+                ['label' => 'Representative Name', 'value' => trim("{$l->rep_first_name} {$l->rep_middle_initial} {$l->rep_last_name}")],
                 ['label' => 'Representative ID No.', 'value' => $l->rep_id_number],
                 ['label' => 'Representative Sex', 'value' => $l->rep_sex],
                 ['label' => 'Representative Birthday', 'value' => $l->rep_birthday->format('M d, Y')],
@@ -235,26 +236,72 @@ class UserAccountController extends Controller
         return response()->json($data);
     }
 
-    public function approve(User $user): RedirectResponse
+    public function approve(Request $request, User $user): RedirectResponse
     {
         if (! $this->isModeratable($user, ['pending'], true)) {
             return back()->withErrors(['moderation' => 'Only eligible pending registrations can be approved.']);
         }
 
-        $user->update(['status' => 'approved']);
+        $user->forceFill([
+            'status' => 'approved',
+            'reviewed_by' => $request->user()?->id,
+            'reviewed_at' => now(),
+            'rejection_reason' => null,
+        ])->save();
 
-        return back()->with('status', "{$user->display_name}'s account has been approved.");
+        $mailSent = $this->sendLogisticsDecisionEmail($user, true);
+        $message = "{$user->display_name}'s account has been approved.";
+        if ($user->account_type === 'logistics' && ! $mailSent) {
+            $message .= ' The approval was saved, but the notification email could not be sent. Check the mail logs.';
+        }
+
+        return back()->with('status', $message);
     }
 
-    public function reject(User $user): RedirectResponse
+    public function reject(Request $request, User $user): RedirectResponse
     {
         if (! $this->isModeratable($user, ['pending'], true)) {
             return back()->withErrors(['moderation' => 'Only eligible pending registrations can be rejected.']);
         }
 
-        $user->update(['status' => 'rejected']);
+        $validated = $request->validate([
+            'rejection_reason' => ['required', 'string', 'max:1000'],
+        ]);
 
-        return back()->with('status', "{$user->display_name}'s account has been rejected.");
+        $user->forceFill([
+            'status' => 'rejected',
+            'reviewed_by' => $request->user()?->id,
+            'reviewed_at' => now(),
+            'rejection_reason' => trim($validated['rejection_reason']),
+        ])->save();
+
+        $mailSent = $this->sendLogisticsDecisionEmail($user, false);
+        $message = "{$user->display_name}'s account has been rejected.";
+        if ($user->account_type === 'logistics' && ! $mailSent) {
+            $message .= ' The rejection was saved, but the notification email could not be sent. Check the mail logs.';
+        }
+
+        return back()->with('status', $message);
+    }
+
+    private function sendLogisticsDecisionEmail(User $user, bool $approved): bool
+    {
+        if ($user->account_type !== 'logistics') {
+            return true;
+        }
+
+        try {
+            $user->notify(new LogisticsApplicationDecisionNotification(
+                approved: $approved,
+                rejectionReason: $user->rejection_reason,
+            ));
+
+            return true;
+        } catch (\Throwable $e) {
+            report($e);
+
+            return false;
+        }
     }
 
     public function suspend(User $user): RedirectResponse
@@ -284,6 +331,6 @@ class UserAccountController extends Controller
         // Registration decisions require verified Buyer/Seller email; later account transitions do not.
         return in_array($user->account_type, ['buyer', 'seller', 'logistics'], true)
             && in_array($user->status, $statuses, true)
-            && (! $registration || $user->account_type === 'logistics' || $user->email_verified_at !== null);
+            && (! $registration || $user->email_verified_at !== null);
     }
 }

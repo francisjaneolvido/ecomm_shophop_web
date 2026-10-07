@@ -196,17 +196,25 @@ class ManualCashlessPaymentJourneyTest extends TestCase
 
         $operator = $this->user('operator@example.test', 'logistics');
         $partnerId = $this->partner($operator);
-        $rider = Rider::create(['logistics_partner_id' => $partnerId, 'name' => 'Cashless Rider',
-            'vehicle_type' => 'Motorcycle', 'status' => 'active', 'email' => 'rider@example.test',
+        $areaId = DB::table('logistics_coverage_areas')->where('logistics_partner_id', $partnerId)->value('id');
+        $rider = Rider::create(['logistics_partner_id' => $partnerId, 'coverage_area_id' => $areaId, 'name' => 'Cashless Rider',
+            'vehicle_type' => 'Motorcycle', 'status' => 'active', 'availability_status' => 'available', 'email' => 'rider@example.test',
             'password' => bcrypt('LongSecretPassword123!')]);
         $this->actingAs($operator)->get(route('logistics.deliveries.board'))->assertOk()->assertSee('Delivered item');
         $this->post(route('logistics.deliveries.assign', $order), ['rider_id' => $rider->id])->assertRedirect();
         $delivery = Delivery::where('order_id', $order->id)->firstOrFail();
         $this->post(route('logout'));
         $this->actingAs($rider, 'rider')->get(route('rider.deliveries.show', $delivery))
-            ->assertOk()->assertSee('Verified by ShopHop Admin')->assertSee('Amount to Collect: ₱0.00');
+            ->assertOk()->assertSee('Payment verified by ShopHop Admin')->assertSee('Amount to collect: ₱0.00');
+        $this->post(route('rider.deliveries.accept-pickup', $delivery))->assertRedirect();
         $this->post(route('rider.deliveries.pickup', $delivery))->assertRedirect();
-        $this->post(route('rider.deliveries.transit', $delivery))->assertRedirect();
+        $this->post(route('rider.logout'));
+        $this->actingAs($operator, 'web');
+        $this->post(route('logistics.deliveries.receive', $delivery), ['tracking_code' => $delivery->fresh()->tracking_code])->assertRedirect();
+        $this->post(route('logistics.deliveries.sort', $delivery), ['destination_area_id' => $areaId])->assertRedirect();
+        $this->post(route('logistics.deliveries.assign-delivery', $delivery), ['rider_id' => $rider->id])->assertRedirect();
+        $this->post(route('logout'));
+        $this->actingAs($rider, 'rider')->post(route('rider.deliveries.out-for-delivery', $delivery))->assertRedirect();
         $this->post(route('rider.deliveries.complete', $delivery), [])->assertSessionHasErrors('proof');
         $this->post(route('rider.deliveries.complete', $delivery), [
             'proof' => UploadedFile::fake()->create('delivery.png', 2, 'image/png'),
@@ -215,8 +223,11 @@ class ManualCashlessPaymentJourneyTest extends TestCase
         $this->post(route('rider.deliveries.complete', $delivery), [
             'proof' => UploadedFile::fake()->create('delivery.png', 2, 'image/png'),
         ])->assertRedirect();
+        $this->assertSame(Order::STATUS_TO_RECEIVE, $order->fresh()->status);
+        $this->assertSame(Delivery::DELIVERED, $delivery->fresh()->status);
+        $this->post(route('rider.logout'));
+        $this->actingAs($buyer->user, 'web')->post(route('buyer.orders.confirm-receipt', $order))->assertRedirect();
         $this->assertSame(Order::STATUS_COMPLETED, $order->fresh()->status);
-        $this->assertSame('delivered', $delivery->fresh()->status);
         Storage::disk('local')->assertExists($delivery->fresh()->proof_path);
         $this->assertDatabaseCount('cod_settlements', 0);
         $this->assertSame(4, $product->fresh()->stock);

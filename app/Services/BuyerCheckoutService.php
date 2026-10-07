@@ -344,6 +344,13 @@ class BuyerCheckoutService
                         $buyer->municipality_name . ', ' .
                         $buyer->province_name
                     ),
+                    'delivery_province_code' => $buyer->province_code,
+                    'delivery_province_name' => $buyer->province_name,
+                    'delivery_municipality_code' => $buyer->municipality_code,
+                    'delivery_municipality_name' => $buyer->municipality_name,
+                    'delivery_barangay_code' => $buyer->barangay_code,
+                    'delivery_barangay_name' => $buyer->barangay_name,
+                    'delivery_street' => $buyer->street_address,
                 ]);
 
                 $createdOrderIds[] = (int) $order->id;

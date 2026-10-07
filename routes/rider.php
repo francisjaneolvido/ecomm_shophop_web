@@ -21,9 +21,13 @@ Route::prefix('rider')->name('rider.')->group(function () {
     Route::middleware('active.rider')->group(function () {
         Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
         Route::get('/deliveries/{delivery}', [DeliveryController::class, 'show'])->name('deliveries.show');
+        Route::post('/deliveries/{delivery}/accept-pickup', [DeliveryController::class, 'acceptPickup'])->name('deliveries.accept-pickup');
         Route::post('/deliveries/{delivery}/pickup', [DeliveryController::class, 'pickup'])->name('deliveries.pickup');
+        Route::post('/deliveries/{delivery}/out-for-delivery', [DeliveryController::class, 'outForDelivery'])->name('deliveries.out-for-delivery');
+        // Compatibility endpoint for older links; it now enforces the final-delivery assignment stage.
         Route::post('/deliveries/{delivery}/transit', [DeliveryController::class, 'transit'])->name('deliveries.transit');
         Route::post('/deliveries/{delivery}/complete', [DeliveryController::class, 'complete'])->name('deliveries.complete');
+        Route::post('/deliveries/{delivery}/fail', [DeliveryController::class, 'fail'])->name('deliveries.fail');
     });
 });
 

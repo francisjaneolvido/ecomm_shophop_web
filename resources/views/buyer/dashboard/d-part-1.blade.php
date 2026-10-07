@@ -3,7 +3,7 @@
 @php
     /*
     |--------------------------------------------------------------------------
-    | DASHBOARD HELPERS + TEMP FALLBACK DATA
+    | DASHBOARD HELPERS
     |--------------------------------------------------------------------------
     | Real controller/database data still wins.
     | These preview records only appear when a real section is empty.
@@ -20,7 +20,7 @@
         $path = trim((string) $path);
 
         if ($path === '') {
-            return asset($sampleImages['cctv']);
+            return asset('images/placeholder-product.jpg');
         }
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
@@ -30,104 +30,7 @@
         return asset(ltrim($path, '/'));
     };
 
-    $productHref = function ($product) {
-        return ($product['preview'] ?? false)
-            ? '#'
-            : route('buyer.product.show', $product['id']);
-    };
-
-    $previewProducts = [
-        [
-            'id' => 9001,
-            'preview' => true,
-            'name' => 'Smart Wi-Fi CCTV Camera',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cctv'],
-            'price' => 699,
-            'original_price' => 1099,
-            'rating' => 4.8,
-            'reviews' => 184,
-            'sold' => 1200,
-        ],
-        [
-            'id' => 9002,
-            'preview' => true,
-            'name' => 'Desktop CPU Home Office Set',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cpu'],
-            'price' => 2499,
-            'original_price' => 3199,
-            'rating' => 4.7,
-            'reviews' => 92,
-            'sold' => 540,
-        ],
-        [
-            'id' => 9003,
-            'preview' => true,
-            'name' => 'Crunchy Snack Variety Pack',
-            'category' => 'Food and Gourmet',
-            'image' => $sampleImages['chips'],
-            'price' => 179,
-            'original_price' => 249,
-            'rating' => 4.9,
-            'reviews' => 327,
-            'sold' => 2100,
-        ],
-        [
-            'id' => 9004,
-            'preview' => true,
-            'name' => 'Minimal Desk & Bedside Lamp',
-            'category' => 'Furniture and Office Equipment',
-            'image' => $sampleImages['lamp'],
-            'price' => 399,
-            'original_price' => 599,
-            'rating' => 4.8,
-            'reviews' => 145,
-            'sold' => 760,
-        ],
-        [
-            'id' => 9005,
-            'preview' => true,
-            'name' => 'Indoor Security Camera Bundle',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cctv'],
-            'price' => 999,
-            'original_price' => 1499,
-            'rating' => 4.9,
-            'reviews' => 211,
-            'sold' => 930,
-        ],
-        [
-            'id' => 9006,
-            'preview' => true,
-            'name' => 'Compact PC Tower Essentials',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cpu'],
-            'price' => 2799,
-            'original_price' => 3599,
-            'rating' => 4.8,
-            'reviews' => 116,
-            'sold' => 610,
-        ],
-    ];
-
-    if (empty($trendingProducts)) {
-        $trendingProducts = array_slice($previewProducts, 0, 4);
-    }
-
-    if (empty($recentlyViewed)) {
-        $recentlyViewed = array_slice($previewProducts, 0, 5);
-    }
-
-    if (empty($recommendedProducts)) {
-        $recommendedProducts = [
-            $previewProducts[1],
-            $previewProducts[0],
-            $previewProducts[3],
-            $previewProducts[2],
-            $previewProducts[5],
-        ];
-    }
+    $productHref = fn ($product) => route('buyer.product.show', $product['id']);
 
     $heroPromos = [
         [
@@ -173,15 +76,7 @@
         ['label' => 'Categories', 'caption' => 'Browse everything', 'icon' => 'layout-grid', 'href' => '#categories'],
     ];
 
-    $activeOrderImage = $activeOrder['image'] ?? $sampleImages['cctv'];
-
-    if (
-        ! str_starts_with((string) $activeOrderImage, 'http://') &&
-        ! str_starts_with((string) $activeOrderImage, 'https://') &&
-        ! is_file(public_path(ltrim((string) $activeOrderImage, '/')))
-    ) {
-        $activeOrderImage = $sampleImages['cctv'];
-    }
+    $activeOrderImage = $activeOrder['image'] ?? null;
 @endphp
 
 
@@ -639,6 +534,7 @@
 
 
         {{-- Active order --}}
+        @if ($activeOrder)
         <div class="mt-3 overflow-hidden rounded-2xl border border-gray-border bg-white shadow-sm buyer-reveal">
             <div class="grid lg:grid-cols-[1fr_auto] gap-4 p-4 sm:p-5">
 
@@ -678,11 +574,11 @@
                 <div class="flex items-center justify-between lg:justify-end gap-3">
                     <div class="lg:text-right">
                         <p class="text-[8px] uppercase tracking-[0.12em] text-navy/35">
-                            Estimated Delivery
+                            Latest Update
                         </p>
 
                         <p class="mt-1 text-[10.5px] sm:text-[11.5px] font-semibold text-teal-dark">
-                            {{ $activeOrder['estimated_delivery'] }}
+                            {{ $activeOrder['latest_update'] }}
                         </p>
                     </div>
 
@@ -729,7 +625,35 @@
                     @endforeach
                 </div>
             </div>
+
+            @if (!empty($activeOrder['timeline']))
+                <div class="border-t border-gray-border/80 px-4 sm:px-5 py-3">
+                    <div class="flex items-center justify-between gap-3">
+                        <p class="text-[8px] font-bold uppercase tracking-[0.12em] text-navy/35">Parcel Journey</p>
+                        <p class="text-[8px] text-navy/30">Latest {{ count($activeOrder['timeline']) }} updates</p>
+                    </div>
+
+                    <ol class="mt-2 space-y-2">
+                        @foreach ($activeOrder['timeline'] as $event)
+                            <li class="flex gap-2.5">
+                                <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full
+                                    {{ ($event['type'] ?? '') === 'failed' ? 'bg-red-400' : (($event['type'] ?? '') === 'success' ? 'bg-teal' : 'bg-navy/25') }}"></span>
+                                <div class="min-w-0">
+                                    <p class="text-[9px] sm:text-[10px] font-semibold text-navy">{{ $event['label'] }}</p>
+                                    <p class="mt-0.5 text-[8px] sm:text-[9px] leading-relaxed text-navy/45">{{ $event['note'] }}</p>
+                                    <p class="mt-0.5 text-[7.5px] text-navy/25">{{ $event['time']->format('M j, Y g:i A') }}</p>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ol>
+                </div>
+            @endif
         </div>
+        @else
+            <div class="mt-3 rounded-2xl border border-gray-border bg-white p-5 text-sm text-navy/55 buyer-reveal">
+                No active order right now. Your next placed order will appear here with real tracking updates.
+            </div>
+        @endif
     </div>
 </section>
 
@@ -969,8 +893,8 @@
                                     data-cart-original-price="{{ $product['original_price'] ?? '' }}"
                                     data-cart-stock="{{ $product['stock'] ?? '' }}"
                                     data-cart-shop-id="{{ $product['shop_id'] ?? '' }}"
-                                    data-cart-shop-name="{{ ! empty($product['preview']) ? 'ShopHop demo catalog' : 'ShopHop Seller' }}"
-                                    data-cart-preview="{{ ! empty($product['preview']) ? 'true' : 'false' }}"
+                                    data-cart-shop-name="ShopHop Seller"
+                                    data-cart-preview="false"
                                     class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal text-white hover:bg-teal-dark transition"
                                     aria-label="Add {{ $product['name'] }} to cart"
                                 >

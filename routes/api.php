@@ -7,6 +7,8 @@ use App\Http\Controllers\Api\MobileBuyerCartController;
 use App\Http\Controllers\Api\MobileBuyerCheckoutController;
 use App\Http\Controllers\Api\MobileBuyerPaymentController;
 use App\Http\Controllers\Api\MobileBuyerFavoriteController;
+use App\Http\Controllers\Api\MobileRiderAuthController;
+use App\Http\Controllers\Api\MobileRiderDeliveryController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile')->group(function () {
@@ -14,6 +16,28 @@ Route::prefix('mobile')->group(function () {
         '/login',
         [MobileAuthController::class, 'login']
     )->middleware('throttle:10,1');
+
+    Route::prefix('rider')->group(function () {
+        Route::get(
+            '/logistics-centers',
+            [MobileRiderAuthController::class, 'logisticsCenters']
+        );
+
+        Route::post(
+            '/register',
+            [MobileRiderAuthController::class, 'register']
+        );
+
+        Route::post(
+            '/verify-email',
+            [MobileRiderAuthController::class, 'verifyEmail']
+        );
+
+        Route::post(
+            '/verify-email/resend',
+            [MobileRiderAuthController::class, 'resendVerification']
+        )->middleware('throttle:6,1');
+    });
 
     Route::prefix('buyer')->group(function () {
         Route::post(
@@ -50,6 +74,16 @@ Route::prefix('mobile')->group(function () {
         | Uses the same products table, Product::publiclyDiscoverable() scope,
         | seller data, and config/shophop_categories.php used by the web app.
         */
+        Route::prefix('rider')->group(function () {
+            Route::get('/assignments', [MobileRiderDeliveryController::class, 'index']);
+            Route::get('/assignments/{delivery}', [MobileRiderDeliveryController::class, 'show'])->whereNumber('delivery');
+            Route::post('/assignments/{delivery}/accept-pickup', [MobileRiderDeliveryController::class, 'acceptPickup'])->whereNumber('delivery');
+            Route::post('/assignments/{delivery}/pickup', [MobileRiderDeliveryController::class, 'pickup'])->whereNumber('delivery');
+            Route::post('/assignments/{delivery}/out-for-delivery', [MobileRiderDeliveryController::class, 'outForDelivery'])->whereNumber('delivery');
+            Route::post('/assignments/{delivery}/complete', [MobileRiderDeliveryController::class, 'complete'])->whereNumber('delivery');
+            Route::post('/assignments/{delivery}/fail', [MobileRiderDeliveryController::class, 'fail'])->whereNumber('delivery');
+        });
+
         Route::prefix('buyer')->group(function () {
             Route::get(
                 '/home',

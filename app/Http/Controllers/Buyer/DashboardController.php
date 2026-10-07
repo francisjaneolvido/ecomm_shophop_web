@@ -5,95 +5,58 @@ namespace App\Http\Controllers\Buyer;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Buyer\Favorite\Favorite;
+use App\Models\Buyer\Order\Order;
 use App\Models\Seller\Manage_inventory\Product;
+use App\Models\Seller\Manage_inventory\Voucher;
 use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
-    /**
-     * Display the buyer dashboard.
-     */
     public function index()
     {
-        $buyerName = auth()->user()?->first_name
-            ?? auth()->user()?->name
-            ?? 'Buyer';
+        $buyer = auth()->user()?->buyer;
+        $buyerName = $buyer?->first_name ?? 'Buyer';
 
         $categories = $this->getCategories();
         $trendingProducts = $this->getTrendingProducts();
         $vouchers = $this->getVouchers();
-        $orderSummary = $this->getOrderSummary();
-        $activeOrder = $this->getActiveOrder();
-        $recentlyViewed = $this->getRecentlyViewed();
+        $orderSummary = $this->getOrderSummary($buyer?->id);
+        $activeOrder = $this->getActiveOrder($buyer?->id);
+        $recentlyViewed = []; // No product-view persistence exists yet; do not invent history.
         $recommendedProducts = $this->getRecommendedProducts();
         $dealProducts = $this->getDealProducts();
         $newArrivals = $this->getNewArrivals();
-        // Teammate commerce moved Cart into cart_items; sparse previews without that schema show zero.
-        $cartItemCount = Schema::hasTable('cart_items')
-            ? CartItem::where('buyer_id', auth()->user()?->buyer?->id)->count()
-            : 0;
-
-        $favoriteCount = Schema::hasTable('favorites')
-            ? Favorite::where('buyer_id', auth()->user()?->buyer?->id)->count()
-            : 0;
+        $cartItemCount = Schema::hasTable('cart_items') && $buyer
+            ? CartItem::where('buyer_id', $buyer->id)->count() : 0;
+        $favoriteCount = Schema::hasTable('favorites') && $buyer
+            ? Favorite::where('buyer_id', $buyer->id)->count() : 0;
 
         return view('buyer.dashboard.dashboard', compact(
-            'buyerName',
-            'categories',
-            'trendingProducts',
-            'vouchers',
-            'orderSummary',
-            'activeOrder',
-            'recentlyViewed',
-            'recommendedProducts',
-            'dealProducts',
-            'newArrivals',
-            'cartItemCount',
-            'favoriteCount'
+            'buyerName', 'categories', 'trendingProducts', 'vouchers', 'orderSummary',
+            'activeOrder', 'recentlyViewed', 'recommendedProducts', 'dealProducts',
+            'newArrivals', 'cartItemCount', 'favoriteCount'
         ));
     }
 
-
-    /**
-     * Base query: only products that sellers have published/approved
-     * and that still have stock.
-     *
-     * NOTE: change 'active' below if your status column uses a
-     * different value (e.g. 'approved', 'published', 1, etc.)
-     */
     private function activeProductsQuery()
     {
-        return Product::query()->publiclyDiscoverable();
+        return Product::query()->publiclyDiscoverable()
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->withSum('orderItems as sold_count', 'quantity');
     }
 
     private function productsTableIsAvailable(): bool
     {
-        // Sparse demo catalog: render the existing empty state instead of throwing.
         return Schema::hasTable((new Product())->getTable());
     }
 
-
-    /**
-     * Transform a Product model into the array shape the
-     * dashboard blade views expect.
-     *
-     * NOTE: there is no ratings/reviews table yet, so rating and
-     * reviews are placeholder values for now. Once you have a
-     * reviews system, swap these two lines for real aggregates
-     * (e.g. $product->reviews_avg_rating, $product->reviews_count).
-     */
     private function formatProduct(Product $product): array
     {
         $price = (float) $product->price;
         $discount = (int) ($product->discount ?? 0);
-
-        $finalPrice = $discount > 0
-            ? round($price - ($price * $discount / 100))
-            : $price;
-
-        $imagePath = $product->image
-            ? 'storage/' . ltrim($product->image, '/')
-            : 'images/placeholder-product.jpg';
+        $finalPrice = $discount > 0 ? round($price - ($price * $discount / 100), 2) : $price;
+        $imagePath = $product->image ? 'storage/'.ltrim($product->image, '/') : 'images/placeholder-product.jpg';
 
         return [
             'id' => $product->id,
@@ -101,212 +64,125 @@ class DashboardController extends Controller
             'category' => $product->category,
             'price' => $finalPrice,
             'original_price' => $discount > 0 ? $price : null,
-            'rating' => 4.5,   // placeholder until reviews exist
-            'reviews' => 0,    // placeholder until reviews exist
+            'rating' => $product->reviews_avg_rating !== null ? round((float) $product->reviews_avg_rating, 1) : null,
+            'reviews' => (int) ($product->reviews_count ?? 0),
+            'sold' => (int) ($product->sold_count ?? 0),
             'image' => asset($imagePath),
             'stock' => (int) $product->stock,
             'shop_id' => $product->seller_id,
         ];
     }
 
-
-    /**
-     * Categories.
-     *
-     * Kept as a static list (for the icon mapping), but you could
-     * instead pull distinct categories from products if you want
-     * it fully dynamic:
-     *
-     *   Product::where('status', 'active')->distinct()->pluck('category');
-     */
     private function getCategories(): array
     {
-        return [
-            ['name' => 'Pet Supplies', 'icon' => 'paw-print'],
-            ['name' => 'Electronics and Gadgets', 'icon' => 'smartphone'],
-            ['name' => "Women's Apparel", 'icon' => 'shirt'],
-            ['name' => "Men's Apparel", 'icon' => 'shirt'],
-            ['name' => 'Kids and Baby', 'icon' => 'baby'],
-            ['name' => 'Home and Garden', 'icon' => 'house'],
-            ['name' => 'Sports and Outdoors', 'icon' => 'dumbbell'],
-            ['name' => 'Health and Beauty', 'icon' => 'heart-pulse'],
-            ['name' => 'Books and Media', 'icon' => 'book-open'],
-            ['name' => 'Food and Gourmet', 'icon' => 'utensils'],
-            ['name' => 'Automotive & Motorcycle', 'icon' => 'car-front'],
-            ['name' => 'Furniture and Office Equipment', 'icon' => 'armchair'],
-            ['name' => 'Jewelry and Watches', 'icon' => 'gem'],
-            ['name' => 'Office and School Supplies', 'icon' => 'notebook-pen'],
-        ];
+        return collect(config('shophop_categories', []))->map(fn ($category) => [
+            'name' => $category['name'],
+            'icon' => $category['icon'],
+        ])->values()->all();
     }
 
-
-    /**
-     * Trending products — newest active products, most recently added first.
-     * (Swap the orderBy for a real "trending" metric like order_count once you track it.)
-     */
     private function getTrendingProducts(): array
     {
-        if (! $this->productsTableIsAvailable()) {
-            return [];
-        }
-
-        return $this->activeProductsQuery()
-            ->latest()
-            ->take(4)
-            ->get()
-            ->map(fn ($product) => $this->formatProduct($product))
-            ->toArray();
+        if (! $this->productsTableIsAvailable()) return [];
+        return $this->activeProductsQuery()->orderByDesc('sold_count')->latest('products.created_at')->take(4)->get()
+            ->map(fn ($p) => $this->formatProduct($p))->all();
     }
 
-
-    /**
-     * Recommended products.
-     * (Simple placeholder logic: random active products.
-     * Later you can base this on buyer's order/category history.)
-     */
     private function getRecommendedProducts(): array
     {
-        if (! $this->productsTableIsAvailable()) {
-            return [];
-        }
-
-        return $this->activeProductsQuery()
-            ->inRandomOrder()
-            ->take(5)
-            ->get()
-            ->map(fn ($product) => $this->formatProduct($product))
-            ->toArray();
+        if (! $this->productsTableIsAvailable()) return [];
+        // Until preference/history scoring exists, show real discoverable products instead of fake recommendations.
+        return $this->activeProductsQuery()->latest('products.created_at')->take(5)->get()
+            ->map(fn ($p) => $this->formatProduct($p))->all();
     }
 
-
-    /**
-     * Deal products — products that currently have a discount.
-     */
     private function getDealProducts(): array
     {
-        if (! $this->productsTableIsAvailable()) {
-            return [];
-        }
-
-        return $this->activeProductsQuery()
-            ->where('discount', '>', 0)
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(fn ($product) => $this->formatProduct($product))
-            ->toArray();
+        if (! $this->productsTableIsAvailable()) return [];
+        return $this->activeProductsQuery()->where('discount', '>', 0)->latest('products.created_at')->take(6)->get()
+            ->map(fn ($p) => $this->formatProduct($p))->all();
     }
 
-
-    /**
-     * New arrivals — most recently added active products.
-     */
     private function getNewArrivals(): array
     {
-        if (! $this->productsTableIsAvailable()) {
-            return [];
-        }
-
-        return $this->activeProductsQuery()
-            ->latest()
-            ->take(5)
-            ->get()
-            ->map(fn ($product) => $this->formatProduct($product))
-            ->toArray();
+        if (! $this->productsTableIsAvailable()) return [];
+        return $this->activeProductsQuery()->latest('products.created_at')->take(6)->get()
+            ->map(fn ($p) => $this->formatProduct($p))->all();
     }
 
-
-    /**
-     * Recently viewed products.
-     *
-     * NOTE: this requires tracking what the buyer actually viewed
-     * (e.g. a `product_views` table with buyer_id + product_id + viewed_at).
-     * Left as sample/fallback data for now — let me know if you want
-     * me to build the view-tracking table + logic.
-     */
-    private function getRecentlyViewed(): array
-    {
-        if (! $this->productsTableIsAvailable()) {
-            return [];
-        }
-
-        return $this->activeProductsQuery()
-            ->inRandomOrder()
-            ->take(5)
-            ->get()
-            ->map(fn ($product) => $this->formatProduct($product))
-            ->toArray();
-    }
-
-
-    /**
-     * Available vouchers.
-     */
     private function getVouchers(): array
     {
+        if (! Schema::hasTable('vouchers')) return [];
+
+        return Voucher::query()->where('status', 'active')
+            ->where(fn ($q) => $q->whereNull('starts_at')->orWhere('starts_at', '<=', now()))
+            ->where(fn ($q) => $q->whereNull('ends_at')->orWhere('ends_at', '>=', now()))
+            ->where(fn ($q) => $q->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit'))
+            ->latest()->limit(4)->get()->map(function (Voucher $voucher) {
+                $value = (float) $voucher->value;
+                $benefit = $voucher->type === 'percent' ? rtrim(rtrim(number_format($value, 2), '0'), '.').'%' : '₱'.number_format($value, 0);
+                return [
+                    'title' => $voucher->name ?: $benefit.' Off',
+                    'code' => $voucher->code,
+                    'description' => $benefit.' off'.((float) $voucher->min_order_amount > 0 ? ' · Min. ₱'.number_format((float) $voucher->min_order_amount, 0) : ''),
+                    'icon' => 'ticket',
+                ];
+            })->all();
+    }
+
+    private function getOrderSummary(?int $buyerId): array
+    {
+        $counts = ['to-pay' => 0, 'to-ship' => 0, 'to-receive' => 0, 'completed' => 0];
+        if ($buyerId && Schema::hasTable('orders')) {
+            Order::with('manualCashlessPayment')->where('buyer_id', $buyerId)->get()->each(function (Order $order) use (&$counts) {
+                $group = $order->buyerStatusGroup();
+                if (array_key_exists($group, $counts)) $counts[$group]++;
+            });
+        }
         return [
-            [
-                'title' => '₱100 Off',
-                'code' => 'SHOPHOP100',
-                'description' => '₱100 off when you spend at least ₱1,000.',
-                'icon' => 'ticket',
-            ],
-            [
-                'title' => 'Free Shipping',
-                'code' => 'FREESHIP',
-                'description' => 'Enjoy free shipping on eligible orders.',
-                'icon' => 'truck',
-            ],
-            [
-                'title' => '10% Off',
-                'code' => 'WELCOME10',
-                'description' => 'Save 10% on selected ShopHop products.',
-                'icon' => 'badge-percent',
-            ],
+            ['label' => 'To Pay', 'count' => $counts['to-pay'], 'icon' => 'wallet'],
+            ['label' => 'To Ship', 'count' => $counts['to-ship'], 'icon' => 'package'],
+            ['label' => 'To Receive', 'count' => $counts['to-receive'], 'icon' => 'truck'],
+            ['label' => 'Completed', 'count' => $counts['completed'], 'icon' => 'circle-check'],
         ];
     }
 
-
-    /**
-     * Buyer order summary.
-     *
-     * NOTE: still static — needs an Order model/table to compute
-     * real counts per status for the logged-in buyer.
-     */
-    private function getOrderSummary(): array
+    private function getActiveOrder(?int $buyerId): ?array
     {
-        return [
-            ['label' => 'To Pay', 'count' => 1, 'icon' => 'wallet'],
-            ['label' => 'To Ship', 'count' => 2, 'icon' => 'package'],
-            ['label' => 'To Receive', 'count' => 1, 'icon' => 'truck'],
-            ['label' => 'Completed', 'count' => 5, 'icon' => 'circle-check'],
-        ];
-    }
+        if (! $buyerId || ! Schema::hasTable('orders')) return null;
 
+        $order = Order::with([
+            'manualCashlessPayment', 'items.product', 'items.variant',
+            'pickupRequest.partner', 'pickupRequest.originSortingCenter',
+            'delivery.rider', 'delivery.pickupRider', 'delivery.deliveryRider',
+            'delivery.originSortingCenter', 'delivery.currentSortingCenter', 'delivery.destinationSortingCenter',
+            'delivery.transfers.fromCenter', 'delivery.transfers.toCenter', 'delivery.failureReports.rider',
+        ])
+            ->where('buyer_id', $buyerId)
+            ->whereNotIn('status', [Order::STATUS_COMPLETED, Order::STATUS_CANCELLED])
+            ->latest()->first();
+        if (! $order) return null;
 
-    /**
-     * Current active order.
-     *
-     * NOTE: still static — needs an Order model/table to fetch the
-     * buyer's actual in-progress order.
-     */
-    private function getActiveOrder(): array
-    {
+        $item = $order->items->first();
+        $image = $item?->product?->image ? 'storage/'.ltrim($item->product->image, '/') : 'images/placeholder-product.jpg';
+        $done = fn (array $states) => in_array($order->status, $states, true);
+
         return [
-            'order_number' => '#SHP-2026-00125',
-            'product_name' => 'Wireless Earbuds Pro',
-            'variant' => 'Black',
-            'quantity' => 1,
-            'price' => 1299,
-            'status' => 'In Transit',
-            'image' => 'images/products/wireless-earbuds.jpg',
-            'estimated_delivery' => 'September 2 - 3',
+            'order_number' => '#SHP-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
+            'product_name' => $item?->product?->name ?? ($order->items->count().' item order'),
+            'variant' => $item?->variantLabel() ?? 'Order items',
+            'quantity' => (int) ($item?->quantity ?? $order->items->sum('quantity')),
+            'price' => (float) ($item?->price ?? $order->total_amount),
+            'status' => $order->statusLabel(),
+            'image' => $image,
+            'latest_update' => $order->statusNote(),
+            'timeline' => array_slice($order->trackingTimeline(), -5),
             'steps' => [
                 ['label' => 'Placed', 'icon' => 'shopping-bag', 'done' => true],
-                ['label' => 'Confirmed', 'icon' => 'circle-check', 'done' => true],
-                ['label' => 'Packed', 'icon' => 'package', 'done' => true],
-                ['label' => 'Shipped', 'icon' => 'truck', 'done' => true],
-                ['label' => 'Delivered', 'icon' => 'house', 'done' => false],
+                ['label' => 'Confirmed', 'icon' => 'circle-check', 'done' => $done([Order::STATUS_CONFIRMED, Order::STATUS_PREPARING, Order::STATUS_READY_FOR_PICKUP, Order::STATUS_TO_RECEIVE])],
+                ['label' => 'Preparing', 'icon' => 'package', 'done' => $done([Order::STATUS_PREPARING, Order::STATUS_READY_FOR_PICKUP, Order::STATUS_TO_RECEIVE])],
+                ['label' => 'In Transit', 'icon' => 'truck', 'done' => $order->status === Order::STATUS_TO_RECEIVE],
+                ['label' => 'Delivered', 'icon' => 'house', 'done' => $order->delivery?->status === \App\Models\Logistics\Delivery::DELIVERED],
             ],
         ];
     }

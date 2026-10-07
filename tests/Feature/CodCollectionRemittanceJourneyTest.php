@@ -26,7 +26,7 @@ class CodCollectionRemittanceJourneyTest extends TestCase
         $this->post(route('rider.deliveries.complete', $delivery), [
             'proof' => UploadedFile::fake()->create('proof.jpg', 2, 'image/jpeg'),
         ])->assertSessionHasErrors('cash_collected');
-        $this->assertSame('in_transit', $delivery->fresh()->status);
+        $this->assertSame(Delivery::OUT_FOR_DELIVERY, $delivery->fresh()->status);
         $this->assertDatabaseMissing('cod_settlements', ['delivery_id' => $delivery->id]);
 
         $this->post(route('rider.deliveries.complete', $delivery), [
@@ -44,7 +44,7 @@ class CodCollectionRemittanceJourneyTest extends TestCase
         $this->assertNotNull($settlement->collected_at);
         $this->assertSame('collected', $settlement->status);
         $this->assertSame('delivered', $delivery->fresh()->status);
-        $this->assertSame(Order::STATUS_COMPLETED, $order->fresh()->status);
+        $this->assertSame(Order::STATUS_TO_RECEIVE, $order->fresh()->status);
         $this->assertNotNull($delivery->fresh()->proof_path);
         $this->assertSame($rider->id, $delivery->fresh()->delivered_rider_id);
         $this->assertEquals('178.00', $order->fresh()->total_amount);
@@ -71,7 +71,7 @@ class CodCollectionRemittanceJourneyTest extends TestCase
             'cash_collected' => '1', 'proof' => UploadedFile::fake()->create('proof.jpg', 2, 'image/jpeg'),
         ])->assertSessionHasErrors('delivery');
         $this->assertDatabaseMissing('cod_settlements', ['delivery_id' => $delivery->id]);
-        $this->assertSame('in_transit', $delivery->fresh()->status);
+        $this->assertSame(Delivery::OUT_FOR_DELIVERY, $delivery->fresh()->status);
     }
 
     public function test_responsible_rider_remits_and_owning_logistics_reconciles_once(): void
@@ -204,7 +204,10 @@ class CodCollectionRemittanceJourneyTest extends TestCase
         ]);
         $delivery = Delivery::create([
             'order_id' => $order->id, 'logistics_partner_id' => $partnerId, 'rider_id' => $rider->id,
-            'status' => 'in_transit', 'assigned_at' => now(), 'picked_up_at' => now(), 'in_transit_at' => now(),
+            'delivery_rider_id' => $rider->id, 'status' => Delivery::OUT_FOR_DELIVERY,
+            'assigned_at' => now(), 'picked_up_at' => now(), 'delivery_assigned_at' => now(),
+            'out_for_delivery_at' => now(), 'in_transit_at' => now(), 'transit_rider_id' => $rider->id,
+            'delivery_attempts' => 1,
         ]);
 
         return [$order, $delivery, $rider, $operator];

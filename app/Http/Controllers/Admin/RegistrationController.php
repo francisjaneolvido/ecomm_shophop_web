@@ -25,45 +25,12 @@ class RegistrationController extends Controller
         $search = $request->get('search');
 
         $base = User::with([
-        'buyer',
-        'seller',
-        'logisticsPartner',
-    ])
-    ->whereIn('account_type', self::ROLES)
-    ->where(function ($query) {
-
-        /*
-        |--------------------------------------------------------------------------
-        | Buyer / Seller
-        |--------------------------------------------------------------------------
-        |
-        | Huwag ipakita sa admin hangga't hindi verified ang email.
-        |
-        */
-
-        $query->where(function ($q) {
-            $q->whereIn('account_type', [
-                    'buyer',
-                    'seller',
-                ])
-                ->whereNotNull('email_verified_at');
-        })
-
-        /*
-        |--------------------------------------------------------------------------
-        | Logistics
-        |--------------------------------------------------------------------------
-        |
-        | Wala pa tayong real email OTP flow sa logistics,
-        | kaya visible muna sila normally.
-        |
-        */
-
-        ->orWhere(
-            'account_type',
-            'logistics'
-        );
-    });
+            'buyer',
+            'seller',
+            'logisticsPartner',
+        ])
+            ->whereIn('account_type', self::ROLES)
+            ->whereNotNull('email_verified_at');
 
         // Summary card counts — hango sa buong non-admin user set, hindi lang sa current filter
         $counts = [
@@ -136,7 +103,7 @@ class RegistrationController extends Controller
         abort_unless(
             in_array($user->account_type, self::ROLES, true)
                 && in_array($user->status, ['pending', 'approved', 'rejected'], true)
-                && ($user->account_type === 'logistics' || $user->email_verified_at !== null),
+                && $user->email_verified_at !== null,
             404
         );
 
@@ -177,7 +144,7 @@ class RegistrationController extends Controller
             ],
             'documents' => $docs,
             'notes' => null,
-            'rejection_reason' => null,
+            'rejection_reason' => $user->rejection_reason,
             'activity' => [],
             'reports' => [],
         ]);
@@ -190,7 +157,7 @@ class RegistrationController extends Controller
             in_array($user->account_type, self::ROLES, true)
                 && in_array($user->status, ['pending', 'approved', 'rejected', 'suspended'], true)
                 && (in_array($user->status, ['approved', 'suspended'], true)
-                    || $user->account_type === 'logistics' || $user->email_verified_at !== null),
+                    || $user->email_verified_at !== null),
             404
         );
 

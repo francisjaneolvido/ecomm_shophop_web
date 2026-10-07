@@ -1,60 +1,59 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Delivery #{{ $delivery->id }} — ShopHop</title>@vite(['resources/css/app.css'])</head>
+<title>Rider task — ShopHop</title>@vite(['resources/css/app.css'])</head>
 <body class="min-h-screen bg-gray-50 p-6 text-navy"><main class="mx-auto max-w-3xl rounded-2xl bg-white p-6 shadow">
-    <a class="text-teal underline" href="{{ route('rider.deliveries.index') }}">Assigned deliveries</a>
-    <h1 class="mt-4 text-2xl font-bold">Order #{{ $delivery->order_id }}</h1>
-    <p>{{ $delivery->order?->seller?->business_name ?? 'Seller' }} · {{ str_replace('_', ' ', ucfirst($delivery->status)) }}</p>
+    <a class="text-teal underline" href="{{ route('rider.deliveries.index') }}">Rider assignments</a>
+    <div class="mt-4 flex flex-wrap items-start justify-between gap-3"><div><h1 class="text-2xl font-bold">{{ $delivery->tracking_code ?? 'Order #'.$delivery->order_id }}</h1><p>Order #{{ $delivery->order_id }} · {{ $delivery->order?->seller?->business_name ?? 'Seller' }}</p></div><span class="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold">{{ $delivery->statusLabel() }}</span></div>
 
-    {{-- COD due is the persisted Seller Order total; cash status comes only from its settlement record. --}}
-    @if ($delivery->order?->payment_method === 'cod')
-        <p class="mt-3 font-semibold">COD amount due: ₱{{ number_format((float) $delivery->order->total_amount, 2) }}</p>
-        <p>Settlement: {{ $delivery->codSettlement ? ucfirst($delivery->codSettlement->status) : 'Not recorded' }}</p>
-        @if ($delivery->codSettlement)
-            <p>Collected: ₱{{ number_format((float) $delivery->codSettlement->collected_amount, 2) }} at {{ $delivery->codSettlement->collected_at->format('M j, Y g:i A') }}</p>
-        @elseif ($delivery->status === 'delivered')
-            <p>Legacy delivery: cash collection was not recorded.</p>
-        @endif
-        <a class="text-teal underline" href="{{ route('rider.settlements.index') }}">COD settlements</a>
-    @elseif ($delivery->order?->isPaymentEligible())
-        {{-- The Rider sees Admin verification but has no payment review or cash custody action. --}}
-        <p class="mt-3 font-semibold">Payment: Verified by ShopHop Admin</p>
-        <p>Amount to Collect: ₱0.00</p>
-    @endif
-    {{-- Recipient contact comes from the assigned Order snapshot and is needed for this delivery only. --}}
-    <dl class="mt-5 space-y-2"><div><dt class="font-semibold">Recipient</dt><dd>{{ $delivery->order?->delivery_name ?: 'Unavailable' }}</dd></div>
-        <div><dt class="font-semibold">Address</dt><dd>{{ $delivery->order?->delivery_address ?: 'Unavailable' }}</dd></div>
+    @if (session('status')) <p role="status" class="mt-4 rounded bg-teal-50 p-3 text-teal-800">{{ session('status') }}</p> @endif
+    @if ($errors->any()) <p role="alert" class="mt-4 rounded bg-red-50 p-3 text-red-700">{{ $errors->first() }}</p> @endif
+
+    <dl class="mt-5 space-y-2 text-sm">
+        <div><dt class="font-semibold">Recipient</dt><dd>{{ $delivery->order?->delivery_name ?: 'Unavailable' }}</dd></div>
+        <div><dt class="font-semibold">Delivery address</dt><dd>{{ $delivery->order?->delivery_address ?: 'Unavailable' }}</dd></div>
         <div><dt class="font-semibold">Contact</dt><dd>{{ $delivery->order?->delivery_phone ?: 'Unavailable' }}</dd></div>
-        <div><dt class="font-semibold">Pickup</dt><dd>{{ $delivery->picked_up_at?->format('M j, Y g:i A') ?? 'Pending' }}</dd></div>
-        <div><dt class="font-semibold">Transit</dt><dd>{{ $delivery->in_transit_at?->format('M j, Y g:i A') ?? 'Pending' }}</dd></div>
-        <div><dt class="font-semibold">Completion</dt><dd>{{ $delivery->delivered_at?->format('M j, Y g:i A') ?? 'Pending' }}</dd></div></dl>
-    @if (session('status')) <p role="status" class="mt-4 text-teal">{{ session('status') }}</p> @endif
-    @if ($errors->any()) <p role="alert" class="mt-4 text-red-700">{{ $errors->first() }}</p> @endif
-    {{-- Each action is available at one persisted state; server transitions recheck ownership and current state. --}}
-    @if ($delivery->status === 'assigned')
-        <form method="POST" action="{{ route('rider.deliveries.pickup', $delivery) }}" class="mt-5">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Confirm pickup</button></form>
-    @elseif ($delivery->status === 'picked_up')
-        <form method="POST" action="{{ route('rider.deliveries.transit', $delivery) }}" class="mt-5">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Mark in transit</button></form>
-    @elseif ($delivery->status === 'in_transit')
+        <div><dt class="font-semibold">Destination area</dt><dd>{{ $delivery->destinationArea?->area_name ?? 'Not sorted yet' }}</dd></div>
+    </dl>
 
+    @if ($delivery->order?->payment_method === 'cod')
+        <div class="mt-4 rounded-xl bg-gray-50 p-4"><p class="font-semibold">COD amount: ₱{{ number_format((float) $delivery->order->total_amount, 2) }}</p><p class="text-sm">Settlement: {{ $delivery->codSettlement ? ucfirst($delivery->codSettlement->status) : 'Not recorded' }}</p></div>
+    @elseif ($delivery->order?->isPaymentEligible())
+        <div class="mt-4 rounded-xl bg-gray-50 p-4"><p class="font-semibold">Payment verified by ShopHop Admin</p><p class="text-sm">Amount to collect: ₱0.00</p></div>
+    @endif
+
+    @php $currentRiderId = auth('rider')->id(); @endphp
+
+    @if ($delivery->rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::PICKUP_ASSIGNED)
+        <form method="POST" action="{{ route('rider.deliveries.accept-pickup', $delivery) }}" class="mt-5">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Accept Pickup Assignment</button></form>
+    @elseif ($delivery->rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::PICKUP_ACCEPTED)
+        <p class="mt-5 text-sm text-navy/60">Go to the Seller, collect the parcel, then confirm pickup.</p>
+        <form method="POST" action="{{ route('rider.deliveries.pickup', $delivery) }}" class="mt-3">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Confirm Parcel Pickup</button></form>
+    @elseif ($delivery->pickup_rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::PICKED_UP)
+        <p class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Bring the parcel to the sorting center. Logistics must scan <strong>{{ $delivery->tracking_code }}</strong> to receive it.</p>
+    @elseif ($delivery->rider_id === $currentRiderId && $delivery->delivery_rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::DELIVERY_ASSIGNED)
+        <p class="mt-5 text-sm text-navy/60">Pick up the sorted parcel from the sorting center before dispatch.</p>
+        <form method="POST" action="{{ route('rider.deliveries.out-for-delivery', $delivery) }}" class="mt-3">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Mark Out for Delivery</button></form>
+    @elseif ($delivery->rider_id === $currentRiderId && $delivery->delivery_rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::OUT_FOR_DELIVERY)
         @if ($delivery->order?->isPaymentEligible())
-        {{-- Delivery completion requires one private photo tied to the authenticated Rider event. --}}
-        <form method="POST" enctype="multipart/form-data" action="{{ route('rider.deliveries.complete', $delivery) }}" class="mt-5 space-y-3">@csrf
-            <label for="proof" class="block">Delivery photo</label><input id="proof" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required>
-            @if ($delivery->order->payment_method === 'cod')
-            {{-- The explicit Rider declaration is required; delivery photo alone never records payment. --}}
-            <label class="flex items-center gap-2"><input name="cash_collected" type="checkbox" value="1" required> I collected ₱{{ number_format((float) $delivery->order->total_amount, 2) }} in COD cash.</label>
-            <button class="block rounded bg-navy px-5 py-2 text-white">Complete delivery and record COD collection</button>
-            @else
-            {{-- Verified cashless completion records proof and zero collection, without a COD settlement. --}}
-            <button class="block rounded bg-navy px-5 py-2 text-white">Complete delivery</button>
-            @endif
-        </form>
-        @else
-            {{-- A forged historical non-COD Delivery cannot enter the COD completion form. --}}
-            <p class="mt-5">This payment method cannot be completed through COD delivery.</p>
+            <form method="POST" enctype="multipart/form-data" action="{{ route('rider.deliveries.complete', $delivery) }}" class="mt-5 space-y-3 rounded-xl border p-4">@csrf
+                <p class="font-semibold">Successful delivery</p>
+                <label for="proof" class="block text-sm">Delivery photo</label><input id="proof" name="proof" type="file" accept="image/jpeg,image/png,image/webp" required>
+                @if ($delivery->order->payment_method === 'cod')<label class="flex items-center gap-2 text-sm"><input name="cash_collected" type="checkbox" value="1" required> I collected ₱{{ number_format((float) $delivery->order->total_amount, 2) }} COD cash.</label>@endif
+                <button class="rounded bg-navy px-5 py-2 text-white">Mark Delivered</button>
+            </form>
         @endif
-    @elseif ($delivery->status === 'delivered' && $delivery->proof_path)
-        <a class="mt-5 inline-block text-teal underline" href="{{ route('delivery.proof', $delivery) }}">View delivery proof</a>
+        <form method="POST" action="{{ route('rider.deliveries.fail', $delivery) }}" class="mt-4 space-y-3 rounded-xl border border-red-200 p-4">@csrf
+            <p class="font-semibold text-red-700">Delivery failed</p>
+            <label for="failure-reason" class="block text-sm">Reason</label>
+            <select id="failure-reason" name="failure_reason" required class="w-full rounded border px-3 py-2 text-sm">
+                <option value="">Choose reason</option><option>Customer unavailable</option><option>Incorrect address</option><option>Customer refused</option><option>Unable to contact customer</option><option>Vehicle issue</option><option>Weather / access issue</option><option>Other</option>
+            </select>
+            <button class="rounded border border-red-500 px-5 py-2 text-red-700">Record Failed Attempt</button>
+        </form>
+    @elseif ($delivery->status === \App\Models\Logistics\Delivery::DELIVERED)
+        <p class="mt-5 rounded-xl bg-teal-50 p-4 text-sm text-teal-800">Delivered successfully. Waiting for Buyer confirmation before the Order becomes completed.</p>
+        @if ($delivery->proof_path)<a class="mt-3 inline-block text-teal underline" href="{{ route('delivery.proof', $delivery) }}">View delivery proof</a>@endif
+    @elseif ($delivery->status === \App\Models\Logistics\Delivery::DELIVERY_FAILED)
+        <p class="mt-5 rounded-xl bg-red-50 p-4 text-sm text-red-700">Failure recorded: {{ $delivery->failure_reason }}. Logistics will reschedule or return the parcel.</p>
     @endif
 </main></body></html>

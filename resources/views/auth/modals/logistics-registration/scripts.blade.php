@@ -546,6 +546,15 @@
                 provinceInput.dataset.coverageHidden = '1';
                 form.appendChild(provinceInput);
 
+                // Backend needs the coverage type keyed by area name so it can
+                // distinguish normal provinces from province-less regions (e.g. NCR).
+                const typeInput = document.createElement('input');
+                typeInput.type = 'hidden';
+                typeInput.name = 'coverage_area_types[' + chip.name + ']';
+                typeInput.value = chip.type || 'province';
+                typeInput.dataset.coverageHidden = '1';
+                form.appendChild(typeInput);
+
                 const checkedCities = [...chip.cities.values()].filter(function (c) { return c.checked; }).map(function (c) { return c.name; });
                 const citiesValue = (chip.citiesLoaded === true && chip.selectAll) ? 'ALL' : checkedCities.join('|');
 
@@ -605,14 +614,14 @@
                     repIdFileNameEl.textContent = this.files[0].name;
                     repIdFileNameEl.classList.remove('hidden');
                 }
-                if (this.files.length) detectRepresentativeId(this.files[0]);
+
             });
         }
 
 
         /*
         |--------------------------------------------------------------------------
-        | VERIFY EMAIL / OTP / RESEND — UX-only for now, same as before.
+        | VERIFY EMAIL / OTP / RESEND — real backend integration
         |--------------------------------------------------------------------------
         */
 
@@ -624,27 +633,170 @@
         const resendBtn = document.getElementById('logistics-resend-code');
         const resendLabel = document.getElementById('logistics-resend-label');
         const resendTimerEl = document.getElementById('logistics-resend-timer');
+        const sendCodeBtn = document.getElementById('logistics-send-code');
+        const sendCodeMessage = document.getElementById('logistics-send-code-message');
+        const step3NextBtn = document.getElementById('logistics-step3-next');
+
+        const verificationSendUrl = @json(route('logistics.verification.send'));
+        const verificationVerifyUrl = @json(route('logistics.verification.verify'));
+
+        let verificationCodeSent = false;
+        let emailVerified = false;
+        let resendInterval = null;
 
         function currentAccountEmail() {
             const emailField = document.getElementById('logistics_email');
             return emailField ? emailField.value.trim() : '';
         }
 
-        // TODO: point this at the real send-verification-code endpoint once it
-        // exists. For now it just updates the UI and starts the resend countdown.
-        function sendVerificationCode() {
-            const email = currentAccountEmail() || 'your email';
-            if (verifyEmailDisplay) verifyEmailDisplay.textContent = email;
-            if (otpEmailDisplay) otpEmailDisplay.textContent = email;
-            startResendCountdown();
+        function csrfToken() {
+            const input = document.querySelector('#logistics-register-form input[name="_token"]');
+            return input ? input.value : '';
         }
 
-        let resendInterval = null;
+        function setVerificationMessage(message, tone) {
+            if (!sendCodeMessage) return;
+            sendCodeMessage.textContent = message || '';
+            sendCodeMessage.classList.remove('text-navy/45', 'text-teal-dark', 'text-red-600');
+            if (tone === 'success') {
+                sendCodeMessage.classList.add('text-teal-dark');
+            } else if (tone === 'error') {
+                sendCodeMessage.classList.add('text-red-600');
+            } else {
+                sendCodeMessage.classList.add('text-navy/45');
+            }
+        }
 
-        function startResendCountdown() {
+        async function parseJsonResponse(response) {
+            let payload = {};
+            try {
+                payload = await response.json();
+            } catch (e) {
+                payload = {};
+            }
+            if (!response.ok) {
+                const validationMessage = payload.errors
+                    ? Object.values(payload.errors).flat().filter(Boolean)[0]
+                    : null;
+                const message = validationMessage || payload.message || ('Request failed (HTTP ' + response.status + ').');
+                const err = new Error(message);
+                err.status = response.status;
+                err.payload = payload;
+                throw err;
+            }
+            return payload;
+        }
+
+        async function sendVerificationCode(isResend) {
+            const email = currentAccountEmail();
+
+            if (!email || !emailRegex.test(email)) {
+                setVerificationMessage('Enter a valid e-mail address in Center Details first.', 'error');
+                return false;
+            }
+
+            if (verifyEmailDisplay) verifyEmailDisplay.textContent = email;
+            if (otpEmailDisplay) otpEmailDisplay.textContent = email;
+
+            if (sendCodeBtn) {
+                sendCodeBtn.disabled = true;
+                sendCodeBtn.classList.add('opacity-60', 'cursor-wait');
+            }
+            if (step3NextBtn) step3NextBtn.disabled = true;
+
+            setVerificationMessage(isResend ? 'Requesting a new code…' : 'Sending your verification code…', 'neutral');
+
+            try {
+                const response = await fetch(verificationSendUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                    },
+                    body: JSON.stringify({
+                        email: email,
+                        resend: !!isResend,
+                    }),
+                });
+
+                const payload = await parseJsonResponse(response);
+
+                verificationCodeSent = true;
+                emailVerified = false;
+                setVerificationMessage(payload.message || 'A 6-digit verification code was sent to your e-mail.', 'success');
+
+                if (step3NextBtn) step3NextBtn.disabled = false;
+                if (sendCodeBtn) {
+                    sendCodeBtn.innerHTML = '<span>Send code again</span>';
+                }
+
+                startResendCountdown(Number(payload.retry_after || 30));
+                return true;
+            } catch (error) {
+                verificationCodeSent = false;
+                setVerificationMessage(error.message || 'Unable to send a verification code. Please try again.', 'error');
+                return false;
+            } finally {
+                if (sendCodeBtn) {
+                    sendCodeBtn.disabled = false;
+                    sendCodeBtn.classList.remove('opacity-60', 'cursor-wait');
+                }
+            }
+        }
+
+        async function verifyVerificationCode() {
+            const email = currentAccountEmail();
+            const code = otpValue();
+
+            if (code.length !== 6) {
+                if (otpErrorEl) {
+                    otpErrorEl.textContent = 'Please enter the full 6-digit code.';
+                    otpErrorEl.classList.remove('hidden');
+                }
+                return false;
+            }
+
+            try {
+                const response = await fetch(verificationVerifyUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken(),
+                    },
+                    body: JSON.stringify({ email: email, code: code }),
+                });
+
+                const payload = await parseJsonResponse(response);
+
+                emailVerified = true;
+                serializeOtp();
+
+                if (otpErrorEl) {
+                    otpErrorEl.textContent = payload.message || 'Email verified successfully.';
+                    otpErrorEl.classList.remove('hidden', 'text-red-500');
+                    otpErrorEl.classList.add('text-teal-dark');
+                }
+
+                return true;
+            } catch (error) {
+                emailVerified = false;
+                if (otpErrorEl) {
+                    otpErrorEl.textContent = error.message || 'The verification code could not be verified.';
+                    otpErrorEl.classList.remove('hidden', 'text-teal-dark');
+                    otpErrorEl.classList.add('text-red-500');
+                }
+                return false;
+            }
+        }
+
+        function startResendCountdown(initialSeconds) {
             if (!resendBtn || !resendLabel || !resendTimerEl) return;
 
-            let secondsLeft = 30;
+            let secondsLeft = Math.max(1, Number(initialSeconds || 30));
 
             resendBtn.disabled = true;
             resendBtn.classList.add('text-navy/30');
@@ -677,13 +829,21 @@
             }, 1000);
         }
 
+        if (sendCodeBtn) {
+            sendCodeBtn.addEventListener('click', function () {
+                sendVerificationCode(verificationCodeSent);
+            });
+        }
+
         if (resendBtn) {
             resendBtn.addEventListener('click', function () {
                 if (resendBtn.disabled) return;
-                // TODO: real resend-code request goes here.
-                otpInputs.forEach(function (input) { input.value = ''; input.classList.remove('otp-filled'); });
+                otpInputs.forEach(function (input) {
+                    input.value = '';
+                    input.classList.remove('otp-filled');
+                });
                 if (otpInputs[0]) otpInputs[0].focus();
-                startResendCountdown();
+                sendVerificationCode(true);
             });
         }
 
@@ -703,7 +863,12 @@
             input.addEventListener('paste', function (e) {
                 e.preventDefault();
                 const pasted = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, otpInputs.length);
-                pasted.split('').forEach(function (digit, i) { if (otpInputs[i]) { otpInputs[i].value = digit; otpInputs[i].classList.add('otp-filled'); } });
+                pasted.split('').forEach(function (digit, i) {
+                    if (otpInputs[i]) {
+                        otpInputs[i].value = digit;
+                        otpInputs[i].classList.add('otp-filled');
+                    }
+                });
                 const nextEmpty = otpInputs.findIndex(function (box) { return !box.value; });
                 (otpInputs[nextEmpty] || otpInputs[otpInputs.length - 1]).focus();
             });
@@ -876,35 +1041,67 @@
         bindFieldValidator('logistics_email', function (v) { return emailRegex.test(v); }, 'Please enter a valid email address.');
 
 
+
+        /*
+        |--------------------------------------------------------------------------
+        | REPRESENTATIVE AGE — ERP field is auto-generated from birthday
+        |--------------------------------------------------------------------------
+        */
+
+        const representativeBirthday = document.getElementById('logistics_rep_birthday');
+        const representativeAge = document.getElementById('logistics_rep_age');
+
+        function calculateRepresentativeAge() {
+            if (!representativeBirthday || !representativeAge || !representativeBirthday.value) {
+                if (representativeAge) representativeAge.value = '';
+                return;
+            }
+
+            const birthDate = new Date(representativeBirthday.value + 'T00:00:00');
+            const today = new Date();
+
+            if (Number.isNaN(birthDate.getTime())) {
+                representativeAge.value = '';
+                return;
+            }
+
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDelta = today.getMonth() - birthDate.getMonth();
+
+            if (monthDelta < 0 || (monthDelta === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+
+            representativeAge.value = age >= 0 ? String(age) : '';
+        }
+
+        if (representativeBirthday) {
+            representativeBirthday.addEventListener('change', calculateRepresentativeAge);
+            calculateRepresentativeAge();
+        }
+
+        const logisticsEmailField = document.getElementById('logistics_email');
+        if (logisticsEmailField) {
+            logisticsEmailField.addEventListener('input', function () {
+                // A different e-mail address must be verified separately.
+                verificationCodeSent = false;
+                emailVerified = false;
+                if (step3NextBtn) step3NextBtn.disabled = true;
+                setVerificationMessage('We will send a 6-digit code to this e-mail after Center Details.', 'neutral');
+            });
+        }
+
+
         /*
         |--------------------------------------------------------------------------
         | TERMS GATE (Step 1)
         |--------------------------------------------------------------------------
         */
 
-        const termsScroll = document.getElementById('logistics-terms-scroll');
-        const termsScrollWrap = document.getElementById('logistics-terms-scroll-wrap');
-        const termsHint = document.getElementById('logistics-terms-scroll-hint');
         const termsCheckbox = document.getElementById('logistics_terms_agree');
         const step1ErrorEl = document.getElementById('logistics-step1-error');
         const signatureInput = document.getElementById('logistics_agreement_signature');
         const signatureNameEl = document.getElementById('logistics-agreement-signature-name');
-
-        if (termsScroll && termsCheckbox) {
-            const unlockCheckbox = function () {
-                termsCheckbox.disabled = false;
-                if (termsHint) termsHint.classList.add('hidden');
-                if (termsScrollWrap) termsScrollWrap.classList.add('terms-at-bottom');
-            };
-            termsScroll.addEventListener('scroll', function () {
-                const reachedBottom = termsScroll.scrollTop + termsScroll.clientHeight >= termsScroll.scrollHeight - 24;
-                if (reachedBottom) {
-                    unlockCheckbox();
-                } else if (termsScrollWrap) {
-                    termsScrollWrap.classList.remove('terms-at-bottom');
-                }
-            });
-        }
 
         if (signatureInput) {
             signatureInput.addEventListener('change', function () {
@@ -932,6 +1129,18 @@
         }
 
         function updateProgressBar(activeStep) {
+
+            const progressLabels = ['Agreement', 'Center', 'Email', 'Code', 'Security', 'Operations', 'Review'];
+            const mobileProgressLabel = document.getElementById('logistics-mobile-progress-label');
+            const mobileProgressPercent = document.getElementById('logistics-mobile-progress-percent');
+            const mobileProgressBar = document.getElementById('logistics-mobile-progress-bar');
+            const percentage = Math.round((activeStep / progressLabels.length) * 100);
+
+            if (mobileProgressLabel) {
+                mobileProgressLabel.textContent = 'Step ' + activeStep + ' of ' + progressLabels.length + ' · ' + progressLabels[activeStep - 1];
+            }
+            if (mobileProgressPercent) mobileProgressPercent.textContent = percentage + '%';
+            if (mobileProgressBar) mobileProgressBar.style.width = percentage + '%';
 
             modal.querySelectorAll('[data-step-circle]').forEach(function (circle) {
 
@@ -983,6 +1192,31 @@
                 if (input && input.value) el.textContent = input.value;
             });
 
+            const serviceTypeReview = document.getElementById('logistics-review-service-type');
+            const serviceTypeSelect = document.getElementById('logistics_line_of_business');
+            if (serviceTypeReview && serviceTypeSelect) {
+                const option = serviceTypeSelect.selectedOptions && serviceTypeSelect.selectedOptions[0];
+                serviceTypeReview.textContent = option && option.value ? option.textContent.trim() : '—';
+            }
+
+            const representativeReview = document.getElementById('logistics-review-representative');
+            if (representativeReview) {
+                const first = document.getElementById('logistics_rep_first_name');
+                const middle = document.getElementById('logistics_rep_middle_initial');
+                const last = document.getElementById('logistics_rep_last_name');
+                const parts = [
+                    first && first.value,
+                    middle && middle.value,
+                    last && last.value,
+                ].filter(Boolean);
+                representativeReview.textContent = parts.length ? parts.join(' ') : '—';
+            }
+
+            const ageReview = document.getElementById('logistics-review-age');
+            if (ageReview && representativeAge) {
+                ageReview.textContent = representativeAge.value || '—';
+            }
+
             const sigReview = document.getElementById('logistics-review-signature-file');
             if (sigReview) {
                 sigReview.textContent = (signatureInput && signatureInput.files && signatureInput.files.length)
@@ -1028,7 +1262,8 @@
         function validateStep1() {
             if (!termsAccepted()) {
                 if (step1ErrorEl) step1ErrorEl.classList.remove('hidden');
-                termsScroll.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const panel = getPanel(1);
+                if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return false;
             }
             if (step1ErrorEl) step1ErrorEl.classList.add('hidden');
@@ -1071,7 +1306,11 @@
 
         function validateStep4() {
             if (!otpComplete()) {
-                if (otpErrorEl) otpErrorEl.classList.remove('hidden');
+                if (otpErrorEl) {
+                    otpErrorEl.textContent = 'Please enter the full 6-digit code.';
+                    otpErrorEl.classList.remove('hidden', 'text-teal-dark');
+                    otpErrorEl.classList.add('text-red-500');
+                }
                 return false;
             }
             if (otpErrorEl) otpErrorEl.classList.add('hidden');
@@ -1113,23 +1352,46 @@
         });
 
         document.getElementById('logistics-step2-back').addEventListener('click', function () { goToStep(1); });
-        document.getElementById('logistics-step2-next').addEventListener('click', function () {
-            if (validateStep2()) {
-                sendVerificationCode();
-                goToStep(3);
-            }
+        document.getElementById('logistics-step2-next').addEventListener('click', async function () {
+            if (!validateStep2()) return;
+
+            verificationCodeSent = false;
+            emailVerified = false;
+            goToStep(3);
+
+            // Automatically attempt the first send, while keeping the explicit
+            // Send button available if the request fails.
+            await sendVerificationCode(false);
         });
 
         document.getElementById('logistics-step3-back').addEventListener('click', function () { goToStep(2); });
         document.getElementById('logistics-step3-next').addEventListener('click', function () {
+            if (!verificationCodeSent) {
+                setVerificationMessage('Send a verification code before continuing.', 'error');
+                return;
+            }
             goToStep(4);
             if (otpInputs[0]) otpInputs[0].focus();
         });
 
         document.getElementById('logistics-step4-back').addEventListener('click', function () { goToStep(3); });
-        document.getElementById('logistics-step4-next').addEventListener('click', function () {
-            if (validateStep4()) {
-                serializeOtp();
+        document.getElementById('logistics-step4-next').addEventListener('click', async function () {
+            if (!validateStep4()) return;
+
+            const button = document.getElementById('logistics-step4-next');
+            if (button) {
+                button.disabled = true;
+                button.classList.add('opacity-60', 'cursor-wait');
+            }
+
+            const verified = await verifyVerificationCode();
+
+            if (button) {
+                button.disabled = false;
+                button.classList.remove('opacity-60', 'cursor-wait');
+            }
+
+            if (verified) {
                 goToStep(5);
             }
         });
@@ -1455,6 +1717,14 @@
 
             serializeOtp();
             serializeCoverage();
+
+            // Disabled form controls are not included in browser submissions.
+            // For province-less regions such as NCR, the UI intentionally shows
+            // a disabled Province field whose value mirrors the region. Enable
+            // it only at the final submit so Laravel receives the displayed value.
+            if (provinceSelect && provinceSelect.disabled && provinceSelect.value) {
+                provinceSelect.disabled = false;
+            }
         });
 
 

@@ -15,8 +15,48 @@ use App\Http\Controllers\Buyer\FavoriteController as BuyerFavoriteController;
 
 /*
 |--------------------------------------------------------------------------
-| Buyer Routes
+| Buyer Catalog / Product Browsing
 |--------------------------------------------------------------------------
+|
+| These routes intentionally do NOT use approved.role:buyer.
+|
+| Reason:
+| - Catalog/category/product pages are browsing pages.
+| - Admin/Seller/Logistics sessions may open a product/category while testing.
+| - Applying the Buyer role middleware here caused an unnecessary 403.
+|
+| Buyer-private operations remain protected further below.
+|
+*/
+
+Route::prefix('buyer')
+    ->name('buyer.')
+    ->group(function () {
+
+        Route::get('/categories', [
+            BuyerCategoryController::class,
+            'index',
+        ])->name('category.index');
+
+        Route::get('/category/{category}', [
+            BuyerCategoryController::class,
+            'show',
+        ])->name('category.show');
+
+        Route::get('/product/{product}', [
+            BuyerProductController::class,
+            'show',
+        ])->name('product.show');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Buyer-Only Routes
+|--------------------------------------------------------------------------
+|
+| These pages/actions are tied to the authenticated Buyer's own data and
+| therefore remain protected.
 |
 | Requirements:
 | - logged in
@@ -48,39 +88,8 @@ Route::prefix('buyer')
 
         /*
         |--------------------------------------------------------------------------
-        | Categories
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/categories', [
-            BuyerCategoryController::class,
-            'index',
-        ])->name('category.index');
-
-        Route::get('/category/{category}', [
-            BuyerCategoryController::class,
-            'show',
-        ])->name('category.show');
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Product Details
-        |--------------------------------------------------------------------------
-        */
-
-        // Product detail needs the controller's persisted Product and review data; a bare view route cannot supply them.
-        Route::get('/product/{product}', [
-            BuyerProductController::class,
-            'show',
-        ])->name('product.show');
-
-
-        /*
-        |--------------------------------------------------------------------------
         | My Likes / Favorites
         |--------------------------------------------------------------------------
-        | Shared with the Flutter mobile app through the same favorites table.
         */
 
         Route::get('/likes', [
@@ -103,8 +112,6 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         | Cart
         |--------------------------------------------------------------------------
-        | Wired to CartController so the buyer's cart_items (add/update/remove)
-        | persist in the database and render on /buyer/cart.
         */
 
         Route::get('/cart', [
@@ -142,8 +149,6 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         | Checkout
         |--------------------------------------------------------------------------
-        | Wired to CheckoutController so the page reads real cart_items,
-        | buyer address, and seller-scoped vouchers from the database.
         */
 
         Route::get('/cart/checkout', [
@@ -151,37 +156,49 @@ Route::prefix('buyer')
             'index',
         ])->name('cart.checkout');
 
-
-        /*
-        |--------------------------------------------------------------------------
-        | Place Order
-        |--------------------------------------------------------------------------
-        */
-
         Route::post('/checkout/place-order', [
             BuyerCheckoutController::class,
             'placeOrder',
         ])->name('checkout.place');
 
-        // Payment IDs are scoped again to the authenticated Buyer in the controller.
-        Route::get('/payments/{payment}', [ManualCashlessPaymentController::class, 'show'])->name('payments.show');
-        Route::post('/payments/{payment}/submit', [ManualCashlessPaymentController::class, 'submit'])->name('payments.submit');
-        // Buyer cancellation closes the complete linked checkout group after ownership and state checks.
-        Route::post('/payments/{payment}/cancel', [ManualCashlessPaymentController::class, 'cancel'])->name('payments.cancel');
+
+        /*
+        |--------------------------------------------------------------------------
+        | Payments
+        |--------------------------------------------------------------------------
+        */
+
+        Route::get('/payments/{payment}', [
+            ManualCashlessPaymentController::class,
+            'show',
+        ])->name('payments.show');
+
+        Route::post('/payments/{payment}/submit', [
+            ManualCashlessPaymentController::class,
+            'submit',
+        ])->name('payments.submit');
+
+        Route::post('/payments/{payment}/cancel', [
+            ManualCashlessPaymentController::class,
+            'cancel',
+        ])->name('payments.cancel');
 
 
         /*
         |--------------------------------------------------------------------------
         | My Orders
         |--------------------------------------------------------------------------
-        | Wired to OrderController so the page reads real Order/OrderItem rows
-        | for the logged-in buyer instead of hardcoded demo data.
         */
 
         Route::get('/orders', [
             BuyerOrderController::class,
             'index',
         ])->name('orders');
+
+        Route::post('/orders/{order}/confirm-receipt', [
+            BuyerOrderController::class,
+            'confirmReceipt',
+        ])->name('orders.confirm-receipt');
 
 
         /*
@@ -209,31 +226,4 @@ Route::prefix('buyer')
             BuyerProfileController::class,
             'update',
         ])->name('settings.profile.update');
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Future Buyer Settings
-        |--------------------------------------------------------------------------
-        */
-
-        // Route::patch('/settings/address', [
-        //     BuyerProfileController::class,
-        //     'updateAddress'
-        // ])->name('settings.address.update');
-
-        // Route::patch('/settings/allergens', [
-        //     BuyerProfileController::class,
-        //     'updateAllergens'
-        // ])->name('settings.allergens.update');
-
-        // Route::patch('/settings/password', [
-        //     BuyerProfileController::class,
-        //     'updatePassword'
-        // ])->name('settings.password.update');
-
-        // Route::patch('/settings/notifications', [
-        //     BuyerProfileController::class,
-        //     'updateNotifications'
-        // ])->name('settings.notifications.update');
     });

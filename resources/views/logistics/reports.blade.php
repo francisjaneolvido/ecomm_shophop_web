@@ -12,7 +12,16 @@
     <button class="rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white">Filter</button>
 </form>
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-    @foreach (['assigned' => 'Assigned', 'picked_up' => 'Picked up', 'in_transit' => 'In transit', 'delivered' => 'Delivered'] as $key => $label)
+    @foreach ([
+        \App\Models\Logistics\Delivery::PICKUP_ASSIGNED => 'Pickup assigned',
+        \App\Models\Logistics\Delivery::PICKED_UP => 'Picked up',
+        \App\Models\Logistics\Delivery::AT_SORTING_CENTER => 'At sorting center',
+        \App\Models\Logistics\Delivery::SORTED => 'Sorted',
+        \App\Models\Logistics\Delivery::DELIVERY_ASSIGNED => 'Delivery assigned',
+        \App\Models\Logistics\Delivery::OUT_FOR_DELIVERY => 'Out for delivery',
+        \App\Models\Logistics\Delivery::DELIVERY_FAILED => 'Delivery failed',
+        \App\Models\Logistics\Delivery::DELIVERED => 'Delivered',
+    ] as $key => $label)
         <div class="rounded-xl border border-gray-border bg-white p-4"><p class="text-sm text-navy/60">{{ $label }}</p><p class="text-2xl font-bold text-navy">{{ $counts[$key] ?? 0 }}</p></div>
     @endforeach
 </div>
@@ -20,7 +29,7 @@
 <div class="space-y-3">
     @forelse ($deliveries as $delivery)
         <div class="rounded-xl border border-gray-border bg-white p-4 text-sm text-navy">
-            Order #{{ $delivery->order_id }} · {{ $delivery->rider?->name ?? 'Rider unavailable' }} · {{ str_replace('_', ' ', ucfirst($delivery->status)) }} · Assigned {{ $delivery->assigned_at?->format('M j, Y') }}
+            Order #{{ $delivery->order_id }} · {{ $delivery->rider?->name ?? 'Rider unavailable' }} · {{ $delivery->statusLabel() }} · Assigned {{ $delivery->assigned_at?->format('M j, Y') }}
         </div>
     @empty
         <p class="text-sm text-navy/50">No persisted deliveries in this date range.</p>

@@ -57,6 +57,7 @@ CONTROLLER / VALIDATION FIELDS (all posted as multipart/form-data):
     - business_registration_no*   string (DTI / SEC / CDA number)
     - line_of_business*           enum: motorcycle_courier | van_truck_freight | same_day | other
     - rep_last_name / rep_first_name   string, letters only
+    - rep_middle_initial         optional string
     - rep_valid_id*                file, image/pdf, max 5MB
     - rep_id_number*               string, alphanumeric + "-"
     - rep_sex*                     enum: male | female
@@ -66,7 +67,8 @@ CONTROLLER / VALIDATION FIELDS (all posted as multipart/form-data):
     - region* / province* / municipality* / barangay*   strings (PSGC names)
     - street_no* / unit_no*        strings
 
-  Account verification (UX-only for now — see JS TODOs below):
+  Account verification:
+    - email verification code is sent and verified through Laravel endpoints
     - otp_code*                    string, 6 digits
     - password* / password_confirmation*   min:8, upper/lower/number
 
@@ -82,11 +84,8 @@ STATUS / APPROVAL FLOW:
     approves the application. Notify the registered email on approval
     or rejection.
 
-STILL STUBBED (same as before, not yet wired to real endpoints):
-  - POST /logistics/detect-id            — ID auto-fill, fails gracefully
-  - POST to send the OTP (Step 2 → 3)
-  - POST to verify the OTP (Step 4 → 5)
-  - POST to resend the OTP
+OPTIONAL / NON-BLOCKING:
+  - ID auto-detection is intentionally not part of the registration flow.
 --}}
 
 <div
@@ -183,19 +182,19 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
             @include('auth.modals.shared.registration-side-panel', [
                 'roleIcon' => 'lucide-truck',
-                'eyebrow' => 'PARTNER WITH SHOPHOP',
-                'title' => 'Deliver more.',
-                'highlight' => 'Reach farther.',
-                'description' => 'Register your fleet as a logistics partner and manage coverage, deliveries, documents, and payouts in one place.',
+                'eyebrow' => 'LOGISTICS / SORTING CENTER',
+                'title' => 'Receive. Sort.',
+                'highlight' => 'Assign. Deliver.',
+                'description' => 'Register your ShopHop logistics / sorting center to manage incoming parcels, rider assignments, delivery areas, and shipment monitoring.',
                 'features' => [
-                    ['icon' => 'lucide-map', 'title' => 'Choose Your Coverage', 'description' => 'Serve the cities and areas you know best'],
-                    ['icon' => 'lucide-route', 'title' => 'Manage Deliveries', 'description' => 'Keep pickups and delivery work organized'],
-                    ['icon' => 'lucide-shield-check', 'title' => 'Verified Partnership', 'description' => 'Operate as an approved ShopHop partner'],
+                    ['icon' => 'lucide-package-check', 'title' => 'Receive & Sort Parcels', 'description' => 'Process parcels according to their destination area'],
+                    ['icon' => 'lucide-users-round', 'title' => 'Manage Riders', 'description' => 'Review riders and organize pickup and delivery work'],
+                    ['icon' => 'lucide-map-pinned', 'title' => 'Assign by Delivery Area', 'description' => 'Match sorted parcels with the right rider for each area'],
                 ],
                 'stats' => [
-                    ['value' => '500+', 'label' => 'Partner Fleets'],
-                    ['value' => '80+', 'label' => 'Cities Covered'],
-                    ['value' => '4.7', 'label' => 'Rating', 'star' => true],
+                    ['value' => 'Verified', 'label' => 'Admin Approval'],
+                    ['value' => 'Area-based', 'label' => 'Rider Assignment'],
+                    ['value' => 'Tracked', 'label' => 'Parcel Status'],
                 ],
             ])
 
@@ -251,30 +250,42 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         </div>
 
                         <p class="text-teal-dark text-[11px] font-bold tracking-[0.12em] mb-2">
-                            LOGISTICS REGISTRATION
+                            LOGISTICS / SORTING CENTER
                         </p>
 
                         <h2 class="text-navy text-2xl sm:text-3xl font-bold leading-tight">
-                            Become a Logistics Partner
+                            Register your Logistics / Sorting Center
                         </h2>
 
                         <p class="text-sm text-navy/50 mt-2 leading-relaxed">
-                            Register your fleet to start delivering for ShopHop sellers.
+                            Submit your center details, verify your email, and upload the documents needed for administrator approval.
                         </p>
 
                     </div>
 
 
                     {{-- =============================================
-                        STEP PROGRESS BAR (7 steps)
+                        APPLICATION PROGRESS
+                        Mobile uses one clear label + bar; larger screens keep
+                        the detailed seven-step tracker.
                     ============================================== --}}
-                    <div class="mb-6 overflow-x-auto">
+                    <div class="sm:hidden mb-6 rounded-2xl border border-gray-border/70 bg-gray-bg/60 px-4 py-3">
+                        <div class="flex items-center justify-between gap-3">
+                            <p id="logistics-mobile-progress-label" class="text-xs font-bold text-navy">Step 1 of 7 · Agreement</p>
+                            <span id="logistics-mobile-progress-percent" class="text-[10px] font-bold text-teal-dark">14%</span>
+                        </div>
+                        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-navy/8">
+                            <div id="logistics-mobile-progress-bar" class="h-full rounded-full bg-teal transition-all duration-300" style="width:14.2857%"></div>
+                        </div>
+                    </div>
+
+                    <div class="hidden sm:block mb-6 overflow-x-auto">
 
                         <div
                             class="grid items-center min-w-140 sm:min-w-0"
                             style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto;"
                         >
-                            @foreach (['Terms', 'Company', 'Verify', 'Code', 'Password', 'Coverage', 'Review'] as $i => $label)
+                            @foreach (['Agreement', 'Center', 'Email', 'Code', 'Security', 'Operations', 'Review'] as $i => $label)
                                 @if ($i > 0)
                                     <div class="step-line h-px mx-1 bg-gray-border" data-step-line="{{ $i }}"></div>
                                 @endif
@@ -292,7 +303,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                             class="grid mt-2 min-w-140 sm:min-w-0"
                             style="grid-template-columns: auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto 1fr auto;"
                         >
-                            @foreach (['Terms', 'Company', 'Verify', 'Code', 'Password', 'Coverage', 'Review'] as $i => $label)
+                            @foreach (['Agreement', 'Center', 'Email', 'Code', 'Security', 'Operations', 'Review'] as $i => $label)
                                 @if ($i > 0)
                                     <div></div>
                                 @endif
@@ -309,8 +320,10 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
 
 
-                    {{-- Validation Errors --}}
-                    @if ($errors->any())
+                    {{-- Logistics registration validation errors only.
+                         Keep these isolated from the shared login modal. --}}
+                    @php($logisticsErrors = $errors->getBag('logisticsRegistration'))
+                    @if ($logisticsErrors->any())
 
                         <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4">
 
@@ -326,7 +339,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                                     <ul class="mt-2 space-y-1 text-xs text-red-600">
 
-                                        @foreach ($errors->all() as $error)
+                                        @foreach ($logisticsErrors->all() as $error)
                                             <li>• {{ $error }}</li>
                                         @endforeach
 
@@ -360,201 +373,105 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         ========================================== --}}
                         <div data-step-panel="1">
 
-                            <div class="flex items-start gap-3 bg-teal-light/60 text-teal-dark text-xs rounded-xl px-3.5 py-2.5 mb-4">
-                                <x-lucide-info class="w-4 h-4 shrink-0 mt-0.5" />
-                                <span>Please read the Courier Terms &amp; Agreement in full. You'll need to
-                                    scroll to the end before you can accept and continue.</span>
-                            </div>
-
-                            <div class="flex items-center justify-between mb-2">
-                                <p class="text-xs font-semibold text-navy/50 uppercase tracking-wide">Courier Terms &amp; Agreement</p>
-                                <a href="{{ Route::has('logistics.terms') ? route('logistics.terms') : '#' }}" target="_blank" rel="noopener"
-                                   class="text-xs font-semibold text-teal-dark hover:text-navy underline underline-offset-2 flex items-center gap-1 transition-colors">
-                                    See full terms
-                                    <x-lucide-external-link class="w-3 h-3" />
-                                </a>
-                            </div>
-
-                            <div id="logistics-terms-scroll-wrap" class="relative">
-                                <div id="logistics-terms-scroll"
-                                     class="h-40 sm:h-44 overflow-y-auto border border-gray-border/70 rounded-2xl p-4 sm:p-5 bg-gray-bg/40 space-y-4 text-xs text-navy/75 leading-relaxed">
-
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">1. Partnership Terms</h4>
-                                        <p>Accreditation is non-exclusive, non-transferable, and limited to the coverage areas approved on your application. This does not create an employment, joint venture, or franchise relationship — the Courier Partner remains an independent contractor.</p>
+                            <div class="mb-5 rounded-2xl border border-teal/15 bg-teal-light/35 p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-teal-dark shadow-sm">
+                                        <x-lucide-clipboard-check class="w-4 h-4" />
                                     </div>
                                     <div>
-                                        <h4 class="text-navy font-bold mb-1">2. Courier Responsibilities</h4>
-                                        <p>Maintain a sufficient, licensed rider/driver pool, ensure valid IDs and vehicle documents are carried at all times, and keep vehicles roadworthy and insured as required by law.</p>
+                                        <p class="text-sm font-bold text-navy">Application acknowledgement</p>
+                                        <p class="mt-1 text-[11px] leading-relaxed text-navy/50">
+                                            This registration is for a ShopHop Logistics / Sorting Center. Your information and documents
+                                            will be reviewed by the ShopHop administrator before the center can operate.
+                                        </p>
                                     </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">3. Service &amp; Delivery Standards</h4>
-                                        <p>Pickups and deliveries must meet the timeframes and success-rate thresholds published in the Logistics Partner Handbook. Delays or issues must be reported through the partner console promptly.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">4. Fees &amp; Payment Terms</h4>
-                                        <p>Delivery fees follow the applicable rate card and are paid on a bi-monthly payout cycle, net of platform fees or adjustments. Disputes must be raised within 15 days of the payout statement.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">5. COD &amp; Remittance</h4>
-                                        <p>Cash-on-Delivery funds are held in trust for the seller and must be remitted in full, less the agreed handling fee, within 3 banking days of successful delivery.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">6. Lost / Damaged Package Liability</h4>
-                                        <p>The Courier Partner is liable for the declared value of parcels lost, stolen, or damaged while in its custody, except where caused by defective packaging, the buyer, or force majeure.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">7. Returns &amp; Failed Deliveries</h4>
-                                        <p>Failed or refused deliveries must be logged with proof of attempt and returned to the seller's nominated hub within 5 calendar days.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">8. Data Privacy &amp; Confidentiality</h4>
-                                        <p>Buyer and seller data may only be used to complete deliveries, in line with the Data Privacy Act of 2012, and must never be copied, stored beyond necessity, or used for off-platform solicitation.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">9. Prohibited Items</h4>
-                                        <p>Illegal drugs, firearms and explosives, counterfeit goods, hazardous materials, and any item prohibited under Philippine law must never knowingly be accepted or transported.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">10. Compliance Requirements</h4>
-                                        <p>The Courier Partner must hold and maintain all permits and licenses required to operate (DTI/SEC/CDA, LTFRB/LTO where applicable, local business permits) and provide updates upon renewal or request.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">11. Suspension &amp; Termination</h4>
-                                        <p>ShopHop may suspend or terminate accreditation for serious violations, or with 15 days' notice for uncured material breaches. The Courier Partner may terminate with 30 days' written notice.</p>
-                                    </div>
-                                    <div>
-                                        <h4 class="text-navy font-bold mb-1">12. Dispute Resolution</h4>
-                                        <p>Disputes are first raised in good faith through Partner Support, then mediation, then binding arbitration or the proper courts of the Philippines, under Philippine law.</p>
-                                    </div>
-
-                                    <p class="text-[11px] text-navy/45 pt-2 border-t border-gray-border">
-                                        This is a summary. The full Courier Terms &amp; Agreement governs in the event of any conflict.
-                                    </p>
                                 </div>
-                                <div id="logistics-terms-scroll-fade"
-                                     class="pointer-events-none absolute left-1 right-2.5 bottom-1 h-8 rounded-b-2xl transition-opacity duration-200"
-                                     style="background: linear-gradient(to bottom, transparent, var(--sh-page));"
-                                ></div>
                             </div>
 
-                            <p id="logistics-terms-scroll-hint" class="text-[11px] text-navy/45 mt-2 flex items-center gap-1.5">
-                                <x-lucide-arrow-down class="w-3.5 h-3.5" />
-                                Scroll to the end of the agreement to unlock the checkbox below.
-                            </p>
+                            <div class="grid gap-3 sm:grid-cols-3">
+                                <div class="rounded-2xl border border-gray-border/70 bg-white p-4">
+                                    <x-lucide-user-check class="h-4 w-4 text-teal-dark" />
+                                    <p class="mt-2 text-xs font-bold text-navy">Administrator review</p>
+                                    <p class="mt-1 text-[10.5px] leading-relaxed text-navy/45">The submitted identity and business information will be checked before approval.</p>
+                                </div>
+                                <div class="rounded-2xl border border-gray-border/70 bg-white p-4">
+                                    <x-lucide-mail-check class="h-4 w-4 text-teal-dark" />
+                                    <p class="mt-2 text-xs font-bold text-navy">Decision by e-mail</p>
+                                    <p class="mt-1 text-[10.5px] leading-relaxed text-navy/45">The approval or rejection result will be sent to the registered e-mail address.</p>
+                                </div>
+                                <div class="rounded-2xl border border-gray-border/70 bg-white p-4">
+                                    <x-lucide-package-check class="h-4 w-4 text-teal-dark" />
+                                    <p class="mt-2 text-xs font-bold text-navy">Sorting center role</p>
+                                    <p class="mt-1 text-[10.5px] leading-relaxed text-navy/45">Approved centers can manage riders, parcel sorting, delivery assignment, and monitoring.</p>
+                                </div>
+                            </div>
 
-                            <div class="bg-gray-bg rounded-2xl p-4 sm:p-5 mt-4 space-y-4">
+                            <div class="mt-5 rounded-2xl bg-gray-bg p-4 sm:p-5">
                                 <label class="flex items-start gap-3 text-sm text-navy cursor-pointer">
-                                    <input type="checkbox" name="terms_agree" id="logistics_terms_agree" required disabled
-                                           class="mt-0.5 w-4 h-4 accent-teal rounded disabled:opacity-40">
+                                    <input type="checkbox" name="terms_agree" id="logistics_terms_agree" required
+                                           class="mt-0.5 h-4 w-4 rounded accent-teal">
                                     <span>
-                                        I confirm that I have read and understood the ShopHop Courier Terms
-                                        &amp; Agreement in full, and I agree, on behalf of the company named
-                                        in this application, to be bound by its terms. <span class="text-red-500">*</span>
+                                        I confirm that the information and documents I will provide are accurate, and I authorize
+                                        ShopHop to review this application for Logistics / Sorting Center approval.
+                                        <span class="text-red-500">*</span>
                                     </span>
                                 </label>
 
-                                <div class="grid sm:grid-cols-2 gap-4">
+                                <div class="mt-4 grid gap-4 sm:grid-cols-2">
                                     <div>
                                         <label for="logistics_agreement_rep_name" class="block text-xs font-semibold text-navy mb-2">
                                             Authorized representative — full name <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
                                             <x-lucide-user class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
-                                            <input type="text" name="agreement_rep_name" id="logistics_agreement_rep_name" value="{{ old('agreement_rep_name') }}" required
-                                                   placeholder="Juan Dela Cruz"
+                                            <input type="text" name="agreement_rep_name" id="logistics_agreement_rep_name"
+                                                   value="{{ old('agreement_rep_name') }}" required placeholder="Juan Dela Cruz"
                                                    class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                         </div>
                                         <p id="logistics_agreement_rep_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                     </div>
+
                                     <div>
                                         <label for="logistics_agreement_date" class="block text-xs font-semibold text-navy mb-2">
                                             Date <span class="text-red-500">*</span>
                                         </label>
                                         <div class="relative">
                                             <x-lucide-calendar class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
-                                            <input type="date" name="agreement_date" id="logistics_agreement_date" value="{{ old('agreement_date', now()->toDateString()) }}" required
+                                            <input type="date" name="agreement_date" id="logistics_agreement_date"
+                                                   value="{{ old('agreement_date', now()->toDateString()) }}" required
                                                    class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-2 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                         </div>
                                     </div>
                                 </div>
 
-                                <div>
+                                <div class="mt-4">
                                     <label for="logistics_agreement_signature" class="block text-xs font-semibold text-navy mb-2">
-                                        E-signature <span class="text-red-500">*</span>
+                                        Representative signature <span class="text-red-500">*</span>
                                     </label>
                                     <label for="logistics_agreement_signature"
-                                           class="flex items-center gap-2 border border-dashed border-gray-border/80 rounded-xl px-4 py-3 text-sm text-navy/50 cursor-pointer hover:border-teal hover:text-navy/70 hover:bg-teal-light/30 transition bg-white">
-                                        <x-lucide-pen-line class="w-4 h-4 shrink-0" />
-                                        <span id="logistics-agreement-signature-name">Upload a photo or scan of your signature</span>
-                                        <input type="file" name="agreement_signature" id="logistics_agreement_signature"
-                                               accept="image/png,image/jpeg,image/webp,application/pdf" class="hidden" required>
-                                    </label>
-                                    <p class="text-[11px] text-navy/45 mt-1.5">
-                                        JPG, PNG, WEBP or PDF, up to 5MB. This constitutes a legally binding
-                                        electronic signature under the Electronic Commerce Act of 2000.
-                                    </p>
-                                    <p id="logistics_agreement_signature_error" class="hidden text-[11px] text-red-500 mt-1"></p>
-
-                                    {{-- Uploaded e-signature preview --}}
-                                    <div
-                                        id="logistics-agreement-signature-preview-card"
-                                        class="hidden mt-3 rounded-2xl border border-gray-border/70 bg-white p-3 shadow-sm"
-                                    >
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-20 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gray-bg/80 ring-1 ring-gray-border/60">
-                                                <img
-                                                    id="logistics-agreement-signature-preview-image"
-                                                    src=""
-                                                    alt="Uploaded e-signature preview"
-                                                    class="hidden h-full w-full object-contain"
-                                                >
-                                                <div id="logistics-agreement-signature-preview-pdf" class="hidden flex-col items-center justify-center text-center text-teal-dark">
-                                                    <x-lucide-file-text class="w-6 h-6" />
-                                                    <span class="mt-1 text-[9px] font-bold uppercase tracking-wide">PDF</span>
-                                                </div>
-                                            </div>
-
-                                            <div class="min-w-0 flex-1">
-                                                <p class="text-[10px] font-bold uppercase tracking-[0.12em] text-teal-dark">Preview ready</p>
-                                                <p id="logistics-agreement-signature-preview-status" class="mt-1 truncate text-xs font-semibold text-navy">Uploaded file</p>
-
-                                                <div class="mt-2 flex flex-wrap items-center gap-2">
-                                                    <button
-                                                        type="button"
-                                                        id="logistics-agreement-signature-preview-view"
-                                                        class="inline-flex min-h-8 items-center justify-center gap-1.5 rounded-lg bg-navy px-3 py-1.5 text-[10.5px] font-bold text-white hover:bg-navy/90 focus:outline-none focus:ring-4 focus:ring-navy/10 transition"
-                                                    >
-                                                        <x-lucide-maximize-2 class="w-3 h-3" />
-                                                        View file
-                                                    </button>
-
-                                                    <button
-                                                        type="button"
-                                                        id="logistics-agreement-signature-preview-change"
-                                                        class="inline-flex min-h-8 items-center justify-center rounded-lg px-2.5 py-1.5 text-[10.5px] font-bold text-teal-dark hover:bg-teal-light hover:text-navy transition"
-                                                    >
-                                                        Choose another
-                                                    </button>
-                                                </div>
-                                            </div>
+                                           class="flex items-center gap-3 rounded-xl border border-dashed border-gray-border/80 bg-white px-4 py-3 text-sm text-navy/50 cursor-pointer hover:border-teal hover:bg-teal-light/30 transition">
+                                        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-bg text-teal-dark">
+                                            <x-lucide-pen-line class="w-4 h-4" />
                                         </div>
-                                    </div>
+                                        <div class="min-w-0">
+                                            <p class="text-xs font-semibold text-navy">Upload signature</p>
+                                            <p id="logistics-agreement-signature-name" class="mt-0.5 truncate text-[10.5px] text-navy/40">JPG, PNG, WEBP or PDF · Max 5MB</p>
+                                        </div>
+                                        <input type="file" name="agreement_signature" id="logistics_agreement_signature"
+                                               accept=".jpg,.jpeg,.png,.webp,.pdf" class="hidden" required>
+                                    </label>
                                 </div>
                             </div>
 
                             <p id="logistics-step1-error" class="hidden text-xs text-red-500 font-medium mt-3 items-center gap-1.5">
                                 <x-lucide-alert-triangle class="w-3.5 h-3.5" />
-                                Please read the agreement, then check the box and complete your name, date, and signature upload to continue.
+                                Complete the acknowledgement, representative name, date, and signature before continuing.
                             </p>
 
                             <div class="flex items-center gap-3 mt-6">
-                                <button
-                                    type="button"
-                                    id="logistics-step1-next"
-                                    class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300"
-                                >
-                                    Next
+                                <button type="button" id="logistics-step1-next"
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
+                                    Start application
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
                             </div>
@@ -563,20 +480,35 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
 
                         {{-- =========================================
-                            STEP 2 — COMPANY DETAILS
+                            STEP 2 — CENTER & REPRESENTATIVE DETAILS
                         ========================================== --}}
                         <div data-step-panel="2" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-4">
-                                <x-lucide-building-2 class="w-4 h-4 text-teal-dark" />
-                                <p class="text-sm font-semibold text-navy">Company Details</p>
+                            <div class="mb-5 rounded-2xl border border-teal/15 bg-teal-light/35 p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-teal-dark shadow-sm">
+                                        <x-lucide-building-2 class="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-navy">Center & representative details</p>
+                                        <p class="mt-1 text-[11px] leading-relaxed text-navy/50">
+                                            Tell us who operates the Logistics / Sorting Center and where the center is located.
+                                            These details are reviewed by the ShopHop administrator before approval.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 flex items-center gap-2">
+                                <span class="h-6 w-1 rounded-full bg-teal"></span>
+                                <p class="text-xs font-bold uppercase tracking-[0.12em] text-navy/55">Center information</p>
                             </div>
 
                             <div class="grid sm:grid-cols-2 gap-4">
 
                                 <div class="sm:col-span-2">
                                     <label for="logistics_company_name" class="block text-xs font-semibold text-navy mb-2">
-                                        Company / business name <span class="text-red-500">*</span>
+                                        Logistics / Sorting Center name <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative">
                                         <x-lucide-store class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
@@ -599,33 +531,50 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                                 <div>
                                     <label for="logistics_line_of_business" class="block text-xs font-semibold text-navy mb-2">
-                                        Line of business <span class="text-red-500">*</span>
+                                        Logistics service type <span class="text-red-500">*</span>
                                     </label>
                                     <div class="relative">
                                         <select name="line_of_business" id="logistics_line_of_business" required
                                                 class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 pr-9 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition appearance-none">
                                             <option value="">Select</option>
-                                            <option value="motorcycle_courier" @selected(old('line_of_business') === 'motorcycle_courier')>Motorcycle courier</option>
-                                            <option value="van_truck_freight" @selected(old('line_of_business') === 'van_truck_freight')>Van / truck freight</option>
-                                            <option value="same_day" @selected(old('line_of_business') === 'same_day')>Same-day delivery</option>
-                                            <option value="other" @selected(old('line_of_business') === 'other')>Other</option>
+                                            <option value="motorcycle_courier" @selected(old('line_of_business') === 'motorcycle_courier')>Local courier / pickup operations</option>
+                                            <option value="van_truck_freight" @selected(old('line_of_business') === 'van_truck_freight')>Van / truck logistics</option>
+                                            <option value="same_day" @selected(old('line_of_business') === 'same_day')>Same-day delivery &amp; sorting</option>
+                                            <option value="other" @selected(old('line_of_business') === 'other')>Sorting / distribution center or other</option>
                                         </select>
                                         <x-lucide-chevron-down class="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
                                     </div>
                                     <p id="logistics_line_of_business_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
 
+                                <div class="sm:col-span-2 mt-2 border-t border-gray-border/70 pt-5">
+                                    <div class="flex items-center gap-2">
+                                        <span class="h-6 w-1 rounded-full bg-teal"></span>
+                                        <p class="text-xs font-bold uppercase tracking-[0.12em] text-navy/55">Authorized representative</p>
+                                    </div>
+                                    <p class="mt-1 text-[11px] text-navy/40">Personal information of the person responsible for this center.</p>
+                                </div>
+
                                 <div>
-                                    <label for="logistics_rep_last_name" class="block text-xs font-semibold text-navy mb-2">Authorized representative — last name</label>
-                                    <input type="text" name="rep_last_name" id="logistics_rep_last_name" value="{{ old('rep_last_name') }}"
+                                    <label for="logistics_rep_last_name" class="block text-xs font-semibold text-navy mb-2">Last name <span class="text-red-500">*</span></label>
+                                    <input type="text" name="rep_last_name" id="logistics_rep_last_name" value="{{ old('rep_last_name') }}" required
                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p id="logistics_rep_last_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
                                 </div>
                                 <div>
-                                    <label for="logistics_rep_first_name" class="block text-xs font-semibold text-navy mb-2">First name</label>
-                                    <input type="text" name="rep_first_name" id="logistics_rep_first_name" value="{{ old('rep_first_name') }}"
+                                    <label for="logistics_rep_first_name" class="block text-xs font-semibold text-navy mb-2">First name <span class="text-red-500">*</span></label>
+                                    <input type="text" name="rep_first_name" id="logistics_rep_first_name" value="{{ old('rep_first_name') }}" required
                                            class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                     <p id="logistics_rep_first_name_error" class="hidden text-[11px] text-red-500 mt-1"></p>
+                                </div>
+
+                                <div>
+                                    <label for="logistics_rep_middle_initial" class="block text-xs font-semibold text-navy mb-2">
+                                        Middle initial <span class="text-navy/35 font-medium">(optional)</span>
+                                    </label>
+                                    <input type="text" name="rep_middle_initial" id="logistics_rep_middle_initial"
+                                           value="{{ old('rep_middle_initial') }}" maxlength="5" placeholder="e.g. M."
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm px-4 py-3 text-sm text-navy placeholder:text-navy/30 outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition">
                                 </div>
 
                                 {{-- Representative ID + ID number --}}
@@ -647,8 +596,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                                accept="image/png,image/jpeg,image/webp,application/pdf" class="hidden" required>
                                     </label>
                                     <p id="logistics-id-detect-status" class="text-[11px] text-navy/45 mt-1.5">
-                                        We'll try to read your name and ID number off this automatically once
-                                        it's uploaded. <span class="text-navy/35">(Auto-fill is a work in progress — please double-check the fields below either way.)</span>
+                                        Upload a clear and readable copy. The ShopHop administrator will use this document to verify the authorized representative.
                                     </p>
                                     <p id="logistics_rep_valid_id_error" class="hidden text-[11px] text-red-500 mt-1"></p>
 
@@ -730,6 +678,16 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </div>
 
                                 <div>
+                                    <label for="logistics_rep_age" class="block text-xs font-semibold text-navy mb-2">
+                                        Age <span class="text-navy/35 font-medium">(auto-generated)</span>
+                                    </label>
+                                    <input type="text" id="logistics_rep_age" value="" readonly tabindex="-1"
+                                           placeholder="Select birthday"
+                                           class="w-full min-h-12 rounded-xl border border-gray-border/70 bg-gray-bg px-4 py-3 text-sm font-semibold text-navy/65 outline-none cursor-default">
+                                    <p class="text-[10.5px] text-navy/35 mt-1">Calculated automatically from your birthday.</p>
+                                </div>
+
+                                <div>
                                     <label for="logistics_email" class="block text-xs font-semibold text-navy mb-2">E-mail <span class="text-red-500">*</span></label>
                                     <div class="relative">
                                         <x-lucide-mail class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/30" />
@@ -753,11 +711,11 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 {{-- Address cascade --}}
                                 <div class="sm:col-span-2">
                                     <label class="block text-xs font-semibold text-navy mb-2">
-                                        Business address <span class="text-red-500">*</span>
+                                        Main Sorting Center address <span class="text-red-500">*</span>
                                     </label>
                                     <p class="text-[11px] text-navy/45 mb-2">
-                                        Pick your region first — province, city/municipality, and barangay
-                                        choices narrow down automatically.
+                                        This becomes your primary branch after approval. You can add more Sorting Center branches from the Logistics portal.
+                                        Pick your region first — the remaining address choices narrow down automatically.
                                     </p>
 
                                     <div id="logistics-address-status" class="hidden mb-2.5 rounded-xl bg-teal-light/50 px-3.5 py-2 text-xs text-teal-dark"></div>
@@ -869,12 +827,26 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 <p class="text-sm text-navy/50 mt-2 leading-relaxed max-w-sm">
                                     We're sending a 6-digit verification code to
                                     <span class="font-semibold text-navy" id="logistics-verify-email-display">—</span>.
-                                    This will also be your login e-mail for the Partner Console.
+                                    This will be the login e-mail for your Logistics / Sorting Center account.
                                 </p>
 
                                 <p class="text-[11px] text-navy/40 mt-3">
-                                    Wrong email? Go back to Company Details to update it.
+                                    Wrong email? Go back to Center Details to update it.
                                 </p>
+
+                                <div id="logistics-send-code-status"
+                                     class="mt-4 w-full max-w-md rounded-xl border border-gray-border/70 bg-gray-bg px-4 py-3 text-left">
+                                    <p class="text-[11px] font-semibold text-navy">Verification code</p>
+                                    <p id="logistics-send-code-message" class="mt-1 text-[11px] leading-relaxed text-navy/45">
+                                        We will send a 6-digit code to the email above.
+                                    </p>
+                                </div>
+
+                                <button type="button" id="logistics-send-code"
+                                        class="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-teal/25 bg-teal-light px-4 py-2 text-xs font-bold text-teal-dark hover:bg-teal/10 transition">
+                                    <x-lucide-send class="w-3.5 h-3.5" />
+                                    Send verification code
+                                </button>
 
                             </div>
 
@@ -884,9 +856,9 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                     <x-lucide-arrow-left class="w-4 h-4" />
                                     Back
                                 </button>
-                                <button type="button" id="logistics-step3-next"
-                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
-                                    Next
+                                <button type="button" id="logistics-step3-next" disabled
+                                        class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark disabled:bg-navy/15 disabled:text-navy/35 disabled:shadow-none disabled:cursor-not-allowed text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 disabled:hover:translate-y-0 transition-all duration-300">
+                                    Enter verification code
                                     <x-lucide-arrow-right class="w-4 h-4" />
                                 </button>
                             </div>
@@ -946,8 +918,8 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </button>
                                 <button type="button" id="logistics-step4-next"
                                         class="flex-1 inline-flex items-center justify-center gap-2 bg-teal hover:bg-teal-dark text-white text-sm font-semibold min-h-12 px-5 py-3 rounded-xl shadow-md shadow-teal/20 hover:-translate-y-0.5 transition-all duration-300">
-                                    Next
-                                    <x-lucide-arrow-right class="w-4 h-4" />
+                                    Verify &amp; continue
+                                    <x-lucide-shield-check class="w-4 h-4" />
                                 </button>
                             </div>
 
@@ -1077,22 +1049,32 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         ========================================== --}}
                         <div data-step-panel="6" class="hidden">
 
-                            <div class="flex items-center gap-2 mb-4">
-                                <x-lucide-map class="w-4 h-4 text-teal-dark" />
-                                <p class="text-sm font-semibold text-navy">Coverage &amp; Documents</p>
+                            <div class="mb-5 rounded-2xl border border-teal/15 bg-teal-light/35 p-4">
+                                <div class="flex items-start gap-3">
+                                    <div class="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-teal-dark shadow-sm">
+                                        <x-lucide-map-pinned class="w-4 h-4" />
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-bold text-navy">Operations & supporting documents</p>
+                                        <p class="mt-1 text-[11px] leading-relaxed text-navy/50">
+                                            Delivery areas help ShopHop sort parcels by destination and assign them to riders serving that area.
+                                            Upload the business permit required for administrator review.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
 
                             <label class="block text-xs font-semibold text-navy mb-2">
-                                Coverage areas serviced <span class="text-red-500">*</span>
+                                Delivery areas covered <span class="text-red-500">*</span>
                             </label>
                             <p class="hidden text-[11px] text-teal-dark mb-3" id="logistics-coverage-suggestion-note">
-                                Suggested based on your business region (<span id="logistics-coverage-region-name"></span>)
+                                Suggested from your center address (<span id="logistics-coverage-region-name"></span>)
                                 — remove anything you don't cover, or add more provinces below.
                             </p>
 
                             <div id="logistics-coverage-list" class="space-y-3 mb-4">
                                 <p class="text-xs text-navy/40" id="logistics-coverage-empty">
-                                    No coverage areas yet. Set your business region/province in Company Details, or add one below.
+                                    No delivery areas yet. Add the province or region where this center can handle deliveries.
                                 </p>
                             </div>
 
@@ -1103,7 +1085,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </select>
                                 <button type="button" id="logistics-coverage-add-btn"
                                         class="shrink-0 bg-navy text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-navy/90 transition">
-                                    + Add province
+                                    + Add delivery area
                                 </button>
                             </div>
                             <p id="logistics-coverage-error" class="hidden text-xs text-red-500 font-medium mt-2">
@@ -1264,6 +1246,9 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
 
                                 <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">Company</span><span class="font-semibold text-navy text-right" data-review="company_name">—</span></div>
                                 <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">Registration no.</span><span class="font-semibold text-navy text-right" data-review="business_registration_no">—</span></div>
+                                <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">Service type</span><span class="font-semibold text-navy text-right" id="logistics-review-service-type">—</span></div>
+                                <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">Representative</span><span class="font-semibold text-navy text-right" id="logistics-review-representative">—</span></div>
+                                <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">Age</span><span class="font-semibold text-navy text-right" id="logistics-review-age">—</span></div>
                                 <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">Representative ID no.</span><span class="font-semibold text-navy text-right" data-review="rep_id_number">—</span></div>
                                 <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">E-mail</span><span class="font-semibold text-navy text-right" data-review="email">—</span></div>
                                 <div class="py-2.5 flex justify-between gap-4"><span class="text-navy/55">Contact no.</span><span class="font-semibold text-navy text-right" data-review="contact_no">—</span></div>
@@ -1272,7 +1257,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                     <span class="text-navy/55">Email verification</span>
                                     <span class="font-semibold text-teal-dark flex items-center gap-1.5">
                                         <x-lucide-check-circle-2 class="w-3.5 h-3.5" />
-                                        Code entered
+                                        Verified
                                     </span>
                                 </div>
                                 <div class="py-2.5 flex justify-between gap-4">
@@ -1284,7 +1269,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 </div>
 
                                 <div class="py-2.5">
-                                    <span class="text-navy/55 block mb-1">Business address</span>
+                                    <span class="text-navy/55 block mb-1">Main Sorting Center address</span>
                                     <span class="font-semibold text-navy block" id="logistics-review-address">—</span>
                                 </div>
                                 <div class="py-2.5">
@@ -1304,6 +1289,24 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                                 <div class="py-2.5 flex justify-between gap-4">
                                     <span class="text-navy/55">Signature file</span>
                                     <span class="font-semibold text-navy text-right" id="logistics-review-signature-file">—</span>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 rounded-2xl border border-navy/8 bg-white p-4 shadow-sm">
+                                <p class="text-xs font-bold text-navy">What happens after you submit?</p>
+                                <div class="mt-3 grid gap-3 sm:grid-cols-3">
+                                    <div class="rounded-xl bg-gray-bg p-3">
+                                        <p class="text-[10px] font-bold uppercase tracking-wide text-teal-dark">1 · Admin review</p>
+                                        <p class="mt-1 text-[10.5px] leading-relaxed text-navy/50">ShopHop checks your information, ID, and business permit.</p>
+                                    </div>
+                                    <div class="rounded-xl bg-gray-bg p-3">
+                                        <p class="text-[10px] font-bold uppercase tracking-wide text-teal-dark">2 · Email decision</p>
+                                        <p class="mt-1 text-[10.5px] leading-relaxed text-navy/50">Approval or rejection is sent to your registered email.</p>
+                                    </div>
+                                    <div class="rounded-xl bg-gray-bg p-3">
+                                        <p class="text-[10px] font-bold uppercase tracking-wide text-teal-dark">3 · Start operations</p>
+                                        <p class="mt-1 text-[10.5px] leading-relaxed text-navy/50">Approved centers can manage riders, parcels, sorting, and delivery assignments.</p>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1335,7 +1338,7 @@ STILL STUBBED (same as before, not yet wired to real endpoints):
                         {{-- Sign in --}}
                         <div class="text-center mt-6">
                             <p class="text-xs text-navy/40">
-                                Already have a logistics account?
+                                Already have a Logistics / Sorting Center account?
                                 <button type="button" data-logistics-registration-modal-signin
                                         class="font-semibold text-teal-dark hover:text-navy transition">
                                     Sign In

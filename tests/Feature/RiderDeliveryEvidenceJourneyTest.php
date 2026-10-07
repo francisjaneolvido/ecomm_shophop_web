@@ -57,6 +57,7 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
         Storage::fake('local');
         $operator = $this->user('logistics');
         $partnerId = $this->partner($operator);
+        $areaId = DB::table('logistics_coverage_areas')->where('logistics_partner_id', $partnerId)->value('id');
         $buyer = $this->user('buyer');
         $seller = $this->user('seller');
         $buyerId = $this->profile('buyers', $buyer);
@@ -69,12 +70,12 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
             'delivery_name' => 'Test Buyer', 'delivery_phone' => '09123456789',
         ]);
         $this->actingAs($operator)->post(route('logistics.riders.store'), [
-            'name' => 'Rider A', 'vehicle_type' => 'Motorcycle', 'email' => 'a@example.test',
+            'name' => 'Rider A', 'vehicle_type' => 'Motorcycle', 'coverage_area_id' => $areaId, 'email' => 'a@example.test',
             'password' => 'LongSecretPassword123!', 'password_confirmation' => 'LongSecretPassword123!',
         ])->assertRedirect();
         $riderA = Rider::where('email', 'a@example.test')->firstOrFail();
         $this->post(route('logistics.riders.store'), [
-            'name' => 'Rider B', 'vehicle_type' => 'Motorcycle', 'email' => 'b@example.test',
+            'name' => 'Rider B', 'vehicle_type' => 'Motorcycle', 'coverage_area_id' => $areaId, 'email' => 'b@example.test',
             'password' => 'LongSecretPassword123!', 'password_confirmation' => 'LongSecretPassword123!',
         ])->assertRedirect();
         $riderB = Rider::where('email', 'b@example.test')->firstOrFail();
@@ -98,16 +99,26 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
             'email' => 'a@example.test', 'password' => 'LongSecretPassword123!',
         ])->assertRedirect(route('rider.deliveries.index'));
         $this->get(route('rider.deliveries.show', $delivery))->assertOk()->assertSee('Test Buyer');
-        // Cash acknowledgement does not let the Rider skip pickup or transit.
+        // Cash acknowledgement does not let the Rider skip pickup acceptance, sorting, or final assignment.
         $this->post(route('rider.deliveries.complete', $delivery), ['cash_collected' => '1', 'proof' => UploadedFile::fake()->create('early.jpg', 2, 'image/jpeg')])
             ->assertSessionHasErrors('delivery');
+        $this->post(route('rider.deliveries.accept-pickup', $delivery))->assertRedirect();
         $this->post(route('rider.deliveries.pickup', $delivery))->assertRedirect();
         $this->post(route('rider.deliveries.pickup', $delivery))->assertSessionHasErrors('delivery');
         $this->assertSame($riderA->id, $delivery->fresh()->pickup_rider_id);
         $this->assertSame(Order::STATUS_TO_RECEIVE, $order->fresh()->status);
-        $this->post(route('rider.deliveries.transit', $delivery))->assertRedirect();
+        $this->post(route('rider.deliveries.out-for-delivery', $delivery))->assertSessionHasErrors('delivery');
+
+        $this->post(route('rider.logout'));
+        $this->actingAs($operator, 'web');
+        $this->post(route('logistics.deliveries.receive', $delivery), ['tracking_code' => $delivery->fresh()->tracking_code])->assertRedirect();
+        $this->post(route('logistics.deliveries.sort', $delivery), ['destination_area_id' => $areaId])->assertRedirect();
+        $this->post(route('logistics.deliveries.assign-delivery', $delivery), ['rider_id' => $riderA->id])->assertRedirect();
+        $this->post(route('logout'));
+        $this->actingAs($riderA, 'rider');
+        $this->post(route('rider.deliveries.out-for-delivery', $delivery))->assertRedirect();
         $this->assertSame($riderA->id, $delivery->fresh()->transit_rider_id);
-        $this->post(route('rider.deliveries.transit', $delivery))->assertSessionHasErrors('delivery');
+        $this->post(route('rider.deliveries.out-for-delivery', $delivery))->assertSessionHasErrors('delivery');
         $this->post(route('rider.deliveries.complete', $delivery), [])->assertSessionHasErrors('proof');
         $this->post(route('rider.deliveries.complete', $delivery), [
             'proof' => UploadedFile::fake()->create('text.txt', 2, 'text/plain'),
@@ -125,7 +136,7 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
         $this->assertSame($riderA->id, $completed->delivered_rider_id);
         $this->assertNotNull($completed->delivered_at);
         Storage::disk('local')->assertExists($completed->proof_path);
-        $this->assertSame(Order::STATUS_COMPLETED, $order->fresh()->status);
+        $this->assertSame(Order::STATUS_TO_RECEIVE, $order->fresh()->status);
         $this->assertSame(200, $this->get(route('delivery.proof', $delivery))->getStatusCode(), 'Rider proof access');
         $this->post(route('rider.deliveries.complete', $delivery), [
             // A repeated cash declaration cannot replace an already completed delivery event.
@@ -139,7 +150,9 @@ class RiderDeliveryEvidenceJourneyTest extends TestCase
         $this->actingAs($buyer, 'web')->get(route('buyer.orders'))->assertOk()->assertSee('Delivered');
         $this->assertSame($buyerId, Auth::guard('web')->user()?->buyer?->id);
         $this->assertSame(200, $this->get(route('delivery.proof', $delivery))->getStatusCode(), 'Buyer proof access');
-        $this->actingAs($seller, 'web')->get(route('seller.orders.show', $order))->assertOk()->assertSee('Delivered');
+        $this->post(route('buyer.orders.confirm-receipt', $order))->assertRedirect();
+        $this->assertSame(Order::STATUS_COMPLETED, $order->fresh()->status);
+        $this->actingAs($seller, 'web')->get(route('seller.orders.show', $order))->assertOk()->assertSee('Completed');
         $this->assertSame(200, $this->get(route('delivery.proof', $delivery))->getStatusCode(), 'Seller proof access');
         $this->actingAs($operator, 'web')->get(route('logistics.deliveries.board'))->assertOk()->assertSee('Rider A');
         $this->assertSame(200, $this->get(route('delivery.proof', $delivery))->getStatusCode(), 'Logistics proof access');

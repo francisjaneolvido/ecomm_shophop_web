@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\SellerEmailVerificationController;
 use App\Http\Controllers\Seller\InventoryController;
 use App\Http\Controllers\Seller\OrderController;
+use App\Http\Controllers\Seller\ReportController;
 // Account reads and writes reuse the authenticated Seller profile within the existing approved-role group.
 use App\Http\Controllers\Seller\AccountController;
 
@@ -146,10 +147,14 @@ Route::prefix('seller')
                 ->name('orders.confirm');
             Route::get('/orders/{order}', [OrderController::class, 'show'])
                 ->name('orders.show');
+            Route::patch('/orders/{order}/accept', [OrderController::class, 'accept'])
+                ->name('orders.accept');
             Route::patch('/orders/{order}/prepare', [OrderController::class, 'startPreparation'])
                 ->name('orders.start-preparation');
             Route::patch('/orders/{order}/ready', [OrderController::class, 'markReady'])
                 ->name('orders.mark-ready');
+            Route::get('/orders/{order}/shipping-label', [OrderController::class, 'shippingLabel'])
+                ->name('orders.shipping-label');
 
 
             /*
@@ -168,8 +173,10 @@ Route::prefix('seller')
             |--------------------------------------------------------------------------
             */
 
-            Route::view('/reports', 'seller.reports')
+            Route::get('/reports', [ReportController::class, 'index'])
                 ->name('reports');
+            Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])
+                ->name('reports.export.csv');
 
 
             /*

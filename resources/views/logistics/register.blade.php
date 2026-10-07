@@ -2,7 +2,7 @@
 
 @extends('layouts.app')
 
-@section('title', 'Become a Logistics Partner — ShopHop')
+@section('title', 'Register a Logistics / Sorting Center — ShopHop')
 
 @section('content')
 
@@ -24,13 +24,9 @@
       - otp_code             (string, 6 digits) — new, from the account-verification steps
       - password / password_confirmation (string) — new, sets the partner's login password
 
-    New steps added: Verify Email (3) → Enter Code (4) → Create Password (5),
-    inserted between Company Details and Coverage & Documents. Like the ID
-    auto-fill, these are UX-only for now — no code is actually sent or
-    checked yet. You'll want to wire up:
-      - POST to send the verification code (Step 2 → Step 3)
-      - POST to verify the OTP (Step 4 → Step 5)
-      - POST to resend the code (see the "Didn't get a code?" button)
+    Verify Email (3) → Enter Code (4) is connected to Laravel-backed
+    email OTP endpoints. A verified server session is required before the
+    final Logistics / Sorting Center application can be submitted.
 
     Also new: POST /logistics/detect-id — placeholder endpoint for ID
     auto-fill (see detectRepresentativeId() in the script below). It
@@ -50,9 +46,9 @@
         </h1>
 
         <p class="text-navy/65 text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl mx-auto">
-            Register your fleet as an accredited Logistics Partner. Once approved,
-            your riders apply directly under your company and you manage every
-            pickup, delivery, and payout from your own console.
+            Register your business as an accredited Logistics / Sorting Center. Once approved,
+            your riders apply under your center and you manage parcel pickup, sorting,
+            rider assignment, delivery monitoring, and settlements from your own console.
         </p>
     </div>
 </section>
@@ -98,12 +94,12 @@
             <div data-step="1">
                 <div class="flex items-start gap-3 bg-teal-light/60 text-teal-dark text-xs sm:text-sm rounded-xl px-4 py-3 mb-4">
                     <x-lucide-info class="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>Please read the Courier Terms &amp; Agreement in full. You'll need to
+                    <span>Please read the Logistics / Sorting Center Terms &amp; Agreement in full. You'll need to
                         scroll to the end before you can accept and continue.</span>
                 </div>
 
                 <div class="flex items-center justify-between mb-2">
-                    <p class="text-xs font-semibold text-navy/50 uppercase tracking-wide">Courier Terms &amp; Agreement</p>
+                    <p class="text-xs font-semibold text-navy/50 uppercase tracking-wide">Logistics / Sorting Center Terms &amp; Agreement</p>
                     <a href="{{ route('logistics.terms') }}" target="_blank" rel="noopener"
                        class="text-xs font-semibold text-teal-dark hover:text-teal underline underline-offset-2 flex items-center gap-1">
                         See full terms
@@ -179,7 +175,7 @@
                                data-terms-checkbox
                                class="mt-0.5 w-4 h-4 accent-teal disabled:opacity-40">
                         <span>
-                            I confirm that I have read and understood the ShopHop Courier Terms
+                            I confirm that I have read and understood the ShopHop Logistics / Sorting Center Terms
                             &amp; Agreement in full, and I agree, on behalf of the company named
                             in this application, to be bound by its terms. <span class="text-red-500">*</span>
                         </span>
@@ -260,32 +256,39 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-navy mb-1.5">
-                        Line of business <span class="text-red-500">*</span>
+                        Logistics service type <span class="text-red-500">*</span>
                     </label>
                     <select name="line_of_business" required
                             class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                         <option value="">Select</option>
-                        <option value="motorcycle_courier" @selected(old('line_of_business') === 'motorcycle_courier')>Motorcycle courier</option>
-                        <option value="van_truck_freight" @selected(old('line_of_business') === 'van_truck_freight')>Van / truck freight</option>
-                        <option value="same_day" @selected(old('line_of_business') === 'same_day')>Same-day delivery</option>
+                        <option value="motorcycle_courier" @selected(old('line_of_business') === 'motorcycle_courier')>Local courier &amp; sorting center</option>
+                        <option value="van_truck_freight" @selected(old('line_of_business') === 'van_truck_freight')>Freight / delivery hub</option>
+                        <option value="same_day" @selected(old('line_of_business') === 'same_day')>Sorting / distribution center</option>
                         <option value="other" @selected(old('line_of_business') === 'other')>Other</option>
                     </select>
                     @error('line_of_business') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-navy mb-1.5">Authorized representative — last name</label>
-                    <input type="text" name="rep_last_name" value="{{ old('rep_last_name') }}"
+                    <label class="block text-xs font-semibold text-navy mb-1.5">Authorized representative — last name <span class="text-red-500">*</span></label>
+                    <input type="text" name="rep_last_name" value="{{ old('rep_last_name') }}" required
                            pattern="[^0-9]*" title="Names should not contain numbers."
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                     <p class="hidden text-xs text-red-500 mt-1" data-client-error="rep_last_name">Please remove any numbers from the name.</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-navy mb-1.5">First name</label>
-                    <input type="text" name="rep_first_name" value="{{ old('rep_first_name') }}"
+                    <label class="block text-xs font-semibold text-navy mb-1.5">First name <span class="text-red-500">*</span></label>
+                    <input type="text" name="rep_first_name" value="{{ old('rep_first_name') }}" required
                            pattern="[^0-9]*" title="Names should not contain numbers."
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                     <p class="hidden text-xs text-red-500 mt-1" data-client-error="rep_first_name">Please remove any numbers from the name.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-navy mb-1.5">Middle initial</label>
+                    <input type="text" name="rep_middle_initial" value="{{ old('rep_middle_initial') }}" maxlength="5"
+                           placeholder="e.g. M."
+                           class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
+                    @error('rep_middle_initial') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 {{-- Representative ID — moved here from Step 3, plus a new ID number field --}}
@@ -332,6 +335,12 @@
                     <label class="block text-xs font-semibold text-navy mb-1.5">Birthday <span class="text-red-500">*</span></label>
                     <input type="date" name="rep_birthday" value="{{ old('rep_birthday') }}" required
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-navy mb-1.5">Age <span class="text-red-500">*</span></label>
+                    <input type="text" data-rep-age value="" readonly aria-readonly="true" placeholder="Auto-generated"
+                           class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy bg-gray-bg/60">
+                    <p class="text-[11px] text-navy/40 mt-1">Automatically calculated from birthday; not stored separately.</p>
                 </div>
 
                 <div>
@@ -439,6 +448,10 @@
                         We're sending a 6-digit verification code to
                         <span class="font-semibold text-navy" data-verify-email-display>—</span>.
                         This will also be your login e-mail for the Partner Console.
+                    </p>
+
+                    <p data-email-verification-status class="text-xs text-navy/50 mt-3">
+                        Preparing your verification code...
                     </p>
 
                     <p class="text-[11px] text-navy/40 mt-3">
@@ -1143,6 +1156,13 @@
                 provinceInput.dataset.coverageHidden = '1';
                 wizard.appendChild(provinceInput);
 
+                const typeInput = document.createElement('input');
+                typeInput.type = 'hidden';
+                typeInput.name = 'coverage_area_types[' + chip.name + ']';
+                typeInput.value = chip.type === 'region' ? 'region' : 'province';
+                typeInput.dataset.coverageHidden = '1';
+                wizard.appendChild(typeInput);
+
                 const checkedCities = [...chip.cities.values()].filter(function (c) { return c.checked; }).map(function (c) { return c.name; });
                 const citiesValue = (chip.citiesLoaded === true && chip.selectAll) ? 'ALL' : checkedCities.join('|');
 
@@ -1202,38 +1222,92 @@
         }
 
         // ---- Verify Email / OTP / Password (Steps 3-5) ----
-        // UX-only for now, same as the ID auto-fill above: nothing here
-        // actually sends or checks a real code yet.
         const verifyEmailDisplay = wizard.querySelector('[data-verify-email-display]');
         const otpEmailDisplay = wizard.querySelector('[data-otp-email-display]');
+        const emailVerificationStatus = wizard.querySelector('[data-email-verification-status]');
         const otpInputs = Array.from(wizard.querySelectorAll('[data-otp-digit]'));
         const otpHidden = wizard.querySelector('[data-otp-hidden]');
         const otpErrorEl = wizard.querySelector('[data-otp-error]');
         const resendBtn = wizard.querySelector('[data-resend-code]');
         const resendLabel = resendBtn ? resendBtn.querySelector('[data-resend-label]') : null;
         const resendTimerEl = resendBtn ? resendBtn.querySelector('[data-resend-timer]') : null;
+        const csrfToken = wizard.querySelector('input[name="_token"]')?.value || '';
+        const sendVerificationUrl = @json(route('logistics.verification.send'));
+        const verifyVerificationUrl = @json(route('logistics.verification.verify'));
 
         function currentAccountEmail() {
             const emailField = wizard.querySelector('[name="email"]');
             return emailField ? emailField.value.trim() : '';
         }
 
-        // TODO: point this at the real send-verification-code endpoint once
-        // it exists. For now it just updates the UI and starts the resend
-        // countdown, same graceful-stub pattern as detectRepresentativeId().
-        function sendVerificationCode() {
-            const email = currentAccountEmail() || 'your email';
-            if (verifyEmailDisplay) verifyEmailDisplay.textContent = email;
-            if (otpEmailDisplay) otpEmailDisplay.textContent = email;
-            startResendCountdown();
+        function responseMessage(payload, fallback) {
+            if (payload?.message) return payload.message;
+            if (payload?.errors) {
+                const first = Object.values(payload.errors).flat()[0];
+                if (first) return first;
+            }
+            return fallback;
+        }
+
+        async function sendVerificationCode(isResend = false) {
+            const email = currentAccountEmail();
+            if (verifyEmailDisplay) verifyEmailDisplay.textContent = email || 'your email';
+            if (otpEmailDisplay) otpEmailDisplay.textContent = email || 'your email';
+
+            if (emailVerificationStatus) {
+                emailVerificationStatus.textContent = isResend ? 'Sending a new code...' : 'Sending your verification code...';
+                emailVerificationStatus.classList.remove('text-red-500', 'text-teal-dark');
+                emailVerificationStatus.classList.add('text-navy/50');
+            }
+
+            try {
+                const response = await fetch(sendVerificationUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({ email: email, resend: isResend }),
+                });
+
+                const payload = await response.json().catch(function () { return {}; });
+
+                if (!response.ok) {
+                    const message = responseMessage(payload, 'Unable to send the verification code.');
+                    if (emailVerificationStatus) {
+                        emailVerificationStatus.textContent = message;
+                        emailVerificationStatus.classList.remove('text-navy/50', 'text-teal-dark');
+                        emailVerificationStatus.classList.add('text-red-500');
+                    }
+                    if (payload.retry_after) startResendCountdown(Number(payload.retry_after));
+                    return false;
+                }
+
+                if (emailVerificationStatus) {
+                    emailVerificationStatus.textContent = responseMessage(payload, 'Verification code sent.');
+                    emailVerificationStatus.classList.remove('text-navy/50', 'text-red-500');
+                    emailVerificationStatus.classList.add('text-teal-dark');
+                }
+
+                startResendCountdown(Number(payload.retry_after || 30));
+                return true;
+            } catch (error) {
+                if (emailVerificationStatus) {
+                    emailVerificationStatus.textContent = 'Could not reach the server to send the verification code.';
+                    emailVerificationStatus.classList.remove('text-navy/50', 'text-teal-dark');
+                    emailVerificationStatus.classList.add('text-red-500');
+                }
+                return false;
+            }
         }
 
         let resendInterval = null;
 
-        function startResendCountdown() {
+        function startResendCountdown(initialSeconds = 30) {
             if (!resendBtn || !resendLabel || !resendTimerEl) return;
 
-            let secondsLeft = 30;
+            let secondsLeft = Math.max(1, Number(initialSeconds) || 30);
 
             resendBtn.disabled = true;
             resendBtn.classList.add('text-navy/30');
@@ -1243,13 +1317,13 @@
 
             if (resendInterval) clearInterval(resendInterval);
 
-            function render() {
+            function renderCountdown() {
                 const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
                 const secs = String(secondsLeft % 60).padStart(2, '0');
                 resendTimerEl.textContent = mins + ':' + secs;
             }
 
-            render();
+            renderCountdown();
 
             resendInterval = setInterval(function () {
                 secondsLeft--;
@@ -1262,17 +1336,18 @@
                     resendBtn.classList.add('text-teal-dark', 'hover:text-navy', 'cursor-pointer');
                     return;
                 }
-                render();
+                renderCountdown();
             }, 1000);
         }
 
         if (resendBtn) {
-            resendBtn.addEventListener('click', function () {
+            resendBtn.addEventListener('click', async function () {
                 if (resendBtn.disabled) return;
-                // TODO: real resend-code request goes here.
+                const sent = await sendVerificationCode(true);
+                if (!sent) return;
                 otpInputs.forEach(function (input) { input.value = ''; });
+                if (otpHidden) otpHidden.value = '';
                 if (otpInputs[0]) otpInputs[0].focus();
-                startResendCountdown();
             });
         }
 
@@ -1308,6 +1383,44 @@
 
         function serializeOtp() {
             if (otpHidden) otpHidden.value = otpValue();
+        }
+
+        async function verifyVerificationCode() {
+            serializeOtp();
+
+            try {
+                const response = await fetch(verifyVerificationUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                    },
+                    body: JSON.stringify({
+                        email: currentAccountEmail(),
+                        code: otpValue(),
+                    }),
+                });
+
+                const payload = await response.json().catch(function () { return {}; });
+
+                if (!response.ok) {
+                    if (otpErrorEl) {
+                        otpErrorEl.textContent = responseMessage(payload, 'Unable to verify this code.');
+                        otpErrorEl.classList.remove('hidden');
+                    }
+                    return false;
+                }
+
+                if (otpErrorEl) otpErrorEl.classList.add('hidden');
+                return true;
+            } catch (error) {
+                if (otpErrorEl) {
+                    otpErrorEl.textContent = 'Could not reach the server to verify the code.';
+                    otpErrorEl.classList.remove('hidden');
+                }
+                return false;
+            }
         }
 
         // ---- Password step ----
@@ -1379,6 +1492,29 @@
                 input.setSelectionRange(caret, caret);
             });
         });
+
+        // ---- Auto-generated representative age ----
+        const repBirthdayInput = wizard.querySelector('[name="rep_birthday"]');
+        const repAgeInput = wizard.querySelector('[data-rep-age]');
+
+        function updateRepresentativeAge() {
+            if (!repBirthdayInput || !repAgeInput || !repBirthdayInput.value) {
+                if (repAgeInput) repAgeInput.value = '';
+                return;
+            }
+            const birthday = new Date(repBirthdayInput.value + 'T00:00:00');
+            const today = new Date();
+            let age = today.getFullYear() - birthday.getFullYear();
+            const beforeBirthday = today.getMonth() < birthday.getMonth()
+                || (today.getMonth() === birthday.getMonth() && today.getDate() < birthday.getDate());
+            if (beforeBirthday) age--;
+            repAgeInput.value = Number.isFinite(age) && age >= 0 ? String(age) : '';
+        }
+
+        if (repBirthdayInput) {
+            repBirthdayInput.addEventListener('change', updateRepresentativeAge);
+            updateRepresentativeAge();
+        }
 
         // ---- Field format validators ----
         function isValidName(v) { return /^[^0-9]+$/.test(v.trim()); }
@@ -1518,7 +1654,7 @@
             }
         }
 
-        nextBtn.addEventListener('click', function () {
+        nextBtn.addEventListener('click', async function () {
             if (current === 1 && !termsAccepted()) {
                 if (termsError) termsError.classList.remove('hidden');
                 wizard.querySelector('[data-terms-scroll]').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -1533,11 +1669,21 @@
             }
             if (step2ErrorEl) step2ErrorEl.classList.add('hidden');
 
+            if (current === 2) {
+                const sent = await sendVerificationCode(false);
+                if (!sent) return;
+            }
+
             if (current === 4 && !otpComplete()) {
                 if (otpErrorEl) otpErrorEl.classList.remove('hidden');
                 return;
             }
             if (otpErrorEl) otpErrorEl.classList.add('hidden');
+
+            if (current === 4) {
+                const verified = await verifyVerificationCode();
+                if (!verified) return;
+            }
 
             if (current === 5 && !passwordStepValid()) {
                 return;
@@ -1552,10 +1698,6 @@
             if (current < total) {
                 current++;
 
-                if (current === 3) {
-                    // Entering "Verify Email" — kick off the (stubbed) send-code call.
-                    sendVerificationCode();
-                }
                 if (current === 4) {
                     if (otpInputs[0]) otpInputs[0].focus();
                 }

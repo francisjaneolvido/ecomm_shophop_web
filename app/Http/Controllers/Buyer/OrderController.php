@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
@@ -14,7 +17,7 @@ class OrderController extends Controller
         $buyer = Auth::user()->buyer;
 
         // Buyer cards read persisted delivery and collection facts scoped to the authenticated Buyer.
-        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery.rider', 'delivery.deliveredRider', 'codSettlement', 'manualCashlessPayment'])
+        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery.rider', 'delivery.deliveredRider', 'delivery.partner', 'codSettlement', 'manualCashlessPayment'])
             ->where('buyer_id', $buyer->id)
             ->latest()
             ->get();
@@ -66,8 +69,11 @@ class OrderController extends Controller
             'shipping' => $order->shipping_method === 'express' ? 'Express Delivery' : 'Standard Delivery',
 
             // Only assigned Rider name and vehicle are exposed; no contact, plate, or ETA is inferred.
-            'tracking_no' => null,
-            'courier' => null,
+            'tracking_no' => $order->delivery?->tracking_code,
+            'delivery_status' => $order->delivery?->status,
+            'can_confirm_receipt' => $order->status === Order::STATUS_TO_RECEIVE
+                && $order->delivery?->status === \App\Models\Logistics\Delivery::DELIVERED,
+            'courier' => $order->delivery?->partner?->company_name,
             'estimated_delivery' => 'Delivery estimate unavailable',
             'rider' => $order->delivery?->rider ? [
                 'name' => $order->delivery->rider->name,
@@ -96,24 +102,90 @@ class OrderController extends Controller
             'progress' => $order->progressSteps(),
 
             // Only order creation has an observed timestamp; tracking, proof, and reporting remain unavailable.
-            'tracking_events' => [[
-                'type' => 'done',
-                'title' => 'Order placed',
-                'description' => 'Your order was created successfully.',
-                'location' => 'ShopHop',
-                'date' => $order->created_at->format('M j, Y'),
-                'time' => $order->created_at->format('g:i A'),
-            ]],
+            'tracking_events' => $this->trackingEvents($order),
             // Private proof URLs work only for this Order's Buyer after server-side authorization.
             'delivery_proof' => $order->delivery?->proof_path ? [
                 'photo' => route('delivery.proof', $order->delivery),
                 'delivered_at' => $order->delivery->delivered_at?->format('M j, Y g:i A'),
                 'uploaded_by' => $order->delivery->deliveredRider?->name ?? 'Rider',
-                'received_by' => 'Not collected',
+                'received_by' => $order->status === Order::STATUS_COMPLETED
+                    ? ($order->delivery_name ?: 'Buyer confirmed')
+                    : 'Awaiting Buyer confirmation',
                 'delivery_note' => 'Rider-submitted delivery photo.',
             ] : null,
             'can_report' => $order->canReport(),
         ];
+    }
+
+    public function confirmReceipt(Request $request, int $order): RedirectResponse
+    {
+        $buyer = $request->user()->buyer ?? abort(403, 'Buyer profile unavailable.');
+
+        return DB::transaction(function () use ($buyer, $order) {
+            $owned = Order::with('delivery')->where('buyer_id', $buyer->id)
+                ->whereKey($order)->lockForUpdate()->firstOrFail();
+
+            if ($owned->status !== Order::STATUS_TO_RECEIVE
+                || $owned->delivery?->status !== \App\Models\Logistics\Delivery::DELIVERED
+                || ! $owned->isPaymentEligible()) {
+                return redirect()->route('buyer.orders')
+                    ->withErrors(['order' => 'This order is not ready for receipt confirmation.']);
+            }
+
+            if (Order::whereKey($owned->id)->where('buyer_id', $buyer->id)
+                ->where('status', Order::STATUS_TO_RECEIVE)
+                ->update(['status' => Order::STATUS_COMPLETED]) !== 1) {
+                return redirect()->route('buyer.orders')
+                    ->withErrors(['order' => 'Order changed. Refresh and review it.']);
+            }
+
+            return redirect()->route('buyer.orders')->with('status', 'Order received and completed.');
+        });
+    }
+
+    private function trackingEvents(Order $order): array
+    {
+        $events = [[
+            'type' => 'done',
+            'title' => 'Order placed',
+            'description' => 'Your order was created successfully.',
+            'location' => 'ShopHop',
+            'date' => $order->created_at->format('M j, Y'),
+            'time' => $order->created_at->format('g:i A'),
+        ]];
+
+        $delivery = $order->delivery;
+        if (! $delivery) {
+            return $events;
+        }
+
+        $milestones = [
+            ['at' => $delivery->assigned_at, 'title' => 'Pickup Rider assigned', 'description' => 'Logistics assigned a Rider to collect the parcel.'],
+            ['at' => $delivery->picked_up_at, 'title' => 'Picked up from Seller', 'description' => 'The parcel was collected for transfer to the sorting center.'],
+            ['at' => $delivery->at_sorting_center_at, 'title' => 'At sorting center', 'description' => 'The parcel was scanned and received by Logistics.'],
+            ['at' => $delivery->sorted_at, 'title' => 'Sorted', 'description' => 'The parcel was sorted according to its destination area.'],
+            ['at' => $delivery->delivery_assigned_at, 'title' => 'Delivery Rider assigned', 'description' => 'A Rider was assigned for final delivery.'],
+            ['at' => $delivery->out_for_delivery_at, 'title' => 'Out for delivery', 'description' => 'The parcel is on the way to the delivery address.'],
+            ['at' => $delivery->delivered_at, 'title' => 'Delivered', 'description' => 'The Rider submitted delivery proof. Confirm receipt to complete the order.'],
+            ['at' => $delivery->delivery_failed_at, 'title' => 'Delivery failed', 'description' => $delivery->failure_reason ?: 'A delivery attempt was unsuccessful.'],
+            ['at' => $delivery->returned_at, 'title' => 'Returned', 'description' => 'The parcel was marked for return to the Seller.'],
+        ];
+
+        foreach ($milestones as $milestone) {
+            if (! $milestone['at']) {
+                continue;
+            }
+            $events[] = [
+                'type' => 'done',
+                'title' => $milestone['title'],
+                'description' => $milestone['description'],
+                'location' => 'ShopHop Logistics',
+                'date' => $milestone['at']->format('M j, Y'),
+                'time' => $milestone['at']->format('g:i A'),
+            ];
+        }
+
+        return $events;
     }
 
     private function paymentLabel(Order $order): string

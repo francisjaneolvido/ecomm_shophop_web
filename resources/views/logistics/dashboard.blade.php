@@ -14,8 +14,9 @@
         </div>
     @endforeach
 </div>
-<div class="mt-6 flex gap-3">
+<div class="mt-6 flex flex-wrap gap-3">
     <a href="{{ route('logistics.deliveries.board') }}" class="rounded-full bg-navy px-5 py-2 text-sm font-semibold text-white hover:bg-teal">Delivery Board</a>
+    <a href="{{ route('logistics.sorting-centers.index') }}" class="rounded-full border border-navy px-5 py-2 text-sm font-semibold text-navy">Sorting Centers</a>
     <a href="{{ route('logistics.riders.index') }}" class="rounded-full border border-navy px-5 py-2 text-sm font-semibold text-navy">Riders</a>
 </div>
 @endsection

@@ -110,9 +110,9 @@
             'color' => 'bg-teal/10 text-teal-dark',
             'bar' => 'bg-teal',
         ],
-        // No separate confirmation state exists between COD placement and preparation.
+        // Confirmed and actively preparing Orders share this operational queue.
         'preparing' => [
-            'label' => 'Preparing',
+            'label' => 'Confirmed / Preparing',
             'icon' => 'box',
             'color' => 'bg-yellow/20 text-amber-700',
             'bar' => 'bg-yellow',
@@ -129,8 +129,7 @@
     $taskItems = collect([
         [
             'count' => $newOrders,
-            // COD placement is already accepted; the Seller starts preparation directly.
-            'label' => 'new orders waiting for preparation',
+            'label' => 'new orders waiting for seller confirmation',
             'action' => 'Review Orders',
             'route' => 'seller.orders.notifications',
             'icon' => 'bell-ring',
@@ -138,7 +137,7 @@
         ],
         [
             'count' => $ordersToPrepare,
-            'label' => 'orders that need packing',
+            'label' => 'confirmed or preparing orders',
             'action' => 'Prepare Orders',
             'route' => 'seller.orders.prepare',
             'icon' => 'box',

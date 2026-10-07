@@ -14,6 +14,7 @@ class LogisticsCoverageArea extends Model
 
     protected $fillable = [
         'logistics_partner_id',
+        'sorting_center_id',
         'area_name',
         'area_type',
         'cities',
@@ -22,5 +23,10 @@ class LogisticsCoverageArea extends Model
     public function logisticsPartner(): BelongsTo
     {
         return $this->belongsTo(LogisticsPartner::class);
+    }
+
+    public function sortingCenter(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Logistics\SortingCenter::class, 'sorting_center_id');
     }
 }

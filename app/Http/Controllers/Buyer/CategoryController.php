@@ -62,20 +62,17 @@ class CategoryController extends Controller
         // ---------------------------------------------------------------
         // Filters (all optional query params)
         // ---------------------------------------------------------------
+        // Only expose filters backed by Product data. Hidden/fake controls are worse UX than an honest smaller filter set.
         $filters = [
-            'shipped_from' => ['Domestic', 'Overseas', 'Metro Manila', 'North Luzon'],
-            'brands' => [], // fill in once you track brand per product
-            'ratings' => [4, 3, 2, 1],
-            'shipping_options' => ['Free Shipping', 'Cash on Delivery'],
+            'shipped_from' => [],
+            'brands' => [],
+            'ratings' => [],
+            'shipping_options' => [],
         ];
 
         $activeFilters = array_filter([
-            'shipped_from' => $request->query('shipped_from'),
-            'brand' => $request->query('brand'),
             'price_min' => $request->query('price_min'),
             'price_max' => $request->query('price_max'),
-            'rating' => $request->query('rating'),
-            'shipping_option' => $request->query('shipping_option'),
         ]);
 
         // ---------------------------------------------------------------
@@ -83,7 +80,10 @@ class CategoryController extends Controller
         // ---------------------------------------------------------------
         $query = Product::query()
             ->publiclyDiscoverable()
-            ->where('category', $activeCategory['name']);
+            ->where('category', $activeCategory['name'])
+            ->withAvg('reviews', 'rating')
+            ->withCount('reviews')
+            ->withSum('orderItems as sold_count', 'quantity');
 
         if ($activeSub) {
             // Only applies if you also store a subcategory column on products.
@@ -103,9 +103,11 @@ class CategoryController extends Controller
         $currentSort = $request->query('sort', 'popular');
 
         match ($currentSort) {
-            'latest' => $query->latest(),
-            'top_sales' => $query->orderByDesc('sold_count'), // adjust column name if different
-            default => $query->latest(), // "popular" — swap for a real popularity metric later
+            'latest' => $query->latest('products.created_at'),
+            'top_sales' => $query->orderByDesc('sold_count')->latest('products.created_at'),
+            'price_asc' => $query->orderBy('price')->latest('products.created_at'),
+            'price_desc' => $query->orderByDesc('price')->latest('products.created_at'),
+            default => $query->orderByDesc('sold_count')->orderByDesc('reviews_avg_rating')->latest('products.created_at'),
         };
 
         $paginated = $query->paginate(20)->withQueryString();
@@ -128,9 +130,10 @@ class CategoryController extends Controller
                 'price' => $finalPrice,
                 'original_price' => $discount > 0 ? $price : null,
                 'discount_percent' => $discount > 0 ? $discount : null,
-                'badge' => null, // e.g. 'BUY 1 TAKE 1' — set this from a real column when you have one
-                'rating' => 4.5, // placeholder until reviews exist
-                'sold_count' => null, // set from a real column when you track it
+                'badge' => null,
+                'rating' => $product->reviews_avg_rating !== null ? round((float) $product->reviews_avg_rating, 1) : null,
+                'reviews_count' => (int) ($product->reviews_count ?? 0),
+                'sold_count' => (int) ($product->sold_count ?? 0),
                 'image' => asset($imagePath),
             ];
         })->all();
@@ -146,11 +149,15 @@ class CategoryController extends Controller
                 'popular' => 'Popular',
                 'latest' => 'Latest',
                 'top_sales' => 'Top Sales',
+                'price_asc' => 'Price: Low to High',
+                'price_desc' => 'Price: High to Low',
             ],
             'currentSort' => $currentSort,
             'products' => $products,
             'currentPage' => $paginated->currentPage(),
             'lastPage' => $paginated->lastPage(),
+            'previousPageUrl' => $paginated->previousPageUrl(),
+            'nextPageUrl' => $paginated->nextPageUrl(),
         ]);
     }
 }

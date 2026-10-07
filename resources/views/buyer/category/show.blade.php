@@ -52,10 +52,10 @@
     $subcategoriesMoreCount ??= 0;
 
     $filters ??= [
-        'shipped_from' => ['Domestic', 'Overseas', 'Metro Manila', 'North Luzon'],
-        'brands' => ['ShopHop Picks', 'Ohana', 'Deoplus', 'Veze'],
-        'ratings' => [4, 3, 2, 1],
-        'shipping_options' => ['Free Shipping', 'Cash on Delivery'],
+        'shipped_from' => [],
+        'brands' => [],
+        'ratings' => [],
+        'shipping_options' => [],
     ];
 
     $activeFilters ??= [];
@@ -71,116 +71,6 @@
     $currentPage ??= 1;
     $lastPage ??= 1;
 
-    // ---------------------------------------------------------------
-    // TEMPORARY PREVIEW PRODUCTS
-    // Remove this block once CategoryController is already returning
-    // real products. It only fills the grid when $products is missing
-    // or empty, so you can immediately preview the category layout.
-    // ---------------------------------------------------------------
-    if (! isset($products) || (is_countable($products) && count($products) === 0)) {
-        $products = [
-            [
-                'id' => 1,
-                'name' => 'Premium Grain-Free Dog Food',
-                'price' => 649,
-                'image' => 'https://images.unsplash.com/photo-1589924691995-400dc9ecc119?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => 12,
-                'badge' => 'Best Seller',
-                'rating' => 4.9,
-                'sold_count' => 328,
-            ],
-            [
-                'id' => 2,
-                'name' => 'Soft Adjustable Pet Harness',
-                'price' => 299,
-                'image' => 'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => 8,
-                'badge' => 'Popular',
-                'rating' => 4.8,
-                'sold_count' => 215,
-            ],
-            [
-                'id' => 3,
-                'name' => 'Cat Scratching Post with Toy',
-                'price' => 459,
-                'image' => 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => null,
-                'badge' => 'New',
-                'rating' => 4.7,
-                'sold_count' => 96,
-            ],
-            [
-                'id' => 4,
-                'name' => 'Stainless Pet Feeding Bowl',
-                'price' => 189,
-                'image' => 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => 5,
-                'badge' => null,
-                'rating' => 4.6,
-                'sold_count' => 174,
-            ],
-            [
-                'id' => 5,
-                'name' => 'Natural Dog Treats Chicken Bites',
-                'price' => 229,
-                'image' => 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => 15,
-                'badge' => 'Sale',
-                'rating' => 4.9,
-                'sold_count' => 441,
-            ],
-            [
-                'id' => 6,
-                'name' => 'Pet Grooming Brush',
-                'price' => 149,
-                'image' => 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => null,
-                'badge' => null,
-                'rating' => 4.5,
-                'sold_count' => 88,
-            ],
-            [
-                'id' => 7,
-                'name' => 'Comfortable Washable Pet Bed',
-                'price' => 799,
-                'image' => 'https://images.unsplash.com/photo-1560807707-8cc77767d783?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => 10,
-                'badge' => 'Top Rated',
-                'rating' => 4.8,
-                'sold_count' => 154,
-            ],
-            [
-                'id' => 8,
-                'name' => 'Interactive Cat Ball Toy',
-                'price' => 119,
-                'image' => 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => null,
-                'badge' => null,
-                'rating' => 4.6,
-                'sold_count' => 267,
-            ],
-            [
-                'id' => 9,
-                'name' => 'Portable Pet Water Bottle',
-                'price' => 259,
-                'image' => 'https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => 7,
-                'badge' => null,
-                'rating' => 4.7,
-                'sold_count' => 132,
-            ],
-            [
-                'id' => 10,
-                'name' => 'Durable Rope Chew Toy Set',
-                'price' => 199,
-                'image' => 'https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=700&q=80',
-                'discount_percent' => 9,
-                'badge' => 'Value Pick',
-                'rating' => 4.8,
-                'sold_count' => 303,
-            ],
-        ];
-    }
 @endphp
 
 
@@ -284,89 +174,17 @@
 
                     <div class="divide-y divide-gray-border">
 
-                        {{-- Shipped from --}}
-                        <div class="px-3 py-2.5">
-                            <p class="text-[9.5px] uppercase tracking-[0.04em] font-bold text-navy/75 mb-2">Shipped From</p>
-                            <div class="flex flex-col gap-1.5">
-                                @foreach ($filters['shipped_from'] as $option)
-                                    <label class="flex items-center gap-2 text-[10px] leading-none text-navy/60 cursor-pointer hover:text-navy transition">
-                                        <input type="checkbox" name="shipped_from[]" value="{{ $option }}"
-                                               class="w-3.5 h-3.5 rounded border-gray-border text-teal accent-teal focus:ring-teal/30 focus:ring-offset-0">
-                                        {{ $option }}
-                                    </label>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        {{-- Brand --}}
-                        <div class="px-3 py-2.5">
-                            <p class="text-[9.5px] uppercase tracking-[0.04em] font-bold text-navy/75 mb-2">Brand</p>
-                            <div class="flex flex-col gap-1.5">
-                                @foreach ($filters['brands'] as $brand)
-                                    <label class="flex items-center gap-2 text-[10px] leading-none text-navy/60 cursor-pointer hover:text-navy transition">
-                                        <input type="checkbox" name="brand[]" value="{{ $brand }}"
-                                               class="w-3.5 h-3.5 rounded border-gray-border text-teal accent-teal focus:ring-teal/30 focus:ring-offset-0">
-                                        {{ $brand }}
-                                    </label>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        {{-- Price range --}}
-                        <div class="px-3 py-2.5">
+                        {{-- Price range — real server-backed filter --}}
+                        <form method="GET" action="{{ route('buyer.category.show', $activeCategory['slug']) }}" class="px-3 py-2.5">
+                            <input type="hidden" name="sort" value="{{ $currentSort }}">
                             <p class="text-[9.5px] uppercase tracking-[0.04em] font-bold text-navy/75 mb-2">Price Range</p>
                             <div class="flex items-center gap-2">
-                                <input
-                                    type="number" min="0" name="price_min" placeholder="₱ Min"
-                                    class="w-full min-w-0 text-[10px] text-navy px-2 py-1.5 rounded-md border border-gray-border focus:border-teal focus:ring-1 focus:ring-teal/30 outline-none"
-                                >
+                                <input type="number" min="0" name="price_min" value="{{ request('price_min') }}" placeholder="₱ Min" class="w-full min-w-0 text-[10px] text-navy px-2 py-1.5 rounded-md border border-gray-border focus:border-teal focus:ring-1 focus:ring-teal/30 outline-none">
                                 <span class="text-navy/30 text-[10px] shrink-0">—</span>
-                                <input
-                                    type="number" min="0" name="price_max" placeholder="₱ Max"
-                                    class="w-full min-w-0 text-[10px] text-navy px-2 py-1.5 rounded-md border border-gray-border focus:border-teal focus:ring-1 focus:ring-teal/30 outline-none"
-                                >
+                                <input type="number" min="0" name="price_max" value="{{ request('price_max') }}" placeholder="₱ Max" class="w-full min-w-0 text-[10px] text-navy px-2 py-1.5 rounded-md border border-gray-border focus:border-teal focus:ring-1 focus:ring-teal/30 outline-none">
                             </div>
-                            <button
-                                type="button"
-                                class="w-full mt-2 bg-teal hover:bg-teal-dark text-white text-[10.5px] font-semibold py-1.5 rounded-md transition-colors"
-                            >
-                                Apply
-                            </button>
-                        </div>
-
-                        {{-- Rating --}}
-                        <div class="px-3 py-2.5">
-                            <p class="text-[9.5px] uppercase tracking-[0.04em] font-bold text-navy/75 mb-2">Rating</p>
-                            <div class="flex flex-col gap-1">
-                                @foreach ($filters['ratings'] as $rating)
-                                    <button
-                                        type="button"
-                                        class="flex items-center gap-1 text-navy/65 hover:text-teal-dark transition w-fit"
-                                    >
-                                        @for ($i = 0; $i < 5; $i++)
-                                            <x-lucide-star
-                                                class="w-3 h-3 {{ $i < $rating ? 'fill-amber-400 text-amber-400' : 'text-gray-border' }}"
-                                            />
-                                        @endfor
-                                        <span class="text-[9.5px] ml-0.5">& Up</span>
-                                    </button>
-                                @endforeach
-                            </div>
-                        </div>
-
-                        {{-- Shipping option --}}
-                        <div class="px-3 py-2.5">
-                            <p class="text-[9.5px] uppercase tracking-[0.04em] font-bold text-navy/75 mb-2">Shipping Option</p>
-                            <div class="flex flex-col gap-1">
-                                @foreach ($filters['shipping_options'] as $option)
-                                    <label class="flex items-center gap-2 text-[10px] leading-none text-navy/60 cursor-pointer hover:text-navy transition">
-                                        <input type="checkbox" name="shipping_option[]" value="{{ $option }}"
-                                               class="w-3.5 h-3.5 rounded border-gray-border text-teal accent-teal focus:ring-teal/30 focus:ring-offset-0">
-                                        {{ $option }}
-                                    </label>
-                                @endforeach
-                            </div>
-                        </div>
+                            <button type="submit" class="w-full mt-2 bg-teal hover:bg-teal-dark text-white text-[10.5px] font-semibold py-1.5 rounded-md transition-colors">Apply</button>
+                        </form>
 
                     </div>
 
@@ -395,7 +213,7 @@
 
                         @foreach ($sortOptions as $key => $label)
                             <a
-                                href="?sort={{ $key }}"
+                                href="{{ request()->fullUrlWithQuery(['sort' => $key, 'page' => null]) }}"
                                 class="text-[10px] font-semibold px-2.5 py-1 rounded-md transition-colors
                                        {{ $currentSort === $key
                                            ? 'bg-teal text-white'
@@ -405,16 +223,7 @@
                             </a>
                         @endforeach
 
-                        <div class="relative">
-                            <select
-                                class="appearance-none text-[10px] font-semibold text-navy/60 bg-gray-bg pl-2.5 pr-7 py-1 rounded-md outline-none cursor-pointer hover:text-navy transition-colors"
-                            >
-                                <option>Price</option>
-                                <option value="price_asc">Lowest to Highest</option>
-                                <option value="price_desc">Highest to Lowest</option>
-                            </select>
-                            <x-lucide-chevron-down class="w-3 h-3 text-navy/40 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
-                        </div>
+
                     </div>
 
                     <div class="flex items-center gap-1 shrink-0">
@@ -423,20 +232,16 @@
                         </span>
 
                         <div class="flex items-center gap-1">
-                            <button
-                                type="button"
-                                {{ $currentPage <= 1 ? 'disabled' : '' }}
-                                class="w-6 h-6 rounded-md border border-gray-border flex items-center justify-center text-navy/40 hover:text-teal-dark hover:border-teal/30 disabled:opacity-40 disabled:pointer-events-none transition"
-                            >
-                                <x-lucide-chevron-left class="w-3 h-3" />
-                            </button>
-                            <button
-                                type="button"
-                                {{ $currentPage >= $lastPage ? 'disabled' : '' }}
-                                class="w-6 h-6 rounded-md border border-gray-border flex items-center justify-center text-navy/40 hover:text-teal-dark hover:border-teal/30 disabled:opacity-40 disabled:pointer-events-none transition"
-                            >
-                                <x-lucide-chevron-right class="w-3 h-3" />
-                            </button>
+                            @if ($previousPageUrl)
+                                <a href="{{ $previousPageUrl }}" aria-label="Previous page" class="w-6 h-6 rounded-md border border-gray-border flex items-center justify-center text-navy/40 hover:text-teal-dark hover:border-teal/30 transition"><x-lucide-chevron-left class="w-3 h-3" /></a>
+                            @else
+                                <span class="w-6 h-6 rounded-md border border-gray-border flex items-center justify-center text-navy/20 opacity-40"><x-lucide-chevron-left class="w-3 h-3" /></span>
+                            @endif
+                            @if ($nextPageUrl)
+                                <a href="{{ $nextPageUrl }}" aria-label="Next page" class="w-6 h-6 rounded-md border border-gray-border flex items-center justify-center text-navy/40 hover:text-teal-dark hover:border-teal/30 transition"><x-lucide-chevron-right class="w-3 h-3" /></a>
+                            @else
+                                <span class="w-6 h-6 rounded-md border border-gray-border flex items-center justify-center text-navy/20 opacity-40"><x-lucide-chevron-right class="w-3 h-3" /></span>
+                            @endif
                         </div>
                     </div>
 

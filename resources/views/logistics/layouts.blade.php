@@ -311,9 +311,16 @@
 
 
         [
-            'label' => 'Rider Management',
+            'label' => 'Network & Riders',
 
             'items' => [
+
+                [
+                    'label' => 'Sorting Centers',
+                    'route' => 'logistics.sorting-centers.index',
+                    'pattern' => 'logistics.sorting-centers.*',
+                    'icon' => 'warehouse',
+                ],
 
                 [
                     'label' => 'Riders',

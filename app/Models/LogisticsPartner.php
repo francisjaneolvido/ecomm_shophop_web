@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class LogisticsPartner extends Model
 {
@@ -21,6 +22,7 @@ class LogisticsPartner extends Model
         'line_of_business',
         'rep_last_name',
         'rep_first_name',
+        'rep_middle_initial',
         'rep_valid_id_path',
         'rep_id_number',
         'rep_sex',
@@ -49,5 +51,16 @@ class LogisticsPartner extends Model
     public function coverageAreas(): HasMany
     {
         return $this->hasMany(LogisticsCoverageArea::class);
+    }
+
+    public function sortingCenters(): HasMany
+    {
+        return $this->hasMany(\App\Models\Logistics\SortingCenter::class, 'logistics_partner_id');
+    }
+
+    public function mainSortingCenter(): HasOne
+    {
+        return $this->hasOne(\App\Models\Logistics\SortingCenter::class, 'logistics_partner_id')
+            ->where('is_main', true);
     }
 }

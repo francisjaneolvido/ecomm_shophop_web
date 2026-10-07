@@ -5,208 +5,38 @@
 @section('content')
 
 @php
-    /*
-    |--------------------------------------------------------------------------
-    | FRONTEND-ONLY DEMO DATA
-    |--------------------------------------------------------------------------
-    |
-    | Your backend teammate can later replace these values with controller data
-    | and connect real date filtering, order/product aggregation, commissions,
-    | CSV/PDF export, pagination, and historical comparisons.
-    */
-
-    $dateFrom = $dateFrom ?? now()->subDays(6)->format('Y-m-d');
-    $dateTo = $dateTo ?? now()->format('Y-m-d');
-
-    $periodLabel = $periodLabel ?? 'Last 7 Days';
-    $previousPeriodLabel = $previousPeriodLabel ?? 'Previous 7 Days';
-
-    $totalSales = (float) ($totalSales ?? 48250);
-    $previousSales = (float) ($previousSales ?? 43100);
-
-    $totalOrders = (int) ($totalOrders ?? 96);
-    $previousOrders = (int) ($previousOrders ?? 84);
-
-    $completedOrders = (int) ($completedOrders ?? 89);
-    $cancelledOrders = (int) ($cancelledOrders ?? 4);
-    $returnedOrders = (int) ($returnedOrders ?? 3);
-
+    $totalSales = (float) ($totalSales ?? 0);
+    $previousSales = (float) ($previousSales ?? 0);
+    $totalOrders = (int) ($totalOrders ?? 0);
+    $previousOrders = (int) ($previousOrders ?? 0);
+    $completedOrders = (int) ($completedOrders ?? 0);
+    $cancelledOrders = (int) ($cancelledOrders ?? 0);
+    $failedDeliveryReports = (int) ($failedDeliveryReports ?? 0);
     $commissionRate = (float) ($commissionRate ?? 10);
     $commissionAmount = $totalSales * ($commissionRate / 100);
     $netEarnings = $totalSales - $commissionAmount;
-
-    $avgOrderValue = $totalOrders > 0
-        ? $totalSales / $totalOrders
-        : 0;
-
-    $previousAvgOrderValue = $previousOrders > 0
-        ? $previousSales / $previousOrders
-        : 0;
-
-    $salesGrowth = $previousSales > 0
-        ? (($totalSales - $previousSales) / $previousSales) * 100
-        : 0;
-
-    $orderGrowth = $previousOrders > 0
-        ? (($totalOrders - $previousOrders) / $previousOrders) * 100
-        : 0;
-
-    $aovGrowth = $previousAvgOrderValue > 0
-        ? (($avgOrderValue - $previousAvgOrderValue) / $previousAvgOrderValue) * 100
-        : 0;
-
-    $completionRate = $totalOrders > 0
-        ? ($completedOrders / $totalOrders) * 100
-        : 0;
-
-    $dailySales = collect($dailySales ?? [
-        ['label' => 'Mon', 'date' => 'Sep 2', 'amount' => 5200, 'orders' => 11],
-        ['label' => 'Tue', 'date' => 'Sep 3', 'amount' => 6800, 'orders' => 14],
-        ['label' => 'Wed', 'date' => 'Sep 4', 'amount' => 4100, 'orders' => 9],
-        ['label' => 'Thu', 'date' => 'Sep 5', 'amount' => 7300, 'orders' => 15],
-        ['label' => 'Fri', 'date' => 'Sep 6', 'amount' => 8950, 'orders' => 17],
-        ['label' => 'Sat', 'date' => 'Sep 7', 'amount' => 9600, 'orders' => 18],
-        ['label' => 'Sun', 'date' => 'Sep 8', 'amount' => 6300, 'orders' => 12],
-    ]);
-
-    $dailySalesMax = max(
-        1,
-        ...($dailySales->pluck('amount')->all() ?: [1])
-    );
-
-    $topProducts = collect($topProducts ?? [
-        [
-            'name' => 'Handwoven Rattan Basket',
-            'variant' => 'Natural / Medium',
-            'sku' => 'RATTAN-NAT-M',
-            'sold' => 34,
-            'orders' => 29,
-            'revenue' => 15300,
-            'share' => 31.7,
-            'image' => 'https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=220&q=80',
-        ],
-        [
-            'name' => 'Barako Coffee Beans 250g',
-            'variant' => 'Dark Roast',
-            'sku' => 'BARAKO-250-DR',
-            'sold' => 58,
-            'orders' => 35,
-            'revenue' => 12760,
-            'share' => 26.4,
-            'image' => 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=220&q=80',
-        ],
-        [
-            'name' => 'Handmade Soap Bar Set',
-            'variant' => 'Assorted / 4 pcs',
-            'sku' => 'SOAP-SET-4',
-            'sold' => 41,
-            'orders' => 25,
-            'revenue' => 7175,
-            'share' => 14.9,
-            'image' => 'https://images.unsplash.com/photo-1600857544200-b2f666a9a2ec?auto=format&fit=crop&w=220&q=80',
-        ],
-        [
-            'name' => 'Daily Glow Face Serum',
-            'variant' => '30ml',
-            'sku' => 'SERUM-30ML',
-            'sold' => 20,
-            'orders' => 18,
-            'revenue' => 6590,
-            'share' => 13.7,
-            'image' => 'https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=220&q=80',
-        ],
-    ]);
-
-    $categorySales = collect($categorySales ?? [
-        ['category' => 'Home & Living', 'revenue' => 17780, 'orders' => 31],
-        ['category' => 'Food & Beverages', 'revenue' => 12760, 'orders' => 35],
-        ['category' => 'Beauty & Personal Care', 'revenue' => 8090, 'orders' => 16],
-        ['category' => 'Fashion', 'revenue' => 6120, 'orders' => 14],
-        ['category' => 'Electronics', 'revenue' => 3500, 'orders' => 8],
-    ]);
-
-    $categoryMax = max(
-        1,
-        ...($categorySales->pluck('revenue')->all() ?: [1])
-    );
-
-    $orderStatusBreakdown = collect($orderStatusBreakdown ?? [
-        ['status' => 'Completed', 'count' => $completedOrders, 'class' => 'bg-teal', 'text' => 'text-teal-dark'],
-        ['status' => 'Cancelled', 'count' => $cancelledOrders, 'class' => 'bg-coral', 'text' => 'text-coral'],
-        ['status' => 'Returned', 'count' => $returnedOrders, 'class' => 'bg-red-400', 'text' => 'text-red-500'],
-    ]);
-
-    $paymentBreakdown = collect($paymentBreakdown ?? [
-        ['method' => 'Cash on Delivery', 'orders' => 54, 'amount' => 27180],
-        ['method' => 'GCash', 'orders' => 28, 'amount' => 14120],
-        ['method' => 'Card / Online', 'orders' => 14, 'amount' => 6950],
-    ]);
-
-    $recentTransactions = collect($recentTransactions ?? [
-        [
-            'order_id' => 'ORD-10231',
-            'date' => 'Sep 8, 2026 · 12:44 PM',
-            'buyer' => 'Maricel Santos',
-            'items' => 3,
-            'gross' => 1780,
-            'commission' => 178,
-            'net' => 1602,
-            'status' => 'Completed',
-        ],
-        [
-            'order_id' => 'ORD-10228',
-            'date' => 'Sep 8, 2026 · 11:08 AM',
-            'buyer' => 'Jonas Villareal',
-            'items' => 2,
-            'gross' => 1320,
-            'commission' => 132,
-            'net' => 1188,
-            'status' => 'Completed',
-        ],
-        [
-            'order_id' => 'ORD-10224',
-            'date' => 'Sep 8, 2026 · 9:36 AM',
-            'buyer' => 'Ella Marasigan',
-            'items' => 1,
-            'gross' => 899,
-            'commission' => 89.90,
-            'net' => 809.10,
-            'status' => 'Completed',
-        ],
-        [
-            'order_id' => 'ORD-10216',
-            'date' => 'Sep 7, 2026 · 5:20 PM',
-            'buyer' => 'Kim Delos Reyes',
-            'items' => 2,
-            'gross' => 1560,
-            'commission' => 156,
-            'net' => 1404,
-            'status' => 'Completed',
-        ],
-        [
-            'order_id' => 'ORD-10211',
-            'date' => 'Sep 7, 2026 · 2:18 PM',
-            'buyer' => 'Trisha Ang',
-            'items' => 1,
-            'gross' => 720,
-            'commission' => 72,
-            'net' => 648,
-            'status' => 'Returned',
-        ],
-    ]);
+    $avgOrderValue = $totalOrders > 0 ? $totalSales / $totalOrders : 0;
+    $previousAvgOrderValue = $previousOrders > 0 ? $previousSales / $previousOrders : 0;
+    $salesGrowth = $previousSales > 0 ? (($totalSales - $previousSales) / $previousSales) * 100 : ($totalSales > 0 ? 100 : 0);
+    $orderGrowth = $previousOrders > 0 ? (($totalOrders - $previousOrders) / $previousOrders) * 100 : ($totalOrders > 0 ? 100 : 0);
+    $aovGrowth = $previousAvgOrderValue > 0 ? (($avgOrderValue - $previousAvgOrderValue) / $previousAvgOrderValue) * 100 : ($avgOrderValue > 0 ? 100 : 0);
+    $completionRate = $totalOrders > 0 ? ($completedOrders / $totalOrders) * 100 : 0;
+    $dailySales = collect($dailySales ?? []);
+    $topProducts = collect($topProducts ?? []);
+    $categorySales = collect($categorySales ?? []);
+    $orderStatusBreakdown = collect($orderStatusBreakdown ?? []);
+    $paymentBreakdown = collect($paymentBreakdown ?? []);
+    $recentTransactions = collect($recentTransactions ?? []);
+    $dailySalesMax = max(1, ...($dailySales->pluck('amount')->all() ?: [1]));
+    $categoryMax = max(1, ...($categorySales->pluck('revenue')->all() ?: [1]));
 
     $formatGrowth = function ($value) {
         $value = round((float) $value, 1);
-
         return [
             'value' => $value,
             'label' => ($value > 0 ? '+' : '') . number_format($value, 1) . '%',
-            'class' => $value >= 0
-                ? 'text-teal-dark bg-teal/10'
-                : 'text-red-500 bg-red-50',
-            'icon' => $value >= 0
-                ? 'trending-up'
-                : 'trending-down',
+            'class' => $value >= 0 ? 'text-teal-dark bg-teal/10' : 'text-red-500 bg-red-50',
+            'icon' => $value >= 0 ? 'trending-up' : 'trending-down',
         ];
     };
 
@@ -296,24 +126,19 @@
                 </p>
 
 
-                <div class="mt-2 inline-flex items-center gap-1.5 rounded-full bg-yellow/20 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                    FRONTEND DEMO · HARDCODED DATA
-                </div>
 
             </div>
 
 
             <div class="flex flex-wrap items-center gap-2">
 
-                <button
-                    type="button"
-                    id="openExportModal"
+                <a
+                    href="{{ route('seller.reports.export.csv', ['date_from' => $dateFrom, 'date_to' => $dateTo]) }}"
                     class="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg border border-gray-border bg-white text-xs font-semibold text-navy hover:border-teal/40 hover:text-teal-dark transition"
                 >
                     <x-lucide-download class="w-4 h-4" />
-                    Export Report
-                </button>
+                    Export CSV
+                </a>
 
 
                 <button
@@ -1386,211 +1211,7 @@
         {{-- =========================================================
             REPORT FOOTNOTE
         ========================================================= --}}
-        <section class="rounded-xl border border-gray-border bg-gray-bg/30 p-4">
 
-            <div class="flex items-start gap-3">
-
-                <x-lucide-info class="w-4 h-4 text-navy/35 mt-0.5 shrink-0" />
-
-                <div>
-
-                    <p class="text-xs font-semibold text-navy/60">
-                        Demo report note
-                    </p>
-
-                    <p class="text-[10px] text-navy/40 mt-1 leading-relaxed">
-                        All values on this page are hardcoded sample data.
-                        Your backend can later calculate these figures from completed orders,
-                        refunds/returns, vouchers, payment records, and platform commission entries.
-                    </p>
-
-                </div>
-
-            </div>
-
-        </section>
-
-    </div>
-
-</div>
-
-
-{{-- =========================================================
-    EXPORT MODAL
-========================================================= --}}
-<div
-    id="reportExportModal"
-    hidden
-    class="fixed inset-0 z-50 flex items-center justify-center p-4"
->
-
-    <div
-        data-close-export
-        class="absolute inset-0 bg-navy/45"
-    ></div>
-
-
-    <div class="relative bg-white rounded-2xl shadow-panel w-full max-w-md">
-
-        <div class="flex items-center justify-between px-5 py-4 border-b border-gray-border">
-
-            <div>
-
-                <p class="text-base font-bold text-navy">
-                    Export Report
-                </p>
-
-                <p class="text-[11px] text-navy/40 mt-0.5">
-                    Frontend demo export options
-                </p>
-
-            </div>
-
-
-            <button
-                type="button"
-                data-close-export
-                class="w-8 h-8 rounded-lg flex items-center justify-center text-navy/40 hover:bg-gray-bg transition"
-            >
-                <x-lucide-x class="w-4 h-4" />
-            </button>
-
-        </div>
-
-
-        <div class="p-5">
-
-            <p class="text-xs text-navy/50 leading-relaxed">
-                Choose an export format. For now these buttons demonstrate the UI;
-                your backend teammate can later generate actual PDF or CSV files.
-            </p>
-
-
-            <div class="mt-4 space-y-2">
-
-                <button
-                    type="button"
-                    data-export-type="pdf"
-                    class="w-full flex items-center gap-3 rounded-xl border border-gray-border p-3 text-left hover:border-teal/30 hover:bg-teal/5 transition"
-                >
-
-                    <div class="w-9 h-9 rounded-lg bg-red-50 text-red-500 flex items-center justify-center shrink-0">
-                        <x-lucide-file-text class="w-4 h-4" />
-                    </div>
-
-
-                    <div class="min-w-0 flex-1">
-
-                        <p class="text-xs font-semibold text-navy">
-                            Export as PDF
-                        </p>
-
-                        <p class="text-[10px] text-navy/35 mt-0.5">
-                            Best for printing and formal submission
-                        </p>
-
-                    </div>
-
-
-                    <x-lucide-chevron-right class="w-4 h-4 text-navy/25" />
-
-                </button>
-
-
-                <button
-                    type="button"
-                    data-export-type="csv"
-                    class="w-full flex items-center gap-3 rounded-xl border border-gray-border p-3 text-left hover:border-teal/30 hover:bg-teal/5 transition"
-                >
-
-                    <div class="w-9 h-9 rounded-lg bg-teal/10 text-teal-dark flex items-center justify-center shrink-0">
-                        <x-lucide-sheet class="w-4 h-4" />
-                    </div>
-
-
-                    <div class="min-w-0 flex-1">
-
-                        <p class="text-xs font-semibold text-navy">
-                            Export as CSV
-                        </p>
-
-                        <p class="text-[10px] text-navy/35 mt-0.5">
-                            Best for spreadsheet analysis
-                        </p>
-
-                    </div>
-
-
-                    <x-lucide-chevron-right class="w-4 h-4 text-navy/25" />
-
-                </button>
-
-
-                <button
-                    type="button"
-                    data-export-type="print"
-                    class="w-full flex items-center gap-3 rounded-xl border border-gray-border p-3 text-left hover:border-teal/30 hover:bg-teal/5 transition"
-                >
-
-                    <div class="w-9 h-9 rounded-lg bg-sky/10 text-sky flex items-center justify-center shrink-0">
-                        <x-lucide-printer class="w-4 h-4" />
-                    </div>
-
-
-                    <div class="min-w-0 flex-1">
-
-                        <p class="text-xs font-semibold text-navy">
-                            Print Report
-                        </p>
-
-                        <p class="text-[10px] text-navy/35 mt-0.5">
-                            Open your browser print dialog
-                        </p>
-
-                    </div>
-
-
-                    <x-lucide-chevron-right class="w-4 h-4 text-navy/25" />
-
-                </button>
-
-            </div>
-
-        </div>
-
-    </div>
-
-</div>
-
-
-{{-- =========================================================
-    DEMO TOAST
-========================================================= --}}
-<div
-    id="reportToast"
-    hidden
-    class="fixed right-4 bottom-4 z-[60] max-w-sm rounded-xl border border-teal/25 bg-white shadow-panel px-4 py-3"
->
-
-    <div class="flex items-start gap-3">
-
-        <div class="w-8 h-8 rounded-lg bg-teal/10 text-teal-dark flex items-center justify-center shrink-0">
-            <x-lucide-circle-check class="w-4 h-4" />
-        </div>
-
-
-        <div>
-
-            <p class="text-xs font-bold text-navy">
-                Report action
-            </p>
-
-            <p
-                id="reportToastMessage"
-                class="text-[11px] text-navy/45 mt-0.5"
-            ></p>
-
-        </div>
 
     </div>
 
@@ -1612,18 +1233,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const toInput =
         document.getElementById('reportDateTo');
 
-    const exportModal =
-        document.getElementById('reportExportModal');
-
-    const toast =
-        document.getElementById('reportToast');
-
-    const toastMessage =
-        document.getElementById('reportToastMessage');
-
-    let toastTimer = null;
-
-
     function formatDateInput(date) {
 
         const year =
@@ -1636,36 +1245,6 @@ document.addEventListener('DOMContentLoaded', function () {
             String(date.getDate()).padStart(2, '0');
 
         return `${year}-${month}-${day}`;
-    }
-
-
-    function showToast(message) {
-
-        if (!toast) {
-            return;
-        }
-
-
-        toastMessage.textContent =
-            message;
-
-
-        toast.hidden =
-            false;
-
-
-        if (toastTimer) {
-            clearTimeout(toastTimer);
-        }
-
-
-        toastTimer =
-            setTimeout(function () {
-
-                toast.hidden =
-                    true;
-
-            }, 3200);
     }
 
 
@@ -1796,83 +1375,6 @@ document.addEventListener('DOMContentLoaded', function () {
             'click',
             printReport
         );
-
-
-    /* ---------------------------------------------------------
-       EXPORT MODAL
-    --------------------------------------------------------- */
-    document
-        .getElementById('openExportModal')
-        ?.addEventListener('click', function () {
-
-            exportModal.hidden =
-                false;
-
-            document.body.style.overflow =
-                'hidden';
-        });
-
-
-    document
-        .querySelectorAll('[data-close-export]')
-        .forEach(function (button) {
-
-            button.addEventListener('click', function () {
-
-                exportModal.hidden =
-                    true;
-
-                document.body.style.overflow =
-                    '';
-            });
-        });
-
-
-    document
-        .querySelectorAll('[data-export-type]')
-        .forEach(function (button) {
-
-            button.addEventListener('click', function () {
-
-                const type =
-                    button.dataset.exportType;
-
-
-                if (type === 'print') {
-
-                    exportModal.hidden =
-                        true;
-
-                    document.body.style.overflow =
-                        '';
-
-                    printReport();
-
-                    return;
-                }
-
-
-                exportModal.hidden =
-                    true;
-
-                document.body.style.overflow =
-                    '';
-
-
-                if (type === 'pdf') {
-
-                    showToast(
-                        'PDF export is ready for backend integration. Use Print for the frontend demo.'
-                    );
-
-                } else if (type === 'csv') {
-
-                    showToast(
-                        'CSV export is ready for backend integration.'
-                    );
-                }
-            });
-        });
 
 
     /* ---------------------------------------------------------

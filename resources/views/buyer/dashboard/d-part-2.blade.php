@@ -3,7 +3,7 @@
 @php
     /*
     |--------------------------------------------------------------------------
-    | CATEGORY + PRODUCT FALLBACKS
+    | CATEGORY + PRODUCT HELPERS
     |--------------------------------------------------------------------------
     */
 
@@ -21,7 +21,7 @@
         $path = trim((string) $path);
 
         if ($path === '') {
-            return asset($sampleImages['cctv']);
+            return asset('images/placeholder-product.jpg');
         }
 
         if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
@@ -31,192 +31,7 @@
         return asset(ltrim($path, '/'));
     };
 
-    $productHref = function ($product) {
-        return ($product['preview'] ?? false)
-            ? '#'
-            : route('buyer.product.show', $product['id']);
-    };
-
-    if (empty($vouchers)) {
-        $vouchers = [
-            [
-                'title' => '₱100 Off',
-                'code' => 'SHOPHOP100',
-                'description' => '₱100 off when you spend at least ₱1,000.',
-                'icon' => 'ticket',
-            ],
-            [
-                'title' => 'Free Shipping',
-                'code' => 'FREESHIP',
-                'description' => 'Enjoy free shipping on eligible orders.',
-                'icon' => 'truck',
-            ],
-            [
-                'title' => '10% Off',
-                'code' => 'WELCOME10',
-                'description' => 'Save 10% on selected ShopHop products.',
-                'icon' => 'badge-percent',
-            ],
-        ];
-    }
-
-    $fallbackDeals = [
-        [
-            'id' => 9201,
-            'preview' => true,
-            'name' => 'Smart CCTV Camera with Night Vision',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cctv'],
-            'price' => 649,
-            'original_price' => 1199,
-            'rating' => 4.8,
-            'reviews' => 238,
-            'sold' => 1800,
-        ],
-        [
-            'id' => 9202,
-            'preview' => true,
-            'name' => 'Performance Desktop CPU',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cpu'],
-            'price' => 2399,
-            'original_price' => 3299,
-            'rating' => 4.7,
-            'reviews' => 124,
-            'sold' => 720,
-        ],
-        [
-            'id' => 9203,
-            'preview' => true,
-            'name' => 'Family Snack Bundle',
-            'category' => 'Food and Gourmet',
-            'image' => $sampleImages['chips'],
-            'price' => 159,
-            'original_price' => 249,
-            'rating' => 4.9,
-            'reviews' => 508,
-            'sold' => 4100,
-        ],
-        [
-            'id' => 9204,
-            'preview' => true,
-            'name' => 'Modern Table Lamp',
-            'category' => 'Furniture and Office Equipment',
-            'image' => $sampleImages['lamp'],
-            'price' => 369,
-            'original_price' => 599,
-            'rating' => 4.8,
-            'reviews' => 187,
-            'sold' => 980,
-        ],
-        [
-            'id' => 9205,
-            'preview' => true,
-            'name' => 'Dual Camera Home Security Pack',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cctv'],
-            'price' => 1299,
-            'original_price' => 1899,
-            'rating' => 4.9,
-            'reviews' => 286,
-            'sold' => 1100,
-        ],
-        [
-            'id' => 9206,
-            'preview' => true,
-            'name' => 'Office PC Starter Tower',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cpu'],
-            'price' => 2599,
-            'original_price' => 3499,
-            'rating' => 4.8,
-            'reviews' => 103,
-            'sold' => 590,
-        ],
-    ];
-
-    $fallbackNew = [
-        [
-            'id' => 9301,
-            'preview' => true,
-            'name' => 'Mini Smart Security Camera',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cctv'],
-            'price' => 799,
-            'original_price' => null,
-            'rating' => 4.8,
-            'reviews' => 43,
-            'sold' => 160,
-        ],
-        [
-            'id' => 9302,
-            'preview' => true,
-            'name' => 'Compact PC Tower',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cpu'],
-            'price' => 2799,
-            'original_price' => null,
-            'rating' => 4.7,
-            'reviews' => 31,
-            'sold' => 95,
-        ],
-        [
-            'id' => 9303,
-            'preview' => true,
-            'name' => 'New Flavor Snack Pack',
-            'category' => 'Food and Gourmet',
-            'image' => $sampleImages['chips'],
-            'price' => 199,
-            'original_price' => null,
-            'rating' => 4.9,
-            'reviews' => 72,
-            'sold' => 230,
-        ],
-        [
-            'id' => 9304,
-            'preview' => true,
-            'name' => 'Ambient Table Lamp',
-            'category' => 'Furniture and Office Equipment',
-            'image' => $sampleImages['lamp'],
-            'price' => 429,
-            'original_price' => null,
-            'rating' => 4.8,
-            'reviews' => 39,
-            'sold' => 120,
-        ],
-        [
-            'id' => 9305,
-            'preview' => true,
-            'name' => 'Wireless Indoor CCTV',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cctv'],
-            'price' => 899,
-            'original_price' => null,
-            'rating' => 4.9,
-            'reviews' => 58,
-            'sold' => 190,
-        ],
-        [
-            'id' => 9306,
-            'preview' => true,
-            'name' => 'Everyday Workstation CPU',
-            'category' => 'Electronics and Gadgets',
-            'image' => $sampleImages['cpu'],
-            'price' => 2999,
-            'original_price' => null,
-            'rating' => 4.8,
-            'reviews' => 47,
-            'sold' => 130,
-        ],
-    ];
-
-    if (empty($dealProducts)) {
-        $dealProducts = $fallbackDeals;
-    }
-
-    if (empty($newArrivals)) {
-        $newArrivals = $fallbackNew;
-    }
+    $productHref = fn ($product) => route('buyer.product.show', $product['id']);
 
     $moreToLove = collect($dealProducts)
         ->concat($newArrivals)
@@ -662,8 +477,8 @@
                                     data-cart-original-price="{{ $product['original_price'] ?? '' }}"
                                     data-cart-stock="{{ $product['stock'] ?? '' }}"
                                     data-cart-shop-id="{{ $product['shop_id'] ?? '' }}"
-                                    data-cart-shop-name="{{ ! empty($product['preview']) ? 'ShopHop demo catalog' : 'ShopHop Seller' }}"
-                                    data-cart-preview="{{ ! empty($product['preview']) ? 'true' : 'false' }}"
+                                    data-cart-shop-name="ShopHop Seller"
+                                    data-cart-preview="false"
                                     class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-teal text-white hover:bg-teal-dark transition"
                                     aria-label="Add {{ $product['name'] }} to cart"
                                 >
@@ -758,8 +573,8 @@
                                 data-cart-original-price="{{ $product['original_price'] ?? '' }}"
                                 data-cart-stock="{{ $product['stock'] ?? '' }}"
                                 data-cart-shop-id="{{ $product['shop_id'] ?? '' }}"
-                                data-cart-shop-name="{{ ! empty($product['preview']) ? 'ShopHop demo catalog' : 'ShopHop Seller' }}"
-                                data-cart-preview="{{ ! empty($product['preview']) ? 'true' : 'false' }}"
+                                data-cart-shop-name="ShopHop Seller"
+                                data-cart-preview="false"
                                 class="inline-flex h-7 items-center gap-1 rounded-lg bg-teal-light px-2 text-[8.5px] font-semibold text-teal-dark hover:bg-teal hover:text-white transition"
                                 aria-label="Add {{ $product['name'] }} to cart"
                             >

@@ -438,6 +438,14 @@
             <h3 id="confirmTitle" class="text-base font-bold text-navy mb-1.5"></h3>
             <p id="confirmMessage" class="text-sm text-slate-500 leading-relaxed mb-4"></p>
 
+            <div id="confirmRejectFields" class="hidden mb-4">
+                <label for="confirmRejectionReason" class="block text-xs font-semibold text-navy mb-1.5">Rejection reason <span class="text-coral">*</span></label>
+                <textarea id="confirmRejectionReason" rows="3" maxlength="1000"
+                          placeholder="Explain what the applicant needs to correct or why the application was rejected."
+                          class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-coral/20 focus:border-coral"></textarea>
+                <p id="confirmRejectionError" class="hidden mt-1 text-xs text-coral">Please enter a rejection reason.</p>
+            </div>
+
             <div class="flex items-center justify-end gap-2">
                 <button type="button" id="confirmCancelBtn" class="h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 transition">
                     Cancel
@@ -455,6 +463,7 @@
     </form>
     <form id="rejectForm" method="POST" class="hidden">
         @csrf
+        <input type="hidden" name="rejection_reason" id="rejectFormReason">
     </form>
 
 
@@ -666,7 +675,9 @@
         const confirmProceedBtn    = document.getElementById('confirmProceedBtn');
         const confirmCancelBtn     = document.getElementById('confirmCancelBtn');
         const confirmRejectFields  = document.getElementById('confirmRejectFields');
-        const confirmApproveFields = document.getElementById('confirmApproveFields');
+        const confirmRejectionReason = document.getElementById('confirmRejectionReason');
+        const confirmRejectionError = document.getElementById('confirmRejectionError');
+        const rejectFormReason = document.getElementById('rejectFormReason');
 
         const approveForm = document.getElementById('approveForm');
         const rejectForm  = document.getElementById('rejectForm');
@@ -692,6 +703,9 @@
                 confirmMessage.textContent = `Are you sure you want to approve ${target.name}'s ${target.role.toLowerCase()} account? This will grant them full platform access.`;
                 confirmProceedBtn.className = 'h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-mint-dark hover:opacity-90 transition-all duration-300';
                 confirmProceedBtn.textContent = 'Confirm Approve';
+                confirmRejectFields.classList.add('hidden');
+                confirmRejectionError.classList.add('hidden');
+                confirmRejectionReason.value = '';
             } else {
                 confirmIconWrap.className = 'w-11 h-11 rounded-xl flex items-center justify-center mb-4 bg-coral/15 text-coral';
                 confirmIconWrap.innerHTML = flagIconSvg;
@@ -699,6 +713,9 @@
                 confirmMessage.textContent = `Reject ${target.name}'s application? This account will not have protected access.`;
                 confirmProceedBtn.className = 'h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-coral hover:opacity-90 transition-all duration-300';
                 confirmProceedBtn.textContent = 'Confirm Reject';
+                confirmRejectFields.classList.remove('hidden');
+                confirmRejectionError.classList.add('hidden');
+                confirmRejectionReason.value = '';
             }
 
             confirmOverlay.classList.remove('hidden');
@@ -747,6 +764,14 @@
                 approveForm.action = activeConfirmTarget.url || approveUrlTemplate.replace('__ID__', activeConfirmTarget.id);
                 approveForm.submit();
             } else {
+                const reason = confirmRejectionReason.value.trim();
+                if (!reason) {
+                    confirmRejectionError.classList.remove('hidden');
+                    confirmRejectionReason.focus();
+                    return;
+                }
+                confirmRejectionError.classList.add('hidden');
+                rejectFormReason.value = reason;
                 rejectForm.action = activeConfirmTarget.url || rejectUrlTemplate.replace('__ID__', activeConfirmTarget.id);
                 rejectForm.submit();
             }
