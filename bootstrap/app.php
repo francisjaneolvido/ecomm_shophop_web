@@ -10,23 +10,39 @@ use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
+        // Register logistics before marketplace routes to avoid '/' host collisions.
+        web: null,
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
-            Route::middleware('web')->group(base_path('routes/admin.php'));
+            // Separate Logistics hostname, but same codebase / backend.
             Route::middleware('web')->group(base_path('routes/logistics.php'));
-            // Rider routes use the same web sessions with a separate, partner-owned guard.
-            Route::middleware('web')->group(base_path('routes/rider.php'));
-            Route::middleware('web')->group(base_path('routes/buyer.php'));
-            Route::middleware('web')->group(base_path('routes/seller.php'));
-            Route::middleware('web')->group(base_path('routes/debug.php'));
+
+            // Marketplace routes must NOT also be served from logistics.<domain>.
+            Route::middleware('web')
+                ->domain(config('app.main_domain'))
+                ->group(function () {
+                    require base_path('routes/web.php');
+                    require base_path('routes/admin.php');
+                    require base_path('routes/rider.php');
+                    require base_path('routes/buyer.php');
+                    require base_path('routes/seller.php');
+                    require base_path('routes/debug.php');
+                });
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // Deployment terminates HTTPS at a proxy; honor forwarded scheme for secure links and cookies.
         $middleware->trustProxies(at: '*');
+
+        // Guests opening a protected logistics URL should not be sent to
+        // the main ShopHop login / account type chooser.
+        $middleware->redirectGuestsTo(fn (Request $request) =>
+            $request->getHost() === config('app.logistics_domain')
+                ? route('logistics.login')
+                : route('login')
+        );
 
         $middleware->alias([
             'approved.role' => EnsureApprovedRole::class,

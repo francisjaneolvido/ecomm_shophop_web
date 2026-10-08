@@ -67,13 +67,7 @@ class LoginController extends Controller
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
-            return redirect()
-                ->route('logistics.login')
-                ->with('login_notice', [
-                    'type' => 'warning',
-                    'title' => 'Use the Logistics Portal',
-                    'message' => 'Logistics partners sign in through the logistics portal.',
-                ]);
+            return redirect()->route('logistics.login', ['portal' => 1]);
         }
 
 

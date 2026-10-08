@@ -520,7 +520,7 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-3 product-stagger">
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3 product-stagger">
                     @foreach ($relatedProducts as $related)
                         <article class="group bg-white border border-gray-border rounded-xl overflow-hidden hover:border-teal/30 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
                             <a href="{{ route('buyer.product.show', $related['id']) }}" class="block aspect-4/3 bg-gray-bg overflow-hidden">

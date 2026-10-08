@@ -30,7 +30,7 @@ class ReportController extends Controller
         $deliveries = $query->latest()->get();
         $counts = $deliveries->countBy('status');
 
-        return view('logistics.reports', compact('deliveries', 'counts', 'data'));
+        return view('logistics.reports.index', compact('deliveries', 'counts', 'data'));
     }
 
     public function exportPdf(): Response

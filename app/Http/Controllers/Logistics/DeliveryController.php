@@ -40,7 +40,7 @@ class DeliveryController extends Controller
         $coverageAreas = $partner->coverageAreas()->with('sortingCenter')->orderBy('area_name')->get();
         $sortingCenters = $partner->sortingCenters()->where('status', 'active')->orderByDesc('is_main')->orderBy('name')->get();
 
-        return view('logistics.delivery-board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'sortingCenters'));
+        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'sortingCenters'));
     }
 
     /** Assign the rider who will collect the parcel from the Seller and bring it to the sorting center. */

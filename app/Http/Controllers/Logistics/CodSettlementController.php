@@ -23,7 +23,7 @@ class CodSettlementController extends Controller
             ->whereHas('order', fn ($order) => $order->where('payment_method', 'cod'))
             ->where('status', 'delivered')->latest()->get();
 
-        return view('logistics.settlements', compact('deliveries'));
+        return view('logistics.settlements.index', compact('deliveries'));
     }
 
     public function reconcile(Request $request, int $delivery): RedirectResponse

@@ -22,7 +22,7 @@ class SortingCenterController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('logistics.sorting-centers', compact('partner', 'centers'));
+        return view('logistics.sorting-centers.index', compact('partner', 'centers'));
     }
 
     public function store(Request $request): RedirectResponse

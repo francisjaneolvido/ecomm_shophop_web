@@ -96,7 +96,7 @@
     {{-- ========================================
         AUTH MODALS
         Available site-wide (login, account type,
-        buyer/seller/logistics registration). Each
+        buyer/seller registration). Each
         modal starts hidden and is only shown when
         opened via its click trigger or a
         `shophop:open-*-modal` custom event, so it's
@@ -109,7 +109,6 @@
     {{-- Performance: keep large registration DOM inert until the user selects a role. --}}
     <template id="buyer-registration-template">@include('auth.modals.buyer-registration-modal')</template>
     <template id="seller-registration-template">@include('auth.modals.seller-registration-modal')</template>
-    <template id="logistics-registration-template">@include('auth.modals.logistics-registration-modal')</template>
     <script>
         document.addEventListener('shophop:open-registration-modal', function (event) {
             const type = event.detail && event.detail.type;

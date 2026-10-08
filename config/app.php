@@ -54,6 +54,12 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    // Hostnames only (without https:// or trailing slashes). Both domains point to
+    // this same Laravel app/public directory; mobile API endpoints stay unchanged.
+    'main_domain' => env('MAIN_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: 'localhost'),
+    'logistics_domain' => env('LOGISTICS_DOMAIN', 'logistics.'.(parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: 'localhost')),
+
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

@@ -515,7 +515,7 @@
         </div>
 
 
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3 buyer-stagger">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6 gap-2.5 sm:gap-3 buyer-stagger">
             @foreach ($moreToLove as $product)
                 <article class="group overflow-hidden rounded-xl border border-gray-border bg-white hover:border-teal/35 hover:-translate-y-0.5 hover:shadow-md transition-all">
 

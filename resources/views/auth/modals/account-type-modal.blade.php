@@ -5,7 +5,6 @@
     opening the matching registration modal:
       - Buyer      -> shophop:open-registration-modal (type: buyer)
       - Seller     -> shophop:open-registration-modal (type: seller)
-      - Logistics  -> shophop:open-registration-modal (type: logistics)
 ========================================================= --}}
 <div
     id="account-type-modal"
@@ -214,55 +213,6 @@
 
                         <p class="text-xs sm:text-sm text-navy/50 group-hover:text-white/80 mt-0.5 leading-snug transition-colors duration-300">
                             List your products, manage your store, and reach ShopHop buyers.
-                        </p>
-                    </div>
-
-                    <x-lucide-arrow-right
-                        class="w-4 h-4 shrink-0 mt-1
-                               text-navy/25
-                               group-hover:text-white
-                               group-hover:translate-x-0.5
-                               transition-all duration-300"
-                    />
-                </button>
-
-                {{-- Logistics --}}
-                <button
-                    type="button"
-                    data-account-type="logistics"
-                    data-open-registration-modal="logistics"
-                    class="group relative flex items-start gap-3 w-full
-                           rounded-xl
-                           border-2 border-gray-border
-                           bg-white
-                           hover:bg-teal-dark
-                           hover:border-teal-dark
-                           p-3.5
-                           text-left
-                           focus:outline-none
-                           focus:ring-4 focus:ring-teal/10
-                           transition-colors duration-300"
-                >
-                    <div
-                        class="w-10 h-10 shrink-0
-                               rounded-lg
-                               bg-teal-light
-                               group-hover:bg-white/15
-                               flex items-center justify-center
-                               text-teal-dark
-                               group-hover:text-white
-                               transition-colors duration-300"
-                    >
-                        <x-lucide-truck class="w-4.5 h-4.5" />
-                    </div>
-
-                    <div class="flex-1 min-w-0">
-                        <p class="text-sm sm:text-base font-semibold text-navy group-hover:text-white transition-colors duration-300">
-                            Logistics
-                        </p>
-
-                        <p class="text-xs sm:text-sm text-navy/50 group-hover:text-white/80 mt-0.5 leading-snug transition-colors duration-300">
-                            Partner with ShopHop to deliver orders and grow your fleet.
                         </p>
                     </div>
 

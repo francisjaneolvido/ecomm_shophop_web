@@ -1,8 +1,66 @@
-{{-- resources/views/logistics/register.blade.php --}}
+{{-- resources/views/logistics/auth/register.blade.php --}}
 
-@extends('layouts.app')
+@extends('logistics.layouts.public')
 
 @section('title', 'Register a Logistics / Sorting Center — ShopHop')
+
+@push('styles')
+<style>
+  /* UI-only v6 polish: keep existing 7-step wizard, field names and JS actions intact. */
+  .sh-logistics-form { color:#0F1B3D; border:1px solid #DFE7EB; border-radius:24px; background:#fff; box-shadow:0 18px 44px rgba(15,27,61,.055); }
+  .sh-logistics-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+  .sh-logistics-form select, .sh-logistics-form textarea {
+    width:100%; max-width:100%; min-height:46px; border:1px solid #DCE5EB;
+    border-radius:13px; padding:11px 14px; color:#0F1B3D; background:#fff;
+    font:inherit; font-size:12px; line-height:1.5; transition:box-shadow .18s,border-color .18s;
+  }
+  .sh-logistics-form input::placeholder,.sh-logistics-form textarea::placeholder { color:#8A9AAA; }
+  .sh-logistics-form input[data-otp-digit] { padding:0; min-height:0; aspect-ratio:1; font-size:20px; text-align:center; font-weight:700; }
+  .sh-logistics-form :is(input:not([type="checkbox"]),select,textarea):focus-visible { outline:none; border-color:#18A98E; box-shadow:0 0 0 4px rgba(33,195,166,.13); }
+  .sh-logistics-form :is(input,select,textarea):disabled { opacity:.65; cursor:not-allowed; }
+  .sh-logistics-form :is(input[type="checkbox"],input[type="radio"]) { accent-color:#18A98E; }
+  .sh-logistics-form [data-step] { min-width:0; }
+  .sh-logistics-form [data-step] > :first-child { margin-top:0; }
+  .sh-logistics-form label { line-height:1.6; }
+  .sh-logistics-form label.cursor-pointer { transition:border-color .2s,background-color .2s; }
+  .sh-logistics-form label.cursor-pointer:hover { border-color:rgba(24,169,142,.5); background-color:#F7FCFA; }
+  .sh-logistics-form [data-step="7"] [data-review], .sh-logistics-form [data-review-address], .sh-logistics-form [data-review-coverage] { overflow-wrap:anywhere; text-align:right; }
+  .sh-logistics-form :is([data-wizard-next],[data-wizard-submit]) {
+    min-height:44px; border:0; border-radius:13px; background:#19B99D; color:#fff;
+    box-shadow:0 10px 23px rgba(25,185,157,.16); font-weight:700; padding:.7rem 1.4rem;
+  }
+  .sh-logistics-form :is([data-wizard-next],[data-wizard-submit]):hover { background:#139D86; }
+  .sh-logistics-form [data-wizard-back] {
+    min-height:44px; border:1px solid #CBD8DF; border-radius:13px; color:#0F1B3D; background:#fff;
+    font-weight:700; padding:.7rem 1.4rem;
+  }
+  .sh-logistics-form [data-wizard-back]:hover { background:#F3FAF8; color:#11806B; border-color:#A5DFD1; }
+  .sh-logistics-form :is([data-wizard-next],[data-wizard-submit],[data-wizard-back]):focus-visible { outline:2px solid #18A98E; outline-offset:3px; }
+  .sh-step-tracker { scrollbar-width:thin; scrollbar-color:#D4F5EE transparent; border-bottom:1px solid #EBEFF2; padding-bottom:20px; }
+  .sh-step-tracker [data-step-label] { line-height:1.45; }
+  .sh-apply-intro { padding:clamp(29px,5vw,54px) 16px 26px; background:radial-gradient(ellipse at 80% 5%,rgba(33,195,166,.12),transparent 43%),#F5F8FA; }
+  .sh-apply-intro .wrap { margin-inline:auto; max-width:780px; text-align:center; }
+  .sh-apply-intro .eyebrow { color:#118F7D; letter-spacing:.16em; font-size:10px; font-weight:700; }
+  .sh-apply-intro h1 { margin:10px 0 12px; font-weight:800; font-size:clamp(25px,3vw,36px); letter-spacing:-.035em; line-height:1.24; color:#0F1B3D; }
+  .sh-apply-intro .subtitle { color:#5E7187; font-size:13px; line-height:1.85; }
+  .sh-apply-intro .tagline { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-top:20px; }
+  .sh-apply-intro .tagline span { display:inline-flex; align-items:center; border-radius:999px; padding:7px 11px; background:#fff; color:#347164; border:1px solid #DFEAE8; font-size:10px; font-weight:700; }
+  .sh-apply-main { background:linear-gradient(180deg,#F5F8FA,#F9FBFC); }
+  .sh-apply-progress { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:17px; border:1px solid #E2EAF0; border-radius:16px; padding:11px 15px; background:#F8FAFB; }
+  .sh-apply-progress strong { color:#0F1B3D; font-size:12px; }
+  .sh-apply-progress span { color:#64808B; font-size:11px; }
+  .sh-apply-progress-track { height:5px; margin-top:8px; overflow:hidden; border-radius:999px; background:#E2E7EB; }
+  .sh-apply-progress-bar { height:100%; width:14.28%; border-radius:inherit; background:#21C3A6; transition:width .2s; }
+  @media (max-width:640px) {
+    .sh-step-tracker { justify-content:flex-start; }
+    .sh-step-tracker > div { min-width:80px; flex:0 0 auto; }
+    .sh-step-tracker [data-step-label] { max-width:72px; }
+    .sh-logistics-form { border-radius:20px; }
+    .sh-logistics-form [data-step="7"] .flex.justify-between { flex-wrap:wrap; gap:6px; }
+  }
+  @media (prefers-reduced-motion:reduce) { .sh-logistics-form * { transition-duration:.01ms!important; } }
+</style>
+@endpush
 
 @section('content')
 
@@ -36,28 +94,22 @@
 {{-- =========================================================
     INTRO
 ========================================================= --}}
-<section class="relative overflow-hidden bg-gray-bg">
-    <div class="absolute -top-28 -right-28 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-teal/10"></div>
-
-    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
-
-        <h1 class="text-navy mb-4">
-            Deliver for <span class="text-teal">Every Seller</span> on ShopHop.
-        </h1>
-
-        <p class="text-navy/65 text-sm sm:text-base lg:text-lg leading-relaxed max-w-xl mx-auto">
-            Register your business as an accredited Logistics / Sorting Center. Once approved,
-            your riders apply under your center and you manage parcel pickup, sorting,
-            rider assignment, delivery monitoring, and settlements from your own console.
-        </p>
+<section class="sh-apply-intro">
+    <div class="wrap">
+        <p class="eyebrow">SHOPHOP · BUSINESS APPLICATION</p>
+        <h1>Become a <span class="text-teal-dark">Logistics Partner</span></h1>
+        <p class="subtitle">Register your logistics or sorting center business, verify your email, and submit your documents for administrator approval. Approved partners manage parcel pickup, sorting, rider assignment, and deliveries from their portal.</p>
+        <div class="tagline" aria-label="Application process">
+            <span>7 guided steps</span><span>Email verification</span><span>Document review</span>
+        </div>
     </div>
 </section>
 
 {{-- =========================================================
     APPLICATION FORM
 ========================================================= --}}
-<section class="py-12 sm:py-16 bg-white">
-    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+<section class="sh-apply-main py-7 sm:py-11">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
         @if (session('status'))
             <div class="flex items-center gap-3 bg-teal-light text-teal-dark text-sm font-medium px-4 py-3 rounded-xl mb-8">
@@ -66,20 +118,39 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('logistics.register.store') }}" enctype="multipart/form-data" data-wizard>
+        @if ($errors->getBag('logisticsRegistration')->any())
+            <div role="alert" class="mb-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-red-700">
+                <p class="text-sm font-semibold">Please review your Logistics application.</p>
+                <ul class="mt-2 list-disc space-y-1 pl-5 text-xs">
+                    @foreach ($errors->getBag('logisticsRegistration')->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <form class="sh-logistics-form p-4 sm:p-7" method="POST" action="{{ route('logistics.register.store') }}" enctype="multipart/form-data" data-wizard>
             @csrf
 
+            {{-- Live wizard progress — visual only; original validation/OTP JS is preserved. --}}
+            <div class="sh-apply-progress" aria-live="polite">
+                <div class="min-w-0 flex-1">
+                    <div class="flex flex-wrap items-center justify-between gap-3"><strong data-apply-progress-label>Step 1 of 7 · Terms & Agreement</strong><span data-apply-progress-percent>14%</span></div>
+                    <div class="sh-apply-progress-track"><div class="sh-apply-progress-bar" data-apply-progress-bar></div></div>
+                </div>
+            </div>
+
             {{-- Step tracker --}}
-            <div class="flex items-center mb-10">
+            <div class="sh-step-tracker flex items-center mb-7 overflow-x-auto pb-3">
                 @foreach (['Terms & Agreement', 'Company Details', 'Verify Email', 'Enter Code', 'Create Password', 'Coverage & Documents', 'Review & Submit'] as $i => $label)
                     <div class="flex items-center {{ $loop->last ? '' : 'flex-1' }}">
                         <div class="flex flex-col items-center gap-2">
                             <div data-step-circle="{{ $i + 1 }}"
-                                 class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold {{ $i === 0 ? 'bg-teal text-white' : 'bg-gray-bg text-navy/40 border border-gray-border' }}">
+                                 class="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold {{ $i === 0 ? 'bg-teal text-white' : 'bg-gray-bg text-navy/40 border border-gray-border' }}">
                                 {{ $i + 1 }}
                             </div>
                             <span data-step-label="{{ $i + 1 }}"
-                                  class="text-[11px] font-semibold text-center max-w-24 {{ $i === 0 ? 'text-navy' : 'text-navy/40' }}">
+                                  class="text-[9px] font-semibold text-center max-w-20 {{ $i === 0 ? 'text-navy' : 'text-navy/40' }}">
                                 {{ $label }}
                             </span>
                         </div>
@@ -192,7 +263,7 @@
                                    class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy placeholder:text-navy/35 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                             <p class="text-[11px] text-navy/40 mt-1">Letters only — no numbers.</p>
                             <p class="hidden text-xs text-red-500 mt-1" data-client-error="agreement_rep_name">Please remove any numbers from the name.</p>
-                            @error('agreement_rep_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                            @error('agreement_rep_name', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
                         <div>
                             <label class="block text-xs font-semibold text-navy mb-1.5">
@@ -219,7 +290,7 @@
                             constitutes a legally binding electronic signature under the
                             Electronic Commerce Act of 2000.
                         </p>
-                        @error('agreement_signature') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                        @error('agreement_signature', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                     </div>
                 </div>
 
@@ -241,7 +312,7 @@
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy placeholder:text-navy/35 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                     <p class="text-[11px] text-navy/40 mt-1">Numbers and special characters are okay, but the name can't be made up of only numbers/symbols.</p>
                     <p class="hidden text-xs text-red-500 mt-1" data-client-error="company_name">Business name needs at least one letter.</p>
-                    @error('company_name') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('company_name', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -251,7 +322,7 @@
                     <input type="text" name="business_registration_no" value="{{ old('business_registration_no') }}" required
                            placeholder="DTI / SEC / CDA number"
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy placeholder:text-navy/35 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                    @error('business_registration_no') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('business_registration_no', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -266,7 +337,7 @@
                         <option value="same_day" @selected(old('line_of_business') === 'same_day')>Sorting / distribution center</option>
                         <option value="other" @selected(old('line_of_business') === 'other')>Other</option>
                     </select>
-                    @error('line_of_business') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('line_of_business', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -288,7 +359,7 @@
                     <input type="text" name="rep_middle_initial" value="{{ old('rep_middle_initial') }}" maxlength="5"
                            placeholder="e.g. M."
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                    @error('rep_middle_initial') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('rep_middle_initial', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 {{-- Representative ID — moved here from Step 3, plus a new ID number field --}}
@@ -306,7 +377,7 @@
                         We'll try to read your name and ID number off this automatically once
                         it's uploaded. <span class="text-navy/35">(Auto-fill is a work in progress — please double-check the fields below either way.)</span>
                     </p>
-                    @error('rep_valid_id') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('rep_valid_id', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div class="sm:col-span-2">
                     <label class="block text-xs font-semibold text-navy mb-1.5">
@@ -319,7 +390,7 @@
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy placeholder:text-navy/35 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                     <p class="text-[11px] text-navy/40 mt-1">Letters and numbers only (hyphens okay) — matches the ID uploaded above.</p>
                     <p class="hidden text-xs text-red-500 mt-1" data-client-error="rep_id_number">ID number can only contain letters, numbers, and hyphens.</p>
-                    @error('rep_id_number') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('rep_id_number', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -348,7 +419,7 @@
                     <input type="email" name="email" value="{{ old('email') }}" required
                            placeholder="ops@company.com"
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy placeholder:text-navy/35 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                    @error('email') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('email', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-navy mb-1.5">Contact no. <span class="text-red-500">*</span></label>
@@ -403,10 +474,10 @@
                             </select>
                         </div>
                     </div>
-                    @error('region') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-                    @error('province') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-                    @error('municipality') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
-                    @error('barangay') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('region', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('province', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('municipality', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('barangay', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <div>
@@ -415,7 +486,7 @@
                     </label>
                     <input type="text" name="street_no" value="{{ old('street_no') }}" required
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                    @error('street_no') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('street_no', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-navy mb-1.5">
@@ -423,7 +494,7 @@
                     </label>
                     <input type="text" name="unit_no" value="{{ old('unit_no') }}" required
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                    @error('unit_no') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
+                    @error('unit_no', 'logisticsRegistration') <p class="text-xs text-red-500 mt-1">{{ $message }}</p> @enderror
                 </div>
 
                 <p data-step2-error class="sm:col-span-2 hidden text-xs text-red-500 font-medium mt-1 flex items-center gap-1.5">
@@ -730,16 +801,16 @@
             {{-- Navigation --}}
             <div class="flex justify-between gap-3 mt-8">
                 <button type="button" data-wizard-back
-                        class="hidden border-2 border-navy text-navy hover:bg-navy hover:text-white text-sm font-semibold px-6 py-3 rounded-full transition-all duration-300">
+                        class="hidden border-2 border-navy text-navy hover:bg-navy hover:text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-300">
                     Back
                 </button>
                 <div class="flex-1"></div>
                 <button type="button" data-wizard-next
-                        class="bg-teal hover:bg-teal-dark text-white text-sm font-semibold px-7 py-3 rounded-full transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20">
+                        class="bg-teal hover:bg-teal-dark text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20">
                     Continue
                 </button>
                 <button type="submit" data-wizard-submit
-                        class="hidden bg-teal hover:bg-teal-dark text-white text-sm font-semibold px-7 py-3 rounded-full transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20">
+                        class="hidden bg-teal hover:bg-teal-dark text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all duration-300 hover:-translate-y-0.5 shadow-lg shadow-teal/20">
                     Submit application
                 </button>
             </div>
@@ -1592,6 +1663,14 @@
         }
 
         function render() {
+            const stepLabels = ['Terms & Agreement', 'Company Details', 'Verify Email', 'Enter Code', 'Create Password', 'Coverage & Documents', 'Review & Submit'];
+            const progressLabel = wizard.querySelector('[data-apply-progress-label]');
+            const progressPercent = wizard.querySelector('[data-apply-progress-percent]');
+            const progressBar = wizard.querySelector('[data-apply-progress-bar]');
+            const percentage = Math.round(current * 100 / total);
+            if (progressLabel) progressLabel.textContent = 'Step ' + current + ' of ' + total + ' · ' + stepLabels[current - 1];
+            if (progressPercent) progressPercent.textContent = percentage + '%';
+            if (progressBar) progressBar.style.width = percentage + '%';
             steps.forEach(function (panel) {
                 panel.classList.toggle('hidden', Number(panel.dataset.step) !== current);
             });

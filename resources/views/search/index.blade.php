@@ -26,7 +26,7 @@
                 <p class="mt-1 text-[12px] text-navy/55">Try a product name, category, or description.</p>
             </div>
         @else
-            <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-4">
                 @foreach ($products as $product)
                     <article data-search-result class="overflow-hidden rounded-2xl border border-gray-border bg-white shadow-sm">
                         <div class="aspect-square bg-gray-bg">

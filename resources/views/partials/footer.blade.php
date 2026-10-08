@@ -138,6 +138,12 @@
 
                     <span data-footer-unavailable class="block text-sm text-navy/60">Contact Us</span>
 
+                    {{-- Logistics has its own site and registration, separate from Buyer/Seller. --}}
+                    <a href="{{ route('logistics.home') }}"
+                       class="block text-sm text-navy/60 hover:text-teal-dark transition-colors duration-200">
+                        Become a Logistics Partner ↗
+                    </a>
+
                     <span data-footer-unavailable class="block text-sm text-navy/60">Terms & Conditions</span>
 
                     <span data-footer-unavailable class="block text-sm text-navy/60">Privacy Policy</span>

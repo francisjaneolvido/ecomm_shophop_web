@@ -21,7 +21,7 @@ class RegistrationController extends Controller
 {
     public function create(): \Illuminate\View\View
     {
-        return view('logistics.register');
+        return view('logistics.auth.register');
     }
 
     public function store(Request $request): RedirectResponse
@@ -161,7 +161,7 @@ class RegistrationController extends Controller
         $request->session()->forget('logistics_email_verification');
 
         return redirect()
-            ->route('home')
+            ->route('logistics.home')
             ->with('status', "Application submitted! Please wait for the ShopHop administrator's approval, sent to your registered e-mail.");
     }
 
@@ -320,6 +320,6 @@ class RegistrationController extends Controller
 
     public function terms(): \Illuminate\View\View
     {
-        return view('logistics.terms');
+        return view('logistics.auth.terms');
     }
 }
