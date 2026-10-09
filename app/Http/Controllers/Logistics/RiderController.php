@@ -32,7 +32,7 @@ class RiderController extends Controller
         $coverageAreas = $partner->coverageAreas()->with('sortingCenter')->orderBy('area_name')->get();
         $sortingCenters = $partner->sortingCenters()->with('coverageAreas')->orderByDesc('is_main')->orderBy('name')->get();
 
-        return view('logistics.riders', compact('riders', 'coverageAreas', 'sortingCenters'));
+        return view('logistics.riders.index', compact('riders', 'coverageAreas', 'sortingCenters'));
     }
 
     /** Operator-created Rider records remain available for controlled/manual onboarding. */

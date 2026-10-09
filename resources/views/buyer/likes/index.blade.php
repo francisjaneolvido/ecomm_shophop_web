@@ -45,7 +45,7 @@
             </select>
         </div>
 
-        <div data-favorites-grid class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-3">
+        <div data-favorites-grid class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3">
             @foreach ($favorites as $product)
                 <article
                     data-favorite-card="{{ $product['id'] }}"

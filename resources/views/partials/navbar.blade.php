@@ -158,6 +158,10 @@
                 </a>
 
 
+                <a href="{{ route('logistics.home') }}" class="hidden xl:inline-flex text-[11px] font-semibold text-teal-dark hover:text-teal items-center gap-1 whitespace-nowrap" title="Become a logistics partner">
+                    <x-lucide-truck class="w-4 h-4" /> Logistics ↗
+                </a>
+
                 {{-- DIVIDER --}}
                 <div class="hidden xl:block h-5 w-px bg-gray-border mx-1"></div>
 
@@ -252,6 +256,10 @@
                 <a href="{{ route('home') }}#categories" data-section-nav="categories" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Categories</a>
                 <a href="{{ route('home') }}#deals" data-section-nav="deals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">Deals</a>
                 <a href="{{ route('home') }}#new-arrivals" data-section-nav="new-arrivals" class="px-3 py-2.5 rounded-lg hover:bg-gray-bg">New Arrivals</a>
+
+                <a href="{{ route('logistics.home') }}" class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-teal-light/60 text-teal-dark font-semibold hover:bg-teal-light">
+                    <x-lucide-truck class="w-4 h-4" /> Logistics Partners ↗
+                </a>
 
                 <div class="my-2 border-t border-gray-border"></div>
 

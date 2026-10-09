@@ -387,7 +387,7 @@
         </div>
 
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 buyer-stagger">
+        <div class="grid grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 gap-2.5 sm:gap-3 buyer-stagger">
             @foreach (array_slice($trendingProducts, 0, 4) as $index => $product)
                 @php
                     $discount = ! empty($product['original_price']) && $product['original_price'] > 0
@@ -496,7 +496,7 @@
         </div>
 
 
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3 buyer-stagger">
+        <div class="grid grid-cols-2 lg:grid-cols-4 2xl:grid-cols-6 gap-2.5 sm:gap-3 buyer-stagger">
             @foreach ($orderSummary as $status)
                 <a
                     href="{{ Route::has('buyer.orders') ? route('buyer.orders') : '#' }}"

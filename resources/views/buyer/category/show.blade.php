@@ -248,7 +248,7 @@
                 </div>
 
                 {{-- Product grid --}}
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2 buyer-stagger">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[2000px]:grid-cols-8 gap-2 buyer-stagger">
 
                     @forelse ($products as $product)
                         <article class="group buyer-card bg-white rounded-lg overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">

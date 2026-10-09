@@ -33,23 +33,23 @@
             theme: {
                 extend: {
                     colors: {
-                        navy: '#0F2C3F',
-                        'navy-light': '#173B52',
+                        navy: '#0F1B3D',
+                        'navy-light': '#1C3150',
                         'navy-soft': '#244B61',
 
-                        teal: '#2ECFA6',
-                        'teal-dark': '#22B593',
-                        'teal-light': '#E9F8F4',
+                        teal: '#21C3A6',
+                        'teal-dark': '#18A98E',
+                        'teal-light': '#D4F5EE',
 
-                        mint: '#2ECFA6',
-                        'mint-dark': '#22B593',
+                        mint: '#21C3A6',
+                        'mint-dark': '#18A98E',
 
                         sky: '#4AA8E0',
                         yellow: '#F7C948',
                         coral: '#FF7A59',
 
-                        'gray-bg': '#F4F7F8',
-                        'gray-border': '#E4EAEE',
+                        'gray-bg': '#F3F5F7',
+                        'gray-border': '#E2E6EA',
                     },
 
                     fontFamily: {
@@ -237,6 +237,103 @@
 
     </style>
 
+    <style>
+        /* ShopHop Admin-aligned details, focus states, and form hierarchy. */
+        .logistics-profile-menu > summary::-webkit-details-marker { display: none; }
+        .logistics-profile-menu > summary::marker { content: ''; }
+        .logistics-console :is(button, a, input, select, textarea, summary):focus-visible {
+            outline: 2px solid #18A98E;
+            outline-offset: 3px;
+        }
+        .logistics-console main :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+            max-width: 100%;
+            min-height: 2.5rem;
+            background-color: #fff;
+        }
+        .logistics-console main :is(input, select, textarea):focus {
+            border-color: #18A98E;
+            box-shadow: 0 0 0 3px rgba(33, 195, 166, .12);
+            outline: none;
+        }
+        .logistics-console main section[id], .logistics-console main article[id] { scroll-margin-top: 1rem; }
+        .logistics-console .logistics-panel { border: 1px solid #E2E6EA; border-radius: 1rem; background: #fff; }
+        @media (prefers-reduced-motion: reduce) {
+            .logistics-console * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+        }
+    </style>
+
+
+    <style>
+        /* v5 polish system: reusable buttons, cards, forms, tables, and confirmation modal */
+        .sh-page-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:1rem; }
+        .sh-page-header .eyebrow { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.16em; color:#18A98E; }
+        .sh-page-header .title { margin-top:.25rem; font-size:1.75rem; line-height:1.15; font-weight:700; color:#0F1B3D; letter-spacing:-.02em; }
+        .sh-page-header .description { margin-top:.4rem; max-width:42rem; font-size:.875rem; line-height:1.7; color:rgba(15,27,61,.58); }
+        .sh-surface { border:1px solid #E2E6EA; border-radius:1.5rem; background:#fff; box-shadow:0 10px 30px rgba(15,44,63,.06); }
+        .sh-surface-soft { border:1px solid #E2E6EA; border-radius:1.25rem; background:#F8FAFB; }
+        .sh-card-pad { padding:1.125rem; }
+        @media (min-width: 640px){ .sh-card-pad { padding:1.375rem; } }
+        .sh-stat { border:1px solid #E2E6EA; border-radius:1.25rem; background:#fff; padding:1rem; box-shadow:0 8px 20px rgba(15,44,63,.05); }
+        .sh-stat-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:rgba(15,27,61,.42); }
+        .sh-stat-value { margin-top:.35rem; font-size:1.7rem; font-weight:700; line-height:1; color:#0F1B3D; }
+        .sh-stat-note { margin-top:.35rem; font-size:.72rem; color:rgba(15,27,61,.5); }
+        .sh-kicker { font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#18A98E; }
+        .sh-title-sm { font-size:.95rem; font-weight:700; color:#0F1B3D; }
+        .sh-text-muted { color:rgba(15,27,61,.55); }
+        .sh-divider { border-color:#E2E6EA; }
+        .sh-btn, .sh-btn-secondary, .sh-btn-ghost, .sh-btn-danger, .sh-btn-soft {
+            min-height:2.6rem; display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            border-radius:999px; padding:.68rem 1rem; font-size:.78rem; font-weight:700; transition:all .18s ease;
+            border:1px solid transparent; text-decoration:none;
+        }
+        .sh-btn { background:#0F1B3D; color:#fff; box-shadow:0 10px 25px rgba(15,27,61,.12); }
+        .sh-btn:hover { background:#18A98E; transform:translateY(-1px); }
+        .sh-btn-secondary { background:#D4F5EE; color:#11806B; }
+        .sh-btn-secondary:hover { background:#c4efe6; transform:translateY(-1px); }
+        .sh-btn-ghost { background:#fff; color:#0F1B3D; border-color:#DCE2E7; }
+        .sh-btn-ghost:hover { border-color:rgba(24,169,142,.35); color:#11806B; background:#F7FBFA; }
+        .sh-btn-soft { background:#F3F5F7; color:#0F1B3D; border-color:#E2E6EA; }
+        .sh-btn-soft:hover { background:#EAF8F4; color:#11806B; }
+        .sh-btn-danger { background:#fff; color:#C24141; border-color:#F3CACA; }
+        .sh-btn-danger:hover { background:#FEF2F2; }
+        .sh-input, .sh-select, .sh-textarea {
+            width:100%; border-radius:1rem; border:1px solid #D8DEE4; background:#fff; color:#0F1B3D;
+            padding:.7rem .9rem; font-size:.9rem; line-height:1.4; box-shadow: inset 0 1px 2px rgba(15,27,61,.02);
+        }
+        .sh-input::placeholder, .sh-textarea::placeholder { color:rgba(15,27,61,.33); }
+        .sh-select, .sh-input, .sh-textarea { transition:border-color .16s ease, box-shadow .16s ease, background-color .16s ease; }
+        .sh-field { display:grid; gap:.42rem; }
+        .sh-label { font-size:.73rem; font-weight:700; color:#0F1B3D; }
+        .sh-help { font-size:.7rem; color:rgba(15,27,61,.45); }
+        .sh-badge { display:inline-flex; align-items:center; gap:.35rem; border-radius:999px; padding:.38rem .72rem; font-size:.66rem; font-weight:700; }
+        .sh-badge-info { background:#EDF7FF; color:#2664A9; }
+        .sh-badge-success { background:#E9FBF6; color:#11806B; }
+        .sh-badge-warning { background:#FFF6DD; color:#A46700; }
+        .sh-badge-danger { background:#FEF2F2; color:#B42318; }
+        .sh-badge-neutral { background:#F2F4F7; color:#475467; }
+        .sh-stack { display:grid; gap:1rem; }
+        .sh-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; }
+        .sh-grid-2 { display:grid; gap:1rem; grid-template-columns:repeat(1,minmax(0,1fr)); }
+        @media (min-width: 1024px){ .sh-grid-2 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+        .sh-empty { border:1px dashed #D8DEE4; border-radius:1.25rem; background:#fff; padding:2rem 1.25rem; text-align:center; }
+        .sh-table-wrap { overflow-x:auto; }
+        .sh-table { width:100%; min-width:720px; border-collapse:separate; border-spacing:0; }
+        .sh-table thead th { background:#F7F9FA; padding:.9rem 1rem; font-size:.67rem; font-weight:700; color:rgba(15,27,61,.45); text-transform:uppercase; letter-spacing:.12em; text-align:left; border-bottom:1px solid #E2E6EA; }
+        .sh-table tbody td { padding:1rem; font-size:.82rem; color:#0F1B3D; border-bottom:1px solid rgba(226,230,234,.8); vertical-align:top; }
+        .sh-table tbody tr:hover td { background:#FBFCFD; }
+        .sh-alert-success, .sh-alert-error { border-radius:1rem; padding:.95rem 1rem; font-size:.82rem; border:1px solid transparent; }
+        .sh-alert-success { background:#EAFBF5; color:#0F7B61; border-color:#B9EEDB; }
+        .sh-alert-error { background:#FEF2F2; color:#B42318; border-color:#F6C4C4; }
+        .sh-summary { list-style:none; cursor:pointer; }
+        .sh-summary::-webkit-details-marker { display:none; }
+        #logisticsConfirmModal[hidden] { display:none !important; }
+        .sh-modal-backdrop { position:fixed; inset:0; background:rgba(15,27,61,.55); backdrop-filter: blur(3px); }
+        .sh-modal-card { position:relative; width:min(100%, 29rem); border-radius:1.5rem; background:#fff; border:1px solid #E2E6EA; box-shadow:0 30px 80px rgba(15,27,61,.24); overflow:hidden; }
+        .sh-modal-head { padding:1.1rem 1.25rem; border-bottom:1px solid #E2E6EA; }
+        .sh-modal-body { padding:1rem 1.25rem; }
+        .sh-modal-actions { padding:1rem 1.25rem 1.25rem; display:flex; justify-content:flex-end; gap:.65rem; }
+    </style>
+
     @stack('styles')
 
 </head>
@@ -311,7 +408,7 @@
 
 
         [
-            'label' => 'Network & Riders',
+            'label' => 'Branches & Fleet',
 
             'items' => [
 
@@ -335,12 +432,12 @@
 
 
         [
-            'label' => 'Deliveries',
+            'label' => 'Operations',
 
             'items' => [
 
                 [
-                    'label' => 'Delivery Board',
+                    'label' => 'Pickup & Delivery Board',
                     'route' => 'logistics.deliveries.board',
                     'pattern' => 'logistics.deliveries.*',
                     'icon' => 'package-check',
@@ -359,12 +456,12 @@
 
 
         [
-            'label' => 'Insights',
+            'label' => 'Analytics',
 
             'items' => [
 
                 [
-                    'label' => 'Reports',
+                    'label' => 'Delivery Reports',
                     'route' => 'logistics.reports.index',
                     'pattern' => 'logistics.reports.*',
                     'icon' => 'chart-no-axes-combined',
@@ -378,7 +475,7 @@
 @endphp
 
 
-<body class="bg-gray-bg text-navy antialiased">
+<body class="logistics-console bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 @includeWhen(app()->environment('local'), 'dev.account-switcher')
@@ -663,6 +760,7 @@
 
                                 
                                     <a href="{{ route($item['route']) }}"
+                                    @if($active) aria-current="page" @endif
                                     class="sidebar-nav-link
                                            relative
                                            flex items-center gap-3
@@ -815,7 +913,7 @@
 
 
             <form
-                action="{{ route('logout') }}"
+                action="{{ route('logistics.logout') }}"
                 method="POST"
             >
                 @csrf
@@ -920,7 +1018,7 @@
                 <x-lucide-search class="w-3.5 h-3.5 text-navy/35 shrink-0" />
 
                 <span class="text-[11px] text-navy/35 truncate flex-1">
-                    Search admin tools...
+                    Search logistics tools...
                 </span>
 
                 <kbd
@@ -975,54 +1073,28 @@
                 ></div>
 
 
-                {{-- Profile --}}
-                <div
-                    class="flex items-center
-                           gap-2
-                           h-10
-                           pl-1 pr-2"
-                >
-
-                    <div
-                        class="w-8 h-8
-                               rounded-full
-                               bg-gradient-to-br
-                               from-teal to-sky
-                               text-navy
-                               flex items-center justify-center
-                               text-[10px]
-                               font-bold"
-                    >
-                        {{ $logisticsInitials }}
+                {{-- Dedicated, keyboard-accessible partner menu (no JavaScript required). --}}
+                <details class="logistics-profile-menu relative">
+                    <summary class="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl px-1.5 transition hover:bg-gray-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" aria-label="Partner account menu">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal to-sky text-[10px] font-bold text-navy">{{ $logisticsInitials }}</span>
+                        <span class="hidden min-w-0 max-w-36 text-left md:block">
+                            <span class="block truncate text-[10px] font-semibold text-navy">{{ $logisticsName }}</span>
+                            <span class="block truncate text-[8px] text-navy/40">{{ $logisticsEmail }}</span>
+                        </span>
+                        <x-lucide-chevron-down class="hidden h-3.5 w-3.5 text-navy/35 md:block" />
+                    </summary>
+                    <div class="absolute right-0 top-[calc(100%+10px)] z-[85] w-56 rounded-2xl border border-gray-border bg-white p-2 shadow-panel">
+                        <div class="border-b border-gray-border px-3 py-2">
+                            <p class="truncate text-[11px] font-bold text-navy">{{ $logisticsName }}</p>
+                            <p class="truncate text-[10px] text-navy/45">Logistics partner</p>
+                        </div>
+                        <a href="{{ route('logistics.dashboard') }}" class="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-layout-dashboard class="h-4 w-4" /> Dashboard</a>
+                        <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-external-link class="h-4 w-4" /> Main ShopHop</a>
+                        <form method="POST" action="{{ route('logistics.logout') }}" class="mt-1 border-t border-gray-border pt-1">@csrf
+                            <button type="submit" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold text-rose-600 hover:bg-rose-50"><x-lucide-log-out class="h-4 w-4" /> Sign out</button>
+                        </form>
                     </div>
-
-
-                    <div
-                        class="hidden md:block
-                               max-w-36"
-                    >
-
-                        <p
-                            class="text-[10px]
-                                   font-semibold
-                                   text-navy
-                                   truncate"
-                        >
-                            {{ $logisticsName }}
-                        </p>
-
-                        <p
-                            class="text-[8px]
-                                   text-navy/35
-                                   truncate"
-                        >
-                            {{ $logisticsEmail }}
-                        </p>
-
-                    </div>
-
-                </div>
-
+                </details>
             </div>
 
         </header>
@@ -1136,7 +1208,7 @@
                 id="logisticsCommandInput"
                 type="text"
                 autocomplete="off"
-                placeholder="Search riders, deliveries, reports..."
+                placeholder="Find a logistics page or tool..."
                 class="w-full h-12
                        bg-transparent
                        text-xs sm:text-sm text-navy
@@ -1249,6 +1321,27 @@
 
         </div>
 
+    </div>
+</div>
+
+
+
+<div id="logisticsConfirmModal" hidden class="fixed inset-0 z-[95] flex items-center justify-center px-4">
+    <button type="button" class="sh-modal-backdrop" data-confirm-close aria-label="Close confirmation dialog"></button>
+    <div class="sh-modal-card" role="dialog" aria-modal="true" aria-labelledby="logisticsConfirmTitle" aria-describedby="logisticsConfirmBody">
+        <div class="sh-modal-head flex items-start gap-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+                <x-lucide-shield-alert class="h-5 w-5" />
+            </div>
+            <div class="min-w-0">
+                <p id="logisticsConfirmTitle" class="text-base font-bold text-navy">Confirm action</p>
+                <p id="logisticsConfirmBody" class="mt-1 text-sm leading-relaxed text-navy/55">Please confirm to continue.</p>
+            </div>
+        </div>
+        <div class="sh-modal-actions">
+            <button type="button" class="sh-btn-ghost" data-confirm-close>Cancel</button>
+            <button type="button" class="sh-btn" id="logisticsConfirmAccept">Continue</button>
+        </div>
     </div>
 </div>
 
@@ -1618,6 +1711,137 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     filterCommands();
+
+
+    /* =====================================================
+       GLOBAL CONFIRMATION MODAL
+    ===================================================== */
+    const confirmModal = document.getElementById('logisticsConfirmModal');
+    const confirmTitle = document.getElementById('logisticsConfirmTitle');
+    const confirmBody = document.getElementById('logisticsConfirmBody');
+    const confirmAccept = document.getElementById('logisticsConfirmAccept');
+    let confirmHandler = null;
+    let previousConfirmFocus = null;
+
+    function openConfirmModal(options) {
+        if (!confirmModal) return;
+        confirmTitle.textContent = options.title || 'Confirm action';
+        confirmBody.textContent = options.message || 'Please confirm to continue.';
+        confirmAccept.textContent = options.confirmLabel || 'Continue';
+        confirmAccept.className = (options.danger ? 'sh-btn-danger' : 'sh-btn') + ' px-5';
+        confirmHandler = options.onConfirm || null;
+        previousConfirmFocus = document.activeElement;
+        confirmModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        confirmModal.querySelector('[data-confirm-close]:not(.sh-modal-backdrop)')?.focus();
+    }
+
+    function closeConfirmModal() {
+        if (!confirmModal) return;
+        confirmModal.hidden = true;
+        if (searchPalette && !searchPalette.hidden) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        confirmHandler = null;
+        previousConfirmFocus?.focus?.();
+        previousConfirmFocus = null;
+    }
+
+    document.querySelectorAll('[data-confirm-close]').forEach(function(btn){
+        btn.addEventListener('click', closeConfirmModal);
+    });
+
+    confirmAccept?.addEventListener('click', function(){
+        if (typeof confirmHandler === 'function') {
+            const run = confirmHandler;
+            closeConfirmModal();
+            run();
+        }
+    });
+
+    document.addEventListener('submit', function(event){
+        const form = event.target.closest('form[data-confirm-title]');
+        if (!form || form.dataset.confirmed === '1') {
+            if (form) form.dataset.confirmed = '0';
+            return;
+        }
+        event.preventDefault();
+        openConfirmModal({
+            title: form.dataset.confirmTitle,
+            message: form.dataset.confirmMessage || 'Please confirm to continue.',
+            confirmLabel: form.dataset.confirmButton || 'Continue',
+            danger: form.dataset.confirmDanger === '1',
+            onConfirm: function(){
+                form.dataset.confirmed = '1';
+                form.requestSubmit();
+            }
+        });
+    }, true);
+
+    function syncCoverageRemoveButtons() {
+        document.querySelectorAll('[data-coverage-list]').forEach(function(list){
+            const buttons = list.querySelectorAll('[data-remove-coverage]');
+            const soleRow = list.querySelectorAll('[data-coverage-row]').length <= 1;
+            buttons.forEach(function(button){
+                button.disabled = soleRow;
+                button.title = soleRow ? 'Keep at least one coverage area' : 'Remove this coverage area';
+                button.classList.toggle('opacity-40', soleRow);
+                button.classList.toggle('cursor-not-allowed', soleRow);
+            });
+        });
+    }
+
+    document.addEventListener('click', function(event){
+        const add = event.target.closest('[data-add-coverage]');
+        if (add) {
+            // The page's own builder handles adding and renumbering rows.
+            window.requestAnimationFrame(syncCoverageRemoveButtons);
+            return;
+        }
+        const removeCoverage = event.target.closest('[data-remove-coverage]');
+        if (!removeCoverage || removeCoverage.disabled) return;
+        event.preventDefault();
+        const row = removeCoverage.closest('[data-coverage-row]');
+        const list = removeCoverage.closest('[data-coverage-list]');
+        if (!row || !list || list.querySelectorAll('[data-coverage-row]').length <= 1) return;
+        openConfirmModal({
+            title: 'Remove coverage area?',
+            message: 'This will remove the area from the form. Changes are not saved until you submit the branch form.',
+            confirmLabel: 'Remove area',
+            danger: true,
+            onConfirm: function(){
+                row.remove();
+                list.querySelectorAll('[data-coverage-row]').forEach(function(row, index){
+                    row.querySelectorAll('[name]').forEach(function(field){
+                        field.name = field.name.replace(/coverage\[\d+\]/, 'coverage[' + index + ']');
+                    });
+                });
+                syncCoverageRemoveButtons();
+            }
+        });
+    });
+
+    document.addEventListener('keydown', function(event){
+        if (!confirmModal || confirmModal.hidden) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            closeConfirmModal();
+        } else if (event.key === 'Tab') {
+            const focusables = [...confirmModal.querySelectorAll('.sh-modal-card button:not([disabled])')]
+                .filter(el => el.offsetParent !== null);
+            if (!focusables.length) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault(); last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault(); first.focus();
+            }
+        }
+    }, true);
+    syncCoverageRemoveButtons();
 
 });
 

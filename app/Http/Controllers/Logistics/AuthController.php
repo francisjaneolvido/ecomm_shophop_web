@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Throwable;
 use Illuminate\View\View;
 
 class AuthController extends Controller
@@ -16,7 +18,7 @@ class AuthController extends Controller
             return redirect()->route('logistics.dashboard');
         }
 
-        return view('logistics.login');
+        return view('logistics.auth.login');
     }
 
     public function login(Request $request): RedirectResponse
@@ -74,6 +76,35 @@ class AuthController extends Controller
             };
 
             return redirect()->route('logistics.login')->with('login_notice', $notice);
+        }
+
+        // An OAuth callback may request one-time Google linking. Only password-authenticated,
+        // admin-approved owner of this exact logistics account can complete it.
+        $pending = $request->session()->pull('logistics_google_link_pending');
+        if (is_array($pending) && (int) ($pending['user_id'] ?? 0) === (int) $user->id
+            && strcasecmp((string) ($pending['email'] ?? ''), $user->email) === 0
+            && time() >= (int) ($pending['created_at'] ?? 0)
+            && time() - (int) ($pending['created_at'] ?? 0) <= 600
+            && is_string($pending['google_sub'] ?? null)
+            && $pending['google_sub'] !== ''
+        ) {
+            try {
+                DB::transaction(function () use ($user, $pending) {
+                    $existingUserLink = DB::table('logistics_google_accounts')
+                        ->where('user_id', $user->id)->lockForUpdate()->first();
+                    $existingSubjectLink = DB::table('logistics_google_accounts')
+                        ->where('google_sub', $pending['google_sub'])->lockForUpdate()->first();
+                    if (! $existingUserLink && ! $existingSubjectLink) {
+                        DB::table('logistics_google_accounts')->insert([
+                            'user_id' => $user->id,
+                            'google_sub' => $pending['google_sub'],
+                            'created_at' => now(), 'updated_at' => now(),
+                        ]);
+                    }
+                });
+            } catch (Throwable $exception) {
+                report($exception); // Standard password login still works, even if Google linking fails.
+            }
         }
 
         return redirect()->route('logistics.dashboard');

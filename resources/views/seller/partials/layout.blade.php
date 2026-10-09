@@ -1098,7 +1098,7 @@
                    sm:px-4 sm:py-5
                    lg:px-5 lg:py-5"
         >
-            <div class="max-w-[1600px] mx-auto">
+            <div class="w-full min-w-0">
                 @yield('content')
             </div>
         </main>

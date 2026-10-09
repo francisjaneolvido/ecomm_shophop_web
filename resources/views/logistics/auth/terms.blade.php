@@ -1,6 +1,6 @@
 {{-- resources/views/logistics/terms.blade.php --}}
 
-@extends('layouts.app')
+@extends('logistics.layouts.public')
 
 @section('title', 'Courier Terms & Agreement — ShopHop')
 
@@ -12,7 +12,7 @@
 <section class="relative overflow-hidden bg-gray-bg">
     <div class="absolute -top-28 -right-28 w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-teal/10"></div>
 
-    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 text-center">
+    <div class="relative max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-10 text-center">
         <div class="inline-flex items-center gap-2 bg-teal-light text-teal-dark px-3.5 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium mb-5 sm:mb-6">
             <x-lucide-file-text class="w-3.5 h-3.5" />
             Courier Partner Reference
@@ -33,7 +33,7 @@
 {{-- =========================================================
     TERMS DOCUMENT
 ========================================================= --}}
-<section class="py-12 sm:py-16 bg-white">
+<section class="py-8 sm:py-10 bg-white">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
 
         <p class="text-xs text-navy/45 mb-8">Last updated: {{ now()->format('F d, Y') }}</p>

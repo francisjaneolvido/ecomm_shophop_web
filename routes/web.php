@@ -33,6 +33,11 @@ Route::get('/search', [PublicSearchController::class, 'index'])
 |--------------------------------------------------------------------------
 */
 
+// Bookmarked former registration URL now leads to the dedicated Logistics site.
+Route::get('/logistics-partner/apply', function () {
+    return redirect()->route('logistics.register');
+})->name('logistics.legacy-apply');
+
 Route::get('/register', function () {
     return redirect()->route('home')->with('open_modal', 'account-type');
 })->name('register');
