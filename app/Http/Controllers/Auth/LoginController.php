@@ -61,7 +61,7 @@ class LoginController extends Controller
         |
         */
 
-        if ($user->account_type === 'logistics') {
+        if (in_array($user->account_type, ['logistics', 'branch'], true)) {
             Auth::logout();
 
             $request->session()->invalidate();

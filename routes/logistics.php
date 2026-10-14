@@ -47,6 +47,9 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/sorting-centers', [SortingCenterController::class, 'store'])->name('sorting-centers.store');
             Route::post('/sorting-centers/{center}/update', [SortingCenterController::class, 'update'])->name('sorting-centers.update');
             Route::post('/sorting-centers/{center}/toggle', [SortingCenterController::class, 'toggle'])->name('sorting-centers.toggle');
+            Route::post('/sorting-centers/{center}/create-login', [SortingCenterController::class, 'createLogin'])->name('sorting-centers.create-login');
+            Route::post('/sorting-centers/{center}/reset-password', [SortingCenterController::class, 'resetPassword'])
+                ->middleware('throttle:10,1')->name('sorting-centers.reset-password');
 
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');

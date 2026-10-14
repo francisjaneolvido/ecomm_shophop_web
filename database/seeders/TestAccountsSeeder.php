@@ -13,8 +13,9 @@ class TestAccountsSeeder extends Seeder
     /**
      * Run the database seeds.
      *
-     * Creates 1 test buyer, 1 test seller, and 1 test logistics partner
-     * for manual/QA testing purposes. Safe to run multiple times.
+     * Creates 1 test buyer, 1 test seller, 1 test logistics partner,
+     * and 1 test admin for manual/QA testing purposes.
+     * Safe to run multiple times.
      */
     public function run(): void
     {
@@ -134,9 +135,22 @@ class TestAccountsSeeder extends Seeder
             ]
         );
 
+        // ----- Test Admin -----
+        // Walang hiwalay na profile table; User record lang ang kailangan.
+        User::updateOrCreate(
+            ['email' => 'test.admin@example.com'],
+            [
+                'password' => 'password123',
+                'account_type' => 'admin',
+                'status' => 'approved',
+                'email_verified_at' => now(),
+            ]
+        );
+
         $this->command->info('Test accounts ready:');
         $this->command->info('Buyer:     test.buyer@example.com / password123');
         $this->command->info('Seller:    test.seller@example.com / password123');
         $this->command->info('Logistics: test.logistics@example.com / password123');
+        $this->command->info('Admin:     test.admin@example.com / password123');
     }
 }
