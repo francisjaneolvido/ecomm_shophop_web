@@ -198,7 +198,7 @@
         }
 
         function loadRegions() {
-            return Promise.resolve(sortByName(PH_REGIONS));
+            return ShopHopPHAddress.regions().then(rows => rows.map(r => ({ code: r.code, name: ShopHopPHAddress.regionLabel(r) })));
         }
 
         async function loadAllProvinces() {
@@ -208,8 +208,7 @@
         }
 
         async function loadProvinces(regionCode) {
-            const all = await loadAllProvinces();
-            return all.filter(function (p) { return p.regionCode === regionCode; });
+            return ShopHopPHAddress.provinces(regionCode);
         }
 
         async function loadCitiesByProvince(provinceCode) {
@@ -220,15 +219,7 @@
         }
 
         async function loadCitiesByRegion(regionCode) {
-            if (!psgcCache.allCitiesMunicipalities) {
-                psgcCache.allCitiesMunicipalities = await psgcGet('/cities-municipalities/');
-            }
-            const cities = psgcCache.allCitiesMunicipalities.filter(function (c) {
-                const cRegion = c.regionCode || c.region_code;
-                const cProvince = c.provinceCode || c.province_code;
-                return cRegion === regionCode && !cProvince;
-            });
-            return sortByName(cities);
+            return ShopHopPHAddress.cities(regionCode, regionCode);
         }
 
         async function loadBarangays(cityCode) {
@@ -304,11 +295,11 @@
 
                     if (provinces.length === 0) {
                         addressState.isNcrLike = true;
-                        addressState.provinceCode = '';
+                        addressState.provinceCode = addressState.regionCode;
                         addressState.provinceName = addressState.regionName;
                         provinceSelect.innerHTML = '<option value="' + addressState.regionName + '">' + addressState.regionName + ' (no provinces)</option>';
                         provinceSelect.value = addressState.regionName;
-                        provinceSelect.disabled = true;
+                        provinceSelect.disabled = false;
 
                         municipalitySelect.innerHTML = '<option value="">Loading cities/municipalities…</option>';
                         const cities = await loadCitiesByRegion(addressState.regionCode);
@@ -396,10 +387,10 @@
                     return { value: p.name, code: p.code, type: 'province', label: p.name };
                 });
 
-                const noProvinceRegion = regions.find(function (r) { return /national capital region|\bncr\b/i.test(r.name); });
-                if (noProvinceRegion) {
-                    options.push({ value: noProvinceRegion.name, code: noProvinceRegion.code, type: 'region', label: noProvinceRegion.name + ' (no provinces)' });
-                }
+                // All regions can be selected as delivery coverage, including NCR and NIR.
+                regions.forEach(function (region) {
+                    options.push({ value: region.name, code: region.code, type: 'region', label: region.name + ' (whole region)' });
+                });
                 options.sort(function (a, b) { return a.label.localeCompare(b.label, 'en'); });
 
                 coverageAddSelect.innerHTML = '<option value="">+ Choose a province to add…</option>';

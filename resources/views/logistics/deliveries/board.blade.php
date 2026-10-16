@@ -1,6 +1,6 @@
 @extends('logistics.layouts.console')
 
-@section('title', 'Pickup & Delivery Board — ShopHop Logistics')
+@section('title', 'Parcel Operations — ShopHop Logistics')
 
 @section('content')
 @php
@@ -18,9 +18,10 @@
     <header class="sh-page-header">
         <div>
             <p class="eyebrow">Operations · Parcel handoffs</p>
-            <h1 class="title">Pickup & Delivery Board</h1>
-            <p class="description">Work from left to right: assign a pickup rider, receive and scan the parcel, confirm its destination, then dispatch a rider for the final delivery.</p>
+            <h1 class="title">Parcel Operations</h1>
+            <p class="description">This is your work queue. Pickup riders collect from sellers; branch staff receive and sort using the QR scanner; transit riders move parcels between branches when needed; delivery riders complete the last mile.</p>
         </div>
+        <a href="{{ route('logistics.returns.index') }}" class="sh-btn-soft">Return-to-Seller Queue →</a>
         <a href="{{ route('logistics.dashboard') }}" class="sh-btn-ghost"><x-lucide-arrow-left class="h-4 w-4" /> Back to Dashboard</a>
     </header>
 
@@ -48,7 +49,7 @@
             </div>
         </div>
         <div class="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            @foreach ([['01','Pickup assignment'],['02','Receive & scan'],['03','Sort or transfer'],['04','Dispatch rider']] as [$number, $label])
+            @foreach ([['01','Seller → Pickup Rider'],['02','Origin branch QR scan'],['03','Sort / optional transit'],['04','Destination → Delivery Rider']] as [$number, $label])
                 <div class="flex items-center gap-3 rounded-2xl border border-gray-border bg-gray-bg/50 px-3 py-3">
                     <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[11px] font-bold text-teal-dark">{{ $number }}</span>
                     <span class="text-xs font-semibold text-navy">{{ $label }}</span>
@@ -56,6 +57,11 @@
             @endforeach
         </div>
     </section>
+
+    <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal/25 bg-teal-light/30 p-4 text-xs text-navy/70">
+        <p><strong>Branch routing:</strong> Each branch is a warehouse/sorting hub in one Logistics company. Staff scan at their assigned branch; riders carry parcels between locations.</p>
+        <a class="sh-btn-soft" href="{{ route('logistics.sorting-centers.index') }}">Check branch readiness →</a>
+    </div>
 
     @if (session('status')) <div role="status" class="sh-alert-success">{{ session('status') }}</div> @endif
     @if ($errors->any()) <div role="alert" class="sh-alert-error">{{ $errors->first() }}</div> @endif
@@ -184,7 +190,7 @@
                                 <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                                     <div class="flex items-start gap-2"><x-lucide-arrow-left-right class="mt-0.5 h-4 w-4 shrink-0 text-amber-800" /><div><p class="text-sm font-bold text-amber-900">Branch transfer required</p><p class="mt-1 text-xs text-amber-800">{{ $delivery->currentSortingCenter?->name }} → {{ $delivery->destinationSortingCenter?->name }}</p></div></div>
                                     @if ($activeTransfer)
-                                        <p class="mt-3 text-xs leading-relaxed text-amber-800">Parcel is in transit. Scan its tracking code when the destination branch receives it.</p>
+                                        <p class="mt-3 text-xs leading-relaxed text-amber-800">Parcel transfer recorded. Assigned Transit Rider must confirm departure on mobile before the destination branch may scan receipt.</p>
                                         <form method="POST" action="{{ route('logistics.transfers.receive', $activeTransfer) }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" data-confirm-title="Confirm destination hub receipt?" data-confirm-message="Only confirm after physically receiving and checking this transferred parcel." data-confirm-button="Receive transfer">
                                             @csrf
                                             <label class="sh-field"><span class="sh-label">Tracking code</span><input name="tracking_code" required autocomplete="off" placeholder="{{ $delivery->tracking_code }}" class="sh-input"></label>
@@ -196,6 +202,11 @@
                                             <label class="sh-field"><span class="sh-label">Next Sorting Center</span><select name="to_sorting_center_id" required class="sh-select"><option value="">Choose next center</option>
                                                 @foreach ($sortingCenters->where('id', '!=', $delivery->current_sorting_center_id) as $center)
                                                     <option value="{{ $center->id }}" @selected((int) $center->id === (int) $delivery->destination_sorting_center_id)>{{ $center->name }}{{ (int) $center->id === (int) $delivery->destination_sorting_center_id ? ' · Destination' : ' · Transfer hub' }}</option>
+                                                @endforeach
+                                            </select></label>
+                                            <label class="sh-field sm:col-span-2"><span class="sh-label">Transit Rider (optional: select when a Rider handles inter-branch transport)</span><select name="transit_rider_id" class="sh-select"><option value="">Branch transport (no Rider transit fee)</option>
+                                                @foreach ($riders->where('sorting_center_id', $delivery->current_sorting_center_id) as $transitRider)
+                                                    <option value="{{ $transitRider->id }}">{{ $transitRider->name }} · {{ $transitRider->sortingCenter?->name }}</option>
                                                 @endforeach
                                             </select></label>
                                             <button class="sh-btn">Dispatch transfer</button>
@@ -217,10 +228,17 @@
                                 @endif
                             @endif
                             @if ($delivery->status === \App\Models\Logistics\Delivery::DELIVERY_FAILED)
-                                <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3"><p class="text-xs font-bold text-rose-900">Delivery failure reported</p><p class="mt-1 text-xs text-rose-800">{{ $delivery->failure_reason }}</p><p class="mt-2 text-[11px] text-rose-700">Returns are not processed in-system. Keep this record for reference or assign a different rider for another delivery attempt.</p></div>
+                                <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3"><p class="text-xs font-bold text-rose-900">Delivery failure reported</p><p class="mt-1 text-xs text-rose-800">{{ $delivery->failure_reason }}</p><p class="mt-2 text-[11px] text-rose-700">Choose whether to retry delivery or initiate a Return-to-Seller case. Both actions require real handoffs.</p></div>
+                                <form action="{{ route('logistics.returns.initiate', $delivery) }}" method="POST" class="mt-3 rounded-xl border border-rose-200 bg-white p-3" onsubmit="return confirm('Start Return-to-Seller? Seller payout will be held and retry will no longer be available.')">@csrf
+                                    <label class="sh-field"><span class="sh-label">Return decision reason (minimum 10 characters)</span><textarea required minlength="10" maxlength="1000" name="reason" class="sh-input" rows="2" placeholder="Why delivery will not be retried"></textarea></label>
+                                    <button class="sh-btn mt-2" type="submit">Initiate Return to Seller</button>
+                                </form>
                             @endif
                         @endif
 
+                        @if(in_array($delivery->status, [\App\Models\Logistics\Delivery::RETURN_REQUESTED,\App\Models\Logistics\Delivery::RETURN_AT_BRANCH,\App\Models\Logistics\Delivery::RETURN_ASSIGNED,\App\Models\Logistics\Delivery::RETURN_IN_TRANSIT,\App\Models\Logistics\Delivery::RETURN_AWAITING_SELLER,\App\Models\Logistics\Delivery::RETURNED],true))
+                          <div class="mt-3 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-900">Return process: {{$delivery->statusLabel()}} · <a class="font-bold underline" href="{{route('logistics.returns.index')}}">Open returns queue</a></div>
+                        @endif
                         @if ($delivery->failureReports->isNotEmpty())
                             <div class="mt-4 rounded-xl border border-gray-border bg-white p-4">
                                 <p class="text-xs font-bold text-navy">Failed delivery attempts</p>

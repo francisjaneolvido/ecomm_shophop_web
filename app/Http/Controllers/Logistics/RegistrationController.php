@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Logistics;
 use App\Http\Controllers\Controller;
 use App\Models\LogisticsPartner;
 use App\Models\User;
+use App\Support\RegistrationIdentity;
 use App\Notifications\LogisticsVerificationCodeNotification;
 // Logistics registration artifacts use the same private review contract as Buyer/Seller IDs.
 use App\Services\RegistrationDocuments;
@@ -26,6 +27,15 @@ class RegistrationController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge([
+            'email' => RegistrationIdentity::email($request->input('email')),
+            'contact_no' => RegistrationIdentity::mobile($request->input('contact_no')),
+            'company_name' => trim((string) $request->input('company_name')),
+            'business_registration_no' => trim((string) $request->input('business_registration_no')),
+            'rep_first_name' => trim((string) $request->input('rep_first_name')),
+            'rep_last_name' => trim((string) $request->input('rep_last_name')),
+        ]);
+
         $validated = $request->validateWithBag('logisticsRegistration', [
             // Terms & Agreement
             'terms_agree' => ['required', 'accepted'],
@@ -34,18 +44,18 @@ class RegistrationController extends Controller
             'agreement_signature' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,pdf', 'max:5120'],
 
             // Company Details
-            'company_name' => ['required', 'string', 'max:255'],
-            'business_registration_no' => ['required', 'string', 'max:100'],
+            'company_name' => ['required', 'string', 'min:3', 'max:100', RegistrationIdentity::companyUnique('logistics_partners', 'company_name', 'This company name is already registered.')],
+            'business_registration_no' => ['required', 'string', 'max:100', RegistrationIdentity::companyUnique('logistics_partners', 'business_registration_no', 'This business registration number is already registered.')],
             'line_of_business' => ['required', 'in:motorcycle_courier,van_truck_freight,same_day,other'],
-            'rep_last_name' => ['required', 'string', 'max:100', 'regex:/^[^0-9]+$/'],
-            'rep_first_name' => ['required', 'string', 'max:100', 'regex:/^[^0-9]+$/'],
+            'rep_last_name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[\p{L}][\p{L}\s\'.-]*$/u'],
+            'rep_first_name' => ['required', 'string', 'min:2', 'max:50', 'regex:/^[\p{L}][\p{L}\s\'.-]*$/u'],
             'rep_middle_initial' => ['nullable', 'string', 'max:5', 'regex:/^[A-Za-zÀ-ÖØ-öø-ÿÑñ. -]+$/'],
             'rep_valid_id' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
             'rep_id_number' => ['required', 'string', 'max:100', 'regex:/^[A-Za-z0-9\-]+$/'],
             'rep_sex' => ['required', 'in:male,female'],
-            'rep_birthday' => ['required', 'date', 'before:-18 years'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'contact_no' => ['required', 'string', 'max:20'],
+            'rep_birthday' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
+            'email' => ['required', 'email', 'max:255', RegistrationIdentity::emailUnique()],
+            'contact_no' => ['required', 'string', 'regex:/^09\d{9}$/', RegistrationIdentity::mobileUnique()],
             'region' => ['required', 'string', 'max:150'],
             'province' => ['required', 'string', 'max:100'],
             'municipality' => ['required', 'string', 'max:100'],
@@ -54,7 +64,7 @@ class RegistrationController extends Controller
             'unit_no' => ['required', 'string', 'max:150'],
 
             // Password
-            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()],
+            'password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
 
             // Coverage & Documents
             'coverage_areas' => ['required', 'array', 'min:1'],
@@ -66,7 +76,6 @@ class RegistrationController extends Controller
             'accreditation_docs' => ['nullable', 'file', 'mimes:pdf,jpg,jpeg,png', 'max:5120'],
         ]);
 
-        $validated['email'] = strtolower(trim($validated['email']));
 
         $verification = $request->session()->get('logistics_email_verification');
 
@@ -86,6 +95,7 @@ class RegistrationController extends Controller
         DB::transaction(function () use ($validated, $request) {
             $user = User::create([
                 'email' => $validated['email'],
+                'registration_contact_no' => $validated['contact_no'],
                 'password' => Hash::make($validated['password']),
                 'account_type' => 'logistics',
                 'status' => 'pending',
@@ -167,8 +177,10 @@ class RegistrationController extends Controller
 
     public function sendVerificationCode(Request $request): JsonResponse
     {
+        $request->merge(['email' => RegistrationIdentity::email($request->input('email'))]);
+
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'email', 'max:255', RegistrationIdentity::emailUnique()],
             'resend' => ['sometimes', 'boolean'],
         ]);
 
@@ -207,7 +219,7 @@ class RegistrationController extends Controller
             'email' => $email,
             'code_hash' => Hash::make($code),
             'attempts' => 0,
-            'expires_at' => now()->addMinutes(10)->timestamp,
+            'expires_at' => now()->addMinutes(5)->timestamp,
             'last_sent_at' => now()->timestamp,
             'verified' => false,
         ]);
@@ -239,6 +251,8 @@ class RegistrationController extends Controller
 
     public function verifyVerificationCode(Request $request): JsonResponse
     {
+        $request->merge(['email' => RegistrationIdentity::email($request->input('email'))]);
+
         $validated = $request->validate([
             'email' => ['required', 'email', 'max:255'],
             'code' => ['required', 'digits:6'],
@@ -308,14 +322,14 @@ class RegistrationController extends Controller
         $message = strtolower($e->getMessage());
 
         if (str_contains($message, '535') || str_contains($message, 'username and password not accepted') || str_contains($message, 'authentication')) {
-            return 'Gmail rejected the SMTP credentials. Create a fresh Google App Password, update MAIL_PASSWORD, then run php artisan optimize:clear.';
+            return 'Email delivery is currently unavailable. Please try again later.';
         }
 
         if (str_contains($message, 'timed out') || str_contains($message, 'could not connect') || str_contains($message, 'connection refused')) {
-            return 'The server could not connect to Gmail SMTP. Check internet/firewall access and confirm smtp.gmail.com:587 is reachable.';
+            return 'Email delivery is currently unavailable. Please try again later.';
         }
 
-        return 'We could not send the verification code. Check storage/logs/laravel.log for the SMTP error, then try again.';
+        return 'We could not send a verification email. Please try again or contact support.';
     }
 
     public function terms(): \Illuminate\View\View

@@ -8,6 +8,7 @@
         }
 
         const dialog = document.getElementById('seller-registration-dialog');
+
         const filePreviewModal = document.getElementById('seller-file-preview-modal');
         const filePreviewFullImage = document.getElementById('seller-file-preview-full-image');
         const filePreviewPdfFrame = document.getElementById('seller-file-preview-pdf-frame');
@@ -462,14 +463,14 @@
         |--------------------------------------------------------------------------
         */
 
-        const nameRegex = /^[A-Za-zÀ-ÿñÑ\s'.-]*$/;
+        const nameRegex = /^[\p{L}][\p{L}\s'.-]*$/u;
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const contactRegex = /^09\d{9}$/;
 
         const passwordUppercaseRegex = /[A-Z]/;
         const passwordLowercaseRegex = /[a-z]/;
         const passwordNumberRegex = /[0-9]/;
-        const passwordSpecialRegex = /[!@#$%^&*]/;
+        const passwordSpecialRegex = /[^\p{L}\p{N}\s]/u;
 
         function showError(input, errorEl, message) {
 
@@ -502,8 +503,13 @@
                 return false;
             }
 
-            if (value && !nameRegex.test(value)) {
-                showError(input, errorEl, `${label} should not contain numbers or special characters.`);
+            const trimmed = value.trim();
+            if (trimmed && !nameRegex.test(trimmed)) {
+                showError(input, errorEl, `${label} should contain letters and allowed punctuation only.`);
+                return false;
+            }
+            if (input.required && (trimmed.length < 2 || trimmed.length > 50)) {
+                showError(input, errorEl, `${label} must be between 2 and 50 characters.`);
                 return false;
             }
 
@@ -514,7 +520,8 @@
 
         function validateEmailField(input, errorEl) {
 
-            const value = input.value.trim();
+            const value = input.value.trim().toLowerCase();
+            input.value = value;
 
             if (!value && input.required) {
                 showError(input, errorEl, 'Email is required.');
@@ -533,7 +540,9 @@
 
         function validateContactField(input, errorEl) {
 
-            const value = input.value.trim();
+            const entered = input.value.trim();
+            const value = /^\+639\d{9}$/.test(entered) ? '0' + entered.slice(3) : entered;
+            if (value !== entered) input.value = value;
 
             if (!value && input.required) {
                 showError(input, errorEl, 'Contact number is required.');
@@ -548,6 +557,23 @@
             showError(input, errorEl, '');
             return true;
 
+        }
+
+        function validateBirthdayField() {
+            if (!validateRequiredField(birthdayInput, birthdayError, 'Birthday')) return false;
+            const dob = new Date(birthdayInput.value + 'T00:00:00');
+            const today = new Date();
+            if (!Number.isFinite(dob.getTime())) {
+                showError(birthdayInput, birthdayError, 'Please enter a valid birthday.');
+                return false;
+            }
+            const latest = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+            if (dob > latest) {
+                showError(birthdayInput, birthdayError, 'You must be at least 18 years old.');
+                return false;
+            }
+            showError(birthdayInput, birthdayError, '');
+            return true;
         }
 
         function validateRequiredField(input, errorEl, label) {
@@ -628,6 +654,11 @@
                 return false;
             }
 
+            if (value && !passwordSpecialRegex.test(value)) {
+                showError(input, errorEl, 'Password must contain at least 1 special character.');
+                return false;
+            }
+
             showError(input, errorEl, '');
             return true;
 
@@ -693,7 +724,7 @@
         const contactError = document.getElementById('seller_contact_no_error');
 
         contactInput.addEventListener('input', function () {
-            this.value = this.value.replace(/\D/g, '');
+            this.value = this.value.replace(/[^+\d]/g, '').replace(/(?!^)\+/g, '');
             validateContactField(contactInput, contactError);
         });
 
@@ -709,7 +740,7 @@
         const birthdayError = document.getElementById('seller_birthday_error');
 
         birthdayInput.addEventListener('change', function () {
-            validateRequiredField(birthdayInput, birthdayError, 'Birthday');
+            validateBirthdayField();
         });
 
 
@@ -961,7 +992,7 @@
             const isEmailValid = validateEmailField(emailInput, emailError);
             const isContactValid = validateContactField(contactInput, contactError);
             const isSexValid = validateRequiredField(sexInput, sexError, 'Sex');
-            const isBirthdayValid = validateRequiredField(birthdayInput, birthdayError, 'Birthday');
+            const isBirthdayValid = validateBirthdayField();
 
             if (!isFirstNameValid || !isLastNameValid || !isMiddleInitialValid ||
                 !isEmailValid || !isContactValid || !isSexValid || !isBirthdayValid) {
@@ -1012,11 +1043,7 @@
 
         document.getElementById('seller-step1-next').addEventListener('click', function () {
             if (validateStep1()) {
-                // Performance: defer the remote province request until Step 2 is needed.
-                if (!provincesLoaded) {
-                    provincesLoaded = true;
-                    loadProvinces();
-                }
+                // Region and city data is loaded by the shared PSGC selector.
                 goToStep(2);
             }
         });
@@ -1057,6 +1084,7 @@
         */
 
         registerForm.addEventListener('submit', function (e) {
+            if (registerForm.dataset.submitting === '1') { e.preventDefault(); return; }
 
             const isFirstNameValid = validateNameField(firstNameInput, firstNameError, 'First name');
             const isLastNameValid = validateNameField(lastNameInput, lastNameError, 'Last name');
@@ -1064,7 +1092,7 @@
             const isEmailValid = validateEmailField(emailInput, emailError);
             const isContactValid = validateContactField(contactInput, contactError);
             const isSexValid = validateRequiredField(sexInput, sexError, 'Sex');
-            const isBirthdayValid = validateRequiredField(birthdayInput, birthdayError, 'Birthday');
+            const isBirthdayValid = validateBirthdayField();
             const isStep1RequiredValid = validatePanelSilently(getPanel(1));
 
             const step1Ok = isFirstNameValid && isLastNameValid && isMiddleInitialValid &&
@@ -1121,6 +1149,10 @@
                 return;
             }
 
+            registerForm.dataset.submitting = '1';
+            const submit = registerForm.querySelector('button[type="submit"]');
+            if (submit) { submit.disabled = true; submit.setAttribute('aria-busy', 'true'); }
+
         });
 
 
@@ -1130,177 +1162,31 @@
         |--------------------------------------------------------------------------
         */
 
-        const PSGC_BASE = 'https://psgc.gitlab.io/api';
-
-        const oldProvinceCode = @json(old('province_code'));
-        const oldMunicipalityCode = @json(old('municipality_code'));
-        const oldBarangayCode = @json(old('barangay_code'));
-
-        function setAddressStatus(message, isError = false) {
-
-            if (!message) {
-                addressStatus.classList.add('hidden');
-                return;
-            }
-
-            addressStatus.textContent = message;
-            addressStatus.classList.remove('hidden');
-            addressStatus.classList.toggle('text-red-500', isError);
-            addressStatus.classList.toggle('text-teal-dark', !isError);
-
-        }
-
-        function resetSelect(select, text) {
-            select.innerHTML = `<option value="">${text}</option>`;
-            select.disabled = true;
-        }
-
-        function fillSelect(select, items, placeholder, selectedCode = null) {
-
-            select.innerHTML = `<option value="">${placeholder}</option>`;
-
-            items.forEach(function (item) {
-
-                const option = document.createElement('option');
-                option.value = item.code;
-                option.textContent = item.name;
-
-                if (selectedCode && item.code === selectedCode) {
-                    option.selected = true;
-                }
-
-                select.appendChild(option);
-
-            });
-
-            select.disabled = false;
-
-        }
-
-        async function fetchJson(url) {
-
-            const response = await fetch(url);
-
-            if (!response.ok) {
-                throw new Error('Unable to load address data.');
-            }
-
-            return response.json();
-
-        }
-
-        async function loadProvinces() {
-
-            try {
-
-                setAddressStatus('Loading provinces...');
-
-                const provinces = await fetchJson(`${PSGC_BASE}/provinces/`);
-
-                provinces.sort((a, b) => a.name.localeCompare(b.name));
-
-                fillSelect(provinceSelect, provinces, 'Select province', oldProvinceCode);
-
-                if (oldProvinceCode) {
-
-                    provinceNameInput.value = provinceSelect.options[provinceSelect.selectedIndex]?.text || '';
-
-                    await loadMunicipalities(oldProvinceCode, oldMunicipalityCode);
-
-                }
-
-                setAddressStatus('');
-
-            } catch (error) {
-                setAddressStatus('Unable to load address dropdowns. Please refresh the page.', true);
-            }
-
-        }
-
-        async function loadMunicipalities(provinceCode, selectedCode = null) {
-
-            resetSelect(municipalitySelect, 'Loading municipality / city...');
-            resetSelect(barangaySelect, 'Select barangay');
-
-            municipalityNameInput.value = '';
-            barangayNameInput.value = '';
-
-            if (!provinceCode) {
-                resetSelect(municipalitySelect, 'Select municipality / city');
-                return;
-            }
-
-            try {
-
-                const cities = await fetchJson(`${PSGC_BASE}/provinces/${provinceCode}/cities-municipalities/`);
-
-                cities.sort((a, b) => a.name.localeCompare(b.name));
-
-                fillSelect(municipalitySelect, cities, 'Select municipality / city', selectedCode);
-
-                if (selectedCode) {
-
-                    municipalityNameInput.value = municipalitySelect.options[municipalitySelect.selectedIndex]?.text || '';
-
-                    await loadBarangays(selectedCode, oldBarangayCode);
-
-                }
-
-            } catch (error) {
-                resetSelect(municipalitySelect, 'Unable to load municipalities');
-            }
-
-        }
-
-        async function loadBarangays(municipalityCode, selectedCode = null) {
-
-            resetSelect(barangaySelect, 'Loading barangays...');
-
-            barangayNameInput.value = '';
-
-            if (!municipalityCode) {
-                resetSelect(barangaySelect, 'Select barangay');
-                return;
-            }
-
-            try {
-
-                const barangays = await fetchJson(`${PSGC_BASE}/cities-municipalities/${municipalityCode}/barangays/`);
-
-                barangays.sort((a, b) => a.name.localeCompare(b.name));
-
-                fillSelect(barangaySelect, barangays, 'Select barangay', selectedCode);
-
-                if (selectedCode) {
-                    barangayNameInput.value = barangaySelect.options[barangaySelect.selectedIndex]?.text || '';
-                }
-
-            } catch (error) {
-                resetSelect(barangaySelect, 'Unable to load barangays');
-            }
-
-        }
-
-        provinceSelect.addEventListener('change', function () {
-
-            provinceNameInput.value = this.options[this.selectedIndex]?.text || '';
-
-            loadMunicipalities(this.value);
-
+        // Shared location hierarchy: Region -> Province (if any) -> City -> Barangay.
+        // For NCR, the legacy province fields store NCR itself for compatibility.
+        ShopHopPHAddress.bind({
+            region: document.getElementById('seller_region'),
+            province: provinceSelect,
+            city: municipalitySelect,
+            barangay: barangaySelect,
+            provinceName: provinceNameInput,
+            regionName: document.getElementById('seller_region_name'),
+            cityName: municipalityNameInput,
+            barangayName: barangayNameInput,
+            status: (message, error) => {
+                addressStatus.textContent = message;
+                addressStatus.classList.toggle('hidden', !message);
+                addressStatus.classList.toggle('text-red-500', !!error);
+                addressStatus.classList.toggle('text-teal-dark', !error);
+            },
+            oldRegion: @json(old('region_code')),
+            oldProvince: @json(old('province_code')),
+            oldProvinceName: @json(old('province_name')),
+            oldCity: @json(old('municipality_code')),
+            oldCityName: @json(old('municipality_name')),
+            oldBarangay: @json(old('barangay_code')),
+            oldBarangayName: @json(old('barangay_name')),
         });
-
-        municipalitySelect.addEventListener('change', function () {
-
-            municipalityNameInput.value = this.options[this.selectedIndex]?.text || '';
-
-            loadBarangays(this.value);
-
-        });
-
-        barangaySelect.addEventListener('change', function () {
-            barangayNameInput.value = this.options[this.selectedIndex]?.text || '';
-        });
-
 
         // Initial visual state — safe even while the modal is still hidden.
         updateProgressBar(1);

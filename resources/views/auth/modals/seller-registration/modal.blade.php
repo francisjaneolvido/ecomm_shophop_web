@@ -366,7 +366,7 @@ FILE STORAGE:
 
 
                     {{-- Validation Errors --}}
-                    @if ($errors->any())
+                    @if ($errors->any() && old('registration_form') === 'seller')
 
                         <div class="mb-5 rounded-2xl border border-red-200 bg-red-50 p-4">
 
@@ -434,6 +434,7 @@ FILE STORAGE:
                                         <input
                                             type="text"
                                             id="seller_first_name"
+                                            minlength="2" maxlength="50"
                                             name="first_name"
                                             value="{{ old('first_name') }}"
                                             required
@@ -464,6 +465,7 @@ FILE STORAGE:
                                         <input
                                             type="text"
                                             id="seller_last_name"
+                                            minlength="2" maxlength="50"
                                             name="last_name"
                                             value="{{ old('last_name') }}"
                                             required
@@ -633,8 +635,8 @@ FILE STORAGE:
                                             name="contact_no"
                                             value="{{ old('contact_no') }}"
                                             required
-                                            inputmode="numeric"
-                                            maxlength="11"
+                                            inputmode="tel"
+                                            maxlength="13"
                                             placeholder="09XXXXXXXXX"
                                             class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-4 py-3 text-sm text-navy outline-none placeholder:text-navy/35 hover:border-navy/25 focus:border-teal focus:ring-4 focus:ring-teal/15 transition"
                                         >
@@ -665,7 +667,7 @@ FILE STORAGE:
                                                 id="seller_birthday"
                                                 name="birthday"
                                                 value="{{ old('birthday') }}"
-                                                max="{{ now()->format('Y-m-d') }}"
+                                                max="{{ now()->subYears(18)->format('Y-m-d') }}"
                                                 required
                                                 class="w-full min-h-12 rounded-xl border border-gray-border/80 bg-white shadow-sm pl-11 pr-2 py-3 text-sm text-navy outline-none hover:border-navy/20 focus:border-teal focus:ring-4 focus:ring-teal/10 transition"
                                             >
@@ -727,8 +729,20 @@ FILE STORAGE:
                             <div class="grid sm:grid-cols-2 gap-4">
 
 
-                                {{-- Province --}}
+                                {{-- Philippines-wide region selector, including NCR (no province). --}}
                                 <div>
+                                    <label for="seller_region" class="block text-xs font-semibold text-navy mb-2">Region <span class="text-red-500">*</span></label>
+                                    <select id="seller_region" name="region_code" required disabled
+                                        class="w-full min-h-12 rounded-2xl border border-gray-border bg-white px-4 py-3 text-sm text-navy">
+                                        <option value="">Loading Philippine regions...</option>
+                                    </select>
+                                    <input type="hidden" id="seller_region_name" name="region_name" value="{{ old('region_name') }}">
+                                    <p data-ph-no-province-note class="hidden mt-1 text-[11px] text-teal-dark">NCR has no provinces. Choose your city or municipality directly.</p>
+
+                                </div>
+
+                                {{-- Province --}}
+                                <div data-ph-province-wrapper>
 
                                     <label for="seller_province" class="block text-xs font-semibold text-navy mb-2">
                                         Province

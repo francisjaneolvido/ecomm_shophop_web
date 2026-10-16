@@ -62,7 +62,7 @@
             </a>
             <div class="sh-auth-head">
                 <h1>Welcome back</h1>
-                <p>Sign in to your approved Logistics account to manage deliveries, sorting centers, and your rider fleet.</p>
+                <p>Logistics company owners can manage branches and riders. Assigned Branch Managers and Scanner Staff can also sign in here using their provisioned credentials; their access is limited to their assigned branch.</p>
             </div>
 
             @if (session('login_notice'))

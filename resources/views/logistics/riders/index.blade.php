@@ -15,7 +15,7 @@
         <div>
             <p class="eyebrow">Network · Fleet management</p>
             <h1 class="title">Rider Management</h1>
-            <p class="description">Review verified applications, approve or reject riders with confirmation modals, assign sorting centers and coverage areas, and manage active rider access in a cleaner workflow.</p>
+            <p class="description">Riders have their own mobile accounts. Approve their applications, assign a home branch and delivery area, then dispatch them through Parcel Operations. Branch managers and scanner staff are managed separately under Branches & Hubs.</p>
         </div>
         <div class="flex flex-wrap gap-3">
             <a href="#rider-directory" class="sh-btn-ghost">View riders <x-lucide-arrow-down class="h-4 w-4" /></a>
@@ -50,7 +50,7 @@
                 @csrf
                 <label class="sh-field"><span class="sh-label">Rider name</span><input id="rider-name" name="name" required maxlength="150" value="{{ old('name') }}" class="sh-input"></label>
                 <label class="sh-field"><span class="sh-label">Vehicle type</span><input id="rider-vehicle" name="vehicle_type" required maxlength="80" value="{{ old('vehicle_type') }}" class="sh-input"></label>
-                <label class="sh-field"><span class="sh-label">Sorting Center</span><select id="rider-center" name="sorting_center_id" class="sh-select"><option value="">Main / default center</option>@foreach ($sortingCenters->where('status', 'active') as $center)<option value="{{ $center->id }}" @selected(old('sorting_center_id') == $center->id)>{{ $center->name }}</option>@endforeach</select></label>
+                <label class="sh-field"><span class="sh-label">Home branch</span><select id="rider-center" name="sorting_center_id" class="sh-select"><option value="">Select home branch</option>@foreach ($sortingCenters->where('status', 'active') as $center)<option value="{{ $center->id }}" @selected(old('sorting_center_id') == $center->id)>{{ $center->name }}</option>@endforeach</select></label>
                 <label class="sh-field"><span class="sh-label">Delivery area</span><select id="rider-area" name="coverage_area_id" class="sh-select"><option value="">Pickup only / unassigned</option>@foreach ($coverageAreas as $area)<option value="{{ $area->id }}" @selected(old('coverage_area_id') == $area->id)>{{ $area->sortingCenter?->name ? $area->sortingCenter->name.' · ' : '' }}{{ $area->area_name }}{{ $area->cities ? ' · '.$area->cities : '' }}</option>@endforeach</select></label>
                 <label class="sh-field"><span class="sh-label">Rider email</span><input id="rider-email" name="email" type="email" required value="{{ old('email') }}" class="sh-input"></label>
                 <label class="sh-field"><span class="sh-label">Temporary password</span><input id="rider-password" name="password" type="password" minlength="12" required class="sh-input"></label>
@@ -148,7 +148,7 @@
 
                     <form method="POST" action="{{ route('logistics.riders.area', $rider) }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1.4fr_auto] sm:items-end">
                         @csrf
-                        <label class="sh-field"><span class="sh-label">Sorting center</span><select name="sorting_center_id" class="sh-select"><option value="">Main / default center</option>@foreach ($sortingCenters->where('status', 'active') as $center)<option value="{{ $center->id }}" @selected($rider->sorting_center_id === $center->id)>{{ $center->name }}</option>@endforeach</select></label>
+                        <label class="sh-field"><span class="sh-label">Sorting center</span><select name="sorting_center_id" class="sh-select"><option value="">Select home branch</option>@foreach ($sortingCenters->where('status', 'active') as $center)<option value="{{ $center->id }}" @selected($rider->sorting_center_id === $center->id)>{{ $center->name }}</option>@endforeach</select></label>
                         <label class="sh-field"><span class="sh-label">Coverage area</span><select name="coverage_area_id" class="sh-select"><option value="">Pickup only / unassigned</option>@foreach ($coverageAreas as $area)<option value="{{ $area->id }}" @selected($rider->coverage_area_id === $area->id)>{{ $area->sortingCenter?->name ? $area->sortingCenter->name.' · ' : '' }}{{ $area->area_name }}{{ $area->cities ? ' · '.$area->cities : '' }}</option>@endforeach</select></label>
                         <button class="sh-btn-ghost">Update assignment</button>
                     </form>

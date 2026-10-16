@@ -28,7 +28,7 @@ class LogisticsVerificationCodeNotification extends Notification
             ->line('Thank you for registering a Logistics / Sorting Center account.')
             ->line('Your verification code is:')
             ->line($this->code)
-            ->line('This code will expire in 10 minutes.')
+            ->line('This code will expire in 5 minutes.')
             ->line('Do not share this code with anyone.')
             ->line('After verification and submission, your application will wait for administrator approval.');
     }

@@ -55,6 +55,26 @@ class CodSettlementController extends Controller
         });
     }
 
+    /** Logistics records manual ShopHop remittance; Admin must independently confirm receipt. */
+    public function remitToAdmin(Request $request, int $delivery): RedirectResponse
+    {
+        $data = $request->validate(['reference' => ['required','string','min:4','max:120']]);
+        $partner = $this->partner($request);
+        DB::transaction(function () use ($partner, $delivery, $data) {
+            $cash = CodSettlement::where('delivery_id', $delivery)
+                ->where('logistics_partner_id', $partner->id)->lockForUpdate()->firstOrFail();
+            if ($cash->status !== CodSettlement::RECONCILED || ! $cash->reconciled_at
+                || $cash->admin_remitted_at || $cash->admin_received_at
+                || abs((float) $cash->received_amount - (float) $cash->expected_amount) > .001) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'settlement' => 'COD must be reconciled and not already remitted to ShopHop.']);
+            }
+            $cash->update(['admin_remittance_reference' => trim($data['reference']),
+                'admin_remitted_at' => now()]);
+        });
+        return back()->with('status', 'Remittance to ShopHop recorded; pending Admin receipt confirmation.');
+    }
+
     private function partner(Request $request): LogisticsPartner
     {
         // Approved role middleware and profile lookup jointly establish the receiving authority.

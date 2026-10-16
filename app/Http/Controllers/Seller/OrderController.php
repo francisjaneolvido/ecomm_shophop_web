@@ -41,7 +41,7 @@ class OrderController extends Controller
             'delivery.rider', 'delivery.pickupRider', 'delivery.deliveryRider', 'delivery.deliveredRider',
             'delivery.originSortingCenter', 'delivery.currentSortingCenter', 'delivery.destinationSortingCenter',
             'delivery.transfers.fromCenter', 'delivery.transfers.toCenter', 'delivery.failureReports.rider',
-            'codSettlement',
+            'codSettlement', 'returnCase.returnRider',
         ]);
 
         $logisticsPartners = collect();

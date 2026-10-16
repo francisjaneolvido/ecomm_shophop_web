@@ -16,14 +16,22 @@ class ParcelTransfer extends Model
         'from_sorting_center_id',
         'to_sorting_center_id',
         'status',
+        'transit_rider_id',
+        'departed_at',
         'dispatched_at',
         'received_at',
     ];
 
     protected $casts = [
+        'departed_at' => 'datetime',
         'dispatched_at' => 'datetime',
         'received_at' => 'datetime',
     ];
+
+    public function transitRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'transit_rider_id');
+    }
 
     public function delivery(): BelongsTo
     {

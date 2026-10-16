@@ -111,6 +111,7 @@
             @csrf
 
             <input type="hidden" name="voucher_code" id="voucherCodeHidden" value="{{ $initialVoucherCode }}">
+            {{-- Seller codes, Platform product codes, and Platform shipping codes are independent. --}}
 
 
             {{-- =================================================
@@ -135,7 +136,7 @@
                         </div>
 
                         <a
-                            href="{{ route('buyer.profile') }}"
+                            href="{{ route('buyer.profile') }}#address"
                             class="h-7 px-2.5 rounded-lg bg-gray-bg hover:bg-teal-light
                                    text-[9px] font-semibold text-navy/55 hover:text-teal-dark transition
                                    flex items-center"
@@ -158,7 +159,7 @@
                                 @if (empty($address['line']))
                                     <p class="text-[10.5px] text-red-500">
                                         No delivery address on file. Please
-                                        <a href="{{ route('buyer.profile') }}" class="underline font-semibold">add one</a>
+                                        <a href="{{ route('buyer.profile') }}#address" class="underline font-semibold">add one</a>
                                         before placing an order.
                                     </p>
                                 @else
@@ -651,6 +652,21 @@
                 </section>
 
 
+                {{-- Platform-funded promotions --}}
+                <section class="bg-white border border-gray-border rounded-2xl p-4 shadow-sm space-y-3">
+                    <h2 class="text-[12px] font-bold text-navy">ShopHop vouchers (Admin funded)</h2>
+                    <label class="block text-[10px] font-semibold">Platform merchandise voucher
+                      <input id="platformVoucherInput" name="merchandise_voucher_code" maxlength="40" value="{{ $platformVoucherCode }}" placeholder="Enter code" class="mt-1 w-full border border-gray-border rounded-lg p-2 uppercase">
+                    </label>
+                    <label class="block text-[10px] font-semibold">Free shipping voucher
+                      <input id="shippingVoucherInput" name="shipping_voucher_code" maxlength="40" value="{{ $shippingVoucherCode }}" placeholder="Enter code" class="mt-1 w-full border border-gray-border rounded-lg p-2 uppercase">
+                    </label>
+                    <div class="text-[9px] text-navy/50">@forelse($platformVouchers as $promo)
+                      <span class="inline-block border px-1 rounded mr-1 mb-1">{{ $promo['code'] }} ({{ $promo['kind'] }})</span>
+                      @empty No ShopHop vouchers currently available. @endforelse</div>
+                    <p id="platformVoucherFeedback" class="text-[9px] text-navy/50">ShopHop funds these discounts; Seller earnings remain unchanged.</p>
+                </section>
+
                 {{-- Summary --}}
                 <section class="bg-white border border-gray-border rounded-2xl p-4 shadow-sm">
 
@@ -696,6 +712,8 @@
                             <span id="summaryVoucherDiscount" class="font-semibold text-teal-dark">-₱0</span>
                         </div>
 
+                        <div id="summaryPlatformRow" class="hidden items-center justify-between gap-3"><span>ShopHop discount</span><span id="summaryPlatformDiscount" class="text-teal-dark font-semibold"></span></div>
+                        <div id="summaryShippingPromoRow" class="hidden items-center justify-between gap-3"><span>Free shipping</span><span id="summaryShippingPromoDiscount" class="text-teal-dark font-semibold"></span></div>
                         <div id="summaryCodFeeRow"
                              class="flex items-center justify-between gap-3">
 
@@ -836,6 +854,10 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
     const initialVoucherCode = @json($initialVoucherCode);
+    const platformCatalog = @json(collect($platformVouchers)->keyBy('code'));
+    const platformInput = document.getElementById('platformVoucherInput');
+    const shippingInput = document.getElementById('shippingVoucherInput');
+    const platformFeedback = document.getElementById('platformVoucherFeedback');
 
 
     const shopGroups = document.querySelectorAll('.checkout-shop-group');
@@ -1039,11 +1061,29 @@ document.addEventListener('DOMContentLoaded', function () {
         const isCod = currentPaymentMethod() === 'cod';
         const codFeeTotal = isCod ? codFeePerShop * shopGroups.length : 0;
 
-        const total =
-            merchandiseSubtotal +
-            shippingTotal +
-            codFeeTotal -
-            currentVoucherDiscount;
+        function promoDiscount(input, kind, eligible, merchandiseBase) {
+            const code = (input?.value || '').trim().toUpperCase();
+            if (!code) return 0;
+            const promo = platformCatalog[code];
+            if (!promo || promo.kind !== kind || merchandiseBase < Number(promo.min_spend || 0) || eligible <= 0) return 0;
+            return Math.round(Math.min(eligible, promo.type === 'percent'
+                ? eligible * Number(promo.value) / 100 : Number(promo.value)) * 100) / 100;
+        }
+        const netMerchandise = Math.max(0, merchandiseSubtotal - currentVoucherDiscount);
+        const platformSaving = promoDiscount(platformInput, 'merchandise', netMerchandise, netMerchandise);
+        const shippingSaving = promoDiscount(shippingInput, 'shipping', shippingTotal, netMerchandise);
+        const platformRow = document.getElementById('summaryPlatformRow');
+        const shippingRow = document.getElementById('summaryShippingPromoRow');
+        platformRow.classList.toggle('hidden', platformSaving <= 0);
+        platformRow.classList.toggle('flex', platformSaving > 0);
+        shippingRow.classList.toggle('hidden', shippingSaving <= 0);
+        shippingRow.classList.toggle('flex', shippingSaving > 0);
+        document.getElementById('summaryPlatformDiscount').textContent = '-' + formatPeso(platformSaving);
+        document.getElementById('summaryShippingPromoDiscount').textContent = '-' + formatPeso(shippingSaving);
+        if (platformFeedback) platformFeedback.textContent = 'ShopHop-funded savings: ' + formatPeso(platformSaving + shippingSaving) +
+            '. Final eligibility and amount are validated by the server.';
+        const total = Math.max(0, merchandiseSubtotal + shippingTotal + codFeeTotal
+            - currentVoucherDiscount - platformSaving - shippingSaving);
 
 
         summarySubtotal.textContent = formatPeso(merchandiseSubtotal);
@@ -1057,11 +1097,16 @@ document.addEventListener('DOMContentLoaded', function () {
         mobileSummaryTotal.textContent = formatPeso(total);
 
         summarySavedText.textContent =
-            'You save ' + formatPeso(productSavings + currentVoucherDiscount);
+            'You save ' + formatPeso(productSavings + currentVoucherDiscount + platformSaving + shippingSaving);
 
 
     }
 
+
+    [platformInput, shippingInput].forEach(function (input) {
+        input?.addEventListener('input', recalculate);
+        input?.addEventListener('change', recalculate);
+    });
 
     /*
     |--------------------------------------------------------------------------

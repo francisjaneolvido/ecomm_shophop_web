@@ -25,6 +25,8 @@ class MobileBuyerCheckoutController extends Controller
             'shipping_method.*' => ['required', 'in:standard,express'],
             'payment_method' => ['nullable', 'in:cod,online'],
             'voucher_code' => ['nullable', 'string', 'max:120'],
+            'merchandise_voucher_code' => ['nullable', 'string', 'max:40'],
+            'shipping_voucher_code' => ['nullable', 'string', 'max:40'],
         ]);
 
         $preview = $this->checkout->preview(
@@ -37,6 +39,8 @@ class MobileBuyerCheckoutController extends Controller
             shippingMethods: $data['shipping_method'] ?? [],
             paymentMethod: (string) ($data['payment_method'] ?? 'cod'),
             strictVoucher: trim((string) ($data['voucher_code'] ?? '')) !== '',
+            platformVoucherCode: (string) ($data['merchandise_voucher_code'] ?? ''),
+            shippingVoucherCode: (string) ($data['shipping_voucher_code'] ?? ''),
         );
 
         return response()->json([
@@ -57,6 +61,8 @@ class MobileBuyerCheckoutController extends Controller
             'shipping_method.*' => ['required', 'in:standard,express'],
             'payment_method' => ['required', 'in:cod,online'],
             'voucher_code' => ['nullable', 'string', 'max:120'],
+            'merchandise_voucher_code' => ['nullable', 'string', 'max:40'],
+            'shipping_voucher_code' => ['nullable', 'string', 'max:40'],
             'groups' => ['nullable', 'array'],
             'groups.*.note' => ['nullable', 'string', 'max:500'],
         ]);

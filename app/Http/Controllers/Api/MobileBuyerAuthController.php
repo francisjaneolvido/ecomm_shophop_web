@@ -68,6 +68,8 @@ class MobileBuyerAuthController extends Controller
                 'before:today',
             ],
 
+            'region_code' => ['nullable', 'string', 'max:20'],
+            'region_name' => ['nullable', 'string', 'max:150'],
             'province_code' => [
                 'required',
                 'string',
@@ -149,6 +151,8 @@ class MobileBuyerAuthController extends Controller
                 'sex' => $validated['sex'],
                 'contact_no' => $validated['contact_no'],
                 'birthday' => $validated['birthday'],
+                'region_code' => $validated['region_code'] ?? null,
+                'region_name' => $validated['region_name'] ?? null,
                 'province_code' => $validated['province_code'],
                 'province_name' => $validated['province_name'],
                 'municipality_code' => $validated['municipality_code'],

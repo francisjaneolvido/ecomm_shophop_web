@@ -14,6 +14,9 @@ class AuthController extends Controller
 {
     public function showLogin(): View|RedirectResponse
     {
+        if (Auth::guard('logistics_staff')->check()) {
+            return redirect()->route('logistics.staff.workspace');
+        }
         if (Auth::check() && Auth::user()->account_type === 'logistics') {
             return redirect()->route('logistics.dashboard');
         }
@@ -36,6 +39,21 @@ class AuthController extends Controller
         ], $request->boolean('remember'));
 
         if (! $attempt) {
+            // Branch operators are explicitly provisioned by an approved Logistics company.
+            $staffAttempt = Auth::guard('logistics_staff')->attempt([
+                'email' => strtolower(trim($data['email'])),
+                'password' => $data['password'],
+                'status' => 'active',
+            ], $request->boolean('remember'));
+            if ($staffAttempt) {
+                $staff = Auth::guard('logistics_staff')->user();
+                if (! $staff->activeForBranch((int) $staff->logistics_partner_id, (int) $staff->sorting_center_id)) {
+                    Auth::guard('logistics_staff')->logout();
+                    return back()->withErrors(['email' => 'Branch, staff account or company is inactive.']);
+                }
+                $request->session()->regenerate();
+                return redirect()->route('logistics.staff.workspace');
+            }
             return back()
                 ->withErrors(['email' => 'Incorrect email or password.'])
                 ->onlyInput('email');
@@ -112,6 +130,7 @@ class AuthController extends Controller
 
     public function logout(Request $request): RedirectResponse
     {
+        Auth::guard('logistics_staff')->logout();
         Auth::logout();
 
         $request->session()->invalidate();

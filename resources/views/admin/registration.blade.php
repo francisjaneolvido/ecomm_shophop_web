@@ -219,7 +219,7 @@
                     <div class="flex items-center gap-2 sm:pl-14 lg:pl-0 shrink-0">
 
                         <button type="button" class="registration-view-btn inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-navy transition"
-                            data-show-url="{{ route('admin.registrations.show', $registration) }}">
+                            data-show-url="{{ route('admin.registrations.show', $registration, false) }}">
                             <x-lucide-eye class="w-3.5 h-3.5" />
                             View
                         </button>
@@ -229,7 +229,7 @@
                                 data-id="{{ $registration->id }}"
                                 data-name="{{ $registration->display_name }}"
                                 data-role="{{ $rStyle['label'] }}"
-                                data-approve-url="{{ route('admin.users.approve', $registration) }}">
+                                data-approve-url="{{ route('admin.users.approve', $registration, false) }}">
                                 <x-lucide-check class="w-3.5 h-3.5" />
                                 Approve
                             </button>
@@ -237,7 +237,7 @@
                                 data-id="{{ $registration->id }}"
                                 data-name="{{ $registration->display_name }}"
                                 data-role="{{ $rStyle['label'] }}"
-                                data-reject-url="{{ route('admin.users.reject', $registration) }}">
+                                data-reject-url="{{ route('admin.users.reject', $registration, false) }}">
                                 <x-lucide-x class="w-3.5 h-3.5" />
                                 Reject
                             </button>
@@ -683,8 +683,8 @@
         const rejectForm  = document.getElementById('rejectForm');
 
         // URL templates — ':id' gets swapped for the real id at submit time.
-        const approveUrlTemplate = "{{ route('admin.users.approve', ['user' => '__ID__']) }}";
-        const rejectUrlTemplate  = "{{ route('admin.users.reject', ['user' => '__ID__']) }}";
+        const approveUrlTemplate = "{{ route('admin.users.approve', ['user' => '__ID__'], false) }}";
+        const rejectUrlTemplate  = "{{ route('admin.users.reject', ['user' => '__ID__'], false) }}";
 
         let activeConfirmAction = null;
         let activeConfirmTarget = null;

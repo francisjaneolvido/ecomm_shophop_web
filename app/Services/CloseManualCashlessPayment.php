@@ -10,6 +10,7 @@ use App\Models\Seller;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductVariant;
 use App\Models\Seller\Manage_inventory\Voucher;
+use App\Models\Finance\PlatformVoucher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -82,6 +83,17 @@ class CloseManualCashlessPayment
                 throw $this->stale();
             }
 
+            // Platform vouchers are incremented once per checkout group (not once per Seller order).
+            // Reversal is serialized under the Payment lock; never decrement on proof rejection alone.
+            $platformIds = $orders->pluck('platform_voucher_id')->filter()->unique()->values();
+            $shippingIds = $orders->pluck('shipping_voucher_id')->filter()->unique()->values();
+            if ($platformIds->count() > 1 || $shippingIds->count() > 1) throw $this->stale();
+            $platformVoucherIds = $platformIds->merge($shippingIds)->unique()->sort()->values();
+            $platformVouchers = PlatformVoucher::whereIn('id', $platformVoucherIds)
+                ->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+            if ($platformVouchers->count() !== $platformVoucherIds->count()
+                || $platformVouchers->contains(fn ($v) => $v->used_count < 1)) throw $this->stale();
+
             foreach ($items->groupBy('product_id') as $productId => $productItems) {
                 if (Product::whereKey($productId)->increment('stock', $productItems->sum('quantity')) !== 1) {
                     throw $this->stale();
@@ -96,6 +108,10 @@ class CloseManualCashlessPayment
                 if (Voucher::whereKey($voucher->id)->where('used_count', '>', 0)->decrement('used_count') !== 1) {
                     throw $this->stale();
                 }
+            }
+            foreach ($platformVoucherIds as $voucherId) {
+                if (PlatformVoucher::whereKey($voucherId)->where('used_count', '>', 0)
+                    ->decrement('used_count') !== 1) throw $this->stale();
             }
             if (Order::whereIn('id', $orders->pluck('id'))->update(['status' => Order::STATUS_CANCELLED]) !== $orders->count()) {
                 throw $this->stale();

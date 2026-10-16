@@ -22,6 +22,11 @@ class Delivery extends Model
     public const DELIVERED = 'delivered';
     public const DELIVERY_FAILED = 'delivery_failed';
     public const RETURNED = 'returned';
+    public const RETURN_REQUESTED = 'return_requested';
+    public const RETURN_AT_BRANCH = 'return_at_branch';
+    public const RETURN_ASSIGNED = 'return_assigned';
+    public const RETURN_IN_TRANSIT = 'return_in_transit';
+    public const RETURN_AWAITING_SELLER = 'return_awaiting_seller';
 
     // Order owns Buyer-facing grouping; Delivery owns the detailed courier/sorting lifecycle.
     protected $fillable = [
@@ -95,6 +100,11 @@ class Delivery extends Model
         return $this->belongsTo(LogisticsPartner::class, 'logistics_partner_id');
     }
 
+    public function returnCase(): HasOne
+    {
+        return $this->hasOne(ReturnCase::class);
+    }
+
     public function codSettlement(): HasOne
     {
         return $this->hasOne(CodSettlement::class);
@@ -166,7 +176,12 @@ class Delivery extends Model
             self::DELIVERED => 'Delivered',
             self::DELIVERY_FAILED => 'Delivery Failed / Reported',
             // Kept only for historical rows created before ShopHop removed return processing.
-            self::RETURNED => 'Legacy Returned Record',
+            self::RETURN_REQUESTED => 'Return Requested',
+            self::RETURN_AT_BRANCH => 'Return Received at Branch',
+            self::RETURN_ASSIGNED => 'Return Rider Assigned',
+            self::RETURN_IN_TRANSIT => 'Returning to Seller',
+            self::RETURN_AWAITING_SELLER => 'Awaiting Seller Receipt',
+            self::RETURNED => 'Returned to Seller',
             default => ucfirst(str_replace('_', ' ', (string) $this->status)),
         };
     }

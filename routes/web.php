@@ -59,7 +59,7 @@ Route::post('/logout', [LoginController::class, 'destroy'])
     ->name('logout');
 
 Route::get('/create-account', function () {
-    return view('auth.create-account');
+    return redirect()->route('register');
 })->name('create-account');
 
 

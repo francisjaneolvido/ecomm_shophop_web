@@ -28,7 +28,7 @@ class SellerVerificationCodeNotification extends Notification
             ->line('Thank you for registering as a seller.')
             ->line('Your seller verification code is:')
             ->line($this->code)
-            ->line('This code will expire in 10 minutes.')
+            ->line('This code will expire in 5 minutes.')
             ->line('Do not share this code with anyone.')
             ->line('After verifying your email, your seller registration will be submitted for administrator approval.');
     }

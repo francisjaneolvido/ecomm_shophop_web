@@ -19,12 +19,16 @@ class CodSettlement extends Model
         'order_id', 'delivery_id', 'logistics_partner_id', 'expected_amount', 'collected_amount',
         'status', 'collected_by_rider_id', 'collected_at', 'remitted_by_rider_id', 'remitted_at',
         'received_amount', 'reconciled_by_user_id', 'reconciled_at',
+        'admin_remittance_reference', 'admin_remitted_at', 'admin_received_amount',
+        'admin_received_by_user_id', 'admin_received_at',
     ];
 
     protected $casts = [
         'expected_amount' => 'decimal:2', 'collected_amount' => 'decimal:2',
         'received_amount' => 'decimal:2', 'collected_at' => 'datetime',
         'remitted_at' => 'datetime', 'reconciled_at' => 'datetime',
+        'admin_remitted_at' => 'datetime', 'admin_received_at' => 'datetime',
+        'admin_received_amount' => 'decimal:2',
     ];
 
     public function order(): BelongsTo

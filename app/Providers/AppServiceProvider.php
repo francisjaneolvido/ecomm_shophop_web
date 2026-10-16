@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Cloudflare terminates HTTPS before forwarding requests to the local Caddy server.
+        // Production route(), asset(), redirects and POST form actions must stay HTTPS.
+        // Local/test environments retain their ordinary URL schemes.
+        if ($this->app->environment('production')) {
+            URL::forceScheme('https');
+        }
+
         $this->loadMigrationsFrom(database_path('migrations/Seller/Manage_inventory'));
         $this->loadMigrationsFrom(database_path('migrations/Admin/account_registration'));
         $this->loadMigrationsFrom(database_path('migrations/Buyer'));

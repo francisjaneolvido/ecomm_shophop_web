@@ -62,8 +62,11 @@ class ReportController extends Controller
         $completed = $orders->where('status', Order::STATUS_COMPLETED);
         $previousCompleted = $previousOrdersCollection->where('status', Order::STATUS_COMPLETED);
 
-        $totalSales = (float) $completed->sum(fn (Order $order) => (float) $order->total_amount);
-        $previousSales = (float) $previousCompleted->sum(fn (Order $order) => (float) $order->total_amount);
+        $merchandiseBase = fn (Order $order) => $order->financial
+            ? (float) $order->financial->merchandise - (float) $order->financial->seller_discount
+            : max(0, (float) $order->items->sum(fn ($item) => (float) $item->price * (int) $item->quantity) - (float) $order->voucher_discount);
+        $totalSales = (float) $completed->sum($merchandiseBase);
+        $previousSales = (float) $previousCompleted->sum($merchandiseBase);
         $totalOrders = $orders->count();
         $previousOrders = $previousOrdersCollection->count();
         $completedOrders = $completed->count();
@@ -77,7 +80,9 @@ class ReportController extends Controller
             return [
                 'label' => $date->format('D'),
                 'date' => $date->format('M j'),
-                'amount' => (float) $dayOrders->sum(fn (Order $order) => (float) $order->total_amount),
+                'amount' => (float) $dayOrders->sum(fn (Order $order) => $order->financial
+                    ? (float) $order->financial->merchandise - (float) $order->financial->seller_discount
+                    : max(0, (float) $order->items->sum(fn ($item) => (float) $item->price * (int) $item->quantity) - (float) $order->voucher_discount)),
                 'orders' => $dayOrders->count(),
             ];
         })->values();
@@ -110,14 +115,19 @@ class ReportController extends Controller
             return [
                 'method' => $method === 'cod' ? 'Cash on Delivery' : 'Online Payment',
                 'orders' => $rows->count(),
-                'amount' => (float) $rows->sum(fn (Order $order) => (float) $order->total_amount),
+                'amount' => (float) $rows->sum(fn (Order $order) => $order->financial
+                    ? (float) $order->financial->merchandise - (float) $order->financial->seller_discount
+                    : max(0, (float) $order->items->sum(fn ($item) => (float) $item->price * (int) $item->quantity) - (float) $order->voucher_discount)),
             ];
         })->values();
 
         $recentTransactions = $orders->sortByDesc('created_at')->take(20)->map(function (Order $order) {
             $isCompleted = $order->status === Order::STATUS_COMPLETED;
-            $gross = (float) $order->total_amount;
-            $commission = $isCompleted ? $gross * (self::COMMISSION_RATE / 100) : 0.0;
+            $gross = $order->financial
+                ? (float) $order->financial->merchandise - (float) $order->financial->seller_discount
+                : max(0, (float) $order->items->sum(fn ($item) => (float) $item->price * (int) $item->quantity) - (float) $order->voucher_discount);
+            $commission = $isCompleted ? ($order->financial
+                ? (float) $order->financial->commission : round($gross * (self::COMMISSION_RATE / 100), 2)) : 0.0;
             return [
                 'order_id' => 'SHP-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
                 'date' => $order->created_at->format('M j, Y · g:i A'),
@@ -158,7 +168,7 @@ class ReportController extends Controller
 
     private function orders(Seller $seller, Carbon $from, Carbon $to): Collection
     {
-        return Order::with(['buyer', 'items.product', 'delivery.failureReports'])
+        return Order::with(['buyer', 'items.product', 'delivery.failureReports', 'financial'])
             ->where('seller_id', $seller->id)
             ->whereBetween('created_at', [$from, $to])
             ->get();

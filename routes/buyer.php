@@ -124,6 +124,11 @@ Route::prefix('buyer')
             'add',
         ])->name('cart.add');
 
+        Route::post('/cart/buy-now', [
+            BuyerCartController::class,
+            'buyNow',
+        ])->name('cart.buyNow');
+
         Route::patch('/cart/{lineKey}', [
             BuyerCartController::class,
             'update',
@@ -173,6 +178,10 @@ Route::prefix('buyer')
             'show',
         ])->name('payments.show');
 
+        Route::post('/payments/{payment}/simulate', [
+            ManualCashlessPaymentController::class, 'simulate'
+        ])->name('payments.simulate');
+
         Route::post('/payments/{payment}/submit', [
             ManualCashlessPaymentController::class,
             'submit',
@@ -221,6 +230,9 @@ Route::prefix('buyer')
         Route::get('/profile', function () {
             return view('buyer.buyer-profile-settings');
         })->name('profile');
+
+        Route::patch('/settings/address', [BuyerProfileController::class, 'updateAddress'])
+            ->name('settings.address.update');
 
         Route::patch('/settings/profile', [
             BuyerProfileController::class,

@@ -39,60 +39,77 @@ class CartController extends Controller
 
     public function add(Request $request)
     {
-        // Only canonical active merchandise may become a persisted cart line; client price and stock are ignored.
+        return $this->storeCartItem($request, false);
+    }
+
+    /**
+     * Buy Now is not a GET to /cart?buy_now=PRODUCT_ID. It validates the
+     * selected variant and quantity and redirects using the real CART LINE id.
+     * When a matching line already exists, Buy Now replaces its quantity rather
+     * than unintentionally purchasing the previous cart quantity as well.
+     */
+    public function buyNow(Request $request)
+    {
+        return $this->storeCartItem($request, true);
+    }
+
+    private function storeCartItem(Request $request, bool $buyNow)
+    {
         $data = $request->validate([
-            'product_id'         => 'required|exists:products,id',
-            'variant_id'         => 'nullable|exists:product_variants,id',
-            'qty'                => 'nullable|integer|min:1',
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
+            'qty' => ['nullable', 'integer', 'min:1', 'max:9999'],
         ]);
 
         $buyer = Auth::user()->buyer;
-        $product = Product::with('seller')->findOrFail($data['product_id']);
-        $variant = isset($data['variant_id']) ? ProductVariant::findOrFail($data['variant_id']) : null;
-        // Seller Inventory's Product stock is the aggregate cap for variant additions.
-        $stock = $variant
-            ? min((int) $variant->stock, (int) $product->stock)
-            : (int) $product->stock;
+        $line = DB::transaction(function () use ($buyer, $data, $buyNow) {
+            $product = Product::with('seller')->whereKey($data['product_id'])->lockForUpdate()->firstOrFail();
+            $variant = ! empty($data['variant_id'])
+                ? ProductVariant::whereKey($data['variant_id'])->lockForUpdate()->firstOrFail()
+                : null;
+            $stock = $variant
+                ? min((int) $variant->stock, (int) $product->stock)
+                : (int) $product->stock;
 
-        // Forged adds must recheck approval as well as canonical inventory and variant ownership.
-        if ($product->compliance_status !== 'approved' || $product->status !== 'active' || ! $product->seller || (int) $product->stock <= 0
-            || ($product->has_variants && ! $variant)
-            || (! $product->has_variants && $variant)
-            || ($variant && ((int) $variant->product_id !== (int) $product->id
-                || $variant->status !== 'active' || $variant->price === null))
-            || $stock <= 0) {
-            throw ValidationException::withMessages(['product_id' => 'This product or variant is unavailable.']);
-        }
+            if ($product->compliance_status !== 'approved' || $product->status !== 'active'
+                || ! $product->seller || $stock <= 0
+                || ($product->has_variants && ! $variant)
+                || (! $product->has_variants && $variant)
+                || ($variant && ((int) $variant->product_id !== (int) $product->id
+                    || $variant->status !== 'active' || $variant->price === null))) {
+                throw ValidationException::withMessages(['product_id' => 'This product or variant is unavailable.']);
+            }
 
-        $existing = CartItem::where('buyer_id', $buyer->id)
-            ->where('product_id', $data['product_id'])
-            ->where('product_variant_id', $data['variant_id'] ?? null)
-            ->first();
-
-        $qty = (int) ($data['qty'] ?? 1);
-
-        // Reject excess quantity instead of reporting a successful add with a silently reduced quantity.
-        if ($qty + ($existing?->quantity ?? 0) > $stock) {
-            throw ValidationException::withMessages(['qty' => "Only {$stock} left in stock."]);
-        }
-
-        if ($existing) {
-            $existing->quantity += $qty;
-            $existing->save();
-            $cartItem = $existing;
-        } else {
-            $cartItem = CartItem::create([
-                'buyer_id'           => $buyer->id,
-                'product_id'         => $data['product_id'],
-                'product_variant_id' => $data['variant_id'] ?? null,
-                'quantity'           => $qty,
+            $existing = CartItem::where('buyer_id', $buyer->id)
+                ->where('product_id', $product->id)
+                ->where('product_variant_id', $variant?->id)
+                ->lockForUpdate()->first();
+            $qty = (int) ($data['qty'] ?? 1);
+            $finalQty = $buyNow ? $qty : $qty + ($existing?->quantity ?? 0);
+            if ($finalQty > $stock) {
+                throw ValidationException::withMessages(['qty' => "Only {$stock} left in stock."]);
+            }
+            if ($existing) {
+                $existing->update(['quantity' => $finalQty]);
+                return $existing;
+            }
+            return CartItem::create([
+                'buyer_id' => $buyer->id,
+                'product_id' => $product->id,
+                'product_variant_id' => $variant?->id,
+                'quantity' => $qty,
             ]);
+        });
+
+        if ($buyNow && ! $request->expectsJson()) {
+            return redirect()->route('buyer.cart', ['buy_now' => $line->id]);
         }
 
         return response()->json([
-            'ok'         => true,
-            'line_key'   => (string) $cartItem->id,
+            'ok' => true,
+            'line_key' => (string) $line->id,
             'cart_count' => CartItem::where('buyer_id', $buyer->id)->count(),
+            'cart_url' => route('buyer.cart', ['buy_now' => $line->id]),
         ]);
     }
 

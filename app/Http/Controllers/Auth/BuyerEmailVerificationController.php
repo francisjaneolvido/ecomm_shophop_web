@@ -296,7 +296,7 @@ class BuyerEmailVerificationController extends Controller
             [
                 'code_hash' => Hash::make($code),
                 'attempts' => 0,
-                'expires_at' => now()->addMinutes(10),
+                'expires_at' => now()->addMinutes(5),
                 'last_sent_at' => now(),
             ]
         );

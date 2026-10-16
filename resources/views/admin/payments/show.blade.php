@@ -22,6 +22,12 @@
         <section class="pay-panel pay-pad" aria-labelledby="evidence-heading">
             <div class="pay-section-head"><span class="pay-icon"><x-lucide-file-image aria-hidden="true" /></span><h2 id="evidence-heading">Buyer & payment evidence</h2></div>
             <dl class="pay-facts"><div><dt>Buyer</dt><dd>{{ trim(($payment->buyer?->first_name ?? '').' '.($payment->buyer?->last_name ?? '')) ?: 'Buyer unavailable' }}</dd></div><div><dt>Method</dt><dd>Online Payment · manual proof review</dd></div><div><dt>Submitted reference</dt><dd>{{ $payment->reference ?: 'Not submitted' }}</dd></div><div><dt>Submitted</dt><dd>{{ $payment->submitted_at?->format('M j, Y g:i A T') ?? 'Not submitted' }}</dd></div></dl>
+            @if($payment->demoTransaction)
+              <div class="pay-reason"><strong>Separate ShopHop DEMO ledger</strong>
+                <p>Generated reference: {{ $payment->demoTransaction->reference }} · Amount: ₱{{ number_format((float)$payment->demoTransaction->amount,2) }}</p>
+                <p>Match: {{ $payment->normalized_reference === $payment->demoTransaction->reference && abs((float)$payment->expectedAmount() - (float)$payment->demoTransaction->amount) < 0.001 ? 'YES — reference and amount' : 'NO — do not verify' }}</p>
+                <p>Demo record confirms only a simulated transaction, NOT external payment.</p></div>
+            @else <p class="pay-note">No ShopHop DEMO transaction recorded; proof cannot be verified.</p> @endif
             @if ($payment->receipt_path)<div class="pay-actions"><a class="pay-button" href="{{ route('payments.receipt', $payment) }}">View private receipt<x-lucide-arrow-up-right aria-hidden="true" /></a></div><p class="pay-note">Open the receipt and compare it with the submitted reference and expected group amount.</p>@else<p class="pay-note">No receipt has been submitted.</p>@endif
         </section>
         {{-- Only retained current review metadata is available; resubmission clears earlier decisions, so do not fabricate history. --}}

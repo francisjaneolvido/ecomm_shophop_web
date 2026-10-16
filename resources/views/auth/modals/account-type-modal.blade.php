@@ -167,13 +167,7 @@
                         </p>
                     </div>
 
-                    <x-lucide-arrow-right
-                        class="w-4 h-4 shrink-0 mt-1
-                               text-navy/25
-                               group-hover:text-white
-                               group-hover:translate-x-0.5
-                               transition-all duration-300"
-                    />
+                    
                 </button>
 
                 {{-- Seller --}}
@@ -216,13 +210,7 @@
                         </p>
                     </div>
 
-                    <x-lucide-arrow-right
-                        class="w-4 h-4 shrink-0 mt-1
-                               text-navy/25
-                               group-hover:text-white
-                               group-hover:translate-x-0.5
-                               transition-all duration-300"
-                    />
+             
                 </button>
 
             </div>

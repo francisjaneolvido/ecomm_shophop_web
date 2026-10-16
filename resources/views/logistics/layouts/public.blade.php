@@ -51,6 +51,7 @@
     @include('logistics.partials.public-header')
     <main class="lp-site-main" id="main-content">@yield('content')</main>
     @include('logistics.partials.public-footer')
+    <script src="{{ asset('js/shophop-ph-address.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

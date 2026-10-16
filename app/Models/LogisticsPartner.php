@@ -58,6 +58,11 @@ class LogisticsPartner extends Model
         return $this->hasMany(\App\Models\Logistics\SortingCenter::class, 'logistics_partner_id');
     }
 
+    public function branchStaff(): HasMany
+    {
+        return $this->hasMany(\App\Models\Logistics\BranchStaff::class, 'logistics_partner_id');
+    }
+
     public function mainSortingCenter(): HasOne
     {
         return $this->hasOne(\App\Models\Logistics\SortingCenter::class, 'logistics_partner_id')
