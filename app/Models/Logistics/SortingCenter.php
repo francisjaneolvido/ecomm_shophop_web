@@ -4,6 +4,7 @@ namespace App\Models\Logistics;
 
 use App\Models\LogisticsCoverageArea;
 use App\Models\LogisticsPartner;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -12,6 +13,7 @@ class SortingCenter extends Model
 {
     protected $fillable = [
         'logistics_partner_id',
+        'user_id',
         'code',
         'name',
         'is_main',
@@ -34,6 +36,12 @@ class SortingCenter extends Model
     public function partner(): BelongsTo
     {
         return $this->belongsTo(LogisticsPartner::class, 'logistics_partner_id');
+    }
+
+    /** Branch login account. */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function coverageAreas(): HasMany

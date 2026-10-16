@@ -31,11 +31,12 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Ang account_type ay extra na kondisyon, kaya buyer/seller/admin ay hindi makakapasok dito.
+        // Logistics partners at branch accounts lang ang pwedeng pumasok dito.
+        // Buyer/seller/admin ay hindi makakapasok.
         $attempt = Auth::attempt([
             'email' => $data['email'],
             'password' => $data['password'],
-            'account_type' => 'logistics',
+            'account_type' => ['logistics', 'branch'],
         ], $request->boolean('remember'));
 
         if (! $attempt) {
@@ -94,6 +95,11 @@ class AuthController extends Controller
             };
 
             return redirect()->route('logistics.login')->with('login_notice', $notice);
+        }
+
+        // Branch account: diretso sa branch console, walang Google linking.
+        if ($user->account_type === 'branch') {
+            return redirect()->route('branch.dashboard');
         }
 
         // An OAuth callback may request one-time Google linking. Only password-authenticated,

@@ -19,6 +19,12 @@ return Application::configure(basePath: dirname(__DIR__))
             // Separate Logistics hostname, but same codebase / backend.
             Route::middleware('web')->group(base_path('routes/logistics.php'));
 
+            // Branch console lives on the logistics hostname too, so branch accounts
+            // sign in at logistics.<domain>/sign-in and share the same session.
+            Route::middleware('web')
+                ->domain(config('app.logistics_domain'))
+                ->group(base_path('routes/branch.php'));
+
             // Marketplace routes must NOT also be served from logistics.<domain>.
             Route::middleware('web')
                 ->domain(config('app.main_domain'))

@@ -4,8 +4,6 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\PublicSearchController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ProductController;
 
 use App\Http\Controllers\Auth\BuyerRegistrationController;
 use App\Http\Controllers\Auth\SellerRegistrationController;
@@ -18,6 +16,7 @@ use App\Http\Controllers\PaymentReceiptController;
 |--------------------------------------------------------------------------
 | ShopHop Web Routes
 |--------------------------------------------------------------------------
+| Ang mga branch routes ay nasa routes/branch.php na.
 */
 
 Route::get('/', [HomeController::class, 'index'])
@@ -67,6 +66,8 @@ Route::get('/create-account', function () {
 |--------------------------------------------------------------------------
 | Future Shop Routes
 |--------------------------------------------------------------------------
+| Wala pang CategoryController/ProductController sa App\Http\Controllers.
+| I-import ulit kapag nagawa na.
 */
 
 // Route::get('/categories', [CategoryController::class, 'index'])

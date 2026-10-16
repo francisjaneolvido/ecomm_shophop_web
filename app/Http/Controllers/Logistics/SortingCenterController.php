@@ -13,6 +13,7 @@ use App\Services\PhilippineDeliveryCoverage;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
@@ -81,6 +82,7 @@ class SortingCenterController extends Controller
     {
         $partner = $this->partner($request);
         $data = $this->validatedCenter($request);
+        $login = $this->validatedLogin($request);
 
         $credentials = null;
         $createdCenter = null;
@@ -217,6 +219,37 @@ class SortingCenterController extends Controller
             'manager_name' => ['nullable', 'required_with:manager_email', 'string','min:2','max:150'],
             'manager_email' => ['nullable', 'required_with:manager_name', 'email','max:190'],
         ]);
+    }
+
+    private function validatedLogin(Request $request): array
+    {
+        $data = $request->validate([
+            'login_email' => ['required', 'email', 'max:190', 'unique:users,email'],
+            'login_password' => ['required', 'string', 'min:8', 'max:100'],
+        ]);
+
+        $data['login_email'] = strtolower(trim($data['login_email']));
+
+        return $data;
+    }
+
+    /**
+     * Gumagawa ng user account para sa branch at ini-link sa sorting center.
+     * ASSUMPTION: may sorting_centers.user_id column at ang users table ay may
+     * account_type at status. I-check ang migration at EnsureApprovedRole.
+     */
+    private function provisionLogin(SortingCenter $center, string $email, string $password): void
+    {
+        $user = new User();
+        $user->forceFill([
+            'email' => $email,
+            'password' => Hash::make($password),
+            'account_type' => 'branch',
+            'status' => 'approved',
+            'email_verified_at' => now(),
+        ])->save();
+
+        $center->forceFill(['user_id' => $user->id])->save();
     }
 
     private function centerPayload(array $data): array
