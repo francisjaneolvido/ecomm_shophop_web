@@ -37,6 +37,28 @@
                 @if (in_array($payment->status, ['awaiting_proof', 'rejected'], true))
                     {{-- Preserve the multipart field contract and resubmit on this same payment. --}}
                     <h2>{{ $payment->status === 'rejected' ? 'Correct your payment proof' : 'Payment proof' }}</h2>
+                    <div class="pay-panel pay-pad" style="border:1px solid #d1e5df;margin:1rem 0;background:#f3fcf9">
+                        <strong>ShopHop Demo Payment</strong>
+                        <p class="pay-note">Demo only — no real GCash transfer or payment gateway. Admin manually checks simulated proof.</p>
+                        @if($paymentSetting)
+                            <p><strong>Recipient:</strong> {{ $paymentSetting->recipient_name }}</p>
+                            <p><strong>Account label:</strong> {{ $paymentSetting->recipient_identifier ?: 'N/A' }}</p>
+                            @if($paymentSetting->qrUrl()) <img src="{{ $paymentSetting->qrUrl() }}" alt="ShopHop demo QR code" style="width:180px;max-width:100%;height:auto;margin:12px 0"> @endif
+                            <p class="pay-note">{{ $paymentSetting->instructions }}</p>
+                        @else <p class="pay-note">Demo QR is not configured yet. Ask Admin to configure it before submitting a simulated proof.</p> @endif
+                        @if(!$payment->demoTransaction)
+                          <form method="POST" action="{{ route('buyer.payments.simulate',$payment) }}">@csrf
+                            <button type="submit" class="pay-button">Generate DEMO payment record</button></form>
+                        @else
+                          <div id="demoReceipt" class="pay-panel pay-pad" style="margin-top:1rem;background:white;border:2px dashed #42b8a4">
+                            <p><strong>DEMO RECEIPT — NOT REAL MONEY</strong></p>
+                            <p>Reference: <strong>{{ $payment->demoTransaction->reference }}</strong></p>
+                            <p>Amount: <strong>₱{{ number_format((float)$payment->demoTransaction->amount,2) }}</strong></p>
+                            <p>Generated: {{ $payment->demoTransaction->simulated_at?->format('M j, Y g:i A T') }}</p>
+                            <p class="pay-note">Take a screenshot and upload it below. Admin compares your typed reference and amount to this separate demo ledger.</p>
+                          </div>
+                        @endif
+                    </div>
                     <p class="pay-note" style="margin-bottom: 1.25rem">Complete your payment using the agreed external payment method, then submit the transaction reference and receipt below for ShopHop Admin review.</p>
                     <form method="POST" enctype="multipart/form-data" action="{{ route('buyer.payments.submit', $payment) }}" class="pay-fields">@csrf
                         <div class="pay-field"><label for="payment-reference">Payment reference</label><input id="payment-reference" name="reference" value="{{ old('reference', $payment->reference) }}" maxlength="120" required aria-describedby="reference-help @error('reference') reference-error @enderror" @error('reference') aria-invalid="true" @enderror><p id="reference-help" class="pay-help">Use the transaction reference from your payment receipt.</p>@error('reference')<p id="reference-error" class="pay-error">{{ $message }}</p>@enderror</div>

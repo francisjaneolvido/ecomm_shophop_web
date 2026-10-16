@@ -28,7 +28,7 @@ class BuyerVerificationCodeNotification extends Notification
             ->line('Thank you for creating a buyer account.')
             ->line('Your verification code is:')
             ->line($this->code)
-            ->line('This code will expire in 10 minutes.')
+            ->line('This code will expire in 5 minutes.')
             ->line('Do not share this code with anyone.')
             ->line('After verifying your email, your registration will be submitted for administrator approval.');
     }

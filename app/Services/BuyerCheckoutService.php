@@ -3,6 +3,9 @@
 namespace App\Services;
 
 use App\Models\Buyer;
+use App\Services\PlatformVoucherPricing;
+use App\Models\Finance\PlatformVoucher;
+use App\Services\ShopHopFinance;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Buyer\Order\ManualCashlessPayment;
 use App\Models\Buyer\Order\Order;
@@ -38,6 +41,8 @@ class BuyerCheckoutService
         array $shippingMethods = [],
         string $paymentMethod = 'cod',
         bool $strictVoucher = false,
+        string $platformVoucherCode = '',
+        string $shippingVoucherCode = '',
     ): array {
         if (! in_array($paymentMethod, ['cod', 'online'], true)) {
             throw ValidationException::withMessages([
@@ -190,12 +195,32 @@ class BuyerCheckoutService
             ]);
         }
 
-        $grandTotal = max(0, $merchandiseTotal + $shippingTotal + $codFeeTotal - $voucherDiscountTotal);
+        // Apply platform-funded vouchers AFTER seller discounts, without subtracting
+        // them from seller's future settlement base or from logistics earnings.
+        $pricing = app(PlatformVoucherPricing::class)->price(
+            $groups->mapWithKeys(fn ($group) => [$group['shop']['id'] => [
+                'merchandise' => round($group['merchandise_subtotal'] - $group['voucher_discount'], 2),
+                'shipping' => $group['shipping_fee'],
+            ]])->all(), $platformVoucherCode, $shippingVoucherCode
+        );
+        $groups = $groups->map(function ($group) use ($pricing) {
+            $alloc = $pricing['allocations'][$group['shop']['id']] ?? ['platform_discount' => 0, 'shipping_discount' => 0];
+            return [...$group, ...$alloc,
+                'group_total' => round($group['group_total'] - $alloc['platform_discount'] - $alloc['shipping_discount'], 2)];
+        });
+        $grandTotal = max(0, $merchandiseTotal + $shippingTotal + $codFeeTotal - $voucherDiscountTotal
+            - $pricing['merchandise_discount'] - $pricing['shipping_discount']);
 
         return [
             'address' => $address,
             'cart_groups' => $groups,
             'available_vouchers' => $availableVouchers,
+            'available_platform_vouchers' => PlatformVoucher::available()->orderBy('kind')->get()
+                ->map(fn ($v) => ['code' => $v->code, 'name' => $v->name, 'kind' => $v->kind,
+                    'type' => $v->type, 'value' => (float) $v->value,
+                    'min_spend' => (float) $v->min_spend])->values()->all(),
+            'platform_voucher_code' => strtoupper(trim($platformVoucherCode)),
+            'shipping_voucher_code' => strtoupper(trim($shippingVoucherCode)),
             'initial_voucher_code' => $selectedVoucher['code'] ?? '',
             'item_count' => $cartItems->count(),
             'quantity_count' => (int) $cartItems->sum('quantity'),
@@ -207,6 +232,8 @@ class BuyerCheckoutService
                 'shipping_fee' => round($shippingTotal, 2),
                 'cod_fee' => round($codFeeTotal, 2),
                 'voucher_discount' => round($voucherDiscountTotal, 2),
+                'platform_discount' => $pricing['merchandise_discount'],
+                'shipping_discount' => $pricing['shipping_discount'],
                 'grand_total' => round($grandTotal, 2),
             ],
         ];
@@ -285,6 +312,29 @@ class BuyerCheckoutService
             $voucherApplied = false;
             $createdOrderIds = [];
             $grandTotal = 0.0;
+            $pricingGroups = [];
+            foreach ($groupedBySeller as $shopId => $shopItems) {
+                $method = $data['shipping_method'][$shopId] ?? null;
+                if (! in_array($method, ['standard', 'express'], true)) {
+                    throw ValidationException::withMessages(['shipping_method' => 'Choose shipping for every shop.']);
+                }
+                $subtotal = round($shopItems->sum(fn ($item) => $item->unitPrice() * $item->quantity), 2);
+                $sellerSaving = 0.0;
+                if ($voucher && (int) $voucher->seller_id === (int) $shopItems->first()->product->seller->user_id) {
+                    $eligible = $shopItems->filter(fn ($item) => $eligibleProductIds->contains($item->product_id))
+                        ->sum(fn ($item) => $item->unitPrice() * $item->quantity);
+                    if ($eligible <= 0 || $eligible < (float) $voucher->min_order_amount) {
+                        throw ValidationException::withMessages(['voucher_code' => 'Seller voucher minimum spend not met.']);
+                    }
+                    $sellerSaving = min($eligible, $voucher->type === 'percent'
+                        ? round($eligible * (float) $voucher->value / 100, 2) : (float) $voucher->value);
+                }
+                $pricingGroups[$shopId] = ['merchandise' => round($subtotal - $sellerSaving, 2),
+                    'shipping' => self::STANDARD_SHIPPING_FEE + ($method === 'express' ? self::EXPRESS_SHIPPING_SURCHARGE : 0)];
+            }
+            $platformPricing = app(PlatformVoucherPricing::class)->price(
+                $pricingGroups, (string) ($data['merchandise_voucher_code'] ?? ''),
+                (string) ($data['shipping_voucher_code'] ?? ''), true);
 
             foreach ($groupedBySeller as $sellerId => $items) {
                 $shippingMethod = $data['shipping_method'][$sellerId] ?? null;
@@ -321,7 +371,9 @@ class BuyerCheckoutService
                     $voucherApplied = true;
                 }
 
-                $totalAmount = $merchandiseSubtotal + $shippingFee + $codFee - $voucherDiscount;
+                $alloc = $platformPricing['allocations'][$sellerId] ?? ['platform_discount' => 0, 'shipping_discount' => 0];
+                $totalAmount = $merchandiseSubtotal + $shippingFee + $codFee - $voucherDiscount
+                    - $alloc['platform_discount'] - $alloc['shipping_discount'];
 
                 $order = Order::create([
                     'buyer_id' => $buyer->id,
@@ -335,15 +387,21 @@ class BuyerCheckoutService
                     'cod_fee' => $codFee,
                     'voucher_id' => $appliedVoucherId,
                     'voucher_discount' => $voucherDiscount,
+                    'platform_voucher_id' => $platformPricing['merchandise_voucher']?->id,
+                    'shipping_voucher_id' => $platformPricing['shipping_voucher']?->id,
+                    'platform_discount' => $alloc['platform_discount'],
+                    'shipping_discount' => $alloc['shipping_discount'],
                     'note' => $data['groups'][$sellerId]['note'] ?? null,
                     'delivery_name' => trim($buyer->first_name . ' ' . $buyer->last_name),
                     'delivery_phone' => $buyer->contact_no,
                     'delivery_address' => trim(
                         $buyer->street_address . ', ' .
                         $buyer->barangay_name . ', ' .
-                        $buyer->municipality_name . ', ' .
-                        $buyer->province_name
+                        $buyer->municipality_name .
+                        ($buyer->province_name ? ', ' . $buyer->province_name : '')
                     ),
+                    'delivery_region_code' => $buyer->region_code,
+                    'delivery_region_name' => $buyer->region_name,
                     'delivery_province_code' => $buyer->province_code,
                     'delivery_province_name' => $buyer->province_name,
                     'delivery_municipality_code' => $buyer->municipality_code,
@@ -353,6 +411,8 @@ class BuyerCheckoutService
                     'delivery_street' => $buyer->street_address,
                 ]);
 
+                app(ShopHopFinance::class)->snapshot($order, (float) $merchandiseSubtotal,
+                    (float) $voucherDiscount, (float) $alloc['platform_discount'], (float) $alloc['shipping_discount']);
                 $createdOrderIds[] = (int) $order->id;
                 $grandTotal += (float) $order->total_amount;
 
@@ -394,6 +454,9 @@ class BuyerCheckoutService
             if ($voucherApplied) {
                 $voucher->increment('used_count');
             }
+            foreach ([$platformPricing['merchandise_voucher'], $platformPricing['shipping_voucher']] as $applied) {
+                if ($applied) $applied->increment('used_count');
+            }
 
             CartItem::where('buyer_id', $buyer->id)
                 ->whereIn('id', $cartItemIds)
@@ -431,7 +494,9 @@ class BuyerCheckoutService
             'name' => trim($buyer->first_name . ' ' . $buyer->last_name),
             'phone' => $buyer->contact_no,
             'line' => $buyer->street_address,
-            'city' => trim($buyer->barangay_name . ', ' . $buyer->municipality_name . ', ' . $buyer->province_name),
+            'city' => implode(', ', array_filter([
+                $buyer->barangay_name, $buyer->municipality_name, $buyer->province_name ?: $buyer->region_name,
+            ])),
             'is_default' => true,
             // Registration stores this address, but there is no separate address-verification record.
             'verified' => false,
@@ -440,7 +505,7 @@ class BuyerCheckoutService
                 && $buyer->contact_no
                 && $buyer->barangay_name
                 && $buyer->municipality_name
-                && $buyer->province_name
+                && ($buyer->province_name || $this->isNcrBuyer($buyer))
             ),
         ];
     }
@@ -451,11 +516,18 @@ class BuyerCheckoutService
             || ! $buyer->contact_no
             || ! $buyer->barangay_name
             || ! $buyer->municipality_name
-            || ! $buyer->province_name) {
+            || (! $buyer->province_name && ! $this->isNcrBuyer($buyer))) {
             throw ValidationException::withMessages([
                 'address' => 'Complete your delivery address in your profile before ordering.',
             ]);
         }
+    }
+
+    private function isNcrBuyer(Buyer $buyer): bool
+    {
+        return strtoupper(trim((string) $buyer->region_code)) === '130000000'
+            || str_contains(strtoupper((string) $buyer->region_name), 'NATIONAL CAPITAL REGION')
+            || strtoupper(trim((string) $buyer->region_code)) === 'NCR';
     }
 
     private function isAvailable(CartItem $item): bool

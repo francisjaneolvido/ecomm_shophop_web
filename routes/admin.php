@@ -7,6 +7,9 @@ use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
 use App\Http\Controllers\Admin\ManualCashlessPaymentReviewController;
+use App\Http\Controllers\Admin\MarketplaceFinanceController;
+use App\Http\Controllers\Admin\ReturnRefundController;
+use App\Http\Controllers\Admin\CodRemittanceController;
 // Product review uses the same current Admin identity and middleware boundary as payment review.
 use App\Http\Controllers\Admin\ProductComplianceController;
 // use App\Http\Controllers\Admin\CommissionController;
@@ -73,9 +76,17 @@ Route::prefix('admin')
             return view('admin.complaints-disputes');
         })->name('disputes');
 
-        Route::get('/commission', function () {
-            return view('admin.commission');
-        })->name('commission');
+        Route::get('/cod-remittances', [CodRemittanceController::class, 'index'])->name('finance.cod.index');
+        Route::post('/cod-remittances/{settlement}/confirm', [CodRemittanceController::class, 'confirm'])->name('finance.cod.confirm');
+        Route::get('/returns-refunds', [ReturnRefundController::class, 'index'])->name('returns.index');
+        Route::post('/returns-refunds/{case}/paid', [ReturnRefundController::class, 'paid'])->name('returns.refund-paid');
+        Route::get('/commission', [MarketplaceFinanceController::class, 'index'])->name('commission');
+        Route::post('/commission/qr', [MarketplaceFinanceController::class, 'paymentSetting'])->name('finance.qr');
+        Route::post('/commission/vouchers', [MarketplaceFinanceController::class, 'createVoucher'])->name('finance.vouchers.create');
+        Route::post('/commission/vouchers/{voucher}/toggle', [MarketplaceFinanceController::class, 'toggleVoucher'])->name('finance.vouchers.toggle');
+        Route::post('/commission/orders/{order}/prepare', [MarketplaceFinanceController::class, 'prepare'])->name('finance.prepare');
+        Route::post('/commission/orders/{order}/hold', [MarketplaceFinanceController::class, 'hold'])->name('finance.hold');
+        Route::post('/commission/payouts/{entry}/paid', [MarketplaceFinanceController::class, 'paid'])->name('finance.paid');
 
         // Route::get('/commissions/export-pdf', [CommissionController::class, 'exportPdf'])
 //     ->name('commissions.export-pdf');

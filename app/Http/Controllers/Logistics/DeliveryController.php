@@ -11,6 +11,8 @@ use App\Models\Logistics\PickupRequest;
 use App\Models\Logistics\SortingCenter;
 use App\Models\LogisticsCoverageArea;
 use App\Models\LogisticsPartner;
+use App\Services\ParcelScanService;
+use App\Services\PhilippineDeliveryCoverage;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -101,35 +103,18 @@ class DeliveryController extends Controller
     }
 
     /** Sorting-center scan/receipt after the pickup rider physically hands over the parcel. */
-    public function receive(Request $request, int $delivery): RedirectResponse
+    public function receive(Request $request, int $delivery, ParcelScanService $scanner): RedirectResponse
     {
         $partner = $this->partner($request);
-        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:40']]);
-
-        return DB::transaction(function () use ($partner, $delivery, $data) {
-            $owned = Delivery::with('order')->where('logistics_partner_id', $partner->id)
-                ->whereKey($delivery)->lockForUpdate()->firstOrFail();
-
-            if ($owned->status !== Delivery::PICKED_UP || $owned->order?->status !== Order::STATUS_TO_RECEIVE
-                || ! $owned->tracking_code || ! hash_equals($owned->tracking_code, trim($data['tracking_code']))) {
-                throw ValidationException::withMessages([
-                    'delivery' => 'Parcel cannot be received. Check its current stage and tracking code.',
-                ]);
-            }
-
-            $owned->update([
-                'current_sorting_center_id' => $owned->origin_sorting_center_id
-                    ?: $partner->mainSortingCenter()->value('id'),
-                'status' => Delivery::AT_SORTING_CENTER,
-                'at_sorting_center_at' => now(),
-            ]);
-            PickupRequest::where('order_id', $owned->order_id)->update([
-                'status' => PickupRequest::RECEIVED,
-                'received_at' => now(),
-            ]);
-
-            return back()->with('status', 'Parcel scanned and received at the sorting center.');
-        });
+        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:60']]);
+        $parcel = Delivery::where('logistics_partner_id', $partner->id)->findOrFail($delivery);
+        if (! hash_equals((string) $parcel->tracking_code, trim($data['tracking_code']))) {
+            throw ValidationException::withMessages(['tracking_code' => 'Tracking code does not match the selected delivery.']);
+        }
+        $centerId = (int) $parcel->origin_sorting_center_id;
+        abort_unless($centerId, 422, 'Origin branch must be configured first.');
+        $scanner->receive((int) $partner->id, $centerId, (int) $request->user()->id, $data['tracking_code']);
+        return back()->with('status', 'Pickup parcel received and recorded at origin branch.');
     }
 
     /** Record the destination area selected after reading the delivery address. */
@@ -183,6 +168,7 @@ class DeliveryController extends Controller
 
             if (! in_array($owned->status, [Delivery::SORTED, Delivery::DELIVERY_FAILED], true)
                 || $owned->order?->status !== Order::STATUS_TO_RECEIVE
+                || $owned->returnCase()->exists()
                 || ! $owned->destination_area_id || ! $this->riderStillActive($rider, $partner)) {
                 return $this->stale();
             }
@@ -229,7 +215,10 @@ class DeliveryController extends Controller
     public function dispatchTransfer(Request $request, int $delivery): RedirectResponse
     {
         $partner = $this->partner($request);
-        $data = $request->validate(['to_sorting_center_id' => ['required', 'integer']]);
+        $data = $request->validate([
+            'to_sorting_center_id' => ['required', 'integer'],
+            'transit_rider_id' => ['nullable', 'integer'],
+        ]);
 
         return DB::transaction(function () use ($partner, $delivery, $data) {
             $owned = Delivery::with(['order', 'transfers'])
@@ -258,9 +247,20 @@ class DeliveryController extends Controller
                 ]);
             }
 
+            $transitRider = null;
+            if (! empty($data['transit_rider_id'])) {
+                $transitRider = $this->activeRider($partner, (int) $data['transit_rider_id']);
+                if ((int) $transitRider->sorting_center_id !== (int) $from->id) {
+                    throw ValidationException::withMessages([
+                        'transit_rider_id' => 'Transit Rider must belong to the dispatching branch.',
+                    ]);
+                }
+            }
+
             ParcelTransfer::create([
                 'delivery_id' => $owned->id,
                 'from_sorting_center_id' => $from->id,
+                'transit_rider_id' => $transitRider?->id,
                 'to_sorting_center_id' => $to->id,
                 'status' => ParcelTransfer::IN_TRANSIT,
                 'dispatched_at' => now(),
@@ -271,38 +271,19 @@ class DeliveryController extends Controller
     }
 
     /** Destination branch scan that closes the active hub-to-hub transfer. */
-    public function receiveTransfer(Request $request, int $transfer): RedirectResponse
+    public function receiveTransfer(Request $request, int $transfer, ParcelScanService $scanner): RedirectResponse
     {
         $partner = $this->partner($request);
-        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:40']]);
-
-        return DB::transaction(function () use ($partner, $transfer, $data) {
-            $ownedTransfer = ParcelTransfer::with(['delivery', 'toCenter'])
-                ->whereKey($transfer)->lockForUpdate()->firstOrFail();
-            $delivery = Delivery::where('logistics_partner_id', $partner->id)
-                ->whereKey($ownedTransfer->delivery_id)->lockForUpdate()->firstOrFail();
-
-            abort_unless((int) $ownedTransfer->toCenter?->logistics_partner_id === (int) $partner->id, 404);
-
-            if ($ownedTransfer->status !== ParcelTransfer::IN_TRANSIT
-                || ! $delivery->tracking_code
-                || ! hash_equals($delivery->tracking_code, trim($data['tracking_code']))) {
-                throw ValidationException::withMessages([
-                    'delivery' => 'Transfer cannot be received. Check the tracking code and transfer status.',
-                ]);
-            }
-
-            $ownedTransfer->update([
-                'status' => ParcelTransfer::RECEIVED,
-                'received_at' => now(),
-            ]);
-
-            $delivery->update([
-                'current_sorting_center_id' => $ownedTransfer->to_sorting_center_id,
-            ]);
-
-            return back()->with('status', 'Parcel received at '.$ownedTransfer->toCenter->name.'.');
-        });
+        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:60']]);
+        $parcelTransfer = ParcelTransfer::with('delivery')->findOrFail($transfer);
+        abort_unless((int) $parcelTransfer->delivery?->logistics_partner_id === (int) $partner->id, 404);
+        abort_unless($parcelTransfer->status === ParcelTransfer::IN_TRANSIT, 422, 'Transfer is not in transit.');
+        if (! hash_equals((string) $parcelTransfer->delivery->tracking_code, trim($data['tracking_code']))) {
+            throw ValidationException::withMessages(['tracking_code' => 'Tracking code does not match this transfer.']);
+        }
+        $scanner->receive((int) $partner->id, (int) $parcelTransfer->to_sorting_center_id,
+            (int) $request->user()->id, $data['tracking_code']);
+        return back()->with('status', 'Transfer received and recorded at destination branch.');
     }
 
     public static function readyFor(LogisticsPartner $partner): Collection
@@ -318,79 +299,12 @@ class DeliveryController extends Controller
             ->latest()->get();
     }
 
-    private static function covers(LogisticsPartner $partner, Order $order): bool
-    {
-        return self::matchingArea($partner, $order) !== null;
-    }
-
-    private static function matchingArea(LogisticsPartner $partner, Order $order): ?LogisticsCoverageArea
-    {
-        [$province, $city, $region] = self::destinationParts($order);
-        if (! $city) {
-            return null;
-        }
-
-        return $partner->coverageAreas->first(
-            fn (LogisticsCoverageArea $area) => self::areaMatches($area, $province, $city, $region)
-        );
-    }
-
     private function areaCoversOrder(LogisticsCoverageArea $area, Order $order): bool
     {
-        [$province, $city, $region] = self::destinationParts($order);
-        return $city && self::areaMatches($area, $province, $city, $region);
-    }
-
-    private static function destinationParts(Order $order): array
-    {
-        $province = trim((string) $order->delivery_province_name);
-        $city = trim((string) $order->delivery_municipality_name);
-        $region = trim((string) $order->delivery_region_name);
-
-        if ($province && $city) {
-            return [$province, $city, $region ?: null];
-        }
-
-        // Compatibility only for Orders created before structured delivery snapshots existed.
-        $parts = array_values(array_filter(array_map('trim', explode(',', (string) $order->delivery_address))));
-        if (count($parts) < 2) {
-            return [null, null, null];
-        }
-
-        return [$parts[count($parts) - 1], $parts[count($parts) - 2], null];
-    }
-
-    private static function areaMatches(LogisticsCoverageArea $area, ?string $province, string $city, ?string $region): bool
-    {
-        if (! in_array($area->area_type, ['province', 'region'], true)) {
-            return false;
-        }
-
-        $cities = collect(explode('|', trim((string) $area->cities)))
-            ->map(fn ($value) => trim($value))
-            ->filter();
-        $cityAllowed = $cities->isEmpty()
-            || $cities->contains(fn ($value) => strcasecmp($value, 'ALL') === 0)
-            || $cities->contains(fn ($value) => strcasecmp($value, $city) === 0);
-
-        if (! $cityAllowed) {
-            return false;
-        }
-
-        if ($area->area_type === 'province') {
-            return $province && strcasecmp(trim($area->area_name), trim($province)) === 0;
-        }
-
-        if ($region && strcasecmp(trim($area->area_name), trim($region)) === 0) {
-            return true;
-        }
-        if (! $region && $province && strcasecmp(trim($area->area_name), trim($province)) === 0) {
-            return true;
-        }
-
-        return ! $region
-            && ! $cities->isEmpty()
-            && ! $cities->contains(fn ($value) => strcasecmp($value, 'ALL') === 0);
+        $coverage = app(PhilippineDeliveryCoverage::class);
+        $partner = LogisticsPartner::findOrFail($area->logistics_partner_id);
+        return $coverage->coversOrder($area, $order)
+            && $coverage->availableForPartner($area, $partner);
     }
 
     private function activeRider(LogisticsPartner $partner, int $riderId): Rider

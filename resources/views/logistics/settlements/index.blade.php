@@ -6,6 +6,7 @@
 @php
     $awaitingRemittance = $deliveries->filter(fn ($delivery) => $delivery->codSettlement && $delivery->codSettlement->status === \App\Models\Logistics\CodSettlement::COLLECTED)->count();
     $awaitingReceipt = $deliveries->filter(fn ($delivery) => $delivery->codSettlement && $delivery->codSettlement->status === \App\Models\Logistics\CodSettlement::REMITTED)->count();
+    $toShopHop = $deliveries->filter(fn ($delivery) => $delivery->codSettlement?->admin_remitted_at && ! $delivery->codSettlement?->admin_received_at)->count();
     $reconciled = $deliveries->filter(fn ($delivery) => $delivery->codSettlement && $delivery->codSettlement->status === \App\Models\Logistics\CodSettlement::RECONCILED)->count();
 @endphp
 <div class="space-y-6">
@@ -13,7 +14,7 @@
         <div>
             <p class="eyebrow">Finance · Cash custody</p>
             <h1 class="title">COD Settlements</h1>
-            <p class="description">Track remittance and confirm receipt of COD collections turned over by riders. Seller payouts remain separate from this logistics cash-custody workflow.</p>
+            <p class="description">Track remittance and confirm receipt of COD collections turned over by riders. After receiving Rider cash, record the remittance to ShopHop Admin. Admin must verify receipt before Seller/Logistics payouts. No transfer is automated.</p>
         </div>
     </header>
 
@@ -23,6 +24,7 @@
     <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <div class="sh-stat"><p class="sh-stat-label">Awaiting rider remittance</p><p class="sh-stat-value">{{ $awaitingRemittance }}</p><p class="sh-stat-note">Cash still with rider</p></div>
         <div class="sh-stat"><p class="sh-stat-label">Awaiting receipt confirmation</p><p class="sh-stat-value">{{ $awaitingReceipt }}</p><p class="sh-stat-note">Ready for logistics acknowledgement</p></div>
+        <div class="sh-stat"><p class="sh-stat-label">Awaiting ShopHop Admin</p><p class="sh-stat-value">{{ $toShopHop }}</p><p class="sh-stat-note">Logistics already remitted</p></div>
         <div class="sh-stat"><p class="sh-stat-label">Reconciled</p><p class="sh-stat-value">{{ $reconciled }}</p><p class="sh-stat-note">Received and confirmed</p></div>
     </div>
 
@@ -68,6 +70,16 @@
                         </form>
                     @else
                         <div class="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">Logistics receipt reconciled · ₱{{ number_format((float) $cash->received_amount, 2) }} confirmed at {{ $cash->reconciled_at?->format('M j, Y g:i A') }}</div>
+                        @if($cash->admin_received_at)
+                           <p class="mt-3 text-sm font-bold text-emerald-800">✓ ShopHop Admin received ₱{{ number_format((float)$cash->admin_received_amount,2) }} on {{ $cash->admin_received_at->format('M j, Y') }}</p>
+                        @elseif($cash->admin_remitted_at)
+                           <p class="mt-3 text-sm font-semibold text-sky-800">Remitted to ShopHop · reference {{ $cash->admin_remittance_reference }} · awaiting Admin verification.</p>
+                        @else
+                           <form method="POST" action="{{ route('logistics.settlements.remit-admin', $delivery) }}" class="mt-3 flex flex-wrap items-end gap-3" data-confirm-title="Record remittance to ShopHop?" data-confirm-message="Only record the remittance after sending funds to ShopHop. Admin must confirm receipt separately." data-confirm-button="Record remittance">@csrf
+                               <label class="sh-field flex-1"><span class="sh-label">Manual remittance reference *</span><input class="sh-input" name="reference" required minlength="4" maxlength="120" placeholder="Reference given to ShopHop" /></label>
+                               <button type="submit" class="sh-btn">Record remittance to ShopHop</button>
+                           </form>
+                        @endif
                     @endif
                 @else
                     <div class="mt-4 rounded-2xl border border-dashed border-gray-border bg-gray-bg/45 px-4 py-4 text-sm text-navy/50">Settlement not recorded for this legacy delivery.</div>

@@ -18,6 +18,7 @@ class SortingCenter extends Model
         'name',
         'is_main',
         'status',
+        'deactivated_at', 'archived_at',
         'contact_no',
         'region',
         'province',
@@ -29,6 +30,7 @@ class SortingCenter extends Model
 
     protected $casts = [
         'is_main' => 'boolean',
+        'deactivated_at' => 'datetime', 'archived_at' => 'datetime',
     ];
 
     public function partner(): BelongsTo
@@ -50,6 +52,11 @@ class SortingCenter extends Model
     public function riders(): HasMany
     {
         return $this->hasMany(Rider::class, 'sorting_center_id');
+    }
+
+    public function staff(): HasMany
+    {
+        return $this->hasMany(BranchStaff::class, 'sorting_center_id');
     }
 
     public function outgoingTransfers(): HasMany

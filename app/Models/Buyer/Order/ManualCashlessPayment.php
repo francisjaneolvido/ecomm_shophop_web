@@ -26,6 +26,11 @@ class ManualCashlessPayment extends Model
     protected $casts = ['submitted_at' => 'datetime', 'reviewed_at' => 'datetime',
         'expires_at' => 'datetime', 'closed_at' => 'datetime'];
 
+    public function demoTransaction(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(\App\Models\Finance\DemoTransaction::class);
+    }
+
     public function buyer(): BelongsTo
     {
         return $this->belongsTo(Buyer::class);

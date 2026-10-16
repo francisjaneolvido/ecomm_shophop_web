@@ -327,6 +327,12 @@
             'label' => 'Insights',
             'items' => [
                 [
+                    'label' => 'Seller Earnings',
+                    'route' => 'seller.earnings',
+                    'pattern' => 'seller.earnings*',
+                    'icon' => 'wallet',
+                ],
+                [
                     'label' => 'Generate Report',
                     'route' => 'seller.reports',
                     'pattern' => 'seller.reports*',

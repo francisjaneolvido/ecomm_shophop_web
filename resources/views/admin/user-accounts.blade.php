@@ -1146,8 +1146,8 @@
             suspended: { dot: 'bg-coral',     text: 'text-coral',     bg: 'bg-coral/10', label: 'Suspended' },
         };
 
-        const suspendUrlTemplate    = "{{ route('admin.users.suspend', 0) }}";
-        const reactivateUrlTemplate = "{{ route('admin.users.reactivate', 0) }}";
+        const suspendUrlTemplate    = "{{ route('admin.users.suspend', 0, false) }}";
+        const reactivateUrlTemplate = "{{ route('admin.users.reactivate', 0, false) }}";
 
         function buildActionUrl(action, id) {
             const tpl = action === 'suspend' ? suspendUrlTemplate : reactivateUrlTemplate;

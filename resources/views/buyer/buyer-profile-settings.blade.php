@@ -680,19 +680,19 @@
                             <div>
                                 <h2 class="text-navy text-base sm:text-lg font-bold mb-1">Address Book</h2>
                                 <p class="text-sm text-navy/55">
-                                    Your registration address is shown below. An editable address book is unavailable.
+                                    You can update your main delivery address from any Philippine region, including NCR.
                                 </p>
                             </div>
-                            <button type="button" disabled title="Address book is unavailable"
-                                class="inline-flex items-center gap-1.5 bg-gray-bg text-navy/45 text-xs font-semibold px-3.5 py-2 rounded-lg cursor-not-allowed shrink-0">
-                                <x-lucide-plus class="w-4 h-4" /> Address book unavailable
+                            <button type="button" id="addAddressBtn"
+                                class="inline-flex items-center gap-1.5 bg-teal-light text-teal-dark text-xs font-semibold px-3.5 py-2 rounded-lg shrink-0">
+                                <x-lucide-pencil class="w-4 h-4" /> Edit delivery address
                             </button>
                         </div>
 
                         <div id="addressList" class="space-y-3">
                             @if ($buyer)
                                 <div class="border border-gray-border rounded-xl p-3.5">
-                                    <p class="text-xs font-semibold text-navy/50 mb-1">Registration address · read only</p>
+                                    <p class="text-xs font-semibold text-navy/50 mb-1">Default delivery address · editable</p>
                                     <p class="text-sm font-semibold text-navy">{{ $displayName }} &middot; {{ $buyer->contact_no }}</p>
                                     <p class="text-sm text-navy/60 mt-0.5">{{ $buyer->street_address }}, {{ $buyer->barangay_name }}, {{ $buyer->municipality_name }}, {{ $buyer->province_name }}</p>
                                 </div>
@@ -1102,10 +1102,11 @@
 <div id="addressModal" class="hidden fixed inset-0 z-50 items-center justify-center px-4" role="dialog" aria-modal="true" aria-labelledby="addressModalTitle">
     <button type="button" class="absolute inset-0 bg-navy/50" data-modal-backdrop aria-label="Close modal"></button>
     <div class="relative bg-white rounded-xl shadow-2xl border border-gray-border max-w-lg w-full p-5 sm:p-6 max-h-[90vh] overflow-y-auto">
-        <h3 id="addressModalTitle" class="text-navy text-base font-bold mb-5">Add New Address</h3>
+        <h3 id="addressModalTitle" class="text-navy text-base font-bold mb-5">Edit Delivery Address</h3>
 
-        <form id="addressForm" method="POST" action="{{ Route::has('buyer.settings.address.store') ? route('buyer.settings.address.store') : '#' }}" class="space-y-4">
+        <form id="addressForm" method="POST" action="{{ route('buyer.settings.address.update') }}" class="space-y-4">
             @csrf
+            @method('PATCH')
             <input type="hidden" name="address_id" id="addressIdInput" value="">
 
             <div class="grid sm:grid-cols-2 gap-4">
@@ -1119,46 +1120,49 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Recipient Name *</label>
-                    <input type="text" name="recipient_name" required
+                    <input type="text" name="recipient_name" value="{{ $displayName }}" required
                         class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                 </div>
             </div>
 
             <div>
                 <label class="block text-xs font-semibold text-navy/70 mb-1.5">Contact No. *</label>
-                <input type="tel" name="phone" autocomplete="tel" placeholder="09XX XXX XXXX" required
+                <input type="tel" name="phone" autocomplete="tel" value="{{ $buyer?->contact_no }}" placeholder="09XX XXX XXXX" required
                     class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
             </div>
 
-            {{-- Province / Municipality / Barangay — wire up to your existing PSGC API script from registration --}}
-            <div class="grid sm:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-xs font-semibold text-navy/70 mb-1.5">Province *</label>
-                    <select id="modalProvinceSelect" name="province" required
-                        class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                        <option value="">Select province</option>
+            <div class="grid sm:grid-cols-2 gap-4">
+                <label class="block text-xs font-semibold text-navy/70">Region *
+                    <select id="modalRegionSelect" name="region_code" required disabled class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm">
+                        <option value="">Loading regions...</option>
                     </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-navy/70 mb-1.5">Municipality/City *</label>
-                    <select id="modalMunicipalitySelect" name="municipality" required disabled
-                        class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy disabled:bg-gray-bg disabled:text-navy/40 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                        <option value="">Select province first</option>
+                    <input type="hidden" name="region_name" id="modalRegionName" value="{{ $buyer?->region_name }}">
+                </label>
+                <label class="block text-xs font-semibold text-navy/70">Province / NCR *
+                    <select id="modalProvinceSelect" name="province_code" required disabled class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm">
+                        <option value="">Select region first</option>
                     </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-navy/70 mb-1.5">Barangay *</label>
-                    <select id="modalBarangaySelect" name="barangay" required disabled
-                        class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy disabled:bg-gray-bg disabled:text-navy/40 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                        <option value="">Select municipality first</option>
+                    <input type="hidden" id="modalProvinceName" name="province_name" value="{{ $buyer?->province_name }}">
+                </label>
+                <label class="block text-xs font-semibold text-navy/70">City / Municipality *
+                    <select id="modalMunicipalitySelect" name="municipality_code" required disabled class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm">
+                        <option value="">Select province / NCR first</option>
                     </select>
-                </div>
+                    <input type="hidden" id="modalMunicipalityName" name="municipality_name" value="{{ $buyer?->municipality_name }}">
+                </label>
+                <label class="block text-xs font-semibold text-navy/70">Barangay *
+                    <select id="modalBarangaySelect" name="barangay_code" required disabled class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm">
+                        <option value="">Select city first</option>
+                    </select>
+                    <input type="hidden" id="modalBarangayName" name="barangay_name" value="{{ $buyer?->barangay_name }}">
+                </label>
             </div>
+            <p id="profileAddressStatus" role="status" class="text-xs text-navy/60"></p>
 
             <div class="grid sm:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-xs font-semibold text-navy/70 mb-1.5">Street *</label>
-                    <input type="text" name="street" required
+                    <input type="text" name="street" value="{{ $buyer?->street_address }}" required
                         class="w-full px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                 </div>
                 <div>
@@ -1881,7 +1885,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!addressModal) return;
 
         addressModalTitle.textContent =
-            isEdit ? 'Edit Address' : 'Add New Address';
+            'Edit Delivery Address';
 
         showModal(addressModal);
 
@@ -1901,7 +1905,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (addAddressButton) {
         addAddressButton.addEventListener('click', function () {
             if (addressForm) {
-                addressForm.reset();
+                // Preserve the current saved address for editing.
             }
 
             if (addressIdInput) {
@@ -1987,16 +1991,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
-    /* =====================================================
-       ADDRESS CASCADING DROPDOWNS
-       Hook your existing PSGC API implementation here.
-    ===================================================== */
-    // const provinceSelect =
-    //     document.getElementById('modalProvinceSelect');
-    // const municipalitySelect =
-    //     document.getElementById('modalMunicipalitySelect');
-    // const barangaySelect =
-    //     document.getElementById('modalBarangaySelect');
+    // Shared nationwide address hierarchy. Values update the Buyer default
+    // address used on subsequent checkouts; existing orders retain snapshots.
+    ShopHopPHAddress.bind({
+        region: document.getElementById('modalRegionSelect'),
+        province: document.getElementById('modalProvinceSelect'),
+        city: document.getElementById('modalMunicipalitySelect'),
+        barangay: document.getElementById('modalBarangaySelect'),
+        regionName: document.getElementById('modalRegionName'),
+        provinceName: document.getElementById('modalProvinceName'),
+        cityName: document.getElementById('modalMunicipalityName'),
+        barangayName: document.getElementById('modalBarangayName'),
+        oldRegion: @json(old('region_code', $buyer?->region_code)),
+        oldProvince: @json(old('province_code', $buyer?->province_code)),
+        oldProvinceName: @json(old('province_name', $buyer?->province_name)),
+        oldCity: @json(old('municipality_code', $buyer?->municipality_code)),
+        oldCityName: @json(old('municipality_name', $buyer?->municipality_name)),
+        oldBarangay: @json(old('barangay_code', $buyer?->barangay_code)),
+        oldBarangayName: @json(old('barangay_name', $buyer?->barangay_name)),
+        status: (message, error) => {
+            const status = document.getElementById('profileAddressStatus');
+            status.textContent = message;
+            status.style.color = error ? '#b91c1c' : '#56727a';
+        },
+    });
 });
 </script>
 @endsection

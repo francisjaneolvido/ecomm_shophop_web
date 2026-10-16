@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Buyer;
 use App\Models\EmailVerificationCode;
 use App\Models\User;
+use App\Support\RegistrationIdentity;
 // Shared sensitive-document storage also covers mobile registration and Admin review.
 use App\Services\RegistrationDocuments;
 use App\Notifications\BuyerVerificationCodeNotification;
@@ -26,19 +27,29 @@ class BuyerRegistrationController extends Controller
         |--------------------------------------------------------------------------
         */
 
+        $request->merge([
+            'registration_form' => 'buyer',
+            'email' => RegistrationIdentity::email($request->input('email')),
+            'contact_no' => RegistrationIdentity::mobile($request->input('contact_no')),
+            'first_name' => trim((string) $request->input('first_name')),
+            'last_name' => trim((string) $request->input('last_name')),
+        ]);
+
         $validated = $request->validate([
             'first_name' => [
                 'required',
                 'string',
-                'max:100',
-                'regex:/^[A-Za-zÀ-ÿñÑ\s\'.-]+$/',
+                'min:2',
+                'max:50',
+                'regex:/^[\p{L}][\p{L}\s\'.-]*$/u',
             ],
 
             'last_name' => [
                 'required',
                 'string',
-                'max:100',
-                'regex:/^[A-Za-zÀ-ÿñÑ\s\'.-]+$/',
+                'min:2',
+                'max:50',
+                'regex:/^[\p{L}][\p{L}\s\'.-]*$/u',
             ],
 
             'middle_initial' => [
@@ -60,20 +71,23 @@ class BuyerRegistrationController extends Controller
                 'required',
                 'email',
                 'max:191',
-                'unique:users,email',
+                RegistrationIdentity::emailUnique(),
             ],
 
             'contact_no' => [
                 'required',
                 'regex:/^09\d{9}$/',
+                RegistrationIdentity::mobileUnique(),
             ],
 
             'birthday' => [
                 'required',
                 'date',
-                'before:today',
+                'before_or_equal:'.now()->subYears(18)->toDateString(),
             ],
 
+            'region_code' => ['nullable', 'string', 'max:20'],
+            'region_name' => ['nullable', 'string', 'max:150'],
             'province_code' => [
                 'required',
                 'string',
@@ -127,7 +141,8 @@ class BuyerRegistrationController extends Controller
                 'confirmed',
                 Password::min(8)
                     ->mixedCase()
-                    ->numbers(),
+                    ->numbers()
+                    ->symbols(),
             ],
 
             'terms' => [
@@ -153,6 +168,7 @@ class BuyerRegistrationController extends Controller
 
             $user = User::create([
                 'email' => $validated['email'],
+                'registration_contact_no' => $validated['contact_no'],
                 'password' => Hash::make($validated['password']),
                 'account_type' => 'buyer',
                 'status' => 'pending',
@@ -186,6 +202,8 @@ class BuyerRegistrationController extends Controller
                 'contact_no' => $validated['contact_no'],
                 'birthday' => $validated['birthday'],
 
+                'region_code' => $validated['region_code'] ?? null,
+                'region_name' => $validated['region_name'] ?? null,
                 'province_code' => $validated['province_code'],
                 'province_name' => $validated['province_name'],
 
@@ -226,7 +244,7 @@ class BuyerRegistrationController extends Controller
             [
                 'code_hash' => Hash::make($code),
                 'attempts' => 0,
-                'expires_at' => now()->addMinutes(10),
+                'expires_at' => now()->addMinutes(5),
                 'last_sent_at' => now(),
             ]
         );

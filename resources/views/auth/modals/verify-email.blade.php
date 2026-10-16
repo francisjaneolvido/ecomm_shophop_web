@@ -256,7 +256,7 @@
                                                text-white/35"
                                     >
                                         The verification code
-                                        expires after 10 minutes.
+                                        expires after 5 minutes.
                                     </p>
 
                                 </div>
@@ -644,7 +644,7 @@
                             />
 
                             <span>
-                                Code expires in 10 minutes
+                                Code expires in 5 minutes
                             </span>
 
                         </div>

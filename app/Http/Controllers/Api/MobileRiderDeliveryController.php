@@ -186,7 +186,6 @@ class MobileRiderDeliveryController extends Controller
                     'status' => Delivery::OUT_FOR_DELIVERY,
                     'out_for_delivery_at' => now(),
                     'in_transit_at' => now(),
-                    'transit_rider_id' => $rider->id,
                 ]);
 
             if ($updated !== 1) {

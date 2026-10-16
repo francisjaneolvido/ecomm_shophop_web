@@ -26,7 +26,7 @@ class ManualCashlessPaymentReviewController extends Controller
 
     public function show(int $payment): View
     {
-        $record = ManualCashlessPayment::with(['buyer', 'reviewer'])
+        $record = ManualCashlessPayment::with(['buyer', 'reviewer', 'demoTransaction'])
             ->findOrFail($payment);
         // Detail lists only explicit membership with matching Buyer/group invariants.
         $record->setRelation('orders', $record->orders()->where('buyer_id', $record->buyer_id)
@@ -78,6 +78,10 @@ class ManualCashlessPaymentReviewController extends Controller
                     || $order->payment_method !== 'online' || $order->status !== Order::STATUS_TO_SHIP)
                 || Delivery::whereIn('order_id', $orders->pluck('id'))->exists()) {
                 throw ValidationException::withMessages(['payment' => 'Payment or related Orders changed. Refresh and review them.']);
+            }
+            if ($decision === ManualCashlessPayment::VERIFIED
+                && ! app(\App\Services\DemoPaymentService::class)->validatedForReview($record)) {
+                throw ValidationException::withMessages(['payment' => 'DEMO ledger does not match the proof reference and expected amount. Reject proof or ask Buyer to generate a demo transaction.']);
             }
             $record->update([
                 'status' => $decision, 'decision' => $decision,

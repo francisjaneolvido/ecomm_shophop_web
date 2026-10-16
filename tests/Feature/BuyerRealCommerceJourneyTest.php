@@ -427,6 +427,77 @@ class BuyerRealCommerceJourneyTest extends TestCase
         $this->assertSame(5, $product->fresh()->stock);
     }
 
+    public function test_buy_now_creates_or_selects_exact_cart_line_and_does_not_select_others(): void
+    {
+        $buyer = $this->buyer();
+        $seller = $this->seller('buy-now-seller@example.test');
+        $product = $this->product($seller, 'Buy Now Target', '125.00', 8);
+        $other = $this->product($seller, 'Other Line', '50.00', 3);
+        $otherLine = $this->cartLine($buyer, $other, 1);
+
+        $this->actingAs($buyer->user)->post(route('buyer.cart.buyNow'), [
+            'product_id' => $product->id, 'qty' => 2,
+        ])->assertRedirect();
+        $selected = CartItem::where('buyer_id', $buyer->id)->where('product_id', $product->id)->sole();
+        $this->assertSame(2, $selected->quantity);
+        $this->assertSame(1, $otherLine->fresh()->quantity);
+
+        $this->post(route('buyer.cart.buyNow'), [
+            'product_id' => $product->id, 'qty' => 1,
+        ])->assertRedirect(route('buyer.cart', ['buy_now' => $selected->id]));
+        $this->assertSame(1, $selected->fresh()->quantity);
+        $this->assertSame(2, CartItem::count());
+        $this->get(route('buyer.cart', ['buy_now' => $selected->id]))
+            ->assertOk()->assertSee('Buy Now Target')->assertSee('Other Line');
+    }
+
+    public function test_buy_now_rejects_foreign_variant_and_insufficient_stock(): void
+    {
+        $buyer = $this->buyer();
+        $seller = $this->seller('buy-now-variant-seller@example.test');
+        $product = $this->product($seller, 'Buy Now Product', '100.00', 3);
+        $other = $this->product($seller, 'Unrelated Variant', '100.00', 3);
+        $variant = ProductVariant::create([
+            'product_id' => $other->id, 'name' => 'Blue', 'price' => '140.00',
+            'stock' => 3, 'status' => 'active',
+        ]);
+        $this->actingAs($buyer->user)->postJson(route('buyer.cart.buyNow'), [
+            'product_id' => $product->id, 'variant_id' => $variant->id, 'qty' => 1,
+        ])->assertUnprocessable();
+        $this->postJson(route('buyer.cart.buyNow'), [
+            'product_id' => $product->id, 'qty' => 4,
+        ])->assertUnprocessable();
+        $this->assertSame(0, CartItem::count());
+    }
+
+    public function test_mobile_buy_now_uses_exact_quantity_and_buyer_orders_are_scoped(): void
+    {
+        $buyer = $this->buyer();
+        $otherBuyer = $this->buyer('other-buyer@example.test');
+        $seller = $this->seller('mobile-order-seller@example.test');
+        $product = $this->product($seller, 'Mobile Product', '150.00', 5);
+        $line = $this->cartLine($buyer, $product, 3);
+
+        $this->actingAs($buyer->user)->postJson('/api/mobile/buyer/cart/add', [
+            'product_id' => $product->id, 'qty' => 1, 'buy_now' => true,
+        ])->assertOk()->assertJsonPath('data.line_key', (string) $line->id);
+        $this->assertSame(1, $line->fresh()->quantity);
+
+        $this->place([$line->id => 1], [$seller->id => 'standard'])
+            ->assertRedirect(route('buyer.orders'));
+        $order = Order::sole();
+
+        $this->getJson('/api/mobile/buyer/orders')->assertOk()
+            ->assertJsonPath('data.orders.0.id', $order->id)
+            ->assertJsonPath('data.orders.0.items.0.name', 'Mobile Product')
+            ->assertJsonPath('data.orders.0.can_confirm_receipt', false);
+        $this->postJson('/api/mobile/buyer/orders/'.$order->id.'/confirm-receipt')
+            ->assertUnprocessable();
+        $this->actingAs($otherBuyer->user)->getJson('/api/mobile/buyer/orders')
+            ->assertOk()->assertJsonCount(0, 'data.orders');
+        $this->postJson('/api/mobile/buyer/orders/'.$order->id.'/confirm-receipt')->assertNotFound();
+    }
+
     private function place(array $items, array $shipping, ?string $voucher = null)
     {
         // Submit only cart identities and choices; totals are never supplied by the test client.

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Logistics\Rider;
+use App\Models\Logistics\BranchStaff;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,6 +36,30 @@ class MobileAuthController extends Controller
             return $this->loginRider($rider);
         }
 
+        // Company-provisioned branch operators have no public registration.
+        $staff = BranchStaff::with(['partner.user', 'sortingCenter'])->where('email', $email)->first();
+        if ($staff && Hash::check($validated['password'], $staff->password)) {
+            if (! $staff->activeForBranch((int) $staff->logistics_partner_id, (int) $staff->sorting_center_id)) {
+                return response()->json(['success' => true, 'status' => 'unavailable',
+                    'message' => 'Your branch operator account or branch is inactive.',
+                    'data' => ['account_type' => 'logistics_staff']], 403);
+            }
+            return response()->json(['success' => true, 'status' => 'approved',
+                'message' => 'Branch scanner sign in successful.',
+                'data' => [
+                    'email' => $staff->email,
+                    'account_type' => 'logistics_staff',
+                    'company_name' => $staff->partner->company_name,
+                    'staff_name' => $staff->name,
+                    'staff_role' => $staff->role,
+                    'sorting_center_id' => $staff->sorting_center_id,
+                    'sorting_center_name' => $staff->sortingCenter->name,
+                    'token' => $staff->createToken('shophop-branch-scanner')->plainTextToken,
+                    'token_type' => 'Bearer',
+                ],
+            ]);
+        }
+
         return response()->json([
             'success' => false,
             'status' => 'invalid_credentials',
@@ -46,6 +71,14 @@ class MobileAuthController extends Controller
     {
         $actor = $request->user();
 
+        if ($actor instanceof BranchStaff) {
+            $staff = $actor->fresh(['partner.user', 'sortingCenter']);
+            $active = $staff?->activeForBranch((int) $staff->logistics_partner_id, (int) $staff->sorting_center_id) ?? false;
+            return response()->json(['success' => true, 'status' => $active ? 'approved' : 'unavailable',
+                'message' => 'Authenticated branch operator.',
+                'data' => ['account_type' => 'logistics_staff', 'email' => $staff?->email,
+                    'sorting_center_id' => $staff?->sorting_center_id, 'staff_role' => $staff?->role]]);
+        }
         if ($actor instanceof Rider) {
             $rider = $actor->fresh(['partner.user', 'coverageArea.sortingCenter', 'sortingCenter']);
             if (! $rider) {
@@ -209,6 +242,7 @@ class MobileAuthController extends Controller
     {
         return [
             'email' => $user->email,
+            'company_name' => $user->account_type === 'logistics' ? $user->logisticsPartner?->company_name : null,
             'account_type' => $user->account_type,
             'rejection_reason' => $user->rejection_reason,
         ];

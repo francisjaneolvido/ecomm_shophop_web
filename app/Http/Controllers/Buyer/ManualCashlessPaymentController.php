@@ -21,10 +21,20 @@ class ManualCashlessPaymentController extends Controller
         // A group UUID or payment ID alone never grants another Buyer access to receipt or Orders.
         $owned = $this->owned($request, $payment);
         // Explicitly linked Orders still require the owning Buyer and matching checkout group.
+        $owned->load('demoTransaction');
         $owned->setRelation('orders', $owned->orders()->where('buyer_id', $owned->buyer_id)
             ->where('checkout_group_id', $owned->checkout_group_id)
             ->with('seller')->get());
-        return view('buyer.payments.show', ['payment' => $owned]);
+        return view('buyer.payments.show', ['payment' => $owned,
+            'paymentSetting' => \App\Models\Finance\PaymentSetting::current()]);
+    }
+
+    public function simulate(Request $request, int $payment, \App\Services\DemoPaymentService $demo): RedirectResponse
+    {
+        $this->owned($request, $payment);
+        $demo->simulate($payment, (int) $request->user()->buyer->id);
+        return redirect()->route('buyer.payments.show', $payment)
+            ->with('status', 'DEMO transaction generated. Take a screenshot of the demo receipt and upload it as proof.');
     }
 
     public function submit(Request $request, int $payment): RedirectResponse

@@ -24,6 +24,20 @@
         @if ($order->delivery->proof_path) <a class="text-sm text-teal underline" href="{{ route('delivery.proof', $order->delivery) }}">View delivery proof</a> @endif
         @endif
 
+        @if($order->returnCase)
+          <section class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4" aria-label="Return to Seller">
+            <h2 class="font-bold text-amber-900">Return-to-Seller · {{str_replace('_',' ',ucfirst($order->returnCase->status))}}</h2>
+            <p class="mt-2 text-sm text-amber-900/80">Reason: {{$order->returnCase->reason}}</p>
+            <p class="text-xs text-amber-800 mt-1">Refund status: {{$order->returnCase->refund_status}} · Items must be inspected before manually updating stock.</p>
+            @if($order->returnCase->status === \App\Models\Logistics\ReturnCase::AWAITING_SELLER)
+              <a class="mt-3 inline-block text-sm font-semibold underline" href="{{route('seller.returns.proof',$order->returnCase)}}" target="_blank">Review Rider handover proof</a>
+              <form class="mt-3" method="POST" action="{{route('seller.returns.confirm',$order->returnCase)}}">@csrf
+                <label class="flex items-start gap-2 text-sm text-amber-900"><input required type="checkbox" value="1" name="physically_received"> I confirm the returned parcel is physically in my possession.</label>
+                <button class="mt-3 rounded-lg bg-teal-dark text-white px-4 py-2 text-sm font-bold" onclick="return confirm('Confirm that you received the actual parcel?')">Confirm Returned Parcel Received</button>
+              </form>
+            @else<p class="mt-3 text-xs text-amber-800">Logistics and Return Rider are handling the physical return.</p>@endif
+          </section>
+        @endif
         @if ($order->tracking_code)
             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal/20 bg-teal/5 p-4">
                 <div>

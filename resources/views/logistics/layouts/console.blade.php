@@ -408,12 +408,12 @@
 
 
         [
-            'label' => 'Branches & Fleet',
+            'label' => 'Network & People',
 
             'items' => [
 
                 [
-                    'label' => 'Sorting Centers',
+                    'label' => 'Branches & Hubs',
                     'route' => 'logistics.sorting-centers.index',
                     'pattern' => 'logistics.sorting-centers.*',
                     'icon' => 'warehouse',
@@ -437,7 +437,7 @@
             'items' => [
 
                 [
-                    'label' => 'Pickup & Delivery Board',
+                    'label' => 'Parcel Operations',
                     'route' => 'logistics.deliveries.board',
                     'pattern' => 'logistics.deliveries.*',
                     'icon' => 'package-check',
@@ -460,6 +460,12 @@
 
             'items' => [
 
+                [
+                    'label' => 'Logistics Earnings',
+                    'route' => 'logistics.earnings',
+                    'pattern' => 'logistics.earnings*',
+                    'icon' => 'wallet',
+                ],
                 [
                     'label' => 'Delivery Reports',
                     'route' => 'logistics.reports.index',
@@ -1848,7 +1854,8 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-@stack('scripts')
+<script src="{{ asset('js/shophop-ph-address.js') }}"></script>
+    @stack('scripts')
 
 </body>
 

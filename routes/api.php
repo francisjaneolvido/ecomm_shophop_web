@@ -5,10 +5,17 @@ use App\Http\Controllers\Api\MobileBuyerAuthController;
 use App\Http\Controllers\Api\MobileBuyerCatalogController;
 use App\Http\Controllers\Api\MobileBuyerCartController;
 use App\Http\Controllers\Api\MobileBuyerCheckoutController;
+use App\Http\Controllers\Api\MobileBuyerOrderController;
+use App\Http\Controllers\Api\MobileBuyerAddressController;
 use App\Http\Controllers\Api\MobileBuyerPaymentController;
 use App\Http\Controllers\Api\MobileBuyerFavoriteController;
 use App\Http\Controllers\Api\MobileRiderAuthController;
+use App\Http\Controllers\Api\MobileSellerAuthController;
 use App\Http\Controllers\Api\MobileRiderDeliveryController;
+use App\Http\Controllers\Api\MobileLogisticsScannerController;
+use App\Http\Controllers\Api\MobileRiderTransitController;
+use App\Http\Controllers\Api\MobileRiderCodController;
+use App\Http\Controllers\Api\MobileRiderReturnController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile')->group(function () {
@@ -37,6 +44,16 @@ Route::prefix('mobile')->group(function () {
             '/verify-email/resend',
             [MobileRiderAuthController::class, 'resendVerification']
         )->middleware('throttle:6,1');
+    });
+
+    // Mobile Seller onboarding only. Seller dashboard remains web-only.
+    Route::prefix('seller')->group(function () {
+        Route::post('/register', [MobileSellerAuthController::class, 'register'])
+            ->middleware('throttle:5,1');
+        Route::post('/verify-email', [MobileSellerAuthController::class, 'verifyEmail'])
+            ->middleware('throttle:10,1');
+        Route::post('/verify-email/resend', [MobileSellerAuthController::class, 'resendVerification'])
+            ->middleware('throttle:6,1');
     });
 
     Route::prefix('buyer')->group(function () {
@@ -74,7 +91,24 @@ Route::prefix('mobile')->group(function () {
         | Uses the same products table, Product::publiclyDiscoverable() scope,
         | seller data, and config/shophop_categories.php used by the web app.
         */
+        // No mobile Logistics registration: existing approved Web Logistics credentials only.
+        Route::prefix('logistics')->group(function () {
+            Route::get('/scanner/branches', [MobileLogisticsScannerController::class, 'branches']);
+            Route::get('/scanner/preview', [MobileLogisticsScannerController::class, 'preview'])->middleware('throttle:60,1');
+            Route::get('/scanner/history', [MobileLogisticsScannerController::class, 'history'])->middleware('throttle:60,1');
+            Route::post('/scanner/receive', [MobileLogisticsScannerController::class, 'receive'])->middleware('throttle:30,1');
+        });
+
         Route::prefix('rider')->group(function () {
+            Route::get('/returns', [MobileRiderReturnController::class, 'index']);
+            Route::post('/returns/{case}/pickup', [MobileRiderReturnController::class, 'pickup'])->whereNumber('case');
+            Route::post('/returns/{case}/handover', [MobileRiderReturnController::class, 'handover'])->whereNumber('case');
+            Route::get('/cod', [MobileRiderCodController::class, 'index']);
+            Route::post('/cod/{delivery}/remit', [MobileRiderCodController::class, 'remit'])
+                ->whereNumber('delivery')->middleware('throttle:10,1');
+            Route::get('/transfers', [MobileRiderTransitController::class, 'index']);
+            Route::post('/transfers/{transfer}/depart', [MobileRiderTransitController::class, 'depart'])->whereNumber('transfer');
+            Route::get('/earnings', [MobileRiderTransitController::class, 'earnings']);
             Route::get('/assignments', [MobileRiderDeliveryController::class, 'index']);
             Route::get('/assignments/{delivery}', [MobileRiderDeliveryController::class, 'show'])->whereNumber('delivery');
             Route::post('/assignments/{delivery}/accept-pickup', [MobileRiderDeliveryController::class, 'acceptPickup'])->whereNumber('delivery');
@@ -85,6 +119,9 @@ Route::prefix('mobile')->group(function () {
         });
 
         Route::prefix('buyer')->group(function () {
+            Route::get('/address', [MobileBuyerAddressController::class, 'show']);
+            Route::patch('/address', [MobileBuyerAddressController::class, 'update']);
+
             Route::get(
                 '/home',
                 [MobileBuyerCatalogController::class, 'home']
@@ -175,9 +212,17 @@ Route::prefix('mobile')->group(function () {
                 [MobileBuyerCheckoutController::class, 'place']
             );
 
+            Route::get('/orders', [MobileBuyerOrderController::class, 'index']);
+            Route::post('/orders/{order}/confirm-receipt', [MobileBuyerOrderController::class, 'confirmReceipt'])->whereNumber('order');
+
             Route::get(
                 '/payments/{payment}',
                 [MobileBuyerPaymentController::class, 'show']
+            )->whereNumber('payment');
+
+            Route::post(
+                '/payments/{payment}/simulate',
+                [MobileBuyerPaymentController::class, 'simulate']
             )->whereNumber('payment');
 
             Route::post(

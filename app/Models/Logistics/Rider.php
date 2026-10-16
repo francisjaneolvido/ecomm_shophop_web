@@ -24,6 +24,8 @@ class Rider extends Authenticatable
         'sex',
         'contact_no',
         'birthday',
+        'region_code',
+        'region_name',
         'province_code',
         'province_name',
         'municipality_code',

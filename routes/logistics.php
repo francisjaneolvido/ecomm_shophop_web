@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Logistics\ReturnController;
 
 use App\Http\Controllers\Logistics\AuthController as LogisticsAuthController;
 use App\Http\Controllers\Logistics\GoogleAuthController;
@@ -10,7 +11,10 @@ use App\Http\Controllers\Logistics\RiderController;
 use App\Http\Controllers\Logistics\DeliveryController;
 use App\Http\Controllers\Logistics\ReportController;
 use App\Http\Controllers\Logistics\CodSettlementController;
+use App\Http\Controllers\Logistics\EarningsController;
 use App\Http\Controllers\Logistics\SortingCenterController;
+use App\Http\Controllers\Logistics\BranchStaffController;
+use App\Http\Controllers\Logistics\BranchStaffWorkspaceController;
 
 /*
 | All Logistics public pages and private console live under LOGISTICS_DOMAIN.
@@ -40,16 +44,30 @@ Route::domain(config('app.logistics_domain'))
             ->middleware('throttle:10,1')->name('login.submit');
         Route::post('/sign-out', [LogisticsAuthController::class, 'logout'])->name('logout');
 
+        // Branch operators use a separate session guard: no access to company management routes.
+        Route::middleware('auth:logistics_staff')->group(function () {
+            Route::get('/staff/workspace', [BranchStaffWorkspaceController::class, 'index'])->name('staff.workspace');
+            Route::post('/staff/password', [BranchStaffWorkspaceController::class, 'changePassword'])
+                ->middleware('throttle:6,1')->name('staff.password');
+        });
+
         Route::middleware(['auth', 'approved.role:logistics'])->group(function () {
             Route::get('/dashboard', [LogisticsDashboardController::class, 'index'])->name('dashboard');
 
             Route::get('/sorting-centers', [SortingCenterController::class, 'index'])->name('sorting-centers.index');
+            Route::get('/sorting-centers/archived', [SortingCenterController::class, 'archived'])->name('sorting-centers.archived');
+            Route::get('/sorting-centers/create', [SortingCenterController::class, 'create'])->name('sorting-centers.create');
+            Route::get('/sorting-centers/{center}', [SortingCenterController::class, 'show'])->name('sorting-centers.show');
+            Route::get('/sorting-centers/{center}/edit', [SortingCenterController::class, 'edit'])->name('sorting-centers.edit');
             Route::post('/sorting-centers', [SortingCenterController::class, 'store'])->name('sorting-centers.store');
             Route::post('/sorting-centers/{center}/update', [SortingCenterController::class, 'update'])->name('sorting-centers.update');
             Route::post('/sorting-centers/{center}/toggle', [SortingCenterController::class, 'toggle'])->name('sorting-centers.toggle');
-            Route::post('/sorting-centers/{center}/create-login', [SortingCenterController::class, 'createLogin'])->name('sorting-centers.create-login');
-            Route::post('/sorting-centers/{center}/reset-password', [SortingCenterController::class, 'resetPassword'])
-                ->middleware('throttle:10,1')->name('sorting-centers.reset-password');
+            Route::post('/sorting-centers/{center}/archive', [SortingCenterController::class, 'archive'])->name('sorting-centers.archive');
+            Route::post('/sorting-centers/{center}/restore', [SortingCenterController::class, 'restore'])->name('sorting-centers.restore');
+            Route::post('/sorting-centers/{center}/staff', [BranchStaffController::class, 'store'])->name('staff.store');
+            Route::post('/staff/{staff}/toggle', [BranchStaffController::class, 'toggle'])->name('staff.toggle');
+            Route::post('/staff/{staff}/reset-password', [BranchStaffController::class, 'resetPassword'])
+                ->middleware('throttle:10,1')->name('staff.reset-password');
 
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
@@ -61,6 +79,10 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/riders/{rider}/suspend', [RiderController::class, 'suspend'])->name('riders.suspend');
             Route::post('/riders/{rider}/activate', [RiderController::class, 'activate'])->name('riders.activate');
 
+            Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
+            Route::post('/returns/deliveries/{delivery}', [ReturnController::class, 'initiate'])->name('returns.initiate');
+            Route::post('/returns/{case}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
+            Route::post('/returns/{case}/assign', [ReturnController::class, 'assign'])->name('returns.assign');
             Route::get('/deliveries', [DeliveryController::class, 'board'])->name('deliveries.board');
             Route::post('/deliveries/{order}/assign', [DeliveryController::class, 'assign'])->name('deliveries.assign');
             Route::post('/deliveries/{delivery}/receive', [DeliveryController::class, 'receive'])->name('deliveries.receive');
@@ -68,8 +90,11 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/deliveries/{delivery}/assign-delivery', [DeliveryController::class, 'assignDelivery'])->name('deliveries.assign-delivery');
             Route::post('/deliveries/{delivery}/transfer', [DeliveryController::class, 'dispatchTransfer'])->name('deliveries.transfer');
             Route::post('/transfers/{transfer}/receive', [DeliveryController::class, 'receiveTransfer'])->name('transfers.receive');
+            Route::get('/earnings', [EarningsController::class, 'index'])->name('earnings');
+            Route::post('/earnings/{entry}/rider-paid', [EarningsController::class, 'payRider'])->name('earnings.rider-paid');
             Route::get('/settlements', [CodSettlementController::class, 'index'])->name('settlements.index');
             Route::post('/settlements/{delivery}/reconcile', [CodSettlementController::class, 'reconcile'])->name('settlements.reconcile');
+            Route::post('/settlements/{delivery}/remit-admin', [CodSettlementController::class, 'remitToAdmin'])->name('settlements.remit-admin');
 
             Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
             Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');

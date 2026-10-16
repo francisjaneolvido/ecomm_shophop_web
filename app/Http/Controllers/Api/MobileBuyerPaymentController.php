@@ -18,6 +18,7 @@ class MobileBuyerPaymentController extends Controller
     public function show(Request $request, int $payment): JsonResponse
     {
         $owned = $this->owned($request, $payment);
+        $owned->load('demoTransaction');
         $orders = $owned->orders()
             ->where('buyer_id', $owned->buyer_id)
             ->where('checkout_group_id', $owned->checkout_group_id)
@@ -32,6 +33,9 @@ class MobileBuyerPaymentController extends Controller
                 'status' => $owned->status,
                 'reference' => $owned->reference,
                 'expected_amount' => (float) $owned->expectedAmount(),
+                'payment_instructions' => \App\Models\Finance\PaymentSetting::current()?->publicDetails(),
+                'demo_transaction' => $owned->demoTransaction ? ['reference' => $owned->demoTransaction->reference,
+                    'amount' => (float) $owned->demoTransaction->amount] : null,
                 'expires_at' => $owned->expires_at?->toIso8601String(),
                 'submitted_at' => $owned->submitted_at?->toIso8601String(),
                 'reviewed_at' => $owned->reviewed_at?->toIso8601String(),
@@ -55,6 +59,14 @@ class MobileBuyerPaymentController extends Controller
                 ])->values()->all(),
             ],
         ]);
+    }
+
+    public function simulate(Request $request, int $payment, \App\Services\DemoPaymentService $demo): JsonResponse
+    {
+        $this->owned($request, $payment);
+        $record = $demo->simulate($payment, (int) $request->user()->buyer->id);
+        return response()->json(['success' => true, 'message' => 'DEMO payment created (no real money transferred).',
+            'data' => ['reference' => $record->reference, 'amount' => (float) $record->amount]]);
     }
 
     public function submit(Request $request, int $payment): JsonResponse

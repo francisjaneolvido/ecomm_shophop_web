@@ -282,7 +282,7 @@
                             <x-lucide-pen-line class="w-4 h-4 shrink-0" />
                             <span data-file-label="agreement_signature">Upload a photo or scan of your signature</span>
                             <input type="file" name="agreement_signature" data-file-input="agreement_signature"
-                                   accept="image/png,image/jpeg,image/webp,application/pdf" class="hidden" required>
+                                   accept="image/png,image/jpeg,application/pdf" class="hidden" required>
                         </label>
                         <p class="text-[11px] text-navy/45 mt-1.5">
                             Accepted formats: JPG, PNG, WEBP, or PDF, up to 5MB. You may upload a
@@ -306,7 +306,7 @@
                     <label class="block text-xs font-semibold text-navy mb-1.5">
                         Company / business name <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="company_name" value="{{ old('company_name') }}" required
+                    <input type="text" name="company_name" minlength="3" maxlength="100" value="{{ old('company_name') }}" required
                            pattern="(?=.*[A-Za-zÀ-ÖØ-öø-ÿÑñ]).+" title="Business name must contain at least one letter."
                            placeholder="e.g. J&amp;T Express — Cavite Hub"
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy placeholder:text-navy/35 focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
@@ -342,14 +342,14 @@
 
                 <div>
                     <label class="block text-xs font-semibold text-navy mb-1.5">Authorized representative — last name <span class="text-red-500">*</span></label>
-                    <input type="text" name="rep_last_name" value="{{ old('rep_last_name') }}" required
+                    <input type="text" name="rep_last_name" minlength="2" maxlength="50" value="{{ old('rep_last_name') }}" required
                            pattern="[^0-9]*" title="Names should not contain numbers."
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                     <p class="hidden text-xs text-red-500 mt-1" data-client-error="rep_last_name">Please remove any numbers from the name.</p>
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-navy mb-1.5">First name <span class="text-red-500">*</span></label>
-                    <input type="text" name="rep_first_name" value="{{ old('rep_first_name') }}" required
+                    <input type="text" name="rep_first_name" minlength="2" maxlength="50" value="{{ old('rep_first_name') }}" required
                            pattern="[^0-9]*" title="Names should not contain numbers."
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                     <p class="hidden text-xs text-red-500 mt-1" data-client-error="rep_first_name">Please remove any numbers from the name.</p>
@@ -371,7 +371,7 @@
                         <x-lucide-upload class="w-4 h-4 shrink-0" />
                         <span data-file-label="rep_valid_id">Drag file or browse</span>
                         <input type="file" name="rep_valid_id" data-file-input="rep_valid_id"
-                               accept="image/png,image/jpeg,image/webp,application/pdf" class="hidden" required>
+                               accept="image/png,image/jpeg,application/pdf" class="hidden" required>
                     </label>
                     <p class="text-[11px] text-navy/45 mt-1.5" data-id-detect-status>
                         We'll try to read your name and ID number off this automatically once
@@ -404,7 +404,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-navy mb-1.5">Birthday <span class="text-red-500">*</span></label>
-                    <input type="date" name="rep_birthday" value="{{ old('rep_birthday') }}" required
+                    <input type="date" name="rep_birthday" max="{{ now()->subYears(18)->format('Y-m-d') }}" value="{{ old('rep_birthday') }}" required
                            class="w-full border border-gray-border rounded-xl px-4 py-3 text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
                 </div>
                 <div>
@@ -423,7 +423,7 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-navy mb-1.5">Contact no. <span class="text-red-500">*</span></label>
-                    <input type="tel" name="contact_no" value="{{ old('contact_no') }}" required
+                    <input type="tel" name="contact_no" inputmode="tel" maxlength="13" pattern="(?:09[0-9]{9}|\+639[0-9]{9})" title="Enter 09XXXXXXXXX or +639XXXXXXXXX" value="{{ old('contact_no') }}" required
                            pattern="[0-9+\-]+" title="Numbers only — + and - are allowed, no letters or other characters."
                            inputmode="tel"
                            placeholder="+63"
@@ -686,6 +686,12 @@
                         At least 1 number (0–9)
                     </p>
 
+                    <p class="req-item flex items-center gap-2 text-[11px] text-navy/40 transition-colors duration-200" data-req="special">
+                        <span class="req-dot w-3.5 h-3.5 rounded-full border border-gray-border bg-white flex items-center justify-center shrink-0 transition-colors duration-200">
+                            <x-lucide-check class="req-check hidden w-2.5 h-2.5 text-white" />
+                        </span>
+                        At least 1 special character (e.g. @, #, !)
+                    </p>
                 </div>
 
             </div>
@@ -894,8 +900,7 @@
         }
 
         function loadRegions() {
-            // Static, stable reference data — no network call needed.
-            return Promise.resolve(sortByName(PH_REGIONS));
+            return ShopHopPHAddress.regions().then(rows => rows.map(r => ({ code: r.code, name: ShopHopPHAddress.regionLabel(r) })));
         }
 
         async function loadAllProvinces() {
@@ -905,8 +910,7 @@
         }
 
         async function loadProvinces(regionCode) {
-            const all = await loadAllProvinces();
-            return all.filter(function (p) { return p.regionCode === regionCode; });
+            return ShopHopPHAddress.provinces(regionCode);
         }
 
         async function loadCitiesByProvince(provinceCode) {
@@ -923,15 +927,7 @@
         // worth doing one manual test of selecting NCR as the region to
         // confirm the field names below still match the live API.
         async function loadCitiesByRegion(regionCode) {
-            if (!psgcCache.allCitiesMunicipalities) {
-                psgcCache.allCitiesMunicipalities = await psgcGet('/cities-municipalities/');
-            }
-            const cities = psgcCache.allCitiesMunicipalities.filter(function (c) {
-                const cRegion = c.regionCode || c.region_code;
-                const cProvince = c.provinceCode || c.province_code;
-                return cRegion === regionCode && !cProvince;
-            });
-            return sortByName(cities);
+            return ShopHopPHAddress.cities(regionCode, regionCode);
         }
 
         async function loadBarangays(cityCode) {
@@ -993,11 +989,11 @@
                     if (provinces.length === 0) {
                         // Province-less region (e.g. NCR) — cities/municipalities sit directly under the region.
                         addressState.isNcrLike = true;
-                        addressState.provinceCode = '';
+                        addressState.provinceCode = addressState.regionCode;
                         addressState.provinceName = addressState.regionName;
                         provinceSelect.innerHTML = '<option value="' + addressState.regionName + '">' + addressState.regionName + ' (no provinces)</option>';
                         provinceSelect.value = addressState.regionName;
-                        provinceSelect.disabled = true;
+                        provinceSelect.disabled = false;
 
                         municipalitySelect.innerHTML = '<option value="">Loading cities/municipalities…</option>';
                         const cities = await loadCitiesByRegion(addressState.regionCode);
@@ -1079,11 +1075,10 @@
                     return { value: p.name, code: p.code, type: 'province', label: p.name };
                 });
 
-                // Province-less regions (e.g. NCR) still need to be addable as a coverage area.
-                const noProvinceRegion = regions.find(function (r) { return /national capital region|\bncr\b/i.test(r.name); });
-                if (noProvinceRegion) {
-                    options.push({ value: noProvinceRegion.name, code: noProvinceRegion.code, type: 'region', label: noProvinceRegion.name + ' (no provinces)' });
-                }
+                // Expose all regions, including NCR and the restored NIR.
+                regions.forEach(function (r) {
+                    options.push({ value: r.name, code: r.code, type: 'region', label: r.name + ' (whole region)' });
+                });
                 options.sort(function (a, b) { return a.label.localeCompare(b.label, 'en'); });
 
                 coverageAddSelect.innerHTML = '<option value="">+ Choose a province to add…</option>';
@@ -1496,7 +1491,7 @@
 
         // ---- Password step ----
         function isValidPassword(v) {
-            return v.length >= 8 && /[A-Z]/.test(v) && /[a-z]/.test(v) && /[0-9]/.test(v);
+            return v.length >= 8 && /[A-Z]/.test(v) && /[a-z]/.test(v) && /[0-9]/.test(v) && /[^\p{L}\p{N}\s]/u.test(v);
         }
 
         function updatePasswordRequirements(value) {
@@ -1505,6 +1500,7 @@
                 uppercase: /[A-Z]/.test(value),
                 lowercase: /[a-z]/.test(value),
                 number: /[0-9]/.test(value),
+                special: /[^\p{L}\p{N}\s]/u.test(value),
             };
             Object.keys(checks).forEach(function (key) {
                 const item = wizard.querySelector('[data-password-requirements] [data-req="' + key + '"]');
@@ -1530,7 +1526,7 @@
             const matchOk = accountPasswordConfirmInput.value.length > 0 && accountPasswordConfirmInput.value === accountPasswordInput.value;
             wizard.querySelector('[data-client-error="password"]').classList.toggle('hidden', passOk);
             wizard.querySelector('[data-client-error="password_confirmation"]').classList.toggle('hidden', matchOk);
-            if (!passOk) wizard.querySelector('[data-client-error="password"]').textContent = 'Password needs 8+ characters, an uppercase letter, a lowercase letter, and a number.';
+            if (!passOk) wizard.querySelector('[data-client-error="password"]').textContent = 'Password needs 8+ characters, uppercase, lowercase, a number, and a special character.';
             if (!matchOk) wizard.querySelector('[data-client-error="password_confirmation"]').textContent = 'Passwords do not match.';
             return passOk && matchOk;
         }
@@ -1588,9 +1584,9 @@
         }
 
         // ---- Field format validators ----
-        function isValidName(v) { return /^[^0-9]+$/.test(v.trim()); }
+        function isValidName(v) { return /^[\p{L}][\p{L}\s'.-]*$/u.test(v.trim()) && v.trim().length >= 2 && v.trim().length <= 50; }
         function isValidBusinessName(v) { return /[A-Za-zÀ-ÖØ-öø-ÿÑñ]/.test(v); }
-        function isValidPhone(v) { return /^[0-9+\-]+$/.test(v.trim()); }
+        function isValidPhone(v) { return /^(?:09\d{9}|\+639\d{9})$/.test(v.trim()); }
         function isValidIdNumber(v) { return /^[A-Za-z0-9\-]+$/.test(v.trim()); }
 
         function bindFieldValidator(name, testFn) {
@@ -1627,6 +1623,14 @@
             }
             const repIdFile = wizard.querySelector('[name="rep_valid_id"]');
             if (!repIdFile || !repIdFile.files || repIdFile.files.length === 0) return false;
+            const birth = wizard.querySelector('[name="rep_birthday"]');
+            const latest = new Date();
+            latest.setFullYear(latest.getFullYear() - 18);
+            if (!birth || new Date(birth.value + 'T00:00:00') > latest) return false;
+            for (const name of required) {
+                const field = wizard.querySelector('[name="' + name + '"]');
+                if (field && !field.checkValidity()) return false;
+            }
 
             return isValidName(wizard.querySelector('[name="rep_last_name"]').value)
                 && isValidName(wizard.querySelector('[name="rep_first_name"]').value)
@@ -1742,7 +1746,7 @@
             if (termsError) termsError.classList.add('hidden');
 
             if (current === 2 && !step2Valid()) {
-                if (step2ErrorEl) step2ErrorEl.classList.remove('hidden');
+                if (step2ErrorEl) { step2ErrorEl.textContent = 'Check all required details, representative age (18+), email and 11-digit Philippine mobile number. Accept a valid ID (JPG, PNG or PDF, max 5 MB).'; step2ErrorEl.classList.remove('hidden'); }
                 wizard.querySelector('[data-step="2"]').scrollIntoView({ behavior: 'smooth', block: 'start' });
                 return;
             }
@@ -1810,12 +1814,23 @@
         wizard.querySelectorAll('[data-file-input]').forEach(function (input) {
             input.addEventListener('change', function () {
                 const label = wizard.querySelector('[data-file-label="' + input.dataset.fileInput + '"]');
-                if (label && input.files.length) label.textContent = input.files[0].name;
+                if (!input.files.length) return;
+                const file = input.files[0];
+                const allowed = input.name === 'agreement_signature'
+                    ? ['image/jpeg', 'image/png', 'image/webp', 'application/pdf']
+                    : ['image/jpeg', 'image/png', 'application/pdf'];
+                if (!allowed.includes(file.type) || file.size > 5 * 1024 * 1024) {
+                    input.value = '';
+                    if (label) { label.textContent = 'Only JPG, PNG or PDF up to 5 MB allowed'; label.classList.add('text-red-500'); }
+                    return;
+                }
+                if (label) { label.textContent = file.name; label.classList.remove('text-red-500'); }
             });
         });
 
         // Also guard actual form submission in case someone bypasses the wizard nav
         wizard.addEventListener('submit', function (e) {
+            if (wizard.dataset.submitting === '1') { e.preventDefault(); return; }
             if (!termsAccepted() || !step2Valid() || !otpComplete() || !passwordStepValid() || coverageChips.size === 0) {
                 e.preventDefault();
                 if (!termsAccepted()) {
@@ -1839,6 +1854,9 @@
             }
             serializeOtp();
             serializeCoverage();
+            wizard.dataset.submitting = '1';
+            submitBtn.disabled = true;
+            submitBtn.setAttribute('aria-busy', 'true');
         });
 
         render();

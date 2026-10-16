@@ -32,6 +32,7 @@ class Order extends Model
         'cod_fee',
         'voucher_id',
         'voucher_discount',
+        'platform_voucher_id', 'shipping_voucher_id', 'platform_discount', 'shipping_discount',
         'note',
         'delivery_name',
         'delivery_phone',
@@ -55,7 +56,23 @@ class Order extends Model
         'shipping_fee' => 'decimal:2',
         'cod_fee' => 'decimal:2',
         'voucher_discount' => 'decimal:2',
+        'platform_discount' => 'decimal:2', 'shipping_discount' => 'decimal:2',
     ];
+
+    public function returnCase(): HasOne
+    {
+        return $this->hasOne(\App\Models\Logistics\ReturnCase::class);
+    }
+
+    public function financial(): HasOne
+    {
+        return $this->hasOne(\App\Models\Finance\OrderFinancial::class);
+    }
+
+    public function settlements(): HasMany
+    {
+        return $this->hasMany(\App\Models\Finance\SettlementEntry::class);
+    }
 
     public function buyer(): BelongsTo
     {
@@ -143,10 +160,14 @@ class Order extends Model
     public const STATUS_TO_RECEIVE = 'to-receive';
     public const STATUS_COMPLETED = 'completed';
     public const STATUS_CANCELLED = 'cancelled';
+    public const STATUS_RETURNED = 'returned';
 
     public function statusLabel(): string
     {
         // A closed Online group has a real terminal Order status, even though it is never payment eligible.
+        if ($this->status === self::STATUS_RETURNED) {
+            return 'Returned to Seller';
+        }
         if ($this->status === self::STATUS_CANCELLED) {
             return 'Cancelled';
         }
@@ -175,6 +196,13 @@ class Order extends Model
 
     public function statusNote(): string
     {
+        if ($this->status === self::STATUS_RETURNED) {
+            return $this->returnCase?->refund_status === 'paid'
+                ? 'Returned to Seller. ShopHop Admin recorded the manual refund.'
+                : ($this->payment_method === 'online'
+                    ? 'Returned to Seller. Manual refund is pending ShopHop Admin verification.'
+                    : 'Returned to Seller. No COD money was collected for this failed delivery.');
+        }
         // The payment preserves the closure reason while the Order stops showing proof instructions.
         if ($this->status === self::STATUS_CANCELLED) {
             return $this->manualCashlessPayment?->status === ManualCashlessPayment::EXPIRED
@@ -250,7 +278,13 @@ class Order extends Model
             Delivery::DELIVERY_ASSIGNED => 'A delivery Rider was assigned for the destination area.',
             Delivery::OUT_FOR_DELIVERY => 'Your parcel is out for delivery.',
             Delivery::DELIVERED => 'Rider marked the parcel delivered. Please confirm receipt to complete the order.',
-            Delivery::DELIVERY_FAILED => 'The delivery attempt was reported as failed. Logistics can review the report and schedule another attempt.',
+            Delivery::DELIVERY_FAILED => 'Delivery failed. Logistics may schedule a retry or initiate a return.',
+            Delivery::RETURN_REQUESTED => 'Return initiated. Waiting for physical receipt at the branch.',
+            Delivery::RETURN_AT_BRANCH => 'Returned parcel received at Logistics branch.',
+            Delivery::RETURN_ASSIGNED => 'A Rider was assigned to return the parcel to the Seller.',
+            Delivery::RETURN_IN_TRANSIT => 'The parcel is on its way back to the Seller.',
+            Delivery::RETURN_AWAITING_SELLER => 'The Rider submitted a Seller handover proof. Awaiting Seller confirmation.',
+            Delivery::RETURNED => 'Seller confirmed receipt of the returned parcel.',
             Delivery::PICKUP_ASSIGNED => 'Pickup Rider assigned; collection from the Seller is pending.',
             Delivery::PICKUP_ACCEPTED => 'Pickup Rider accepted the assignment and is heading to the Seller.',
             default => 'Courier details are unavailable.',

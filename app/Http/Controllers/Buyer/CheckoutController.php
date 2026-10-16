@@ -35,6 +35,8 @@ class CheckoutController extends Controller
                 voucherCode: $queryVoucher,
                 paymentMethod: 'cod',
                 strictVoucher: false,
+                platformVoucherCode: (string) $request->query('merchandise_voucher_code', ''),
+                shippingVoucherCode: (string) $request->query('shipping_voucher_code', ''),
             );
         } catch (ValidationException $exception) {
             return redirect()
@@ -46,7 +48,12 @@ class CheckoutController extends Controller
             'address' => $preview['address'],
             'cartGroups' => $preview['cart_groups'],
             'availableVouchers' => $preview['available_vouchers'],
+            'platformVouchers' => $preview['available_platform_vouchers'],
             'initialVoucherCode' => $preview['initial_voucher_code'],
+            'platformVoucherCode' => $preview['platform_voucher_code'],
+            'shippingVoucherCode' => $preview['shipping_voucher_code'],
+            'initialPlatformDiscount' => $preview['summary']['platform_discount'],
+            'initialShippingDiscount' => $preview['summary']['shipping_discount'],
             'itemCount' => $preview['item_count'],
             'shopCount' => $preview['shop_count'],
             'codFee' => $preview['cod_fee_per_shop'],
@@ -64,6 +71,8 @@ class CheckoutController extends Controller
             'shipping_method.*' => 'required|in:standard,express',
             'payment_method' => 'required|in:cod,online',
             'voucher_code' => 'nullable|string',
+            'merchandise_voucher_code' => 'nullable|string|max:40',
+            'shipping_voucher_code' => 'nullable|string|max:40',
             'groups' => 'nullable|array',
             'groups.*.note' => 'nullable|string|max:500',
         ]);

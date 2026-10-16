@@ -131,15 +131,27 @@
 
     {{-- REQUIRED: this is what actually renders every @push('scripts')
          block pushed by the modals included above (buyer/seller/logistics
-         registration, etc.). Without this @stack('scripts') tag, all of
+         registration, etc.). Without the scripts stack, all of
          that JavaScript — including the event listeners that open each
          registration modal — is silently dropped and never reaches the
          page, even though the modal HTML itself is present. --}}
+    <script src="{{ asset('js/shophop-ph-address.js') }}"></script>
     @stack('scripts')
 
     {{-- If a route redirected here asking to auto-open a modal
          (e.g. /register redirecting home with open_modal = 'account-type'),
          fire the matching open event once the page has loaded. --}}
+    {{-- Validation errors belong to the registration flow, not the sign-in modal. --}}
+    @if ($errors->any() && in_array(old('registration_form'), ['buyer', 'seller'], true))
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.dispatchEvent(new CustomEvent('shophop:open-registration-modal', {
+                detail: { type: @json(old('registration_form')) }
+            }));
+        });
+    </script>
+    @endif
+
     @if (session('open_modal') === 'account-type')
     <script>
         document.addEventListener('DOMContentLoaded', function () {

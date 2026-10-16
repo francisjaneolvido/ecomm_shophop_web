@@ -47,6 +47,10 @@ return [
             'driver' => 'session',
             'provider' => 'riders',
         ],
+        'logistics_staff' => [
+            'driver' => 'session',
+            'provider' => 'logistics_staff',
+        ],
     ],
 
     /*
@@ -75,6 +79,10 @@ return [
         'riders' => [
             'driver' => 'eloquent',
             'model' => \App\Models\Logistics\Rider::class,
+        ],
+        'logistics_staff' => [
+            'driver' => 'eloquent',
+            'model' => \App\Models\Logistics\BranchStaff::class,
         ],
 
         // 'users' => [

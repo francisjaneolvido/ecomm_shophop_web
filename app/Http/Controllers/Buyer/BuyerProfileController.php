@@ -34,4 +34,37 @@ class BuyerProfileController extends Controller
 
         return redirect()->route('buyer.profile')->with('status', 'Profile changes saved.');
     }
+    /** Updates the Buyer's single default/registration address.
+     * Orders already placed keep their historical delivery snapshots. */
+    public function updateAddress(Request $request): RedirectResponse
+    {
+        $buyer = $request->user()->buyer;
+        abort_unless($buyer, 404);
+        $data = $request->validate([
+            'region_code' => ['required', 'string', 'max:20'],
+            'region_name' => ['required', 'string', 'max:150'],
+            'province_code' => ['required', 'string', 'max:20'],
+            'province_name' => ['required', 'string', 'max:150'],
+            'municipality_code' => ['required', 'string', 'max:20'],
+            'municipality_name' => ['required', 'string', 'max:150'],
+            'barangay_code' => ['required', 'string', 'max:20'],
+            'barangay_name' => ['required', 'string', 'max:150'],
+            'street' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'regex:/^09\d{9}$/'],
+        ]);
+        $buyer->update([
+            'region_code' => $data['region_code'],
+            'region_name' => $data['region_name'],
+            'province_code' => $data['province_code'],
+            'province_name' => $data['province_name'],
+            'municipality_code' => $data['municipality_code'],
+            'municipality_name' => $data['municipality_name'],
+            'barangay_code' => $data['barangay_code'],
+            'barangay_name' => $data['barangay_name'],
+            'street_address' => trim($data['street']),
+            'contact_no' => $data['phone'],
+        ]);
+        return redirect()->route('buyer.profile')->with('status', 'Your default delivery address was updated.');
+    }
+
 }

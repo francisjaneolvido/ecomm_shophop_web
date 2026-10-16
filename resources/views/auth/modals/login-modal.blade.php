@@ -508,7 +508,7 @@
                            transition-all duration-200"
                 >
                     Sign In
-                    <x-lucide-arrow-right class="w-4 h-4" />
+                    
                 </button>
             </form>
 
@@ -691,7 +691,7 @@
         // If the server sent back validation errors (wrong password, pending
         // approval, etc.) for the login form, auto-open this modal so the
         // person actually sees the error message.
-        @if ($errors->any() && old('email') !== null)
+        @if ($errors->any() && old('email') !== null && ! old('registration_form'))
             document.addEventListener('DOMContentLoaded', openLoginModal);
         @endif
     })();

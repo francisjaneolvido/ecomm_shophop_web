@@ -60,7 +60,8 @@ class MobileBuyerCartController extends Controller
         $data = $request->validate([
             'product_id' => ['required', 'integer', 'exists:products,id'],
             'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
-            'qty' => ['nullable', 'integer', 'min:1'],
+            'qty' => ['nullable', 'integer', 'min:1', 'max:9999'],
+            'buy_now' => ['sometimes', 'boolean'],
         ]);
 
         $buyer = $this->approvedBuyer($request);
@@ -97,14 +98,16 @@ class MobileBuyerCartController extends Controller
 
         $qty = (int) ($data['qty'] ?? 1);
 
-        if ($qty + ($existing?->quantity ?? 0) > $stock) {
+        // Buy Now selects the requested quantity; ordinary Add increments the cart.
+        $finalQty = ! empty($data['buy_now']) ? $qty : $qty + ($existing?->quantity ?? 0);
+        if ($finalQty > $stock) {
             throw ValidationException::withMessages([
                 'qty' => "Only {$stock} left in stock.",
             ]);
         }
 
         if ($existing) {
-            $existing->quantity += $qty;
+            $existing->quantity = $finalQty;
             $existing->save();
             $cartItem = $existing;
         } else {
@@ -118,7 +121,7 @@ class MobileBuyerCartController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Added to cart.',
+            'message' => ! empty($data['buy_now']) ? 'Ready to buy.' : 'Added to cart.',
             'data' => [
                 'line_key' => (string) $cartItem->id,
                 'cart_count' => CartItem::where('buyer_id', $buyer->id)->count(),

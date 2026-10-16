@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\SellerEmailVerificationController;
 use App\Http\Controllers\Seller\InventoryController;
 use App\Http\Controllers\Seller\OrderController;
+use App\Http\Controllers\Seller\ReturnController;
 use App\Http\Controllers\Seller\ReportController;
+use App\Http\Controllers\Seller\EarningsController;
 // Account reads and writes reuse the authenticated Seller profile within the existing approved-role group.
 use App\Http\Controllers\Seller\AccountController;
 
@@ -72,6 +74,7 @@ Route::prefix('seller')
             */
 
             // Dashboard fulfillment counts follow this Seller's persisted Orders.
+            Route::get('/earnings', [EarningsController::class, 'index'])->name('earnings');
             Route::get('/dashboard', [OrderController::class, 'dashboard'])
                 ->name('dashboard');
 
@@ -145,6 +148,8 @@ Route::prefix('seller')
                 ->name('orders.courier');
             Route::get('/orders/confirm', [OrderController::class, 'confirm'])
                 ->name('orders.confirm');
+            Route::post('/returns/{case}/confirm', [ReturnController::class, 'confirm'])->name('returns.confirm');
+            Route::get('/returns/{case}/proof', [ReturnController::class, 'proof'])->name('returns.proof');
             Route::get('/orders/{order}', [OrderController::class, 'show'])
                 ->name('orders.show');
             Route::patch('/orders/{order}/accept', [OrderController::class, 'accept'])

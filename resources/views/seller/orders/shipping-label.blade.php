@@ -27,6 +27,8 @@
         .meta > div:last-child { border-right: 0; }
         .items { margin-top: 18px; width: 100%; border-collapse: collapse; font-size: 12px; }
         .items th,.items td { border: 1px solid #cdd7dc; padding: 8px; text-align: left; }
+        .parcel-qr { min-height: 145px; display:flex; align-items:center; gap:18px; padding: 14px; border: 1px solid #0f2c3f; margin-top: 18px; }
+        .parcel-qr #parcelQr { width:128px; height:128px; }
         .footer { margin-top: 16px; padding-top: 12px; border-top: 1px dashed #8296a1; font-size: 11px; color: #55707f; }
         @media print { body { background: white; } .toolbar { display:none; } .label { margin:0; width:100%; border:2px solid #000; } }
     </style>
@@ -79,7 +81,22 @@
         </tbody>
     </table>
 
+    <div class="parcel-qr">
+        <div id="parcelQr" role="img" aria-label="Parcel tracking QR code"></div>
+        <div><strong>SCAN AT SORTING CENTER</strong><p class="muted">This QR contains the tracking code only. Staff login and branch/status verification are required to receive the parcel.</p><strong>{{ $order->tracking_code }}</strong><p id="qrHelp" class="muted">If the QR fails to display, enter the tracking code manually.</p></div>
+    </div>
+
     <div class="footer">Attach this label securely before Rider handoff. Logistics/Riders should verify the tracking code at parcel custody changes.</div>
 </section>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" referrerpolicy="no-referrer"></script>
+<script>
+    if (typeof QRCode === 'function') {
+        new QRCode(document.getElementById('parcelQr'), {
+            text: @json($order->tracking_code), width: 128, height: 128,
+            correctLevel: QRCode.CorrectLevel.M,
+        });
+        document.getElementById('qrHelp').style.display = 'none';
+    }
+</script>
 </body>
 </html>

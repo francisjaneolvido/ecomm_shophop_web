@@ -50,6 +50,14 @@
 
 @include('buyer.partials.navbar-buyer')
 
+@if ($errors->any())
+    <div role="alert" class="max-w-310 mx-auto m-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        @foreach ($errors->all() as $error)
+            <p>{{ $error }}</p>
+        @endforeach
+    </div>
+@endif
+
 {{-- BREADCRUMB --}}
 <div class="bg-white border-b border-gray-border/70">
     <div class="max-w-310 mx-auto px-3 sm:px-4 lg:px-5 py-2">
@@ -206,8 +214,8 @@
                                 <div class="flex gap-2 text-[10px] text-navy min-w-0">
                                     <x-lucide-truck class="w-3.5 h-3.5 text-teal-dark shrink-0 mt-0.5" />
                                     <div>
-                                        <p class="font-semibold">Free shipping eligible</p>
-                                        <p class="text-navy/40 mt-0.5">Ships from {{ $product['ships_from'] }} · Delivery in 2–5 days</p>
+                                        <p class="font-semibold">Shipping calculated at checkout</p>
+                                        <p class="text-navy/40 mt-0.5">Ships from {{ $product['ships_from'] }} · Delivery estimate not yet available</p>
                                     </div>
                                 </div>
                             </div>
@@ -286,15 +294,15 @@
                             Add to Cart
                         </button>
 
-                        <a
-                            id="buyNowLink"
-                            data-buy-now-base="{{ url('/buyer/cart') }}?buy_now={{ $product['id'] }}"
-                            href="{{ url('/buyer/cart') }}?buy_now={{ $product['id'] }}&qty=1"
-                            class="h-10 rounded-lg bg-teal hover:bg-teal-dark text-white font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99] transition"
-                        >
-                            Buy Now
-                            <x-lucide-arrow-right class="w-3.5 h-3.5" />
-                        </a>
+                        <form method="POST" action="{{ route('buyer.cart.buyNow') }}" data-buy-now-form>
+                            @csrf
+                            <input type="hidden" name="product_id" value="{{ $product['id'] }}">
+                            <input type="hidden" name="variant_id" value="{{ $firstVariant['id'] ?? '' }}" data-buy-variant>
+                            <input type="hidden" name="qty" value="1" data-buy-quantity>
+                            <button type="submit" class="h-10 w-full rounded-lg bg-teal hover:bg-teal-dark text-white font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99] transition">
+                                Buy Now <x-lucide-arrow-right class="w-3.5 h-3.5" />
+                            </button>
+                        </form>
                     </div>
 
                     {{-- TRUST --}}
@@ -574,7 +582,13 @@
         <button type="button" data-add-to-cart="{{ $product['id'] }}" data-selected-variant="{{ $firstVariant['id'] ?? '' }}" class="h-10 rounded-lg border border-teal bg-teal-light text-teal-dark text-[10px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed">
             <x-lucide-shopping-cart class="w-3.5 h-3.5" /> Add to Cart
         </button>
-        <a id="mobileBuyNowLink" data-buy-now-base="{{ url('/buyer/cart') }}?buy_now={{ $product['id'] }}" href="{{ url('/buyer/cart') }}?buy_now={{ $product['id'] }}&qty=1" class="h-10 rounded-lg bg-teal text-white text-[10px] font-semibold flex items-center justify-center">Buy Now</a>
+        <form method="POST" action="{{ route('buyer.cart.buyNow') }}" data-buy-now-form>
+            @csrf
+            <input type="hidden" name="product_id" value="{{ $product['id'] }}">
+            <input type="hidden" name="variant_id" value="{{ $firstVariant['id'] ?? '' }}" data-buy-variant>
+            <input type="hidden" name="qty" value="1" data-buy-quantity>
+            <button type="submit" class="h-10 w-full rounded-lg bg-teal text-white text-[10px] font-semibold flex items-center justify-center">Buy Now</button>
+        </form>
     </div>
 </div>
 
@@ -617,10 +631,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const basePrice = {{ (float) $product['price'] }};
     const baseStock = {{ (int) $product['stock'] }};
     const addToCartButtons = document.querySelectorAll('[data-add-to-cart]');
-    const buyNowLinks = [
-        document.getElementById('buyNowLink'),
-        document.getElementById('mobileBuyNowLink')
-    ].filter(Boolean);
+    const buyNowForms = document.querySelectorAll('[data-buy-now-form]');
 
     // NOTE: assumes <meta name="csrf-token" content="{{ csrf_token() }}">
     // is present in the shared layout head.
@@ -678,10 +689,9 @@ document.addEventListener('DOMContentLoaded', function () {
             priceDisplay.textContent = '₱' + price.toLocaleString();
         }
 
-        buyNowLinks.forEach(function (link) {
-            let href = link.dataset.buyNowBase + '&qty=' + qty;
-            if (selectedVariant) href += '&variant_id=' + selectedVariant.id;
-            link.href = href;
+        buyNowForms.forEach(function (form) {
+            form.querySelector('[data-buy-quantity]').value = qty;
+            form.querySelector('[data-buy-variant]').value = selectedVariant ? selectedVariant.id : '';
         });
 
         addToCartButtons.forEach(function (btn) {
@@ -777,11 +787,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 body: JSON.stringify(payload),
             });
 
-            if (!response.ok) {
-                throw new Error('Add to cart failed: ' + response.status);
+            const data = await response.json().catch(() => null);
+            if (!response.ok || !data?.ok) {
+                const firstError = data?.errors ? Object.values(data.errors).flat()[0] : null;
+                throw new Error(firstError || data?.message || 'Could not add this item.');
             }
-
-            const data = await response.json();
 
             if (data && typeof data.cart_count !== 'undefined') {
                 refreshCartCountBadge(data.cart_count);
@@ -789,8 +799,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             showToast('Added ' + payload.qty + ' item(s) to cart');
         } catch (error) {
-            console.error(error);
-            showToast('Could not add to cart. Please try again.');
+            showToast(error.message || 'Could not add to cart. Please try again.');
         } finally {
             triggerButtons.forEach(function (btn) { btn.disabled = false; });
         }
