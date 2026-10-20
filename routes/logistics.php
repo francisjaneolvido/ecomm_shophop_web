@@ -68,6 +68,8 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/staff/{staff}/toggle', [BranchStaffController::class, 'toggle'])->name('staff.toggle');
             Route::post('/staff/{staff}/reset-password', [BranchStaffController::class, 'resetPassword'])
                 ->middleware('throttle:10,1')->name('staff.reset-password');
+            Route::post('/staff/{staff}/set-password', [BranchStaffController::class, 'setPassword'])
+                ->middleware('throttle:10,1')->name('staff.set-password');
 
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
@@ -101,3 +103,6 @@ Route::domain(config('app.logistics_domain'))
             Route::get('/reports/riders/{rider}/export/pdf', [ReportController::class, 'exportRiderPdf'])->name('reports.riders.export.pdf');
         });
     });
+
+// Province Hub portal lives in its own file.
+require __DIR__ . '/hub.php';

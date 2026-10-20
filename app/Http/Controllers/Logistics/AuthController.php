@@ -15,7 +15,7 @@ class AuthController extends Controller
     public function showLogin(): View|RedirectResponse
     {
         if (Auth::guard('logistics_staff')->check()) {
-            return redirect()->route('logistics.staff.workspace');
+            return redirect()->route($this->staffHomeRoute(Auth::guard('logistics_staff')->user()));
         }
         if (Auth::check() && Auth::user()->account_type === 'logistics') {
             return redirect()->route('logistics.dashboard');
@@ -31,8 +31,8 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Logistics partners at branch accounts lang ang pwedeng pumasok dito.
-        // Buyer/seller/admin ay hindi makakapasok.
+        // Only logistics partners and branch accounts may sign in here.
+        // Buyers/sellers/admins cannot.
         $attempt = Auth::attempt([
             'email' => $data['email'],
             'password' => $data['password'],
@@ -46,6 +46,7 @@ class AuthController extends Controller
                 'password' => $data['password'],
                 'status' => 'active',
             ], $request->boolean('remember'));
+
             if ($staffAttempt) {
                 $staff = Auth::guard('logistics_staff')->user();
                 if (! $staff->activeForBranch((int) $staff->logistics_partner_id, (int) $staff->sorting_center_id)) {
@@ -53,8 +54,12 @@ class AuthController extends Controller
                     return back()->withErrors(['email' => 'Branch, staff account or company is inactive.']);
                 }
                 $request->session()->regenerate();
-                return redirect()->route('logistics.staff.workspace');
+
+                // Main hub manager -> main console; province hub manager -> /hub;
+                // scanners -> assigned branch workspace.
+                return redirect()->route($this->staffHomeRoute($staff));
             }
+
             return back()
                 ->withErrors(['email' => 'Incorrect email or password.'])
                 ->onlyInput('email');
@@ -97,12 +102,12 @@ class AuthController extends Controller
             return redirect()->route('logistics.login')->with('login_notice', $notice);
         }
 
-        // Branch account: diretso sa branch console, walang Google linking.
+        // Branch account: straight to the branch console, no Google linking.
         if ($user->account_type === 'branch') {
             return redirect()->route('branch.dashboard');
         }
 
-        // An OAuth callback may request one-time Google linking. Only password-authenticated,
+        // An OAuth callback may request one-time Google linking. Only the password-authenticated,
         // admin-approved owner of this exact logistics account can complete it.
         $pending = $request->session()->pull('logistics_google_link_pending');
         if (is_array($pending) && (int) ($pending['user_id'] ?? 0) === (int) $user->id
@@ -143,5 +148,23 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('logistics.login');
+    }
+
+    /** Where a signed-in branch-staff account lands after login. */
+    private function staffHomeRoute($staff): string
+    {
+        if ($staff->role !== 'manager') {
+            return 'logistics.staff.workspace';
+        }
+
+        $center = $staff->sortingCenter;
+
+        // Manager of the MAIN hub -> main logistics console.
+        if ($center && $center->is_main) {
+            return 'logistics.dashboard';
+        }
+
+        // Manager of a province hub -> province hub portal.
+        return 'logistics.hub.dashboard';
     }
 }

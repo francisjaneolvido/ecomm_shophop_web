@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class BranchStaffController extends Controller
 {
@@ -79,6 +80,31 @@ class BranchStaffController extends Controller
         });
         return back()->with('status', 'Temporary password regenerated; existing mobile sessions revoked.')
             ->with('new_staff_credentials', ['email' => $operator->email, 'password' => $password]);
+    }
+
+    /**
+     * Main hub sets a specific password for a province hub manager / branch staff.
+     * Same ownership + archive checks as resetPassword(); password is hashed by the model cast.
+     */
+    public function setPassword(Request $request, int $staff): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $operator = $partner->branchStaff()->findOrFail($staff);
+        if ($operator->sortingCenter?->archived_at) {
+            return back()->withErrors(['staff' => 'Restore this branch before changing staff credentials.']);
+        }
+
+        $data = $request->validateWithBag('setPassword', [
+            'password' => ['required', 'string', 'max:100', Password::min(8)->letters()->numbers()],
+        ]);
+
+        DB::transaction(function () use ($operator, $data) {
+            $operator->update(['password' => $data['password']]);
+            $operator->tokens()->delete();
+        });
+
+        return back()->with('status', "Password updated for {$operator->name}; existing mobile sessions revoked.")
+            ->with('new_staff_credentials', ['email' => $operator->email, 'password' => $data['password']]);
     }
 
     public static function assertNewEmail(string $email): void

@@ -23,7 +23,8 @@ class SortingCenterController extends Controller
     {
         $partner = $this->partner($request);
         $centers = $partner->sortingCenters()->whereNull('archived_at')
-            ->with(['coverageAreas', 'riders', 'staff'])
+            ->where('type', 'province_hub')
+            ->with(['staff'])->withCount('stationHubs')
             ->when($request->filled('search'), function ($query) use ($request) {
                 $term = trim((string) $request->query('search'));
                 $query->where(function ($q) use ($term) {
@@ -33,17 +34,9 @@ class SortingCenterController extends Controller
                         ->orWhere('province', 'like', "%{$term}%");
                 });
             })
-            ->when(in_array($request->query('status'), ['active', 'inactive'], true),
-                fn ($query) => $query->where('status', $request->query('status')))
-            ->orderByDesc('is_main')->orderBy('name')->get();
-        $totals = [
-            'all' => $partner->sortingCenters()->whereNull('archived_at')->count(),
-            'active' => $partner->sortingCenters()->whereNull('archived_at')->where('status', 'active')->count(),
-            'needs_setup' => $partner->sortingCenters()->whereNull('archived_at')->where('is_main', false)
-                ->where('status', 'inactive')->count(),
-            'archived' => $partner->sortingCenters()->whereNotNull('archived_at')->count(),
-        ];
-        return view('logistics.sorting-centers.index', compact('partner', 'centers', 'totals'));
+            ->orderBy('province')->get();
+
+        return view('logistics.sorting-centers.index', compact('partner', 'centers'));
     }
 
     public function create(Request $request): View
@@ -81,37 +74,45 @@ class SortingCenterController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $partner = $this->partner($request);
-        $data = $this->validatedCenter($request);
-        $login = $this->validatedLogin($request);
+        $data = $this->validatedProvinceHub($request);
+
+        // One province hub per province.
+        $taken = $partner->sortingCenters()
+            ->where('type', 'province_hub')
+            ->whereNull('archived_at')
+            ->whereRaw('LOWER(province) = ?', [mb_strtolower(trim($data['province']))])
+            ->exists();
+        if ($taken) {
+            throw ValidationException::withMessages([
+                'province' => 'A province hub for '.trim($data['province']).' already exists.',
+            ]);
+        }
 
         $credentials = null;
-        $createdCenter = null;
-        DB::transaction(function () use ($partner, $data, &$credentials, &$createdCenter) {
+        DB::transaction(function () use ($partner, $data, &$credentials) {
             $center = $partner->sortingCenters()->create([
                 ...$this->centerPayload($data),
+                'type' => 'province_hub',
+                'parent_id' => null,
                 'code' => $this->nextCode($partner),
                 'is_main' => false,
-                'status' => 'inactive', // Draft until manager, coverage and assignments are ready.
+                'status' => 'active',
             ]);
 
-            $createdCenter = $center;
-            $this->syncCoverage($partner, $center, $data['coverage']);
-            if (filled($data['manager_name'] ?? null) && filled($data['manager_email'] ?? null)) {
-                $email = strtolower(trim($data['manager_email']));
-                BranchStaffController::assertNewEmail($email);
-                $password = Str::password(18);
-                $center->staff()->create([
-                    'logistics_partner_id' => $partner->id,
-                    'name' => trim($data['manager_name']),
-                    'email' => $email, 'password' => $password,
-                    'role' => 'manager', 'status' => 'active',
-                ]);
-                $credentials = ['email' => $email, 'password' => $password];
-            }
+            $email = strtolower(trim($data['manager_email']));
+            BranchStaffController::assertNewEmail($email);
+            $password = Str::password(18);
+            $center->staff()->create([
+                'logistics_partner_id' => $partner->id,
+                'name' => trim($data['manager_name']),
+                'email' => $email, 'password' => $password,
+                'role' => 'manager', 'status' => 'active',
+            ]);
+            $credentials = ['email' => $email, 'password' => $password];
         });
 
-        return redirect()->route('logistics.sorting-centers.show', $createdCenter)
-            ->with('status', 'Branch draft saved. Check the setup checklist, then activate.')
+        return redirect()->route('logistics.sorting-centers.index')
+            ->with('status', 'Province hub created.')
             ->with('new_staff_credentials', $credentials);
     }
 
@@ -201,13 +202,29 @@ class SortingCenterController extends Controller
             ->with('status', 'Branch restored as inactive. Review its coverage and manager before activating.');
     }
 
-    private function validatedCenter(Request $request): array
+    private function validatedProvinceHub(Request $request): array
     {
         return $request->validate([
             'name' => ['required', 'string', 'max:180'],
             'contact_no' => ['nullable', 'string', 'max:30'],
             'region' => ['required', 'string', 'max:150'],
             'province' => ['required', 'string', 'max:150'],
+            'municipality' => ['required', 'string', 'max:150'],
+            'barangay' => ['required', 'string', 'max:150'],
+            'street_no' => ['required', 'string', 'max:180'],
+            'unit_no' => ['nullable', 'string', 'max:180'],
+            'manager_name' => ['required', 'string', 'min:2', 'max:150'],
+            'manager_email' => ['required', 'email', 'max:190'],
+        ]);
+    }
+
+    private function validatedCenter(Request $request): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:180'],
+            'contact_no' => ['nullable', 'string', 'max:30'],
+            'region' => ['required', 'string', 'max:150'],
+            'province' => ['nullable', 'string', 'max:150'], // NCR has no province
             'municipality' => ['required', 'string', 'max:150'],
             'barangay' => ['required', 'string', 'max:150'],
             'street_no' => ['required', 'string', 'max:180'],
@@ -258,7 +275,7 @@ class SortingCenterController extends Controller
             'name' => trim($data['name']),
             'contact_no' => filled($data['contact_no'] ?? null) ? trim($data['contact_no']) : null,
             'region' => trim($data['region']),
-            'province' => trim($data['province']),
+            'province' => filled($data['province'] ?? null) ? trim($data['province']) : null,
             'municipality' => trim($data['municipality']),
             'barangay' => trim($data['barangay']),
             'street_no' => trim($data['street_no']),

@@ -14,6 +14,8 @@ class SortingCenter extends Model
     protected $fillable = [
         'logistics_partner_id',
         'user_id',
+        'type',
+        'parent_id',
         'code',
         'name',
         'is_main',
@@ -42,6 +44,18 @@ class SortingCenter extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** Province hub of a station hub. */
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'parent_id');
+    }
+
+    /** Station hubs under a province hub. */
+    public function stationHubs(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id');
     }
 
     public function coverageAreas(): HasMany
