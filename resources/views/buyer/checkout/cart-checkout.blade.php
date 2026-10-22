@@ -101,16 +101,18 @@
         </div>
 
 
+        {{-- No file upload anymore (online payment proof removed), so no multipart encoding needed. --}}
         <form
             id="checkoutForm"
             action="{{ route('buyer.checkout.place') }}"
             method="POST"
-            enctype="multipart/form-data"
             class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-5 items-start"
         >
             @csrf
 
             <input type="hidden" name="voucher_code" id="voucherCodeHidden" value="{{ $initialVoucherCode }}">
+            {{-- COD is the only payment method. The server must still enforce this. --}}
+            <input type="hidden" name="payment_method" value="cod">
             {{-- Seller codes, Platform product codes, and Platform shipping codes are independent. --}}
 
 
@@ -252,7 +254,7 @@
                                     <div class="flex gap-3">
 
                                         <a href="{{ route('buyer.product.show', $item['product_id']) }}"
-                                           class="w-16 h-16 sm:w-17 sm:h-17 rounded-xl overflow-hidden
+                                           class="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden
                                                   bg-gray-bg border border-gray-border/80 shrink-0">
                                             <img
                                                 src="{{ $item['image'] }}"
@@ -273,13 +275,13 @@
                                             </p>
 
 
-                                            <div class="flex flex-wrap items-center justify-between gap-2 mt-2.5">
+                                            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 mt-2.5">
 
                                                 <div class="flex flex-wrap items-center gap-1.5">
 
                                                     <span class="text-[12px] font-bold text-teal-dark">
-                                                    {{-- Canonical discounted prices retain cents through display and placement. --}}
-                                                    ₱{{ number_format($item['price'], 2) }}
+                                                        {{-- Canonical discounted prices retain cents through display and placement. --}}
+                                                        ₱{{ number_format($item['price'], 2) }}
                                                     </span>
 
                                                     @if ($item['original_price'])
@@ -301,11 +303,12 @@
                                                         {{ $item['stock'] }} available
                                                     </span>
 
-                                                    <div class="flex items-center border border-gray-border rounded-lg overflow-hidden">
+                                                    <div class="flex items-center border border-gray-border rounded-lg overflow-hidden bg-white">
 
                                                         <button
                                                             type="button"
                                                             data-qty-decrease
+                                                            aria-label="Decrease quantity"
                                                             class="w-7 h-7 flex items-center justify-center hover:bg-teal-light transition"
                                                         >
                                                             <x-lucide-minus class="w-3 h-3" />
@@ -318,6 +321,7 @@
                                                             value="{{ $item['qty'] }}"
                                                             min="1"
                                                             max="{{ $item['stock'] }}"
+                                                            aria-label="Quantity"
                                                             class="w-9 h-7 text-center text-[10px] font-semibold
                                                                    border-x border-gray-border focus:outline-none"
                                                         >
@@ -325,6 +329,7 @@
                                                         <button
                                                             type="button"
                                                             data-qty-increase
+                                                            aria-label="Increase quantity"
                                                             class="w-7 h-7 flex items-center justify-center hover:bg-teal-light transition"
                                                         >
                                                             <x-lucide-plus class="w-3 h-3" />
@@ -343,18 +348,19 @@
                         {{-- Message to seller --}}
                         <div class="px-4 py-3 border-t border-gray-border/80">
 
-                            <div class="grid sm:grid-cols-[105px_1fr] gap-2 sm:items-center">
+                            <div class="grid sm:grid-cols-[105px_1fr] gap-1.5 sm:gap-2 sm:items-center">
 
-                                <label class="text-[9.5px] font-medium text-navy/45">
+                                <label for="note-{{ $shopId }}" class="text-[9.5px] font-medium text-navy/45">
                                     Message
                                 </label>
 
                                 <input
                                     type="text"
+                                    id="note-{{ $shopId }}"
                                     name="groups[{{ $shopId }}][note]"
                                     placeholder="Optional note for this seller"
-                                    class="w-full text-[10px] text-navy rounded-lg border border-gray-border
-                                           px-3 py-2 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal/10"
+                                    class="w-full h-9 text-[10px] text-navy rounded-lg border border-gray-border
+                                           px-3 focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal/10"
                                 >
 
                             </div>
@@ -394,13 +400,13 @@
 
                                         <div>
                                             <p class="text-[10px] font-semibold text-navy">Standard</p>
-                                                {{-- Fixed shipping charge has no carrier delivery-time estimate. --}}
-                                                <p class="text-[8.5px] text-navy/40 mt-0.5">Delivery time unavailable</p>
+                                            {{-- Fixed shipping charge has no carrier delivery-time estimate. --}}
+                                            <p class="text-[8.5px] text-navy/40 mt-0.5">Delivery time unavailable</p>
                                         </div>
                                     </div>
 
-                                    <span class="text-[10px] font-bold text-navy">
-                                        ₱{{ number_format($standardFee) }}
+                                    <span class="text-[10px] font-bold text-navy shrink-0">
+                                        ₱{{ number_format($standardFee, 2) }}
                                     </span>
                                 </label>
 
@@ -422,13 +428,13 @@
 
                                         <div>
                                             <p class="text-[10px] font-semibold text-navy">Express</p>
-                                                {{-- Express changes the fixed charge, but no carrier timetable is persisted. --}}
-                                                <p class="text-[8.5px] text-navy/40 mt-0.5">Delivery time unavailable</p>
+                                            {{-- Express changes the fixed charge, but no carrier timetable is persisted. --}}
+                                            <p class="text-[8.5px] text-navy/40 mt-0.5">Delivery time unavailable</p>
                                         </div>
                                     </div>
 
-                                    <span class="text-[10px] font-bold text-navy">
-                                        ₱{{ number_format($expressFee) }}
+                                    <span class="text-[10px] font-bold text-navy shrink-0">
+                                        ₱{{ number_format($expressFee, 2) }}
                                     </span>
                                 </label>
 
@@ -472,7 +478,7 @@
 
                             <span class="shop-subtotal text-[11px] font-bold text-navy"
                                   data-shop-subtotal="{{ $groupIndex }}">
-                                ₱0
+                                ₱0.00
                             </span>
                         </div>
 
@@ -480,7 +486,7 @@
                 @endforeach
 
 
-                {{-- PAYMENT METHOD --}}
+                {{-- PAYMENT METHOD — Cash on Delivery only --}}
                 <section class="bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm">
 
                     <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-border/80">
@@ -491,90 +497,58 @@
 
                         <div>
                             <p class="text-[11px] font-bold text-navy">Payment Method</p>
-                            <p class="text-[8.5px] text-navy/35 mt-0.5">Choose how you want to pay</p>
+                            <p class="text-[8.5px] text-navy/35 mt-0.5">Pay in cash when your order arrives</p>
                         </div>
                     </div>
 
 
-                    <div class="p-3 space-y-2" data-payment-group>
+                    <div class="p-3">
 
-                        {{-- COD --}}
-                        <label
-                            data-payment-option="cod"
-                            class="payment-option flex items-center justify-between gap-3
-                                   border border-teal bg-teal-light/35 rounded-xl px-3 py-2.5
-                                   cursor-pointer transition"
-                        >
-                            <div class="flex items-center gap-2.5">
+                        <div class="flex items-center justify-between gap-3
+                                    border border-teal bg-teal-light/35 rounded-xl px-3 py-2.5">
 
-                                <input
-                                    type="radio"
-                                    name="payment_method"
-                                    value="cod"
-                                    checked
-                                    class="accent-teal-dark w-3.5 h-3.5"
-                                >
+                            <div class="flex items-center gap-2.5 min-w-0">
 
                                 <span class="w-8 h-8 rounded-lg bg-white border border-gray-border
                                              flex items-center justify-center shrink-0">
                                     <x-lucide-banknote class="w-3.5 h-3.5 text-teal-dark" />
                                 </span>
 
-                                <div>
+                                <div class="min-w-0">
                                     <p class="text-[10.5px] font-semibold text-navy">Cash on Delivery</p>
                                     <p class="text-[8.5px] text-navy/40 mt-0.5">
-                                        Pay when your order arrives
+                                        Pay the rider when your order arrives
                                     </p>
                                 </div>
                             </div>
 
-                            <span class="text-[8px] font-semibold text-navy/35">
-                                +₱{{ number_format($codFee) }}/shop
-                            </span>
-                        </label>
-
-
-                        {{-- Generic Online Payment starts a private manual proof review after real Order placement. --}}
-                        <label
-                            data-payment-option="online"
-                            class="payment-option flex items-center justify-between gap-3
-                                   border border-gray-border rounded-xl px-3 py-2.5
-                                   cursor-pointer transition"
-                        >
-                            <div class="flex items-center gap-2.5">
-
-                                <input
-                                    type="radio"
-                                    name="payment_method"
-                                    value="online"
-                                    class="accent-teal-dark w-3.5 h-3.5"
-                                >
-
-                                <span class="w-8 h-8 rounded-lg bg-white border border-gray-border
-                                             flex items-center justify-center shrink-0">
-                                    <x-lucide-smartphone class="w-3.5 h-3.5 text-teal-dark" />
+                            <div class="flex items-center gap-2 shrink-0">
+                                <span class="text-[8px] font-semibold text-navy/45">
+                                    +₱{{ number_format($codFee, 2) }}/shop
                                 </span>
 
-                                <div>
-                                    <p class="text-[10.5px] font-semibold text-navy">
-                                        Online Payment
-                                    </p>
-
-                                    <p class="text-[8.5px] text-navy/40 mt-0.5">
-                                        Submit a reference and receipt for ShopHop Admin review
-                                    </p>
-                                </div>
+                                <span class="w-5 h-5 rounded-full bg-teal text-white flex items-center justify-center">
+                                    <x-lucide-check class="w-3 h-3" />
+                                </span>
                             </div>
-
-                            <span class="text-[8px] font-semibold text-navy/35">
-                                No COD fee
-                            </span>
-                        </label>
-
-                    </div>
+                        </div>
 
 
-                    {{-- Proof submission follows Order placement; this page cannot claim a transfer was verified. --}}
+                        <ul class="mt-3 space-y-1.5 px-1 text-[9px] text-navy/45 leading-relaxed">
+                            <li class="flex items-start gap-1.5">
+                                <x-lucide-circle-check class="w-3 h-3 mt-0.5 shrink-0 text-teal-dark" />
+                                Please prepare the exact amount shown in Total Payment.
+                            </li>
+                            <li class="flex items-start gap-1.5">
+                                <x-lucide-circle-check class="w-3 h-3 mt-0.5 shrink-0 text-teal-dark" />
+                                A COD handling fee is charged once per shop in your order.
+                            </li>
+                            <li class="flex items-start gap-1.5">
+                                <x-lucide-circle-check class="w-3 h-3 mt-0.5 shrink-0 text-teal-dark" />
+                                Make sure someone can receive the parcel at your delivery address.
+                            </li>
+                        </ul>
+
                     </div>
 
                 </section>
@@ -587,7 +561,7 @@
             ================================================== --}}
             <aside class="space-y-3 lg:sticky lg:top-4">
 
-                {{-- Voucher --}}
+                {{-- Seller voucher --}}
                 <section class="bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm">
 
                     <div class="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-border/80">
@@ -622,6 +596,7 @@
                                 id="voucherInput"
                                 value="{{ $initialVoucherCode }}"
                                 placeholder="Enter voucher code"
+                                aria-label="Seller voucher code"
                                 class="flex-1 min-w-0 h-9 text-[9.5px] rounded-lg border border-gray-border
                                        px-3 uppercase focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal/10"
                             >
@@ -653,19 +628,83 @@
 
 
                 {{-- Platform-funded promotions --}}
-                <section class="bg-white border border-gray-border rounded-2xl p-4 shadow-sm space-y-3">
-                    <h2 class="text-[12px] font-bold text-navy">ShopHop vouchers (Admin funded)</h2>
-                    <label class="block text-[10px] font-semibold">Platform merchandise voucher
-                      <input id="platformVoucherInput" name="merchandise_voucher_code" maxlength="40" value="{{ $platformVoucherCode }}" placeholder="Enter code" class="mt-1 w-full border border-gray-border rounded-lg p-2 uppercase">
-                    </label>
-                    <label class="block text-[10px] font-semibold">Free shipping voucher
-                      <input id="shippingVoucherInput" name="shipping_voucher_code" maxlength="40" value="{{ $shippingVoucherCode }}" placeholder="Enter code" class="mt-1 w-full border border-gray-border rounded-lg p-2 uppercase">
-                    </label>
-                    <div class="text-[9px] text-navy/50">@forelse($platformVouchers as $promo)
-                      <span class="inline-block border px-1 rounded mr-1 mb-1">{{ $promo['code'] }} ({{ $promo['kind'] }})</span>
-                      @empty No ShopHop vouchers currently available. @endforelse</div>
-                    <p id="platformVoucherFeedback" class="text-[9px] text-navy/50">ShopHop funds these discounts; Seller earnings remain unchanged.</p>
+                <section class="bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm">
+
+                    <div class="flex items-center gap-2 px-4 py-3 border-b border-gray-border/80">
+
+                        <span class="w-7 h-7 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
+                            <x-lucide-badge-percent class="w-3.5 h-3.5" />
+                        </span>
+
+                        <div>
+                            <p class="text-[11px] font-bold text-navy">ShopHop Vouchers</p>
+                            <p class="text-[8.5px] text-navy/35 mt-0.5">Funded by ShopHop Admin</p>
+                        </div>
+                    </div>
+
+
+                    <div class="p-3 space-y-3">
+
+                        <div>
+                            <label for="platformVoucherInput" class="block text-[9px] font-semibold text-navy/45 mb-1.5">
+                                Merchandise voucher
+                            </label>
+
+                            <input
+                                id="platformVoucherInput"
+                                name="merchandise_voucher_code"
+                                maxlength="40"
+                                value="{{ $platformVoucherCode }}"
+                                placeholder="Enter code"
+                                class="w-full h-9 text-[9.5px] rounded-lg border border-gray-border
+                                       px-3 uppercase focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal/10"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="shippingVoucherInput" class="block text-[9px] font-semibold text-navy/45 mb-1.5">
+                                Free shipping voucher
+                            </label>
+
+                            <input
+                                id="shippingVoucherInput"
+                                name="shipping_voucher_code"
+                                maxlength="40"
+                                value="{{ $shippingVoucherCode }}"
+                                placeholder="Enter code"
+                                class="w-full h-9 text-[9.5px] rounded-lg border border-gray-border
+                                       px-3 uppercase focus:outline-none focus:border-teal focus:ring-1 focus:ring-teal/10"
+                            >
+                        </div>
+
+                        <div>
+                            <p class="text-[9px] font-semibold text-navy/45 mb-1.5">Available codes</p>
+
+                            @forelse ($platformVouchers as $promo)
+                                <button
+                                    type="button"
+                                    class="platform-suggestion inline-flex items-center gap-1 mr-1 mb-1
+                                           px-2 py-1 rounded-md bg-gray-bg hover:bg-teal-light
+                                           text-[8px] font-semibold text-navy/45 hover:text-teal-dark transition"
+                                    data-code="{{ $promo['code'] }}"
+                                    data-kind="{{ $promo['kind'] }}"
+                                >
+                                    <x-lucide-ticket class="w-2.5 h-2.5" />
+                                    {{ $promo['code'] }}
+                                    <span class="text-navy/30">({{ $promo['kind'] }})</span>
+                                </button>
+                            @empty
+                                <p class="text-[9px] text-navy/35">No ShopHop vouchers currently available.</p>
+                            @endforelse
+                        </div>
+
+                        <p id="platformVoucherFeedback" class="text-[8.5px] leading-relaxed text-navy/40">
+                            ShopHop funds these discounts; Seller earnings remain unchanged.
+                        </p>
+
+                    </div>
                 </section>
+
 
                 {{-- Summary --}}
                 <section class="bg-white border border-gray-border rounded-2xl p-4 shadow-sm">
@@ -679,7 +718,8 @@
                         <div>
                             <p class="text-[11px] font-bold text-navy">Order Summary</p>
                             <p class="text-[8.5px] text-navy/35 mt-0.5">
-                                {{ $itemCount }} items · {{ $shopCount }} shops
+                                {{ $itemCount }} {{ \Illuminate\Support\Str::plural('item', $itemCount) }}
+                                · {{ $shopCount }} {{ \Illuminate\Support\Str::plural('shop', $shopCount) }}
                             </p>
                         </div>
                     </div>
@@ -689,17 +729,22 @@
 
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-navy/50">Merchandise</span>
-                            <span id="summarySubtotal" class="font-semibold text-navy">₱0</span>
+                            <span id="summarySubtotal" class="font-semibold text-navy">₱0.00</span>
                         </div>
 
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-navy/50">Shipping</span>
-                            <span id="summaryShipping" class="font-semibold text-navy">₱0</span>
+                            <span id="summaryShipping" class="font-semibold text-navy">₱0.00</span>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-navy/50">COD handling fee</span>
+                            <span id="summaryCodFee" class="font-semibold text-navy">₱0.00</span>
                         </div>
 
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-navy/50">Product savings</span>
-                            <span id="summaryProductSavings" class="font-semibold text-teal-dark">-₱0</span>
+                            <span id="summaryProductSavings" class="font-semibold text-teal-dark">-₱0.00</span>
                         </div>
 
                         <div id="summaryVoucherRow"
@@ -709,19 +754,17 @@
                                 <span id="summaryVoucherCode" class="text-[7.5px] font-mono text-teal-dark"></span>
                             </span>
 
-                            <span id="summaryVoucherDiscount" class="font-semibold text-teal-dark">-₱0</span>
+                            <span id="summaryVoucherDiscount" class="font-semibold text-teal-dark">-₱0.00</span>
                         </div>
 
-                        <div id="summaryPlatformRow" class="hidden items-center justify-between gap-3"><span>ShopHop discount</span><span id="summaryPlatformDiscount" class="text-teal-dark font-semibold"></span></div>
-                        <div id="summaryShippingPromoRow" class="hidden items-center justify-between gap-3"><span>Free shipping</span><span id="summaryShippingPromoDiscount" class="text-teal-dark font-semibold"></span></div>
-                        <div id="summaryCodFeeRow"
-                             class="flex items-center justify-between gap-3">
+                        <div id="summaryPlatformRow" class="hidden items-center justify-between gap-3">
+                            <span class="text-navy/50">ShopHop discount</span>
+                            <span id="summaryPlatformDiscount" class="font-semibold text-teal-dark"></span>
+                        </div>
 
-                            <span class="text-navy/50">COD handling fee</span>
-
-                            <span id="summaryCodFee" class="font-semibold text-navy">
-                                ₱0
-                            </span>
+                        <div id="summaryShippingPromoRow" class="hidden items-center justify-between gap-3">
+                            <span class="text-navy/50">Free shipping</span>
+                            <span id="summaryShippingPromoDiscount" class="font-semibold text-teal-dark"></span>
                         </div>
 
                     </div>
@@ -733,16 +776,17 @@
 
                             <div>
                                 <p class="text-[9px] text-navy/40">Total Payment</p>
+                                <p class="text-[8px] text-navy/30 mt-0.5">Pay in cash on delivery</p>
 
                                 <p id="summarySavedText"
                                    class="text-[8px] text-teal-dark mt-0.5">
-                                    You save ₱0
+                                    You save ₱0.00
                                 </p>
                             </div>
 
                             <span id="summaryTotal"
                                   class="text-[20px] leading-none font-bold text-teal-dark">
-                                ₱0
+                                ₱0.00
                             </span>
                         </div>
                     </div>
@@ -786,9 +830,8 @@
                     </div>
 
                     <div class="bg-white border border-gray-border rounded-xl px-2 py-2.5 text-center">
-                        <x-lucide-lock class="w-3.5 h-3.5 text-teal-dark mx-auto" />
-                        {{-- Checkout offers COD and manual Online Payment with separate server contracts. --}}
-                        <p class="text-[7.5px] text-navy/45 mt-1">Secure checkout</p>
+                        <x-lucide-banknote class="w-3.5 h-3.5 text-teal-dark mx-auto" />
+                        <p class="text-[7.5px] text-navy/45 mt-1">Pay on Delivery</p>
                     </div>
 
                 </section>
@@ -806,18 +849,20 @@
             <div class="flex items-center justify-between gap-3">
 
                 <div>
-                    <p class="text-[8px] text-navy/40">Total Payment</p>
+                    <p class="text-[8px] text-navy/40">Total Payment · COD</p>
 
                     <p id="mobileSummaryTotal"
                        class="text-[15px] font-bold text-teal-dark leading-tight mt-0.5">
-                        ₱0
+                        ₱0.00
                     </p>
                 </div>
 
                 <button
                     type="button"
                     id="mobilePlaceOrderBtn"
+                    {{ empty($address['line']) || $itemCount === 0 ? 'disabled' : '' }}
                     class="h-9 px-4 rounded-xl bg-teal hover:bg-teal-dark
+                           disabled:bg-gray-border disabled:cursor-not-allowed
                            text-white text-[10.5px] font-semibold transition"
                 >
                     Place Order
@@ -847,6 +892,7 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
+    // COD is the only payment method: the handling fee always applies, once per shop.
     const codFeePerShop = {{ (float) $codFee }};
 
     const voucherCatalog = @json(
@@ -870,15 +916,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const summaryVoucherCode = document.getElementById('summaryVoucherCode');
     const summaryVoucherDiscount = document.getElementById('summaryVoucherDiscount');
 
-    const summaryCodFeeRow = document.getElementById('summaryCodFeeRow');
     const summaryCodFee = document.getElementById('summaryCodFee');
     const summaryTotal = document.getElementById('summaryTotal');
     const summarySavedText = document.getElementById('summarySavedText');
 
     const mobileSummaryTotal = document.getElementById('mobileSummaryTotal');
-
-    // Both choices preview fees; server placement remains the authority for every total.
-    const paymentOptions = document.querySelectorAll('[data-payment-option]');
 
     const voucherInput = document.getElementById('voucherInput');
     const applyVoucherBtn = document.getElementById('applyVoucherBtn');
@@ -920,15 +962,6 @@ document.addEventListener('DOMContentLoaded', function () {
             checkoutToast.classList.remove('translate-y-0', 'opacity-100');
             checkoutToast.classList.add('translate-y-6', 'opacity-0');
         }, 2200);
-    }
-
-
-    function currentPaymentMethod() {
-        const checked = document.querySelector(
-            'input[name="payment_method"]:checked'
-        );
-
-        return checked ? checked.value : 'cod';
     }
 
 
@@ -1003,6 +1036,22 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
+    function promoDiscount(input, kind, eligible, merchandiseBase) {
+        const code = (input?.value || '').trim().toUpperCase();
+        if (!code) return 0;
+
+        const promo = platformCatalog[code];
+
+        if (!promo || promo.kind !== kind || merchandiseBase < Number(promo.min_spend || 0) || eligible <= 0) {
+            return 0;
+        }
+
+        return Math.round(Math.min(eligible, promo.type === 'percent'
+            ? eligible * Number(promo.value) / 100
+            : Number(promo.value)) * 100) / 100;
+    }
+
+
     function recalculate() {
         let merchandiseSubtotal = 0;
         let shippingTotal = 0;
@@ -1058,48 +1107,41 @@ document.addEventListener('DOMContentLoaded', function () {
 
         syncVoucherUI(voucherEligibleShopSubtotal, voucherDiscount);
 
-        const isCod = currentPaymentMethod() === 'cod';
-        const codFeeTotal = isCod ? codFeePerShop * shopGroups.length : 0;
+        const codFeeTotal = codFeePerShop * shopGroups.length;
 
-        function promoDiscount(input, kind, eligible, merchandiseBase) {
-            const code = (input?.value || '').trim().toUpperCase();
-            if (!code) return 0;
-            const promo = platformCatalog[code];
-            if (!promo || promo.kind !== kind || merchandiseBase < Number(promo.min_spend || 0) || eligible <= 0) return 0;
-            return Math.round(Math.min(eligible, promo.type === 'percent'
-                ? eligible * Number(promo.value) / 100 : Number(promo.value)) * 100) / 100;
-        }
         const netMerchandise = Math.max(0, merchandiseSubtotal - currentVoucherDiscount);
         const platformSaving = promoDiscount(platformInput, 'merchandise', netMerchandise, netMerchandise);
         const shippingSaving = promoDiscount(shippingInput, 'shipping', shippingTotal, netMerchandise);
+
         const platformRow = document.getElementById('summaryPlatformRow');
         const shippingRow = document.getElementById('summaryShippingPromoRow');
+
         platformRow.classList.toggle('hidden', platformSaving <= 0);
         platformRow.classList.toggle('flex', platformSaving > 0);
         shippingRow.classList.toggle('hidden', shippingSaving <= 0);
         shippingRow.classList.toggle('flex', shippingSaving > 0);
+
         document.getElementById('summaryPlatformDiscount').textContent = '-' + formatPeso(platformSaving);
         document.getElementById('summaryShippingPromoDiscount').textContent = '-' + formatPeso(shippingSaving);
-        if (platformFeedback) platformFeedback.textContent = 'ShopHop-funded savings: ' + formatPeso(platformSaving + shippingSaving) +
-            '. Final eligibility and amount are validated by the server.';
+
+        if (platformFeedback) {
+            platformFeedback.textContent = 'ShopHop-funded savings: ' + formatPeso(platformSaving + shippingSaving) +
+                '. Final eligibility and amount are validated by the server.';
+        }
+
         const total = Math.max(0, merchandiseSubtotal + shippingTotal + codFeeTotal
             - currentVoucherDiscount - platformSaving - shippingSaving);
-
 
         summarySubtotal.textContent = formatPeso(merchandiseSubtotal);
         summaryShipping.textContent = formatPeso(shippingTotal);
         summaryProductSavings.textContent = '-' + formatPeso(productSavings);
-
         summaryCodFee.textContent = formatPeso(codFeeTotal);
-        summaryCodFeeRow.classList.toggle('hidden', !isCod);
 
         summaryTotal.textContent = formatPeso(total);
         mobileSummaryTotal.textContent = formatPeso(total);
 
         summarySavedText.textContent =
             'You save ' + formatPeso(productSavings + currentVoucherDiscount + platformSaving + shippingSaving);
-
-
     }
 
 
@@ -1107,6 +1149,21 @@ document.addEventListener('DOMContentLoaded', function () {
         input?.addEventListener('input', recalculate);
         input?.addEventListener('change', recalculate);
     });
+
+
+    // Tap a ShopHop code chip to fill the matching input.
+    document.querySelectorAll('.platform-suggestion').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const target = button.dataset.kind === 'shipping' ? shippingInput : platformInput;
+
+            if (!target) return;
+
+            target.value = button.dataset.code;
+            recalculate();
+            showToast(button.dataset.code + ' added.');
+        });
+    });
+
 
     /*
     |--------------------------------------------------------------------------
@@ -1172,36 +1229,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             option.classList.remove('border-gray-border');
             option.classList.add('border-teal', 'bg-teal-light/35');
-
-            recalculate();
-        });
-
-    });
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Payment
-    |--------------------------------------------------------------------------
-    */
-    paymentOptions.forEach(function (option) {
-
-        const radio = option.querySelector('input[type="radio"]');
-
-        option.addEventListener('click', function () {
-
-            // The selected radio drives the displayed fee preview and the posted method.
-
-            radio.checked = true;
-
-            paymentOptions.forEach(function (item) {
-                item.classList.remove('border-teal', 'bg-teal-light/35');
-                item.classList.add('border-gray-border');
-            });
-
-            option.classList.remove('border-gray-border');
-            option.classList.add('border-teal', 'bg-teal-light/35');
-
 
             recalculate();
         });

@@ -7,7 +7,6 @@ use App\Services\PlatformVoucherPricing;
 use App\Models\Finance\PlatformVoucher;
 use App\Services\ShopHopFinance;
 use App\Models\Buyer\Cart\CartItem;
-use App\Models\Buyer\Order\ManualCashlessPayment;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Seller;
@@ -44,7 +43,8 @@ class BuyerCheckoutService
         string $platformVoucherCode = '',
         string $shippingVoucherCode = '',
     ): array {
-        if (! in_array($paymentMethod, ['cod', 'online'], true)) {
+        // Cash on Delivery is the only supported payment method.
+        if ($paymentMethod !== 'cod') {
             throw ValidationException::withMessages([
                 'payment_method' => 'Choose a valid payment method.',
             ]);
@@ -462,26 +462,9 @@ class BuyerCheckoutService
                 ->whereIn('id', $cartItemIds)
                 ->delete();
 
-            $paymentId = null;
-            if ($data['payment_method'] === 'online') {
-                $payment = ManualCashlessPayment::create([
-                    'buyer_id' => $buyer->id,
-                    'checkout_group_id' => $checkoutGroupId,
-                    'status' => ManualCashlessPayment::AWAITING_PROOF,
-                    'expires_at' => now()->addDay(),
-                ]);
-
-                Order::where('buyer_id', $buyer->id)
-                    ->where('checkout_group_id', $checkoutGroupId)
-                    ->update(['manual_cashless_payment_id' => $payment->id]);
-
-                $paymentId = (int) $payment->id;
-            }
-
             return [
                 'checkout_group_id' => $checkoutGroupId,
                 'order_ids' => $createdOrderIds,
-                'payment_id' => $paymentId,
                 'payment_method' => $data['payment_method'],
                 'grand_total' => round($grandTotal, 2),
             ];

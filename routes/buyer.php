@@ -9,7 +9,6 @@ use App\Http\Controllers\Buyer\CartController as BuyerCartController;
 use App\Http\Controllers\Buyer\CheckoutController as BuyerCheckoutController;
 use App\Http\Controllers\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Buyer\BuyerProfileController;
-use App\Http\Controllers\Buyer\ManualCashlessPaymentController;
 use App\Http\Controllers\Buyer\FavoriteController as BuyerFavoriteController;
 
 
@@ -165,32 +164,6 @@ Route::prefix('buyer')
             BuyerCheckoutController::class,
             'placeOrder',
         ])->name('checkout.place');
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | Payments
-        |--------------------------------------------------------------------------
-        */
-
-        Route::get('/payments/{payment}', [
-            ManualCashlessPaymentController::class,
-            'show',
-        ])->name('payments.show');
-
-        Route::post('/payments/{payment}/simulate', [
-            ManualCashlessPaymentController::class, 'simulate'
-        ])->name('payments.simulate');
-
-        Route::post('/payments/{payment}/submit', [
-            ManualCashlessPaymentController::class,
-            'submit',
-        ])->name('payments.submit');
-
-        Route::post('/payments/{payment}/cancel', [
-            ManualCashlessPaymentController::class,
-            'cancel',
-        ])->name('payments.cancel');
 
 
         /*

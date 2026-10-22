@@ -23,7 +23,7 @@ class MobileBuyerCheckoutController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'shipping_method' => ['nullable', 'array'],
             'shipping_method.*' => ['required', 'in:standard,express'],
-            'payment_method' => ['nullable', 'in:cod,online'],
+            'payment_method' => ['nullable', 'in:cod'],
             'voucher_code' => ['nullable', 'string', 'max:120'],
             'merchandise_voucher_code' => ['nullable', 'string', 'max:40'],
             'shipping_voucher_code' => ['nullable', 'string', 'max:40'],
@@ -37,7 +37,7 @@ class MobileBuyerCheckoutController extends Controller
                 ->all(),
             voucherCode: (string) ($data['voucher_code'] ?? ''),
             shippingMethods: $data['shipping_method'] ?? [],
-            paymentMethod: (string) ($data['payment_method'] ?? 'cod'),
+            paymentMethod: 'cod',
             strictVoucher: trim((string) ($data['voucher_code'] ?? '')) !== '',
             platformVoucherCode: (string) ($data['merchandise_voucher_code'] ?? ''),
             shippingVoucherCode: (string) ($data['shipping_voucher_code'] ?? ''),
@@ -59,7 +59,7 @@ class MobileBuyerCheckoutController extends Controller
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'shipping_method' => ['required', 'array'],
             'shipping_method.*' => ['required', 'in:standard,express'],
-            'payment_method' => ['required', 'in:cod,online'],
+            'payment_method' => ['required', 'in:cod'],
             'voucher_code' => ['nullable', 'string', 'max:120'],
             'merchandise_voucher_code' => ['nullable', 'string', 'max:40'],
             'shipping_voucher_code' => ['nullable', 'string', 'max:40'],
@@ -71,9 +71,7 @@ class MobileBuyerCheckoutController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => $result['payment_id']
-                ? 'Orders placed. Submit payment proof for ShopHop Admin review.'
-                : 'Order placed successfully.',
+            'message' => 'Order placed successfully.',
             'data' => [
                 ...$result,
                 'cart_count' => CartItem::where('buyer_id', $buyer->id)->count(),

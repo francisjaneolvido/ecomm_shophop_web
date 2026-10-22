@@ -69,7 +69,7 @@ class CheckoutController extends Controller
             'items.*.quantity' => 'required|integer|min:1',
             'shipping_method' => 'required|array',
             'shipping_method.*' => 'required|in:standard,express',
-            'payment_method' => 'required|in:cod,online',
+            'payment_method' => 'required|in:cod',
             'voucher_code' => 'nullable|string',
             'merchandise_voucher_code' => 'nullable|string|max:40',
             'shipping_voucher_code' => 'nullable|string|max:40',
@@ -77,13 +77,7 @@ class CheckoutController extends Controller
             'groups.*.note' => 'nullable|string|max:500',
         ]);
 
-        $result = $this->checkout->placeOrder($buyer, $data);
-
-        if ($result['payment_id']) {
-            return redirect()
-                ->route('buyer.payments.show', $result['payment_id'])
-                ->with('status', 'Orders placed. Submit your payment reference and receipt for Admin review.');
-        }
+        $this->checkout->placeOrder($buyer, $data);
 
         return redirect()
             ->route('buyer.orders')
