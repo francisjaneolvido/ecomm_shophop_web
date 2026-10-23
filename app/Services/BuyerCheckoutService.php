@@ -31,6 +31,8 @@ class BuyerCheckoutService
      *
      * $selectedIds can be empty for the web page, which intentionally means
      * "all current cart lines". Mobile always supplies an explicit selection.
+     *
+     * $logisticsChoices is [sellerId => logisticsPartnerId]; it only preselects an option in the preview.
      */
     public function preview(
         Buyer $buyer,
@@ -42,6 +44,7 @@ class BuyerCheckoutService
         bool $strictVoucher = false,
         string $platformVoucherCode = '',
         string $shippingVoucherCode = '',
+        array $logisticsChoices = [],
     ): array {
         // Cash on Delivery is the only supported payment method.
         if ($paymentMethod !== 'cod') {
@@ -121,7 +124,9 @@ class BuyerCheckoutService
         $voucherDiscountTotal = 0.0;
 
         $groups = $groups->map(function (array $group) use (
+            $buyer,
             $shippingMethods,
+            $logisticsChoices,
             $paymentMethod,
             $selectedVoucher,
             $strictVoucher,
@@ -140,6 +145,13 @@ class BuyerCheckoutService
                 throw ValidationException::withMessages([
                     'shipping_method' => 'Choose shipping for every shop.',
                 ]);
+            }
+
+            // Couriers that can pick up from this Seller and deliver to the Buyer's address.
+            $logisticsOptions = $this->logisticsOptionsFor($buyer, $sellerId);
+            $chosenPartner = (int) ($logisticsChoices[$sellerId] ?? $logisticsChoices[(string) $sellerId] ?? 0);
+            if ($chosenPartner > 0 && ! $logisticsOptions->contains('id', $chosenPartner)) {
+                $chosenPartner = 0;
             }
 
             $merchandiseSubtotal = collect($group['items'])
@@ -181,6 +193,8 @@ class BuyerCheckoutService
             return [
                 ...$group,
                 'selected_shipping_method' => $shippingMethod,
+                'logistics_options' => $logisticsOptions->all(),
+                'selected_logistics_partner_id' => $chosenPartner > 0 ? $chosenPartner : null,
                 'merchandise_subtotal' => round($merchandiseSubtotal, 2),
                 'shipping_fee' => round($shippingFee, 2),
                 'cod_fee' => round($codFee, 2),
@@ -344,6 +358,15 @@ class BuyerCheckoutService
                     ]);
                 }
 
+                // Optional Buyer courier choice: never trust the form value, recheck coverage on the server.
+                $logisticsPartnerId = (int) ($data['logistics_partner'][$sellerId] ?? 0);
+                if ($logisticsPartnerId > 0
+                    && ! $this->logisticsOptionsFor($buyer, (int) $sellerId)->contains('id', $logisticsPartnerId)) {
+                    throw ValidationException::withMessages([
+                        'logistics_partner' => 'The courier you selected does not cover your delivery address for one of the shops.',
+                    ]);
+                }
+
                 $merchandiseSubtotal = $items->sum(fn ($item) => $item->unitPrice() * $item->quantity);
                 $shippingFee = self::STANDARD_SHIPPING_FEE
                     + ($shippingMethod === 'express' ? self::EXPRESS_SHIPPING_SURCHARGE : 0);
@@ -385,6 +408,7 @@ class BuyerCheckoutService
                     'shipping_fee' => $shippingFee,
                     'payment_method' => $data['payment_method'],
                     'cod_fee' => $codFee,
+                    'logistics_partner_id' => $logisticsPartnerId > 0 ? $logisticsPartnerId : null,
                     'voucher_id' => $appliedVoucherId,
                     'voucher_discount' => $voucherDiscount,
                     'platform_voucher_id' => $platformPricing['merchandise_voucher']?->id,
@@ -491,6 +515,35 @@ class BuyerCheckoutService
                 && ($buyer->province_name || $this->isNcrBuyer($buyer))
             ),
         ];
+    }
+
+    /**
+     * Couriers that can pick up from this Seller and deliver to the Buyer's saved address.
+     * Preview and placement share this one rule so the list shown is the list enforced.
+     *
+     * @return Collection<int, array{id:int, name:string}>
+     */
+    private function logisticsOptionsFor(Buyer $buyer, int $sellerId): Collection
+    {
+        $seller = Seller::find($sellerId);
+        if (! $seller) {
+            return collect();
+        }
+
+        return app(LogisticsRoutingService::class)
+            ->eligiblePartnersFor($seller, [
+                'delivery_region_name' => $buyer->region_name,
+                'delivery_province_name' => $buyer->province_name,
+                'delivery_municipality_name' => $buyer->municipality_name,
+                'delivery_address' => trim(
+                    $buyer->street_address . ', ' .
+                    $buyer->barangay_name . ', ' .
+                    $buyer->municipality_name .
+                    ($buyer->province_name ? ', ' . $buyer->province_name : '')
+                ),
+            ])
+            ->map(fn ($partner) => ['id' => (int) $partner->id, 'name' => (string) $partner->company_name])
+            ->values();
     }
 
     private function assertCompleteAddress(Buyer $buyer): void

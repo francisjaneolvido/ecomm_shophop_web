@@ -19,7 +19,7 @@ class MobileBuyerOrderController extends Controller
         $buyer = $this->approvedBuyer($request);
         $orders = Order::query()
             ->where('buyer_id', $buyer->id)
-            ->with(['seller', 'items.product', 'items.variant', 'delivery', 'returnCase', 'manualCashlessPayment'])
+            ->with(['seller', 'items.product', 'items.variant', 'delivery', 'returnCase'])
             ->latest('id')
             ->paginate(20);
 
@@ -38,7 +38,7 @@ class MobileBuyerOrderController extends Controller
     {
         $buyer = $this->approvedBuyer($request);
         DB::transaction(function () use ($buyer, $order) {
-            $owned = Order::with(['delivery', 'manualCashlessPayment'])
+            $owned = Order::with('delivery')
                 ->where('buyer_id', $buyer->id)
                 ->whereKey($order)
                 ->lockForUpdate()
@@ -105,7 +105,6 @@ class MobileBuyerOrderController extends Controller
             'shipping_fee' => (float) $order->shipping_fee,
             'voucher_discount' => (float) $order->voucher_discount,
             'payment_method' => $order->payment_method,
-            'payment_id' => $order->payment_method === 'online' ? $order->manual_cashless_payment_id : null,
             'delivery_address' => $order->delivery_address,
             'placed_at' => $order->created_at?->toIso8601String(),
             'can_confirm_receipt' => $order->status === Order::STATUS_TO_RECEIVE

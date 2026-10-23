@@ -118,6 +118,12 @@ class ShowProductDetails_Controller extends Controller
             })->avg('rating'), 1) ?: 0
             : 0;
 
+        // "Municipality, Province" from the Seller's registered address; no invented fallback city.
+        $shipsFrom = collect([$seller?->municipality_name, $seller?->province_name])
+            ->filter()
+            ->unique()
+            ->implode(', ') ?: 'the Philippines';
+
         $productData = [
             'id' => $product->id,
             'name' => $product->name,
@@ -132,7 +138,7 @@ class ShowProductDetails_Controller extends Controller
             'rating' => $avgRating,
             'reviews' => $reviewsCount,
             'sold' => $soldCount,
-            'ships_from' => $seller?->municipality_name ?? 'Metro Manila',
+            'ships_from' => $shipsFrom,
             'condition' => 'New',
             'seller_name' => $sellerName,
             'seller_rating' => $sellerRating,

@@ -6,11 +6,10 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserAccountController;
 use App\Http\Controllers\Admin\RegistrationController as AdminRegistrationController;
 use App\Http\Controllers\Admin\AccountManagementController;
-use App\Http\Controllers\Admin\ManualCashlessPaymentReviewController;
 use App\Http\Controllers\Admin\MarketplaceFinanceController;
 use App\Http\Controllers\Admin\ReturnRefundController;
 use App\Http\Controllers\Admin\CodRemittanceController;
-// Product review uses the same current Admin identity and middleware boundary as payment review.
+// Product review uses the same current Admin identity and middleware boundary as the rest of the Admin area.
 use App\Http\Controllers\Admin\ProductComplianceController;
 // use App\Http\Controllers\Admin\CommissionController;
 
@@ -35,14 +34,6 @@ Route::prefix('admin')
         Route::get('/seller-compliance/{product}', [ProductComplianceController::class, 'show'])->name('compliance.show');
         Route::patch('/seller-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])->name('compliance.approve');
         Route::patch('/seller-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])->name('compliance.reject');
-
-        // Cashless proof decisions have their own Admin queue and locked group review.
-        Route::get('/payments', [ManualCashlessPaymentReviewController::class, 'index'])->name('payments.index');
-        Route::get('/payments/{payment}', [ManualCashlessPaymentReviewController::class, 'show'])->name('payments.show');
-        Route::post('/payments/{payment}/verify', [ManualCashlessPaymentReviewController::class, 'verify'])->name('payments.verify');
-        Route::post('/payments/{payment}/reject', [ManualCashlessPaymentReviewController::class, 'reject'])->name('payments.reject');
-        // Cancellation restores Checkout effects and is distinct from correctable proof rejection.
-        Route::post('/payments/{payment}/cancel', [ManualCashlessPaymentReviewController::class, 'cancel'])->name('payments.cancel');
 
         Route::get('/registration', [AdminRegistrationController::class, 'index'])
             ->name('registrations');

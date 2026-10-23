@@ -439,6 +439,37 @@
                                 </label>
 
                             </div>
+
+
+                            {{-- Courier chosen by the Buyer (only couriers covering this address and seller) --}}
+                            <div class="mt-3 pt-3 border-t border-gray-border/70">
+                                <p class="text-[10px] font-bold text-navy">Courier</p>
+                                <p class="text-[8.5px] text-navy/35 mt-0.5 mb-2">Choose who delivers your parcel</p>
+
+                                @if (count($group['logistics_options']) > 0)
+                                    <div class="grid sm:grid-cols-2 gap-2">
+                                        <label class="flex items-center gap-2 border border-gray-border rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal/40 transition">
+                                            <input type="radio" name="logistics_partner[{{ $shopId }}]" value=""
+                                                   class="accent-teal-dark w-3.5 h-3.5"
+                                                   {{ empty($group['selected_logistics_partner_id']) ? 'checked' : '' }}>
+                                            <span class="text-[10px] font-semibold text-navy">No preference</span>
+                                        </label>
+
+                                        @foreach ($group['logistics_options'] as $option)
+                                            <label class="flex items-center gap-2 border border-gray-border rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal/40 transition">
+                                                <input type="radio" name="logistics_partner[{{ $shopId }}]" value="{{ $option['id'] }}"
+                                                       class="accent-teal-dark w-3.5 h-3.5"
+                                                       {{ (int) $group['selected_logistics_partner_id'] === (int) $option['id'] ? 'checked' : '' }}>
+                                                <span class="text-[10px] font-semibold text-navy">{{ $option['name'] }}</span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <p class="text-[9px] text-navy/40">
+                                        No courier currently covers this address for this shop. The seller will assign one.
+                                    </p>
+                                @endif
+                            </div>
                         </div>
 
 

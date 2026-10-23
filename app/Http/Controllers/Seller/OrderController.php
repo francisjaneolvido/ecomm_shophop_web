@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
-use App\Models\Buyer\Order\ManualCashlessPayment;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
 use App\Models\Buyer\Review\Review;
@@ -190,7 +189,7 @@ class OrderController extends Controller
         ]);
     }
 
-    /** ERP CONFIRMED stage: Seller explicitly accepts a paid/eligible Order before preparation. */
+    /** ERP CONFIRMED stage: Seller explicitly accepts an eligible Order before preparation. */
     public function accept(Request $request, int $order): RedirectResponse
     {
         return DB::transaction(function () use ($request, $order) {
@@ -218,8 +217,9 @@ class OrderController extends Controller
     /** Seller selects the Logistics company and creates the explicit pickup request. */
     public function markReady(Request $request, int $order): RedirectResponse
     {
+        // Required only when the Buyer did not choose a courier at Checkout.
         $data = $request->validate([
-            'logistics_partner_id' => ['required', 'integer'],
+            'logistics_partner_id' => ['nullable', 'integer'],
         ]);
 
         return DB::transaction(function () use ($request, $order, $data) {
@@ -229,12 +229,18 @@ class OrderController extends Controller
             }
 
             $owned->loadMissing(['seller', 'buyer']);
-            $partner = $this->routing->eligiblePartners($owned)
-                ->firstWhere('id', (int) $data['logistics_partner_id']);
+
+            // The Buyer's choice wins; the Seller's form value is only a fallback for orders without one.
+            $partnerId = (int) ($owned->logistics_partner_id ?: ($data['logistics_partner_id'] ?? 0));
+            $partner = $partnerId > 0
+                ? $this->routing->eligiblePartners($owned)->firstWhere('id', $partnerId)
+                : null;
 
             if (! $partner) {
                 throw ValidationException::withMessages([
-                    'logistics_partner_id' => 'Choose an approved Logistics / Sorting Center that covers this delivery destination.',
+                    'logistics_partner_id' => $owned->logistics_partner_id
+                        ? 'The courier the Buyer chose can no longer serve this order. Contact ShopHop support.'
+                        : 'Choose an approved Logistics / Sorting Center that covers this delivery destination.',
                 ]);
             }
 
@@ -313,12 +319,6 @@ class OrderController extends Controller
     private function lockedEligibleOrder(Request $request, int $orderId, string $expected): ?Order
     {
         $seller = $this->seller($request);
-        $order = $this->ordersFor($seller)->whereKey($orderId)->firstOrFail();
-
-        if ($order->payment_method === 'online' && $order->manual_cashless_payment_id) {
-            ManualCashlessPayment::whereKey($order->manual_cashless_payment_id)->lockForUpdate()->first();
-        }
-
         $order = $this->ordersFor($seller)->whereKey($orderId)->lockForUpdate()->firstOrFail();
         return $order->isPaymentEligible() && $order->status === $expected ? $order : null;
     }

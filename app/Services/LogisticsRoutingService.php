@@ -28,6 +28,22 @@ class LogisticsRoutingService
             ->values();
     }
 
+    /**
+     * Partners that can pick up from this Seller and deliver to a destination, before any Order exists.
+     * Used by Checkout so the Buyer only sees couriers that really cover the address.
+     *
+     * @param array<string, mixed> $destination delivery_* attributes (region/province/municipality names, address)
+     */
+    public function eligiblePartnersFor(Seller $seller, array $destination): Collection
+    {
+        // An unsaved Order only carries the destination fields the coverage rule reads.
+        $draft = new Order();
+        $draft->forceFill($destination);
+        $draft->setRelation('seller', $seller);
+
+        return $this->eligiblePartners($draft);
+    }
+
     public function destinationArea(LogisticsPartner $partner, Order $order): ?LogisticsCoverageArea
     {
         return $partner->coverageAreas->first(

@@ -28,8 +28,8 @@ class Order extends Model
         'shipping_method',
         'shipping_fee',
         'payment_method',
-        'manual_cashless_payment_id',
         'cod_fee',
+        'logistics_partner_id',
         'voucher_id',
         'voucher_discount',
         'platform_voucher_id', 'shipping_voucher_id', 'platform_discount', 'shipping_discount',
@@ -100,6 +100,12 @@ class Order extends Model
         return $this->hasOne(Delivery::class);
     }
 
+    public function logisticsPartner(): BelongsTo
+    {
+        // The courier the Buyer chose at Checkout; null means the Seller picks one.
+        return $this->belongsTo(\App\Models\LogisticsPartner::class, 'logistics_partner_id');
+    }
+
     public function pickupRequest(): HasOne
     {
         return $this->hasOne(PickupRequest::class);
@@ -111,38 +117,16 @@ class Order extends Model
         return $this->hasOne(CodSettlement::class);
     }
 
-    public function manualCashlessPayment(): BelongsTo
-    {
-        // Explicit membership plus Buyer/group checks keep a copied UUID from releasing a forged Order.
-        return $this->belongsTo(ManualCashlessPayment::class, 'manual_cashless_payment_id');
-    }
-
     public function isPaymentEligible(): bool
     {
-        // A historical non-COD row cannot enter fulfillment without this verified group contract.
-        if ($this->payment_method !== 'online') {
-            return $this->payment_method === 'cod';
-        }
-
-        $payment = $this->manualCashlessPayment;
-        return $this->payment_method === 'online' && $payment
-            && (int) $payment->buyer_id === (int) $this->buyer_id
-            && $payment->checkout_group_id === $this->checkout_group_id
-            && $payment->status === ManualCashlessPayment::VERIFIED;
+        // Cash on Delivery is the only supported payment method; any historical non-COD row cannot enter fulfillment.
+        return $this->payment_method === 'cod';
     }
 
     public function scopePaymentEligible(Builder $query): Builder
     {
-        // Queue queries use the same Buyer-scoped rule as individual Order actions.
-        return $query->where(function (Builder $query) {
-            $query->where('payment_method', 'cod')->orWhere(function (Builder $query) {
-                $query->where('payment_method', 'online')->whereHas('manualCashlessPayment', function (Builder $payment) {
-                    $payment->where('status', ManualCashlessPayment::VERIFIED)
-                        ->whereColumn('manual_cashless_payments.buyer_id', 'orders.buyer_id')
-                        ->whereColumn('manual_cashless_payments.checkout_group_id', 'orders.checkout_group_id');
-                });
-            });
-        });
+        // Queue queries use the same rule as individual Order actions.
+        return $query->where('payment_method', 'cod');
     }
 
     /*
@@ -164,21 +148,15 @@ class Order extends Model
 
     public function statusLabel(): string
     {
-        // A closed Online group has a real terminal Order status, even though it is never payment eligible.
         if ($this->status === self::STATUS_RETURNED) {
             return 'Returned to Seller';
         }
         if ($this->status === self::STATUS_CANCELLED) {
             return 'Cancelled';
         }
-        // An unverified Online Order remains placed, but Buyer and Seller must see payment state first.
-        if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
-            return match ($this->manualCashlessPayment?->status) {
-                ManualCashlessPayment::AWAITING_PROOF => 'Awaiting Payment Proof',
-                ManualCashlessPayment::PENDING_REVIEW => 'Pending Payment Verification',
-                ManualCashlessPayment::REJECTED => 'Payment Rejected / Resubmission Required',
-                default => 'Payment Verification Unavailable',
-            };
+        // Historical non-COD rows can no longer be fulfilled; say so instead of showing a misleading status.
+        if (! $this->isPaymentEligible()) {
+            return 'Payment Method Unavailable';
         }
         return match ($this->status) {
             self::STATUS_TO_PAY => 'To Pay',
@@ -197,24 +175,16 @@ class Order extends Model
     public function statusNote(): string
     {
         if ($this->status === self::STATUS_RETURNED) {
-            return $this->returnCase?->refund_status === 'paid'
-                ? 'Returned to Seller. ShopHop Admin recorded the manual refund.'
-                : ($this->payment_method === 'online'
-                    ? 'Returned to Seller. Manual refund is pending ShopHop Admin verification.'
-                    : 'Returned to Seller. No COD money was collected for this failed delivery.');
+            return 'Returned to Seller. No COD money was collected for this failed delivery.';
         }
-        // The payment preserves the closure reason while the Order stops showing proof instructions.
         if ($this->status === self::STATUS_CANCELLED) {
-            return $this->manualCashlessPayment?->status === ManualCashlessPayment::EXPIRED
-                ? 'The payment deadline passed and this order expired.' : 'This order was cancelled.';
+            return 'This order was cancelled.';
         }
-        // Seller fulfillment messaging cannot conceal an unresolved Buyer payment review.
-        if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
-            return 'Submit or correct payment proof for ShopHop Admin review.';
+        if (! $this->isPaymentEligible()) {
+            return 'This order used a payment method that is no longer supported.';
         }
         return match ($this->status) {
-            // Status alone does not prove payment verification, packing, or courier movement.
-            self::STATUS_TO_PAY => 'Online payment verification is unavailable.',
+            self::STATUS_TO_PAY => 'Awaiting payment.',
             self::STATUS_TO_SHIP => 'Order placed. Waiting for the seller to accept it.',
             self::STATUS_CONFIRMED => 'The seller accepted this order and will prepare it next.',
             // These Seller states report preparation only; neither proves courier pickup or delivery.
@@ -228,7 +198,6 @@ class Order extends Model
             // Only an attached persisted Delivery can justify pickup or transit messaging.
             self::STATUS_TO_RECEIVE => $this->deliveryStatusNote(),
             self::STATUS_COMPLETED => 'Buyer confirmed receipt. Transaction completed.',
-            self::STATUS_CANCELLED => 'This order was cancelled.',
             default => '',
         };
     }
@@ -437,21 +406,6 @@ class Order extends Model
             ];
         }
 
-        if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
-            return [
-                ['label' => 'Order Placed', 'done' => true],
-                ['label' => 'Payment', 'done' => false],
-            ];
-        }
-
-        $sellerStarted = in_array($this->status, [
-            self::STATUS_TO_SHIP,
-            self::STATUS_CONFIRMED,
-            self::STATUS_PREPARING,
-            self::STATUS_READY_FOR_PICKUP,
-            self::STATUS_TO_RECEIVE,
-            self::STATUS_COMPLETED,
-        ], true);
         $confirmed = in_array($this->status, [
             self::STATUS_CONFIRMED,
             self::STATUS_PREPARING,
@@ -477,7 +431,6 @@ class Order extends Model
 
         return [
             ['label' => 'Order Placed', 'done' => true],
-            ...($this->payment_method === 'cod' ? [] : [['label' => 'Payment', 'done' => true]]),
             ['label' => 'Seller Confirmed', 'done' => $confirmed],
             ['label' => 'Preparing', 'done' => $preparing],
             ['label' => 'Ready for Pickup', 'done' => $ready],
@@ -489,13 +442,9 @@ class Order extends Model
 
     public function buyerStatusGroup(): string
     {
-        // Closed groups move to Cancelled instead of remaining actionable in To Pay.
+        // Closed orders move to Cancelled instead of remaining actionable.
         if ($this->status === self::STATUS_CANCELLED) {
             return self::STATUS_CANCELLED;
-        }
-        // Buyer tabs keep unresolved Online Orders in To Pay despite their placed Order status.
-        if ($this->payment_method === 'online' && ! $this->isPaymentEligible()) {
-            return self::STATUS_TO_PAY;
         }
         // Seller preparation stays in Buyer's To Ship group until Logistics actually advances the Order.
         return in_array($this->status, [self::STATUS_CONFIRMED, self::STATUS_PREPARING, self::STATUS_READY_FOR_PICKUP], true)

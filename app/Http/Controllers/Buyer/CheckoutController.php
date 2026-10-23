@@ -37,6 +37,7 @@ class CheckoutController extends Controller
                 strictVoucher: false,
                 platformVoucherCode: (string) $request->query('merchandise_voucher_code', ''),
                 shippingVoucherCode: (string) $request->query('shipping_voucher_code', ''),
+                logisticsChoices: (array) $request->query('logistics_partner', []),
             );
         } catch (ValidationException $exception) {
             return redirect()
@@ -73,6 +74,9 @@ class CheckoutController extends Controller
             'voucher_code' => 'nullable|string',
             'merchandise_voucher_code' => 'nullable|string|max:40',
             'shipping_voucher_code' => 'nullable|string|max:40',
+            // Optional courier per shop; the service rechecks coverage before saving it.
+            'logistics_partner' => 'nullable|array',
+            'logistics_partner.*' => 'nullable|integer',
             'groups' => 'nullable|array',
             'groups.*.note' => 'nullable|string|max:500',
         ]);

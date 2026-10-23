@@ -134,7 +134,7 @@ class DashboardController extends Controller
     {
         $counts = ['to-pay' => 0, 'to-ship' => 0, 'to-receive' => 0, 'completed' => 0];
         if ($buyerId && Schema::hasTable('orders')) {
-            Order::with('manualCashlessPayment')->where('buyer_id', $buyerId)->get()->each(function (Order $order) use (&$counts) {
+            Order::where('buyer_id', $buyerId)->get()->each(function (Order $order) use (&$counts) {
                 $group = $order->buyerStatusGroup();
                 if (array_key_exists($group, $counts)) $counts[$group]++;
             });
@@ -152,7 +152,7 @@ class DashboardController extends Controller
         if (! $buyerId || ! Schema::hasTable('orders')) return null;
 
         $order = Order::with([
-            'manualCashlessPayment', 'items.product', 'items.variant',
+            'items.product', 'items.variant',
             'pickupRequest.partner', 'pickupRequest.originSortingCenter',
             'delivery.rider', 'delivery.pickupRider', 'delivery.deliveryRider',
             'delivery.originSortingCenter', 'delivery.currentSortingCenter', 'delivery.destinationSortingCenter',

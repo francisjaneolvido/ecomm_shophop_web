@@ -214,8 +214,12 @@
                                 <div class="flex gap-2 text-[10px] text-navy min-w-0">
                                     <x-lucide-truck class="w-3.5 h-3.5 text-teal-dark shrink-0 mt-0.5" />
                                     <div>
-                                        <p class="font-semibold">Shipping calculated at checkout</p>
-                                        <p class="text-navy/40 mt-0.5">Ships from {{ $product['ships_from'] }} · Delivery estimate not yet available</p>
+                                        <p class="font-semibold">Ships from {{ $product['ships_from'] }}</p>
+                                        <p class="text-navy/40 mt-0.5">Standard or Express · Fee calculated at checkout</p>
+                                        <p class="inline-flex items-center gap-1 mt-1.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
+                                            <x-lucide-wallet class="w-3 h-3" />
+                                            Cash on Delivery available
+                                        </p>
                                     </div>
                                 </div>
                             </div>

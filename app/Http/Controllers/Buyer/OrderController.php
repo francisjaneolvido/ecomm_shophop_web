@@ -17,7 +17,7 @@ class OrderController extends Controller
         $buyer = Auth::user()->buyer;
 
         // Buyer cards read persisted delivery and collection facts scoped to the authenticated Buyer.
-        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery.rider', 'delivery.deliveredRider', 'delivery.partner', 'codSettlement', 'manualCashlessPayment'])
+        $realOrders = Order::with(['items.product', 'items.variant', 'seller', 'delivery.rider', 'delivery.deliveredRider', 'delivery.partner', 'codSettlement'])
             ->where('buyer_id', $buyer->id)
             ->latest()
             ->get();
@@ -29,7 +29,6 @@ class OrderController extends Controller
         // Seller preparation remains in the Buyer's To Ship group while its exact persisted label stays visible.
         $orderCounts = [
             'all'        => $orders->count(),
-            // Cashless payment state, not only Order.status, controls the Buyer's To Pay tab.
             'to-pay'     => $orders->where('status_group', Order::STATUS_TO_PAY)->count(),
             'to-ship'    => $orders->where('status_group', Order::STATUS_TO_SHIP)->count(),
             'to-receive' => $orders->where('status', Order::STATUS_TO_RECEIVE)->count(),
@@ -63,9 +62,8 @@ class OrderController extends Controller
 
             'placed_at' => $order->created_at->format('M j, Y · g:i A'),
             'payment' => $this->paymentLabel($order),
-            // Buyer returns to the same group payment for proof, rejection, and review status.
-            'payment_url' => $order->payment_method === 'online' && $order->manualCashlessPayment
-                ? route('buyer.payments.show', $order->manualCashlessPayment) : null,
+            // Kept as null so existing views reading this key do not break; there is no payment page anymore.
+            'payment_url' => null,
             'shipping' => $order->shipping_method === 'express' ? 'Express Delivery' : 'Standard Delivery',
 
             // Only assigned Rider name and vehicle are exposed; no contact, plate, or ETA is inferred.
@@ -202,14 +200,7 @@ class OrderController extends Controller
             return 'Cash on Delivery';
         }
 
-        // Only a persisted Admin-reviewed group payment can describe Online Payment as verified.
-        if ($order->payment_method === 'online' && $order->manualCashlessPayment
-            && (int) $order->manualCashlessPayment->buyer_id === (int) $order->buyer_id) {
-            return $order->manualCashlessPayment->status === 'verified'
-                ? 'Online Payment · Verified by ShopHop Admin'
-                : 'Online Payment · '.$order->statusLabel();
-        }
-        // Historical GCash rows have no verified provider result in this schema.
-        return 'GCash · Verification unavailable';
+        // Historical non-COD rows have no verified payment record in this schema.
+        return 'Online payment (no longer supported)';
     }
 }
