@@ -184,32 +184,68 @@
     $hubActive = ($hubCenter?->status ?? 'active') === 'active';
     $hubEmail = $hubStaff?->email ?? '';
 
+    /*
+    | Optional: ang controller o view composer ay puwedeng mag-share ng $hubBadges,
+    | halimbawa ['logistics.hub.inbound' => 12, 'logistics.hub.returns' => 3].
+    | Kapag walang value, walang lalabas na badge.
+    */
+    $hubBadges = $hubBadges ?? [];
+
+    /*
+    | Navigation ng province hub, ayon sa trabaho ng hub:
+    | tumanggap, mag-sort, mag-dispatch, mamahala ng station hubs, at mag-verify ng COD.
+    | Ang mga page na wala pang route ay lalabas na "Soon" (hindi mag-eerror).
+    */
     $hubNavigation = [
         [
             'label' => 'Overview',
             'items' => [
-                ['label' => 'Dashboard', 'route' => 'logistics.hub.dashboard', 'pattern' => 'logistics.hub.dashboard', 'icon' => 'layout-dashboard'],
+                ['label' => 'Dashboard', 'route' => 'logistics.hub.dashboard', 'pattern' => 'logistics.hub.dashboard', 'icon' => 'layout-dashboard', 'keywords' => 'home overview summary backlog'],
             ],
         ],
         [
             'label' => 'Network',
             'items' => [
-                ['label' => 'Station Hubs', 'route' => 'logistics.hub.station-hubs', 'pattern' => 'logistics.hub.station-hubs', 'icon' => 'warehouse'],
+                ['label' => 'Station Hubs', 'route' => 'logistics.hub.station-hubs', 'pattern' => 'logistics.hub.station-hubs*', 'icon' => 'warehouse', 'keywords' => 'station branch create coverage barangay credentials'],
             ],
         ],
         [
             'label' => 'Operations',
             'items' => [
-                ['label' => 'Parcels', 'route' => 'logistics.hub.parcels', 'pattern' => 'logistics.hub.parcels', 'icon' => 'package-check'],
+                ['label' => 'Inbound', 'route' => 'logistics.hub.inbound', 'pattern' => 'logistics.hub.inbound*', 'icon' => 'package-check', 'keywords' => 'receiving receive arrived scan incoming'],
+                ['label' => 'Sorting', 'route' => 'logistics.hub.sorting', 'pattern' => 'logistics.hub.sorting*', 'icon' => 'scan-barcode', 'keywords' => 'sort destination route assign'],
+                ['label' => 'Outbound', 'route' => 'logistics.hub.outbound', 'pattern' => 'logistics.hub.outbound*', 'icon' => 'truck', 'keywords' => 'dispatch manifest batch send'],
+                ['label' => 'Parcel Tracking', 'route' => 'logistics.hub.parcels', 'pattern' => 'logistics.hub.parcels*', 'icon' => 'package-search', 'keywords' => 'parcels tracking number timeline status'],
+                ['label' => 'Returns & Failed', 'route' => 'logistics.hub.returns', 'pattern' => 'logistics.hub.returns*', 'icon' => 'rotate-ccw', 'keywords' => 'return failed delivery retry reassign damaged missing'],
+            ],
+        ],
+        [
+            'label' => 'Finance',
+            'items' => [
+                ['label' => 'COD & Remittance', 'route' => 'logistics.hub.cod', 'pattern' => 'logistics.hub.cod*', 'icon' => 'banknote', 'keywords' => 'cod cash collected remit verify money'],
+            ],
+        ],
+        [
+            'label' => 'Insights',
+            'items' => [
+                ['label' => 'Reports', 'route' => 'logistics.hub.reports', 'pattern' => 'logistics.hub.reports*', 'icon' => 'activity', 'keywords' => 'performance success rate delivery time export'],
+                ['label' => 'Activity Log', 'route' => 'logistics.hub.activity', 'pattern' => 'logistics.hub.activity*', 'icon' => 'history', 'keywords' => 'audit log history who changed'],
             ],
         ],
         [
             'label' => 'Account',
             'items' => [
-                ['label' => 'Account & Password', 'route' => 'logistics.staff.workspace', 'pattern' => 'logistics.staff.*', 'icon' => 'user'],
+                ['label' => 'Account & Password', 'route' => 'logistics.staff.workspace', 'pattern' => 'logistics.staff.*', 'icon' => 'user', 'keywords' => 'profile password security'],
             ],
         ],
     ];
+
+    foreach ($hubNavigation as $sectionKey => $section) {
+        foreach ($section['items'] as $itemKey => $item) {
+            $hubNavigation[$sectionKey]['items'][$itemKey]['available'] = \Illuminate\Support\Facades\Route::has($item['route']);
+            $hubNavigation[$sectionKey]['items'][$itemKey]['badge'] = (int) ($hubBadges[$item['route']] ?? 0);
+        }
+    }
 @endphp
 
 <body class="logistics-console bg-gray-bg text-navy antialiased">
@@ -283,28 +319,46 @@
 
                     <div class="space-y-1">
                         @foreach ($section['items'] as $item)
-                            @php $active = request()->routeIs($item['pattern']); @endphp
+                            @php $active = $item['available'] && request()->routeIs($item['pattern']); @endphp
 
                             <div class="relative group">
-                                <a href="{{ route($item['route']) }}"
-                                   @if($active) aria-current="page" @endif
-                                   class="sidebar-nav-link relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] transition-all duration-150
-                                          {{ $active ? 'bg-white/10 text-white font-semibold' : 'text-white/55 hover:text-white hover:bg-white/[0.06]' }}">
+                                @if ($item['available'])
+                                    <a href="{{ route($item['route']) }}"
+                                       @if($active) aria-current="page" @endif
+                                       class="sidebar-nav-link relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] transition-all duration-150
+                                              {{ $active ? 'bg-white/10 text-white font-semibold' : 'text-white/55 hover:text-white hover:bg-white/[0.06]' }}">
 
-                                    @if ($active)
-                                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-teal"></span>
-                                    @endif
+                                        @if ($active)
+                                            <span class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-teal"></span>
+                                        @endif
 
-                                    <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0
-                                                 {{ $active ? 'bg-teal/15 text-teal' : 'text-white/45 group-hover:bg-white/[0.06] group-hover:text-teal' }}">
-                                        <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
-                                    </span>
+                                        <span class="relative w-8 h-8 rounded-lg flex items-center justify-center shrink-0
+                                                     {{ $active ? 'bg-teal/15 text-teal' : 'text-white/45 group-hover:bg-white/[0.06] group-hover:text-teal' }}">
+                                            <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
+                                            @if ($item['badge'] > 0)
+                                                <span class="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-coral ring-2 ring-navy"></span>
+                                            @endif
+                                        </span>
 
-                                    <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
-                                </a>
+                                        <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
+
+                                        @if ($item['badge'] > 0)
+                                            <span class="sidebar-expanded-only rounded-full bg-coral/90 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
+                                        @endif
+                                    </a>
+                                @else
+                                    <div aria-disabled="true" title="Coming soon"
+                                         class="sidebar-nav-link relative flex cursor-not-allowed items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] text-white/25">
+                                        <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0">
+                                            <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
+                                        </span>
+                                        <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
+                                        <span class="sidebar-expanded-only rounded-full bg-white/[0.07] px-1.5 py-0.5 text-[8px] font-semibold text-white/35">Soon</span>
+                                    </div>
+                                @endif
 
                                 <div class="sidebar-tooltip pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 z-[80] px-2.5 py-1.5 rounded-lg bg-navy-light text-white border border-white/10 shadow-lg text-[10px] font-medium whitespace-nowrap opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">
-                                    {{ $item['label'] }}
+                                    {{ $item['label'] }}{{ $item['available'] ? '' : ' (soon)' }}
                                 </div>
                             </div>
                         @endforeach
@@ -397,9 +451,29 @@
         {{-- Session alerts --}}
         @if (session('success'))
             <div class="px-3 sm:px-4 lg:px-5 pt-3 shrink-0">
-                <div class="max-w-[1600px] mx-auto flex items-center gap-3 rounded-xl bg-teal-light border border-teal/20 px-4 py-3">
+                <div role="status" class="max-w-[1600px] mx-auto flex items-center gap-3 rounded-xl bg-teal-light border border-teal/20 px-4 py-3">
                     <x-lucide-circle-check class="w-4 h-4 text-teal-dark shrink-0" />
                     <p class="text-xs font-medium text-teal-dark">{{ session('success') }}</p>
+                </div>
+            </div>
+        @endif
+
+        @if (session('error') || $errors->any())
+            <div class="px-3 sm:px-4 lg:px-5 pt-3 shrink-0">
+                <div role="alert" class="sh-alert-error max-w-[1600px] mx-auto flex items-start gap-3">
+                    <x-lucide-circle-alert class="mt-0.5 h-4 w-4 shrink-0" />
+                    <div class="min-w-0 text-xs font-medium">
+                        @if (session('error'))
+                            <p>{{ session('error') }}</p>
+                        @else
+                            <p>Please fix the following:</p>
+                            <ul class="mt-1 list-disc space-y-0.5 pl-4 font-normal">
+                                @foreach ($errors->all() as $message)
+                                    <li>{{ $message }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
                 </div>
             </div>
         @endif
@@ -413,7 +487,7 @@
     </div>
 </div>
 
-{{-- COMMAND / SEARCH PALETTE (built from $hubNavigation, always matches the sidebar) --}}
+{{-- COMMAND / SEARCH PALETTE (built from $hubNavigation, only pages that exist) --}}
 <div id="logisticsSearchPalette" hidden class="fixed inset-0 z-[90] flex items-start justify-center px-3 pt-[10vh] sm:pt-[14vh]" aria-hidden="true">
     <button id="logisticsSearchBackdrop" type="button" class="absolute inset-0 bg-navy/50 backdrop-blur-[2px]" aria-label="Close search"></button>
 
@@ -430,8 +504,9 @@
 
             @foreach ($hubNavigation as $section)
                 @foreach ($section['items'] as $item)
+                    @continue (! $item['available'])
                     <a href="{{ route($item['route']) }}" data-logistics-command-item
-                       data-search-text="{{ strtolower($item['label'] . ' ' . $section['label']) }}"
+                       data-search-text="{{ strtolower($item['label'] . ' ' . $section['label'] . ' ' . ($item['keywords'] ?? '')) }}"
                        class="group flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-gray-bg transition">
                         <div class="w-8 h-8 rounded-lg bg-gray-bg text-teal-dark flex items-center justify-center shrink-0">
                             <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
@@ -502,22 +577,29 @@ document.addEventListener('DOMContentLoaded', function () {
         link.addEventListener('click', function () { if (window.innerWidth < 1024) closeSidebar(); });
     });
 
-    /* Desktop collapse / expand */
+    /* Desktop collapse / expand
+       Ang saved preference ay isinusulat lang kapag ang user mismo ang pumindot.
+       Dati, ang resize papuntang mobile ay nag-o-overwrite nito ng "expanded". */
     const collapseStorageKey = 'shophop_hub_sidebar_collapsed';
     const collapseBtn = document.getElementById('logisticsDesktopCollapse');
     const expandBtn = document.getElementById('logisticsDesktopExpand');
 
-    function setCollapsed(collapsed) {
-        const apply = window.innerWidth >= 1024 && collapsed;
-        sidebar?.setAttribute('data-collapsed', apply ? 'true' : 'false');
-        localStorage.setItem(collapseStorageKey, apply ? '1' : '0');
+    function readCollapsedPreference() {
+        try { return localStorage.getItem(collapseStorageKey) === '1'; } catch (e) { return false; }
     }
-    setCollapsed(localStorage.getItem(collapseStorageKey) === '1');
-    collapseBtn?.addEventListener('click', function () { setCollapsed(true); });
-    expandBtn?.addEventListener('click', function (event) { event.preventDefault(); setCollapsed(false); });
+    function saveCollapsedPreference(collapsed) {
+        try { localStorage.setItem(collapseStorageKey, collapsed ? '1' : '0'); } catch (e) { /* storage unavailable */ }
+    }
+    function applyCollapsed(collapsed) {
+        sidebar?.setAttribute('data-collapsed', (window.innerWidth >= 1024 && collapsed) ? 'true' : 'false');
+    }
+
+    applyCollapsed(readCollapsedPreference());
+    collapseBtn?.addEventListener('click', function () { saveCollapsedPreference(true); applyCollapsed(true); });
+    expandBtn?.addEventListener('click', function (event) { event.preventDefault(); saveCollapsedPreference(false); applyCollapsed(false); });
     window.addEventListener('resize', function () {
-        if (window.innerWidth >= 1024) { closeSidebar(); setCollapsed(localStorage.getItem(collapseStorageKey) === '1'); }
-        else { setCollapsed(false); }
+        if (window.innerWidth >= 1024) closeSidebar();
+        applyCollapsed(readCollapsedPreference());
     });
 
     /* Command palette */

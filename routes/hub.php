@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Route;
 /*
 | Province hub portal. URL: <LOGISTICS_DOMAIN>/hub/...   Route names: logistics.hub.*
 | Branch-staff guard (logistics_staff) + manager role only.
-| Naka-require sa dulo ng routes/logistics.php, kaya pareho ang web middleware at domain.
 */
 Route::domain(config('app.logistics_domain'))
     ->name('logistics.')
@@ -19,9 +18,9 @@ Route::domain(config('app.logistics_domain'))
             ->prefix('hub')->name('hub.')->group(function () {
 
                 // Overview
-                Route::view('/', 'hub.dashboard.dashboard')->name('dashboard');
+                Route::get('/', [HubPortalController::class, 'dashboard'])->name('dashboard');
 
-                // Network: station hubs (province manager creates the station accounts)
+                // Network: station hubs
                 Route::get('/station-hubs', [HubPortalController::class, 'stationHubs'])->name('station-hubs');
                 Route::post('/station-hubs', [HubPortalController::class, 'storeStationHub'])->name('station-hubs.store');
                 Route::post('/station-hubs/{stationHub}/password', [HubPortalController::class, 'setStationPassword'])

@@ -95,6 +95,7 @@
             <div><dt class="text-navy/50">Recipient</dt><dd class="font-semibold text-navy">{{ $order->delivery_name ?: 'Unavailable' }}</dd></div>
             <div><dt class="text-navy/50">Delivery address</dt><dd class="font-semibold text-navy">{{ $order->delivery_address ?: 'Unavailable' }}</dd></div>
             <div><dt class="text-navy/50">Shipping</dt><dd class="font-semibold text-navy">{{ ucfirst($order->shipping_method ?? 'Unavailable') }}</dd></div>
+            <div><dt class="text-navy/50">Courier</dt><dd class="font-semibold text-navy">{{ $order->logisticsPartner?->company_name ?? 'Not chosen by Buyer' }}</dd></div>
             {{-- Seller sees recorded COD custody only; Logistics receipt does not mean Seller payout. --}}
             <div><dt class="text-navy/50">Payment</dt><dd class="font-semibold text-navy">
                 @if ($order->payment_method === 'online' && $order->isPaymentEligible())
@@ -158,29 +159,57 @@
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
                             <p class="text-sm font-semibold text-navy">Packed and labeled?</p>
-                            <p class="mt-1 text-xs text-navy/55">Select the Logistics / Sorting Center company that will collect this parcel. Only providers covering the Buyer destination are shown.</p>
+                            <p class="mt-1 text-xs text-navy/55">
+                                {{ $order->logistics_partner_id
+                                    ? 'The Buyer already chose the courier for this order.'
+                                    : 'Select the Logistics company that will collect this parcel. Only providers covering the Buyer destination are shown.' }}
+                            </p>
                         </div>
                         <a target="_blank" href="{{ route('seller.orders.shipping-label', $order) }}" class="text-xs font-semibold text-teal-dark hover:underline">Print label</a>
                     </div>
+
                     @if ($errors->has('logistics_partner_id'))
                         <p class="mt-3 rounded-lg bg-red-50 p-2 text-xs text-red-700">{{ $errors->first('logistics_partner_id') }}</p>
                     @endif
-                    <form class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" method="POST" action="{{ route('seller.orders.mark-ready', $order) }}">
-                        @csrf
-                        @method('PATCH')
-                        <label class="flex-1 text-xs font-semibold text-navy">
-                            Logistics / Sorting Center
-                            <select name="logistics_partner_id" required class="mt-2 w-full rounded-lg border border-gray-border bg-white px-3 py-2.5 text-sm font-medium text-navy focus:border-teal focus:outline-none">
-                                <option value="">Choose provider</option>
-                                @foreach ($logisticsPartners as $partner)
-                                    <option value="{{ $partner->id }}" @selected((string) old('logistics_partner_id') === (string) $partner->id)>{{ $partner->company_name }}</option>
-                                @endforeach
-                            </select>
-                        </label>
-                        <button @disabled($logisticsPartners->isEmpty()) class="rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark disabled:cursor-not-allowed disabled:opacity-40">Mark Ready & Request Pickup</button>
-                    </form>
-                    @if ($logisticsPartners->isEmpty())
-                        <p class="mt-3 text-xs text-amber-700">No approved Logistics partner currently covers this delivery destination. Keep the order in Preparing until coverage is available.</p>
+
+                    @if ($order->logistics_partner_id)
+                        @php($buyerCourierOk = $logisticsPartners->contains('id', $order->logistics_partner_id))
+
+                        <div class="mt-4 rounded-lg border border-gray-border bg-white p-3 text-sm">
+                            <span class="text-navy/50">Courier chosen by Buyer:</span>
+                            <strong class="text-navy">{{ $order->logisticsPartner?->company_name ?? 'Unavailable' }}</strong>
+                        </div>
+
+                        @unless ($buyerCourierOk)
+                            <p class="mt-3 text-xs text-amber-700">This courier can no longer serve this order. Contact ShopHop support.</p>
+                        @endunless
+
+                        <form class="mt-4" method="POST" action="{{ route('seller.orders.mark-ready', $order) }}">
+                            @csrf
+                            @method('PATCH')
+                            <button @disabled(! $buyerCourierOk)
+                                class="rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark disabled:cursor-not-allowed disabled:opacity-40">
+                                Mark Ready & Request Pickup
+                            </button>
+                        </form>
+                    @else
+                        <form class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end" method="POST" action="{{ route('seller.orders.mark-ready', $order) }}">
+                            @csrf
+                            @method('PATCH')
+                            <label class="flex-1 text-xs font-semibold text-navy">
+                                Logistics / Sorting Center
+                                <select name="logistics_partner_id" required class="mt-2 w-full rounded-lg border border-gray-border bg-white px-3 py-2.5 text-sm font-medium text-navy focus:border-teal focus:outline-none">
+                                    <option value="">Choose provider</option>
+                                    @foreach ($logisticsPartners as $partner)
+                                        <option value="{{ $partner->id }}" @selected((string) old('logistics_partner_id') === (string) $partner->id)>{{ $partner->company_name }}</option>
+                                    @endforeach
+                                </select>
+                            </label>
+                            <button @disabled($logisticsPartners->isEmpty()) class="rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark disabled:cursor-not-allowed disabled:opacity-40">Mark Ready & Request Pickup</button>
+                        </form>
+                        @if ($logisticsPartners->isEmpty())
+                            <p class="mt-3 text-xs text-amber-700">No approved Logistics partner currently covers this delivery destination. Keep the order in Preparing until coverage is available.</p>
+                        @endif
                     @endif
                 </div>
             @elseif ($order->status === \App\Models\Buyer\Order\Order::STATUS_READY_FOR_PICKUP)

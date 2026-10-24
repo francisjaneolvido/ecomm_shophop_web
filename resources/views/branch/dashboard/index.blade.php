@@ -5,24 +5,23 @@
 
 @section('content')
 @php
-    // Data contract mula sa controller. May safe defaults para hindi mag-error kung kulang.
     $stats = array_merge([
-        'incoming' => 0, 'at_branch' => 0, 'to_assign' => 0, 'out_for_delivery' => 0,
-        'delivered_today' => 0, 'failed' => 0, 'cod_with_riders' => 0,
+        'pickups' => 0, 'to_receive' => 0, 'at_branch' => 0, 'to_assign' => 0,
+        'out_for_delivery' => 0, 'delivered_today' => 0, 'failed' => 0, 'cod_with_riders' => 0,
     ], $stats ?? []);
-    $incoming = collect($incoming ?? []);
+    $awaiting = collect($awaiting ?? []);
     $toAssign = collect($toAssign ?? []);
-    $riders = collect($riders ?? []);
-    $alerts = collect($alerts ?? []);
+    $riders   = collect($riders ?? []);
+    $alerts   = collect($alerts ?? []);
 
-    $link = fn (string $name, $param = null) => \Illuminate\Support\Facades\Route::has($name)
-        ? ($param ? route($name, $param) : route($name))
-        : '#';
+    $has  = fn (string $name) => \Illuminate\Support\Facades\Route::has($name);
+    $link = fn (string $name) => $has($name) ? route($name) : null;
 
     $cards = [
-        ['Incoming', $stats['incoming'], 'Batches papunta sa branch'],
+        ['Pickup requests', $stats['pickups'], 'Naghihintay ng pickup rider'],
+        ['Awaiting receipt', $stats['to_receive'], 'Papunta sa branch, i-scan pagdating'],
         ['At branch', $stats['at_branch'], 'Naka-receive na, naka-sort'],
-        ['To assign', $stats['to_assign'], 'Wala pang rider'],
+        ['To assign', $stats['to_assign'], 'Wala pang delivery rider'],
         ['Out for delivery', $stats['out_for_delivery'], 'Hawak ng riders'],
         ['Delivered today', $stats['delivered_today'], 'Tapos na at may proof'],
         ['Failed / return', $stats['failed'], 'Kailangan ng aksyon'],
@@ -36,13 +35,22 @@
             <h1 class="title">Branch Dashboard</h1>
             <p class="description">I-receive ang dumarating na parcels, i-assign sa riders, at subaybayan ang deliveries ng branch mo.</p>
         </div>
-        <div class="flex flex-wrap gap-3">
-            <a href="{{ $link('branch.dispatch') }}" class="sh-btn">Assign riders</a>
-        </div>
+        @if ($link('branch.parcels.index'))
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ $link('branch.parcels.index') }}" class="sh-btn">Assign riders</a>
+            </div>
+        @endif
     </header>
 
+    @if (session('status'))
+        <div role="status" class="sh-alert-success">{{ session('status') }}</div>
+    @endif
+    @if ($errors->any())
+        <div role="alert" class="sh-alert-error">{{ $errors->first() }}</div>
+    @endif
+
     {{-- Stat cards --}}
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @foreach ($cards as [$label, $value, $note])
             <div class="sh-stat">
                 <p class="sh-stat-label">{{ $label }}</p>
@@ -71,36 +79,46 @@
     @endif
 
     <div class="grid gap-5 xl:grid-cols-3">
-        {{-- Incoming transfers --}}
+        {{-- Awaiting receipt --}}
         <section class="sh-surface sh-card-pad xl:col-span-2">
             <div class="sh-toolbar">
                 <div>
-                    <h2 class="text-base font-bold text-navy">Incoming transfers</h2>
-                    <p class="mt-1 text-xs text-navy/45">Bilangin ang parcels pagdating, at ilagay ang bilang bago i-receive.</p>
+                    <h2 class="text-base font-bold text-navy">Awaiting receipt</h2>
+                    <p class="mt-1 text-xs text-navy/45">Parcels na dala ng pickup rider o ng transfer. I-scan o i-type ang tracking code, tapos i-receive.</p>
                 </div>
-                <a href="{{ $link('branch.transfers') }}" class="sh-btn-ghost">View all</a>
             </div>
 
+            {{-- Scan box: gumagana sa USB scanner (nagta-type + Enter) --}}
+            @if ($has('branch.receive'))
+                <form method="POST" action="{{ route('branch.receive') }}" class="mt-4 flex flex-wrap items-center gap-2">
+                    @csrf
+                    <input name="tracking_code" required autofocus autocomplete="off"
+                           placeholder="Scan tracking code (SHP-YYYYMMDD-000000)" class="sh-input min-w-0 flex-1">
+                    <button class="sh-btn">Receive</button>
+                </form>
+            @endif
+
             <div class="mt-4 grid gap-3">
-                @forelse ($incoming as $batch)
-                    @php $b = (object) $batch; @endphp
+                @forelse ($awaiting as $item)
+                    @php $i = (object) $item; @endphp
                     <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-border bg-white px-4 py-3">
                         <div class="min-w-0">
-                            <p class="text-sm font-bold text-navy">{{ $b->code ?? '—' }}</p>
-                            <p class="mt-0.5 text-xs text-navy/50">
-                                {{ number_format($b->parcels ?? 0) }} parcels · galing {{ $b->from ?? 'Main hub' }} · {{ $b->sent_at ?? '' }}
-                            </p>
+                            <p class="text-sm font-bold text-navy">{{ $i->tracking }}</p>
+                            <p class="mt-0.5 text-xs text-navy/50">{{ $i->label }} · {{ $i->from }} · {{ $i->when }}</p>
                         </div>
-                        <form method="POST" action="{{ $link('branch.transfers.receive', $b->id ?? null) }}" class="flex items-center gap-2">
-                            @csrf
-                            <input type="number" name="received_count" min="0" max="{{ $b->parcels ?? 0 }}" required placeholder="Counted" class="sh-input w-28">
-                            <button class="sh-btn">Receive</button>
-                        </form>
+                        @if ($has('branch.receive'))
+                            <form method="POST" action="{{ route('branch.receive') }}">
+                                @csrf
+                                <input type="hidden" name="tracking_code" value="{{ $i->tracking }}">
+                                <button class="sh-btn-soft"
+                                        onclick="return confirm('Na-check mo ba ang physical na parcel at tugma ang tracking code?')">Receive</button>
+                            </form>
+                        @endif
                     </div>
                 @empty
                     <div class="sh-empty">
-                        <p class="text-sm font-semibold text-navy">Walang dumarating na transfer</p>
-                        <p class="mt-1 text-xs text-navy/45">Kapag may ipinadala ang main hub, lalabas dito.</p>
+                        <p class="text-sm font-semibold text-navy">Walang hinihintay na parcel</p>
+                        <p class="mt-1 text-xs text-navy/45">Lalabas dito kapag na-pickup na ng rider o may transfer na papunta.</p>
                     </div>
                 @endforelse
             </div>
@@ -109,9 +127,11 @@
         {{-- COD with riders --}}
         <section class="sh-surface sh-card-pad">
             <h2 class="text-base font-bold text-navy">COD with riders</h2>
-            <p class="mt-1 text-xs text-navy/45">Nakolekta pero hindi pa nai-remit sa branch.</p>
+            <p class="mt-1 text-xs text-navy/45">Nakolekta pero hindi pa nai-remit ng riders.</p>
             <p class="mt-5 text-3xl font-bold text-navy">₱{{ number_format($stats['cod_with_riders'], 2) }}</p>
-            <a href="{{ $link('branch.cod') }}" class="sh-btn-soft mt-5 inline-flex">Open remittance</a>
+            @if ($link('branch.cod'))
+                <a href="{{ $link('branch.cod') }}" class="sh-btn-soft mt-5 inline-flex">Open remittance</a>
+            @endif
         </section>
     </div>
 
@@ -121,9 +141,11 @@
             <div class="sh-toolbar">
                 <div>
                     <h2 class="text-base font-bold text-navy">Ready to assign</h2>
-                    <p class="mt-1 text-xs text-navy/45">Nasa branch na, wala pang rider.</p>
+                    <p class="mt-1 text-xs text-navy/45">Nasa branch na, wala pang delivery rider.</p>
                 </div>
-                <a href="{{ $link('branch.dispatch') }}" class="sh-btn-ghost">Dispatch</a>
+                @if ($link('branch.parcels.index'))
+                    <a href="{{ $link('branch.parcels.index') }}" class="sh-btn-ghost">Open parcels</a>
+                @endif
             </div>
 
             <div class="mt-4 divide-y divide-gray-border">
@@ -153,7 +175,9 @@
                     <h2 class="text-base font-bold text-navy">Riders</h2>
                     <p class="mt-1 text-xs text-navy/45">Sino ang available at gaano karami ang hawak.</p>
                 </div>
-                <a href="{{ $link('branch.riders') }}" class="sh-btn-ghost">View all</a>
+                @if ($link('branch.riders'))
+                    <a href="{{ $link('branch.riders') }}" class="sh-btn-ghost">View all</a>
+                @endif
             </div>
 
             <div class="mt-4 divide-y divide-gray-border">

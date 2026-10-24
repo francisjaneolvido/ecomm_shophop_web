@@ -30,5 +30,8 @@ class AppServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(database_path('migrations/Seller/Manage_inventory'));
         $this->loadMigrationsFrom(database_path('migrations/Admin/account_registration'));
         $this->loadMigrationsFrom(database_path('migrations/Buyer'));
+
+        // A new station hub automatically covers the city in its own address.
+        \App\Models\Logistics\SortingCenter::observe(\App\Observers\SortingCenterObserver::class);
     }
 }

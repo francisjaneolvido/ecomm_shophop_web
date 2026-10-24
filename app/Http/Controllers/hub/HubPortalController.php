@@ -4,10 +4,14 @@ namespace App\Http\Controllers\hub;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Logistics\BranchStaffController;
+use App\Models\Logistics\Delivery;
+use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\SortingCenter;
+use App\Models\LogisticsCoverageArea;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -24,6 +28,96 @@ use Illuminate\View\View;
  */
 class HubPortalController extends Controller
 {
+    /* ---------------------------------------------------------------
+     | Dashboard
+     * ------------------------------------------------------------- */
+    public function dashboard(Request $request): View
+    {
+        $center = $this->center();
+        $open = [Delivery::AT_SORTING_CENTER, Delivery::SORTED];
+
+        // Parcels na nasa province hub ngayon
+        $inHub = Delivery::where('current_sorting_center_id', $center->id)
+            ->whereIn('status', $open)->count();
+
+        // Inbound = scans na naitala sa hub ngayon
+        $inboundToday = DB::table('parcel_scan_events')
+            ->where('sorting_center_id', $center->id)
+            ->whereDate('scanned_at', today())->count();
+
+        // Outbound = transfers na umalis sa hub ngayon
+        $outboundToday = ParcelTransfer::where('from_sorting_center_id', $center->id)
+            ->whereDate('dispatched_at', today())->count();
+
+        // Delayed = nasa hub nang higit 24 oras na walang galaw, o failed delivery
+        $delayed = Delivery::where('current_sorting_center_id', $center->id)
+            ->whereIn('status', array_merge($open, [Delivery::DELIVERY_FAILED]))
+            ->where('updated_at', '<', now()->subDay())->count();
+
+        $stats = [
+            ['Parcels in hub', $inHub, 'lucide-package', 'text-navy'],
+            ['Inbound today', $inboundToday, 'lucide-arrow-down', 'text-teal'],
+            ['Outbound today', $outboundToday, 'lucide-arrow-up', 'text-sky'],
+            ['Delayed (24h+)', $delayed, 'lucide-clock', $delayed > 0 ? 'text-yellow' : 'text-navy'],
+        ];
+
+        // Station hubs sa ilalim ng province hub na ito
+        $stationModels = $center->stationHubs()->whereNull('archived_at')
+            ->withCount(['riders as active_riders_count' => fn ($q) => $q->where('status', 'active')])
+            ->orderBy('name')->get();
+
+        $stationIds = $stationModels->pluck('id');
+
+        $activeByStation = Delivery::whereIn('destination_sorting_center_id', $stationIds)
+            ->whereNotIn('status', [Delivery::DELIVERED, Delivery::RETURNED])
+            ->selectRaw('destination_sorting_center_id as center_id, COUNT(*) as total')
+            ->groupBy('destination_sorting_center_id')->pluck('total', 'center_id');
+
+        $maxLoad = max(1, (int) $activeByStation->max());
+
+        $stations = $stationModels->map(fn ($s) => [
+            'name'    => $s->name,
+            'city'    => $s->municipality,
+            'active'  => (int) ($activeByStation[$s->id] ?? 0),
+            'riders'  => (int) $s->active_riders_count,
+            'percent' => (int) round((($activeByStation[$s->id] ?? 0) / $maxLoad) * 100),
+            'status'  => $s->status,
+        ]);
+
+        // Recent activity: scans at transfers sa hub at mga station niya
+        $centerIds = $stationIds->push($center->id);
+
+        $scans = DB::table('parcel_scan_events as e')
+            ->join('deliveries as d', 'd.id', '=', 'e.delivery_id')
+            ->join('sorting_centers as c', 'c.id', '=', 'e.sorting_center_id')
+            ->whereIn('e.sorting_center_id', $centerIds)
+            ->orderByDesc('e.scanned_at')->limit(8)
+            ->get(['d.tracking_code', 'c.name as center', 'e.event_type', 'e.scanned_at'])
+            ->map(fn ($r) => [
+                'title' => $r->event_type === 'pickup_received'
+                    ? "Pickup received at {$r->center}"
+                    : "Transfer received at {$r->center}",
+                'sub'   => $r->tracking_code,
+                'at'    => Carbon::parse($r->scanned_at),
+            ]);
+
+        $transfers = ParcelTransfer::with(['delivery', 'fromCenter', 'toCenter'])
+            ->where(fn ($q) => $q->whereIn('from_sorting_center_id', $centerIds)
+                ->orWhereIn('to_sorting_center_id', $centerIds))
+            ->whereNotNull('dispatched_at')
+            ->latest('dispatched_at')->limit(8)->get()
+            ->map(fn ($t) => [
+                'title' => 'Dispatched: '.($t->fromCenter?->name ?? '—').' → '.($t->toCenter?->name ?? '—'),
+                'sub'   => $t->delivery?->tracking_code ?? '',
+                'at'    => $t->dispatched_at,
+            ]);
+
+        $activity = $scans->concat($transfers)->sortByDesc('at')->take(8)->values();
+        $stationCount = $stationModels->count();
+
+        return view('hub.dashboard.dashboard', compact('center', 'stats', 'stations', 'activity', 'stationCount'));
+    }
+
     /* ---------------------------------------------------------------
      | Station hubs list
      * ------------------------------------------------------------- */
@@ -47,7 +141,7 @@ class HubPortalController extends Controller
     }
 
     /* ---------------------------------------------------------------
-     | Create station hub + its login account
+     | Create station hub + its login account + its coverage area
      * ------------------------------------------------------------- */
     public function storeStationHub(Request $request): RedirectResponse
     {
@@ -73,12 +167,9 @@ class HubPortalController extends Controller
         BranchStaffController::assertNewEmail($email); // email must not belong to any ShopHop account
 
         DB::transaction(function () use ($center, $data, $email) {
-            // The station hub's login account (same pattern as other branch accounts).
             $account = new User();
-            // `users` has no `name` column: the station hub's name lives on sorting_centers.name.
             $account->forceFill([
                 'email'             => $email,
-                // Safe with or without a 'hashed' cast: an already-hashed value is not re-hashed.
                 'password'          => Hash::make($data['manager_password']),
                 'account_type'      => 'branch',
                 'status'            => 'approved',
@@ -92,7 +183,7 @@ class HubPortalController extends Controller
                 $code = $center->code . '-S' . str_pad((string) $seq++, 2, '0', STR_PAD_LEFT);
             } while (SortingCenter::where('code', $code)->exists());
 
-            SortingCenter::create([
+            $station = SortingCenter::create([
                 'logistics_partner_id' => $center->logistics_partner_id,
                 'user_id'              => $account->id,
                 'type'                 => 'station_hub',
@@ -102,12 +193,21 @@ class HubPortalController extends Controller
                 'is_main'              => false,
                 'status'               => 'active',
                 'contact_no'           => $data['contact_no'] ?? null,
-                'region'               => $center->region,     // galing sa province hub
+                'region'               => $center->region,
                 'province'             => $center->province,
                 'municipality'         => $data['municipality'],
                 'barangay'             => $data['barangay'],
                 'street_no'            => $data['street_no'],
                 'unit_no'              => $data['unit_no'] ?? null,
+            ]);
+
+            // Coverage: ang station hub ang sumasakop sa city niya (pickup at delivery).
+            LogisticsCoverageArea::create([
+                'logistics_partner_id' => $center->logistics_partner_id,
+                'sorting_center_id'    => $station->id,
+                'area_name'            => $center->province,
+                'area_type'            => 'province',
+                'cities'               => $data['municipality'],
             ]);
         });
 
@@ -134,7 +234,7 @@ class HubPortalController extends Controller
         DB::transaction(function () use ($account, $data) {
             $account->forceFill(['password' => Hash::make($data['password'])])->save();
             if (method_exists($account, 'tokens')) {
-                $account->tokens()->delete(); // revoke existing mobile sessions
+                $account->tokens()->delete();
             }
         });
 
@@ -180,7 +280,6 @@ class HubPortalController extends Controller
         $center = $staff?->sortingCenter;
 
         abort_unless($center, 404);
-        // A station hub can never create further station hubs.
         abort_if($center->parent_id !== null, 403);
 
         if ($mutating) {
