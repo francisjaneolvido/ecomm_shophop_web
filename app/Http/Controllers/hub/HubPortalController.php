@@ -470,7 +470,7 @@ class HubPortalController extends Controller
             ])->all());
 
             $skipped = count($data['parcel_ids']) - $deliveries->count();
-            $message = "Nagawa ang {$manifest->code}: {$deliveries->count()} parcel papunta sa {$target->name}. I-scan ang bawat parcel habang niloload.";
+            $message = "Nagawa ang {$manifest->code}: {$deliveries->count()} parcel papunta sa {$target->name}. I-verify ang physical batch count bago i-confirm ang loading.";
             if ($skipped > 0) $message .= " {$skipped} ang nilaktawan.";
             return redirect()->route('logistics.hub.parcels')->with('status', $message);
         }, 3);
@@ -480,14 +480,14 @@ class HubPortalController extends Controller
     {
         $center = $this->center(mutating: true);
         $staff = $this->staff();
-        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:60']]);
+        $data = $request->validate(['physical_count' => ['required', 'integer', 'min:1', 'max:5000']]);
 
         try {
-            $result = $loading->load(
+            $result = $loading->confirmBatchLoad(
                 (int) $center->logistics_partner_id,
                 (int) $center->id,
                 $manifest,
-                $data['tracking_code'],
+                (int) $data['physical_count'],
                 $this->partnerUserId($center),
                 (int) $staff->id,
             );
@@ -495,8 +495,7 @@ class HubPortalController extends Controller
             return back()->withErrors($e->errors())->withInput();
         }
 
-        $message = "Loaded {$result['tracking_code']} ({$result['loaded']}/{$result['expected']}).";
-        if ($result['ready']) $message .= ' Manifest complete—assign a Linehaul vehicle and driver.';
+        $message = "Confirmed complete load for {$result['manifest_code']} ({$result['loaded']}/{$result['expected']}). Assign a Linehaul vehicle and driver.";
         return redirect()->route('logistics.hub.parcels')->with('status', $message);
     }
 

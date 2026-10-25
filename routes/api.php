@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\MobileBuyerPaymentController;
 use App\Http\Controllers\Api\MobileBuyerFavoriteController;
 use App\Http\Controllers\Api\MobileRiderAuthController;
 use App\Http\Controllers\Api\MobileSellerAuthController;
+use App\Http\Controllers\Api\MobileSellerEarningsController;
 use App\Http\Controllers\Api\MobileRiderDeliveryController;
 use App\Http\Controllers\Api\MobileLogisticsScannerController;
 use App\Http\Controllers\Api\MobileLinehaulController;
@@ -86,6 +87,8 @@ Route::prefix('mobile')->group(function () {
             [MobileAuthController::class, 'logout']
         );
 
+        Route::get('/seller/earnings', [MobileSellerEarningsController::class, 'index']);
+
         /*
         |--------------------------------------------------------------------------
         | Buyer Mobile Catalog
@@ -99,6 +102,10 @@ Route::prefix('mobile')->group(function () {
             Route::get('/scanner/manifests', [MobileLogisticsScannerController::class, 'manifests']);
             Route::get('/scanner/load-preview', [MobileLogisticsScannerController::class, 'loadPreview'])->middleware('throttle:60,1');
             Route::post('/scanner/load', [MobileLogisticsScannerController::class, 'loadParcel'])->middleware('throttle:60,1');
+            Route::post('/scanner/manifest/batch-load', [MobileLogisticsScannerController::class, 'batchLoad'])->middleware('throttle:30,1');
+            Route::get('/scanner/inbound-manifest/preview', [MobileLogisticsScannerController::class, 'inboundManifestPreview'])->middleware('throttle:60,1');
+            Route::post('/scanner/inbound-manifest/arrive', [MobileLogisticsScannerController::class, 'acknowledgeManifestArrival'])->middleware('throttle:30,1');
+            Route::post('/scanner/inbound-manifest/receive-all', [MobileLogisticsScannerController::class, 'receiveManifestAll'])->middleware('throttle:30,1');
             Route::get('/scanner/manifest-summary', [MobileLogisticsScannerController::class, 'manifestSummary'])->middleware('throttle:60,1');
             Route::get('/scanner/preview', [MobileLogisticsScannerController::class, 'preview'])->middleware('throttle:60,1');
             Route::get('/scanner/history', [MobileLogisticsScannerController::class, 'history'])->middleware('throttle:60,1');
@@ -107,6 +114,7 @@ Route::prefix('mobile')->group(function () {
 
         Route::prefix('linehaul')->group(function () {
             Route::get('/trips', [MobileLinehaulController::class, 'trips']);
+            Route::get('/earnings', [MobileLinehaulController::class, 'earnings']);
             Route::get('/manifest/preview', [MobileLinehaulController::class, 'preview'])->middleware('throttle:60,1');
             Route::post('/manifest/confirm', [MobileLinehaulController::class, 'confirm'])->middleware('throttle:30,1');
         });

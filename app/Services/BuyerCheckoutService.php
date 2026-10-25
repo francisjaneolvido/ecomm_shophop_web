@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Buyer;
 use App\Services\PlatformVoucherPricing;
 use App\Models\Finance\PlatformVoucher;
+use App\Models\Finance\MarketplaceRateSetting;
 use App\Services\ShopHopFinance;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Buyer\Order\Order;
@@ -21,9 +22,6 @@ use Illuminate\Validation\ValidationException;
 
 class BuyerCheckoutService
 {
-    public const COD_FEE = 20;
-    public const STANDARD_SHIPPING_FEE = 58;
-    public const EXPRESS_SHIPPING_SURCHARGE = 70;
 
     /**
      * Build checkout data from the same persisted cart, product, seller, stock,
@@ -120,8 +118,8 @@ class BuyerCheckoutService
         $voucherApplied = false;
         $merchandiseTotal = 0.0;
         $shippingTotal = 0.0;
-        $codFeeTotal = 0.0;
         $voucherDiscountTotal = 0.0;
+        $sellerShippingDiscountTotal = 0.0;
 
         $groups = $groups->map(function (array $group) use (
             $buyer,
@@ -133,8 +131,8 @@ class BuyerCheckoutService
             &$voucherApplied,
             &$merchandiseTotal,
             &$shippingTotal,
-            &$codFeeTotal,
             &$voucherDiscountTotal,
+            &$sellerShippingDiscountTotal,
         ) {
             $sellerId = (int) $group['shop']['id'];
             $shippingMethod = $shippingMethods[$sellerId]
@@ -153,14 +151,23 @@ class BuyerCheckoutService
             if ($chosenPartner > 0 && ! $logisticsOptions->contains('id', $chosenPartner)) {
                 $chosenPartner = 0;
             }
+            if ($chosenPartner <= 0 && $logisticsOptions->isNotEmpty()) {
+                $chosenPartner = (int) $logisticsOptions->first()['id'];
+            }
 
             $merchandiseSubtotal = collect($group['items'])
                 ->sum(fn (array $item) => (float) $item['price'] * (int) $item['qty']);
 
-            $shippingFee = self::STANDARD_SHIPPING_FEE
-                + ($shippingMethod === 'express' ? self::EXPRESS_SHIPPING_SURCHARGE : 0);
-            $codFee = $paymentMethod === 'cod' ? self::COD_FEE : 0;
+            $seller = Seller::find($sellerId);
+            if (! $seller) {
+                throw ValidationException::withMessages(['items' => 'Seller profile is unavailable for this checkout group.']);
+            }
+            $shippingQuote = app(ShippingRateService::class)->quote(
+                $seller, $buyer, collect($group['items']), $shippingMethod
+            );
+            $shippingFee = (float) $shippingQuote['selected_fee'];
             $voucherDiscount = 0.0;
+            $sellerShippingDiscount = 0.0;
 
             if ($selectedVoucher && (int) $selectedVoucher['seller_id'] === $sellerId) {
                 $eligibleProductIds = collect($selectedVoucher['product_ids'])->map(fn ($id) => (int) $id);
@@ -175,30 +182,43 @@ class BuyerCheckoutService
                         ]);
                     }
                 } else {
-                    $voucherDiscount = $selectedVoucher['type'] === 'percent'
-                        ? round($eligibleSubtotal * ((float) $selectedVoucher['value'] / 100), 2)
-                        : (float) $selectedVoucher['value'];
-                    $voucherDiscount = min($voucherDiscount, $eligibleSubtotal);
+                    if (($selectedVoucher['kind'] ?? 'merchandise') === 'shipping') {
+                        $sellerShippingDiscount = $selectedVoucher['type'] === 'percent'
+                            ? round($shippingFee * ((float) $selectedVoucher['value'] / 100), 2)
+                            : (float) $selectedVoucher['value'];
+                        $commissionRate = (float) MarketplaceRateSetting::current()->commission_percent;
+                        $maxSellerShippingSubsidy = max(0, round($merchandiseSubtotal * (1 - $commissionRate / 100), 2));
+                        $sellerShippingDiscount = min($sellerShippingDiscount, $shippingFee, $maxSellerShippingSubsidy);
+                    } else {
+                        $voucherDiscount = $selectedVoucher['type'] === 'percent'
+                            ? round($eligibleSubtotal * ((float) $selectedVoucher['value'] / 100), 2)
+                            : (float) $selectedVoucher['value'];
+                        $voucherDiscount = min($voucherDiscount, $eligibleSubtotal);
+                    }
                     $voucherApplied = true;
                 }
             }
 
-            $groupTotal = max(0, $merchandiseSubtotal + $shippingFee + $codFee - $voucherDiscount);
+            $groupTotal = max(0, $merchandiseSubtotal + $shippingFee - $voucherDiscount - $sellerShippingDiscount);
 
             $merchandiseTotal += $merchandiseSubtotal;
             $shippingTotal += $shippingFee;
-            $codFeeTotal += $codFee;
             $voucherDiscountTotal += $voucherDiscount;
+            $sellerShippingDiscountTotal += $sellerShippingDiscount;
 
             return [
                 ...$group,
                 'selected_shipping_method' => $shippingMethod,
+                'shipping_fee_standard' => (float) $shippingQuote['standard_fee'],
+                'shipping_fee_express' => (float) $shippingQuote['express_fee'],
+                'shipping_quote' => $shippingQuote,
                 'logistics_options' => $logisticsOptions->all(),
                 'selected_logistics_partner_id' => $chosenPartner > 0 ? $chosenPartner : null,
                 'merchandise_subtotal' => round($merchandiseSubtotal, 2),
                 'shipping_fee' => round($shippingFee, 2),
-                'cod_fee' => round($codFee, 2),
+                'cod_fee' => 0.0,
                 'voucher_discount' => round($voucherDiscount, 2),
+                'seller_shipping_discount' => round($sellerShippingDiscount, 2),
                 'group_total' => round($groupTotal, 2),
             ];
         })->values();
@@ -214,7 +234,7 @@ class BuyerCheckoutService
         $pricing = app(PlatformVoucherPricing::class)->price(
             $groups->mapWithKeys(fn ($group) => [$group['shop']['id'] => [
                 'merchandise' => round($group['merchandise_subtotal'] - $group['voucher_discount'], 2),
-                'shipping' => $group['shipping_fee'],
+                'shipping' => max(0, round($group['shipping_fee'] - $group['seller_shipping_discount'], 2)),
             ]])->all(), $platformVoucherCode, $shippingVoucherCode
         );
         $groups = $groups->map(function ($group) use ($pricing) {
@@ -222,7 +242,7 @@ class BuyerCheckoutService
             return [...$group, ...$alloc,
                 'group_total' => round($group['group_total'] - $alloc['platform_discount'] - $alloc['shipping_discount'], 2)];
         });
-        $grandTotal = max(0, $merchandiseTotal + $shippingTotal + $codFeeTotal - $voucherDiscountTotal
+        $grandTotal = max(0, $merchandiseTotal + $shippingTotal - $voucherDiscountTotal - $sellerShippingDiscountTotal
             - $pricing['merchandise_discount'] - $pricing['shipping_discount']);
 
         return [
@@ -239,13 +259,13 @@ class BuyerCheckoutService
             'item_count' => $cartItems->count(),
             'quantity_count' => (int) $cartItems->sum('quantity'),
             'shop_count' => $groups->count(),
-            'cod_fee_per_shop' => self::COD_FEE,
             'payment_method' => $paymentMethod,
             'summary' => [
                 'merchandise_subtotal' => round($merchandiseTotal, 2),
                 'shipping_fee' => round($shippingTotal, 2),
-                'cod_fee' => round($codFeeTotal, 2),
+                'cod_fee' => 0.0,
                 'voucher_discount' => round($voucherDiscountTotal, 2),
+                'seller_shipping_discount' => round($sellerShippingDiscountTotal, 2),
                 'platform_discount' => $pricing['merchandise_discount'],
                 'shipping_discount' => $pricing['shipping_discount'],
                 'grand_total' => round($grandTotal, 2),
@@ -334,17 +354,31 @@ class BuyerCheckoutService
                 }
                 $subtotal = round($shopItems->sum(fn ($item) => $item->unitPrice() * $item->quantity), 2);
                 $sellerSaving = 0.0;
-                if ($voucher && (int) $voucher->seller_id === (int) $shopItems->first()->product->seller->user_id) {
+                $sellerShippingSaving = 0.0;
+                $sellerProfile = $shopItems->first()->product->seller;
+                $shippingQuote = app(ShippingRateService::class)->quote($sellerProfile, $buyer, $shopItems, $method);
+                $grossShipping = (float) $shippingQuote['selected_fee'];
+                if ($voucher && (int) $voucher->seller_id === (int) $sellerProfile->user_id) {
                     $eligible = $shopItems->filter(fn ($item) => $eligibleProductIds->contains($item->product_id))
                         ->sum(fn ($item) => $item->unitPrice() * $item->quantity);
                     if ($eligible <= 0 || $eligible < (float) $voucher->min_order_amount) {
                         throw ValidationException::withMessages(['voucher_code' => 'Seller voucher minimum spend not met.']);
                     }
-                    $sellerSaving = min($eligible, $voucher->type === 'percent'
-                        ? round($eligible * (float) $voucher->value / 100, 2) : (float) $voucher->value);
+                    if (($voucher->kind ?? 'merchandise') === 'shipping') {
+                        $sellerShippingSaving = min($grossShipping, $voucher->type === 'percent'
+                            ? round($grossShipping * (float) $voucher->value / 100, 2) : (float) $voucher->value);
+                        $commissionRate = (float) MarketplaceRateSetting::current()->commission_percent;
+                        $maxSellerShippingSubsidy = max(0, round($subtotal * (1 - $commissionRate / 100), 2));
+                        $sellerShippingSaving = min($sellerShippingSaving, $maxSellerShippingSubsidy);
+                    } else {
+                        $sellerSaving = min($eligible, $voucher->type === 'percent'
+                            ? round($eligible * (float) $voucher->value / 100, 2) : (float) $voucher->value);
+                    }
                 }
-                $pricingGroups[$shopId] = ['merchandise' => round($subtotal - $sellerSaving, 2),
-                    'shipping' => self::STANDARD_SHIPPING_FEE + ($method === 'express' ? self::EXPRESS_SHIPPING_SURCHARGE : 0)];
+                $pricingGroups[$shopId] = [
+                    'merchandise' => round($subtotal - $sellerSaving, 2),
+                    'shipping' => max(0, round($grossShipping - $sellerShippingSaving, 2)),
+                ];
             }
             $platformPricing = app(PlatformVoucherPricing::class)->price(
                 $pricingGroups, (string) ($data['merchandise_voucher_code'] ?? ''),
@@ -358,24 +392,36 @@ class BuyerCheckoutService
                     ]);
                 }
 
-                // Optional Buyer courier choice: never trust the form value, recheck coverage on the server.
+                // Every Seller order must have an actual eligible courier. If the client
+                // did not explicitly choose one (older mobile clients), use the first
+                // eligible partner rather than persisting a "no preference" order.
+                $logisticsOptions = $this->logisticsOptionsFor($buyer, (int) $sellerId);
+                if ($logisticsOptions->isEmpty()) {
+                    throw ValidationException::withMessages([
+                        'logistics_partner' => 'No Logistics company currently covers both this Seller and your delivery address.',
+                    ]);
+                }
+
                 $logisticsPartnerId = (int) ($data['logistics_partner'][$sellerId] ?? 0);
-                if ($logisticsPartnerId > 0
-                    && ! $this->logisticsOptionsFor($buyer, (int) $sellerId)->contains('id', $logisticsPartnerId)) {
+                if ($logisticsPartnerId <= 0) {
+                    $logisticsPartnerId = (int) $logisticsOptions->first()['id'];
+                } elseif (! $logisticsOptions->contains('id', $logisticsPartnerId)) {
                     throw ValidationException::withMessages([
                         'logistics_partner' => 'The courier you selected does not cover your delivery address for one of the shops.',
                     ]);
                 }
 
                 $merchandiseSubtotal = $items->sum(fn ($item) => $item->unitPrice() * $item->quantity);
-                $shippingFee = self::STANDARD_SHIPPING_FEE
-                    + ($shippingMethod === 'express' ? self::EXPRESS_SHIPPING_SURCHARGE : 0);
-                $codFee = $data['payment_method'] === 'cod' ? self::COD_FEE : 0;
+                $sellerProfile = $items->first()->product->seller;
+                $shippingQuote = app(ShippingRateService::class)->quote($sellerProfile, $buyer, $items, $shippingMethod);
+                $shippingFee = (float) $shippingQuote['selected_fee'];
+                $codFee = 0.0;
 
-                $voucherDiscount = 0;
+                $voucherDiscount = 0.0;
+                $sellerShippingDiscount = 0.0;
                 $appliedVoucherId = null;
 
-                if ($voucher && (int) $voucher->seller_id === (int) $items->first()->product->seller->user_id) {
+                if ($voucher && (int) $voucher->seller_id === (int) $sellerProfile->user_id) {
                     $eligibleSubtotal = $items
                         ->filter(fn ($item) => $eligibleProductIds->contains($item->product_id))
                         ->sum(fn ($item) => $item->unitPrice() * $item->quantity);
@@ -386,16 +432,25 @@ class BuyerCheckoutService
                         ]);
                     }
 
-                    $voucherDiscount = $voucher->type === 'percent'
-                        ? round($eligibleSubtotal * ((float) $voucher->value / 100), 2)
-                        : (float) $voucher->value;
-                    $voucherDiscount = min($voucherDiscount, $eligibleSubtotal);
+                    if (($voucher->kind ?? 'merchandise') === 'shipping') {
+                        $sellerShippingDiscount = $voucher->type === 'percent'
+                            ? round($shippingFee * ((float) $voucher->value / 100), 2)
+                            : (float) $voucher->value;
+                        $commissionRate = (float) MarketplaceRateSetting::current()->commission_percent;
+                        $maxSellerShippingSubsidy = max(0, round($merchandiseSubtotal * (1 - $commissionRate / 100), 2));
+                        $sellerShippingDiscount = min($sellerShippingDiscount, $shippingFee, $maxSellerShippingSubsidy);
+                    } else {
+                        $voucherDiscount = $voucher->type === 'percent'
+                            ? round($eligibleSubtotal * ((float) $voucher->value / 100), 2)
+                            : (float) $voucher->value;
+                        $voucherDiscount = min($voucherDiscount, $eligibleSubtotal);
+                    }
                     $appliedVoucherId = $voucher->id;
                     $voucherApplied = true;
                 }
 
                 $alloc = $platformPricing['allocations'][$sellerId] ?? ['platform_discount' => 0, 'shipping_discount' => 0];
-                $totalAmount = $merchandiseSubtotal + $shippingFee + $codFee - $voucherDiscount
+                $totalAmount = $merchandiseSubtotal + $shippingFee + $codFee - $voucherDiscount - $sellerShippingDiscount
                     - $alloc['platform_discount'] - $alloc['shipping_discount'];
 
                 $order = Order::create([
@@ -411,6 +466,7 @@ class BuyerCheckoutService
                     'logistics_partner_id' => $logisticsPartnerId > 0 ? $logisticsPartnerId : null,
                     'voucher_id' => $appliedVoucherId,
                     'voucher_discount' => $voucherDiscount,
+                    'seller_shipping_discount' => $sellerShippingDiscount,
                     'platform_voucher_id' => $platformPricing['merchandise_voucher']?->id,
                     'shipping_voucher_id' => $platformPricing['shipping_voucher']?->id,
                     'platform_discount' => $alloc['platform_discount'],
@@ -435,8 +491,15 @@ class BuyerCheckoutService
                     'delivery_street' => $buyer->street_address,
                 ]);
 
-                app(ShopHopFinance::class)->snapshot($order, (float) $merchandiseSubtotal,
-                    (float) $voucherDiscount, (float) $alloc['platform_discount'], (float) $alloc['shipping_discount']);
+                app(ShopHopFinance::class)->snapshot(
+                    $order,
+                    (float) $merchandiseSubtotal,
+                    (float) $voucherDiscount,
+                    (float) $sellerShippingDiscount,
+                    (float) $alloc['platform_discount'],
+                    (float) $alloc['shipping_discount'],
+                    $shippingQuote
+                );
                 $createdOrderIds[] = (int) $order->id;
                 $grandTotal += (float) $order->total_amount;
 
@@ -604,8 +667,6 @@ class BuyerCheckoutService
                         'name' => $seller->business_name,
                         'municipality' => $seller->municipality_name,
                     ],
-                    'shipping_fee_standard' => self::STANDARD_SHIPPING_FEE,
-                    'shipping_fee_express' => self::STANDARD_SHIPPING_FEE + self::EXPRESS_SHIPPING_SURCHARGE,
                     'items' => $items->map(fn (CartItem $item) => [
                         'id' => (int) $item->id,
                         'line_key' => (string) $item->id,
@@ -617,6 +678,7 @@ class BuyerCheckoutService
                             : asset('images/products/placeholder.png'),
                         'variant' => $item->variantLabel(),
                         'price' => round((float) $item->unitPrice(), 2),
+                        'weight_kg' => round((float) ($item->variant?->weight_kg ?? $item->product->weight_kg ?? 0.5), 3),
                         'original_price' => $item->originalPrice(),
                         'qty' => (int) $item->quantity,
                         'stock' => $item->availableStock(),
@@ -651,10 +713,13 @@ class BuyerCheckoutService
             ->get()
             ->map(fn (Voucher $voucher) => [
                 'code' => $voucher->code,
-                'title' => $voucher->type === 'percent'
-                    ? $voucher->value . '% Off'
-                    : '₱' . number_format($voucher->value) . ' Off',
-                'description' => 'On ₱' . number_format($voucher->min_order_amount) . ' minimum spend from this seller',
+                'title' => ($voucher->kind ?? 'merchandise') === 'shipping'
+                    ? ($voucher->type === 'percent' && (float) $voucher->value >= 100 ? 'Free Shipping'
+                        : ($voucher->type === 'percent' ? $voucher->value . '% Shipping Off' : '₱' . number_format($voucher->value) . ' Shipping Off'))
+                    : ($voucher->type === 'percent' ? $voucher->value . '% Off' : '₱' . number_format($voucher->value) . ' Off'),
+                'description' => (($voucher->kind ?? 'merchandise') === 'shipping' ? 'Seller-funded shipping voucher · ' : '')
+                    . 'Min. merchandise ₱' . number_format($voucher->min_order_amount),
+                'kind' => $voucher->kind ?? 'merchandise',
                 'type' => $voucher->type,
                 'value' => (float) $voucher->value,
                 'min_spend' => (float) $voucher->min_order_amount,

@@ -201,6 +201,7 @@
                         $standardFee = (float) $group['shipping_fee_standard'];
                         $expressFee = (float) $group['shipping_fee_express'];
                         $shopId = $group['shop']['id'];
+                        $shippingQuote = $group['shipping_quote'] ?? [];
 
                         $shopVouchers = $availableVouchers
                             ->filter(fn ($voucher) => (int) $voucher['seller_id'] === (int) $shopId)
@@ -213,6 +214,12 @@
                         data-express-fee="{{ $expressFee }}"
                         data-shop-index="{{ $groupIndex }}"
                         data-shop-id="{{ $shopId }}"
+                        data-base-fee="{{ $shippingQuote['base_fee'] ?? 0 }}"
+                        data-distance-fee="{{ $shippingQuote['distance_fee'] ?? 0 }}"
+                        data-linehaul-fee="{{ $shippingQuote['linehaul_fee'] ?? 0 }}"
+                        data-included-weight="{{ $shippingQuote['included_weight_kg'] ?? 1 }}"
+                        data-extra-weight-fee="{{ $shippingQuote['extra_weight_fee_per_kg'] ?? 0 }}"
+                        data-express-percent="{{ ($standardFee > 0 ? (($expressFee / $standardFee) - 1) * 100 : 0) }}"
                     >
 
                         {{-- Shop header --}}
@@ -249,6 +256,7 @@
                                     data-price="{{ $item['price'] }}"
                                     data-original-price="{{ $item['original_price'] ?? $item['price'] }}"
                                     data-product-id="{{ $item['product_id'] }}"
+                                    data-weight-kg="{{ $item['weight_kg'] ?? 0.5 }}"
                                 >
 
                                     <div class="flex gap-3">
@@ -394,7 +402,7 @@
                                             name="shipping_method[{{ $shopId }}]"
                                             value="standard"
                                             data-fee="{{ $standardFee }}"
-                                            checked
+                                            {{ ($group['selected_shipping_method'] ?? 'standard') === 'standard' ? 'checked' : '' }}
                                             class="mt-0.5 accent-teal-dark w-3.5 h-3.5"
                                         >
 
@@ -405,7 +413,7 @@
                                         </div>
                                     </div>
 
-                                    <span class="text-[10px] font-bold text-navy shrink-0">
+                                    <span class="text-[10px] font-bold text-navy shrink-0" data-shipping-price="standard">
                                         ₱{{ number_format($standardFee, 2) }}
                                     </span>
                                 </label>
@@ -423,6 +431,7 @@
                                             name="shipping_method[{{ $shopId }}]"
                                             value="express"
                                             data-fee="{{ $expressFee }}"
+                                            {{ ($group['selected_shipping_method'] ?? 'standard') === 'express' ? 'checked' : '' }}
                                             class="mt-0.5 accent-teal-dark w-3.5 h-3.5"
                                         >
 
@@ -433,11 +442,19 @@
                                         </div>
                                     </div>
 
-                                    <span class="text-[10px] font-bold text-navy shrink-0">
+                                    <span class="text-[10px] font-bold text-navy shrink-0" data-shipping-price="express">
                                         ₱{{ number_format($expressFee, 2) }}
                                     </span>
                                 </label>
 
+                            </div>
+                            <div class="mt-2 rounded-lg bg-gray-bg/60 px-3 py-2 text-[8.5px] text-navy/45">
+                                <span class="font-semibold text-navy/60">{{ $shippingQuote['route_label'] ?? 'Route-based shipping' }}</span>
+                                · <span data-shipping-weight>{{ number_format((float)($shippingQuote['weight_kg'] ?? 0), 3) }} kg</span>
+                                · Base ₱{{ number_format((float)($shippingQuote['base_fee'] ?? 0), 2) }}
+                                + route ₱{{ number_format((float)($shippingQuote['distance_fee'] ?? 0), 2) }}
+                                @if((float)($shippingQuote['linehaul_fee'] ?? 0) > 0) + linehaul ₱{{ number_format((float)$shippingQuote['linehaul_fee'], 2) }} @endif
+                                <span data-weight-fee-note>@if((float)($shippingQuote['weight_fee'] ?? 0) > 0) + weight ₱{{ number_format((float)$shippingQuote['weight_fee'], 2) }} @endif</span>
                             </div>
 
 
@@ -448,13 +465,6 @@
 
                                 @if (count($group['logistics_options']) > 0)
                                     <div class="grid sm:grid-cols-2 gap-2">
-                                        <label class="flex items-center gap-2 border border-gray-border rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal/40 transition">
-                                            <input type="radio" name="logistics_partner[{{ $shopId }}]" value=""
-                                                   class="accent-teal-dark w-3.5 h-3.5"
-                                                   {{ empty($group['selected_logistics_partner_id']) ? 'checked' : '' }}>
-                                            <span class="text-[10px] font-semibold text-navy">No preference</span>
-                                        </label>
-
                                         @foreach ($group['logistics_options'] as $option)
                                             <label class="flex items-center gap-2 border border-gray-border rounded-xl px-3 py-2.5 cursor-pointer hover:border-teal/40 transition">
                                                 <input type="radio" name="logistics_partner[{{ $shopId }}]" value="{{ $option['id'] }}"
@@ -466,7 +476,7 @@
                                     </div>
                                 @else
                                     <p class="text-[9px] text-navy/40">
-                                        No courier currently covers this address for this shop. The seller will assign one.
+                                        No courier currently covers both this Seller and your delivery address. Checkout is unavailable for this shop.
                                     </p>
                                 @endif
                             </div>
@@ -553,15 +563,9 @@
                                 </div>
                             </div>
 
-                            <div class="flex items-center gap-2 shrink-0">
-                                <span class="text-[8px] font-semibold text-navy/45">
-                                    +₱{{ number_format($codFee, 2) }}/shop
-                                </span>
-
-                                <span class="w-5 h-5 rounded-full bg-teal text-white flex items-center justify-center">
-                                    <x-lucide-check class="w-3 h-3" />
-                                </span>
-                            </div>
+                            <span class="w-5 h-5 rounded-full bg-teal text-white flex items-center justify-center shrink-0">
+                                <x-lucide-check class="w-3 h-3" />
+                            </span>
                         </div>
 
 
@@ -569,10 +573,6 @@
                             <li class="flex items-start gap-1.5">
                                 <x-lucide-circle-check class="w-3 h-3 mt-0.5 shrink-0 text-teal-dark" />
                                 Please prepare the exact amount shown in Total Payment.
-                            </li>
-                            <li class="flex items-start gap-1.5">
-                                <x-lucide-circle-check class="w-3 h-3 mt-0.5 shrink-0 text-teal-dark" />
-                                A COD handling fee is charged once per shop in your order.
                             </li>
                             <li class="flex items-start gap-1.5">
                                 <x-lucide-circle-check class="w-3 h-3 mt-0.5 shrink-0 text-teal-dark" />
@@ -769,11 +769,6 @@
                         </div>
 
                         <div class="flex items-center justify-between gap-3">
-                            <span class="text-navy/50">COD handling fee</span>
-                            <span id="summaryCodFee" class="font-semibold text-navy">₱0.00</span>
-                        </div>
-
-                        <div class="flex items-center justify-between gap-3">
                             <span class="text-navy/50">Product savings</span>
                             <span id="summaryProductSavings" class="font-semibold text-teal-dark">-₱0.00</span>
                         </div>
@@ -923,9 +918,6 @@
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // COD is the only payment method: the handling fee always applies, once per shop.
-    const codFeePerShop = {{ (float) $codFee }};
-
     const voucherCatalog = @json(
         $availableVouchers->mapWithKeys(fn ($voucher) => [$voucher['code'] => $voucher])
     );
@@ -947,7 +939,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const summaryVoucherCode = document.getElementById('summaryVoucherCode');
     const summaryVoucherDiscount = document.getElementById('summaryVoucherDiscount');
 
-    const summaryCodFee = document.getElementById('summaryCodFee');
     const summaryTotal = document.getElementById('summaryTotal');
     const summarySavedText = document.getElementById('summarySavedText');
 
@@ -996,7 +987,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    function voucherDiscountForShop(shopSubtotal) {
+    function voucherDiscountForShop(shopSubtotal, shippingFee, sellerGroupSubtotal = shopSubtotal) {
         const voucher = activeVoucherCode ? voucherCatalog[activeVoucherCode] : null;
 
         if (!voucher) return 0;
@@ -1007,11 +998,17 @@ document.addEventListener('DOMContentLoaded', function () {
             return 0;
         }
 
-        if (voucher.type === 'percent') {
-            return shopSubtotal * (Number(voucher.value || 0) / 100);
-        }
+        const base = voucher.kind === 'shipping' ? shippingFee : shopSubtotal;
+        const raw = voucher.type === 'percent'
+            ? Math.min(base, base * (Number(voucher.value || 0) / 100))
+            : Math.min(Number(voucher.value || 0), base);
 
-        return Math.min(Number(voucher.value || 0), shopSubtotal);
+        // Seller-funded shipping cannot exceed the Seller's available merchandise net
+        // after ShopHop's locked 10% commission. This prevents an accidental platform subsidy.
+        if (voucher.kind === 'shipping') {
+            return Math.min(raw, Math.max(0, sellerGroupSubtotal * 0.90));
+        }
+        return raw;
     }
 
 
@@ -1095,6 +1092,7 @@ document.addEventListener('DOMContentLoaded', function () {
         shopGroups.forEach(function (group, index) {
             let groupSubtotal = 0;
             let eligibleSubtotal = 0;
+            let groupWeight = 0;
 
             group.querySelectorAll('.checkout-item').forEach(function (row) {
                 const price = Number(row.dataset.price || 0);
@@ -1104,6 +1102,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const qty = Math.max(1, parseInt(qtyInput?.value, 10) || 1);
 
                 groupSubtotal += price * qty;
+                groupWeight += Number(row.dataset.weightKg || 0.5) * qty;
 
                 // Match the server voucher rule by counting only assigned Product rows in this seller group.
                 if (voucher && String(group.dataset.shopId) === String(voucher.seller_id)
@@ -1116,11 +1115,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
             merchandiseSubtotal += groupSubtotal;
 
+            const baseFee = Number(group.dataset.baseFee || 0);
+            const distanceFee = Number(group.dataset.distanceFee || 0);
+            const linehaulFee = Number(group.dataset.linehaulFee || 0);
+            const includedWeight = Number(group.dataset.includedWeight || 1);
+            const extraWeightFee = Number(group.dataset.extraWeightFee || 0);
+            const expressPercent = Number(group.dataset.expressPercent || 0);
+            const extraKg = Math.max(0, groupWeight - includedWeight);
+            const weightFee = Math.ceil(Math.max(0, extraKg - 0.000001)) * extraWeightFee;
+            const standardDynamic = Math.round((baseFee + distanceFee + linehaulFee + weightFee) * 100) / 100;
+            const expressDynamic = Math.round((standardDynamic * (1 + expressPercent / 100)) * 100) / 100;
+            const standardRadio = group.querySelector('input[value="standard"][name^="shipping_method"]');
+            const expressRadio = group.querySelector('input[value="express"][name^="shipping_method"]');
+            if (standardRadio) standardRadio.dataset.fee = standardDynamic;
+            if (expressRadio) expressRadio.dataset.fee = expressDynamic;
+            const standardPrice = group.querySelector('[data-shipping-price="standard"]');
+            const expressPrice = group.querySelector('[data-shipping-price="express"]');
+            if (standardPrice) standardPrice.textContent = formatPeso(standardDynamic);
+            if (expressPrice) expressPrice.textContent = formatPeso(expressDynamic);
+            const weightLabel = group.querySelector('[data-shipping-weight]');
+            if (weightLabel) weightLabel.textContent = groupWeight.toFixed(3) + ' kg';
+            const weightFeeNote = group.querySelector('[data-weight-fee-note]');
+            if (weightFeeNote) weightFeeNote.textContent = weightFee > 0 ? ' + weight ' + formatPeso(weightFee) : '';
+
             const selectedShipping = group.querySelector(
                 'input[type="radio"][name^="shipping_method"]:checked'
             );
-
-            shippingTotal += Number(selectedShipping?.dataset.fee || 0);
+            const selectedShippingFee = Number(selectedShipping?.dataset.fee || 0);
+            shippingTotal += selectedShippingFee;
 
             const groupSubtotalEl = group.querySelector(
                 '[data-shop-subtotal="' + index + '"]'
@@ -1132,17 +1154,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (voucher && String(group.dataset.shopId) === String(voucher.seller_id)) {
                 voucherEligibleShopSubtotal = eligibleSubtotal;
-                voucherDiscount = voucherDiscountForShop(eligibleSubtotal);
+                voucherDiscount = voucherDiscountForShop(eligibleSubtotal, selectedShippingFee, groupSubtotal);
             }
         });
 
         syncVoucherUI(voucherEligibleShopSubtotal, voucherDiscount);
 
-        const codFeeTotal = codFeePerShop * shopGroups.length;
-
-        const netMerchandise = Math.max(0, merchandiseSubtotal - currentVoucherDiscount);
+        const sellerMerchandiseSaving = (voucher?.kind === 'shipping') ? 0 : currentVoucherDiscount;
+        const sellerShippingSaving = (voucher?.kind === 'shipping') ? currentVoucherDiscount : 0;
+        const netMerchandise = Math.max(0, merchandiseSubtotal - sellerMerchandiseSaving);
+        const netShipping = Math.max(0, shippingTotal - sellerShippingSaving);
         const platformSaving = promoDiscount(platformInput, 'merchandise', netMerchandise, netMerchandise);
-        const shippingSaving = promoDiscount(shippingInput, 'shipping', shippingTotal, netMerchandise);
+        const shippingSaving = promoDiscount(shippingInput, 'shipping', netShipping, netMerchandise);
 
         const platformRow = document.getElementById('summaryPlatformRow');
         const shippingRow = document.getElementById('summaryShippingPromoRow');
@@ -1160,13 +1183,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 '. Final eligibility and amount are validated by the server.';
         }
 
-        const total = Math.max(0, merchandiseSubtotal + shippingTotal + codFeeTotal
-            - currentVoucherDiscount - platformSaving - shippingSaving);
+        const total = Math.max(0, merchandiseSubtotal + shippingTotal
+            - sellerMerchandiseSaving - sellerShippingSaving - platformSaving - shippingSaving);
 
         summarySubtotal.textContent = formatPeso(merchandiseSubtotal);
         summaryShipping.textContent = formatPeso(shippingTotal);
         summaryProductSavings.textContent = '-' + formatPeso(productSavings);
-        summaryCodFee.textContent = formatPeso(codFeeTotal);
 
         summaryTotal.textContent = formatPeso(total);
         mobileSummaryTotal.textContent = formatPeso(total);

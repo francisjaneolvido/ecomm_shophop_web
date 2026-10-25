@@ -201,7 +201,7 @@ class ParcelScanService
 
             if (! $trip || ! in_array($trip->status, [LinehaulTrip::ARRIVED, LinehaulTrip::COMPLETED], true) || ! $trip->arrived_at) {
                 throw ValidationException::withMessages([
-                    'tracking_code' => 'The assigned Linehaul Driver has not marked this manifest arrived at the destination yet.',
+                    'tracking_code' => 'The destination Branch/Hub has not scanned and acknowledged this Manifest QR yet.',
                 ]);
             }
             return;

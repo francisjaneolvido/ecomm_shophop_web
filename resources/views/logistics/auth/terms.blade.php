@@ -143,7 +143,7 @@
                     <p class="text-sm text-navy/75 leading-relaxed">
                         Where the Courier Partner collects Cash-on-Delivery ("COD") payments
                         on ShopHop's behalf, such funds are held in trust for the seller and
-                        must be remitted in full, less only the pre-agreed COD handling fee, no
+                        must be remitted in full with no Rider deduction; earnings are settled separately, no
                         later than three (3) banking days after successful delivery. The
                         Courier Partner must maintain accurate COD logs reconciled against the
                         ShopHop dashboard and must promptly flag any discrepancy. Repeated

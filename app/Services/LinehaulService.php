@@ -7,6 +7,8 @@ use App\Models\Logistics\LinehaulDriver;
 use App\Models\Logistics\LinehaulTrip;
 use App\Models\Logistics\ParcelManifest;
 use App\Models\Logistics\ParcelTransfer;
+use App\Models\Finance\LinehaulDriverEarning;
+use App\Models\Finance\MarketplaceRateSetting;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -66,7 +68,7 @@ class LinehaulService
             $expected = DB::table('parcel_manifest_items')->where('manifest_id', $locked->id)->count();
             $loaded = DB::table('parcel_manifest_items')->where('manifest_id', $locked->id)->whereNotNull('loaded_at')->count();
             if ($expected < 1 || $loaded !== $expected) {
-                throw ValidationException::withMessages(['linehaul' => 'All manifest parcels must be scanned as loaded before assigning transport.']);
+                throw ValidationException::withMessages(['linehaul' => 'The origin center must confirm the complete physical manifest load before assigning transport.']);
             }
 
             $trip = LinehaulTrip::create([
@@ -97,11 +99,7 @@ class LinehaulService
             ->selectRaw('COUNT(*) as expected, COUNT(loaded_at) as loaded, COUNT(received_at) as received')
             ->first();
 
-        $action = match ($trip->status) {
-            LinehaulTrip::SCHEDULED => 'depart',
-            LinehaulTrip::IN_TRANSIT => 'arrive',
-            default => 'none',
-        };
+        $action = $trip->status === LinehaulTrip::SCHEDULED ? 'depart' : 'none';
 
         return [
             'manifest_id' => $manifest->id,
@@ -121,7 +119,9 @@ class LinehaulService
             'received' => (int) ($counts->received ?? 0),
             'confirm_label' => $action === 'depart'
                 ? 'Accept load & depart'
-                : ($action === 'arrive' ? 'Mark arrived at destination' : 'No action required'),
+                : ($trip->status === LinehaulTrip::IN_TRANSIT
+                    ? 'Waiting for destination Manifest scan'
+                    : 'No action required'),
         ];
     }
 
@@ -145,7 +145,7 @@ class LinehaulService
 
             $items = DB::table('parcel_manifest_items')->where('manifest_id', $manifest->id)->lockForUpdate()->get();
             if ($items->isEmpty() || $items->contains(fn ($item) => ! $item->loaded_at)) {
-                throw ValidationException::withMessages(['manifest_code' => 'Manifest loading is incomplete. Branch/Hub staff must scan every parcel before departure.']);
+                throw ValidationException::withMessages(['manifest_code' => 'Manifest loading is incomplete. The origin Branch/Hub must confirm the complete physical batch before departure.']);
             }
 
             $now = now();
@@ -202,29 +202,6 @@ class LinehaulService
         }, 3);
     }
 
-    public function arrive(LinehaulDriver $driver, string $manifestCode): array
-    {
-        return DB::transaction(function () use ($driver, $manifestCode) {
-            $manifest = ParcelManifest::where('logistics_partner_id', $driver->logistics_partner_id)
-                ->where('code', strtoupper(trim($manifestCode)))
-                ->lockForUpdate()
-                ->first();
-
-            if (! $manifest || ! $manifest->linehaul_trip_id) {
-                throw ValidationException::withMessages(['manifest_code' => 'No assigned Linehaul Trip was found for this manifest.']);
-            }
-
-            $trip = LinehaulTrip::whereKey($manifest->linehaul_trip_id)->lockForUpdate()->firstOrFail();
-            if ((int) $trip->driver_id !== (int) $driver->id || $trip->status !== LinehaulTrip::IN_TRANSIT) {
-                throw ValidationException::withMessages(['manifest_code' => 'This trip is not currently in transit under your Driver account.']);
-            }
-
-            $trip->forceFill(['status' => LinehaulTrip::ARRIVED, 'arrived_at' => now()])->save();
-
-            return $this->previewForDriver($driver, $manifest->code);
-        }, 3);
-    }
-
     public function completeTripIfReceived(int $tripId): void
     {
         $trip = LinehaulTrip::with('manifests')->whereKey($tripId)->first();
@@ -257,6 +234,27 @@ class LinehaulService
             FleetVehicle::whereKey($locked->vehicle_id)
                 ->where('status', FleetVehicle::IN_TRANSIT)
                 ->update(['status' => FleetVehicle::AVAILABLE]);
+
+            $from = $locked->fromCenter()->first();
+            $to = $locked->toCenter()->first();
+            $rates = MarketplaceRateSetting::current();
+            $isHubToHub = $from?->type === 'province_hub' && $to?->type === 'province_hub';
+            $driverFee = $isHubToHub
+                ? (float) $rates->linehaul_hub_hub_driver_fee
+                : (float) $rates->linehaul_branch_hub_driver_fee;
+
+            if ($driverFee > 0) {
+                LinehaulDriverEarning::firstOrCreate(
+                    ['linehaul_trip_id' => $locked->id],
+                    [
+                        'logistics_partner_id' => (int) $locked->logistics_partner_id,
+                        'driver_id' => (int) $locked->driver_id,
+                        'amount' => round($driverFee, 2),
+                        'status' => 'available',
+                        'available_at' => now(),
+                    ]
+                );
+            }
         }, 3);
     }
 

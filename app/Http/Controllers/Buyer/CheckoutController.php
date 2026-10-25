@@ -57,7 +57,6 @@ class CheckoutController extends Controller
             'initialShippingDiscount' => $preview['summary']['shipping_discount'],
             'itemCount' => $preview['item_count'],
             'shopCount' => $preview['shop_count'],
-            'codFee' => $preview['cod_fee_per_shop'],
         ]);
     }
 

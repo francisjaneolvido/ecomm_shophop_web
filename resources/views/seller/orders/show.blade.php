@@ -128,7 +128,6 @@
         </ul>
         <dl class="mt-4 space-y-2 text-sm text-navy/65">
             <div class="flex justify-between"><dt>Shipping fee</dt><dd>₱{{ number_format((float) $order->shipping_fee, 2) }}</dd></div>
-            <div class="flex justify-between"><dt>COD fee</dt><dd>₱{{ number_format((float) $order->cod_fee, 2) }}</dd></div>
             <div class="flex justify-between"><dt>Voucher discount</dt><dd>₱{{ number_format((float) $order->voucher_discount, 2) }}</dd></div>
             <div class="flex justify-between border-t border-gray-border pt-3 font-bold text-navy"><dt>Recorded Order total</dt><dd>₱{{ number_format((float) $order->total_amount, 2) }}</dd></div>
         </dl>

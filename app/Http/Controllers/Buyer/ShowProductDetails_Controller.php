@@ -96,9 +96,14 @@ class ShowProductDetails_Controller extends Controller
                     ? $voucher->value . '% off'
                     : '₱' . number_format($voucher->value) . ' off';
 
+                if (($voucher->kind ?? 'merchandise') === 'shipping') {
+                    $label .= ' shipping';
+                }
+
                 return [
                     'code' => $voucher->code,
                     'label' => $label,
+                    'kind' => $voucher->kind ?? 'merchandise',
                     'min' => $voucher->min_order_amount
                         ? 'Min. spend ₱' . number_format($voucher->min_order_amount)
                         : 'No minimum spend',

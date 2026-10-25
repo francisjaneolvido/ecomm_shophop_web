@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Logistics\LinehaulDriver;
 use App\Models\Logistics\LinehaulTrip;
+use App\Models\Finance\LinehaulDriverEarning;
 use App\Services\LinehaulService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,6 +49,40 @@ class MobileLinehaulController extends Controller
         ]);
     }
 
+
+    public function earnings(Request $request): JsonResponse
+    {
+        $driver = $this->driver($request);
+        $query = LinehaulDriverEarning::with(['trip.fromCenter', 'trip.toCenter'])
+            ->where('driver_id', $driver->id)
+            ->where('logistics_partner_id', $driver->logistics_partner_id);
+
+        $entries = (clone $query)->latest('id')->limit(100)->get()->map(fn (LinehaulDriverEarning $earning) => [
+            'id' => $earning->id,
+            'trip_code' => $earning->trip?->code,
+            'from' => $earning->trip?->fromCenter?->name,
+            'to' => $earning->trip?->toCenter?->name,
+            'amount' => (float) $earning->amount,
+            'status' => $earning->status,
+            'payment_reference' => $earning->payment_reference,
+            'completed_at' => optional($earning->trip?->completed_at)?->toIso8601String(),
+            'available_at' => optional($earning->available_at)?->toIso8601String(),
+            'paid_at' => optional($earning->paid_at)?->toIso8601String(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'status' => 'ok',
+            'message' => 'Linehaul earnings loaded.',
+            'data' => [
+                'pending' => (float) (clone $query)->where('status', 'pending')->sum('amount'),
+                'available' => (float) (clone $query)->where('status', 'available')->sum('amount'),
+                'paid' => (float) (clone $query)->where('status', 'paid')->sum('amount'),
+                'entries' => $entries,
+            ],
+        ]);
+    }
+
     public function preview(Request $request, LinehaulService $linehaul): JsonResponse
     {
         $driver = $this->driver($request);
@@ -59,36 +94,39 @@ class MobileLinehaulController extends Controller
             return $this->conflict($exception, 'Manifest is not available for this Driver.');
         }
 
+        $message = $manifest['action'] === 'depart'
+            ? 'Manifest verified. Confirm custody only after the complete load is physically on your assigned vehicle.'
+            : ($manifest['trip_status'] === LinehaulTrip::IN_TRANSIT
+                ? 'Trip is in transit. Destination Branch/Hub must scan the Manifest QR to acknowledge arrival.'
+                : 'No Driver action is required for this manifest.');
+
         return response()->json([
             'success' => true,
             'status' => 'ready',
-            'message' => 'Manifest verified. Confirm the physical Linehaul handoff.',
+            'message' => $message,
             'data' => ['manifest' => $manifest],
         ]);
     }
 
+    /** Driver authority stops at departure. Arrival belongs to the destination center. */
     public function confirm(Request $request, LinehaulService $linehaul): JsonResponse
     {
         $driver = $this->driver($request);
         $data = $request->validate([
             'manifest_code' => ['required', 'string', 'max:80'],
-            'action' => ['required', 'string', 'in:depart,arrive'],
+            'action' => ['required', 'string', 'in:depart'],
         ]);
 
         try {
-            $result = $data['action'] === 'depart'
-                ? $linehaul->depart($driver, $data['manifest_code'])
-                : $linehaul->arrive($driver, $data['manifest_code']);
+            $result = $linehaul->depart($driver, $data['manifest_code']);
         } catch (ValidationException $exception) {
-            return $this->conflict($exception, 'Linehaul action could not be confirmed.');
+            return $this->conflict($exception, 'Linehaul departure could not be confirmed.');
         }
 
         return response()->json([
             'success' => true,
-            'status' => $data['action'] === 'depart' ? 'in_transit' : 'arrived',
-            'message' => $data['action'] === 'depart'
-                ? 'Manifest custody accepted. Linehaul trip is now in transit.'
-                : 'Arrival recorded. Destination staff may now scan the parcels during unloading.',
+            'status' => 'in_transit',
+            'message' => 'Manifest custody accepted. Trip is in transit; the destination Branch/Hub must scan this Manifest QR on arrival.',
             'data' => ['manifest' => $result],
         ]);
     }

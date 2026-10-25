@@ -36,4 +36,5 @@ class LinehaulTrip extends Model
     public function assignedBy(): BelongsTo { return $this->belongsTo(User::class, 'assigned_by_user_id'); }
     public function manifests(): HasMany { return $this->hasMany(ParcelManifest::class, 'linehaul_trip_id'); }
     public function transfers(): HasMany { return $this->hasMany(ParcelTransfer::class, 'linehaul_trip_id'); }
+    public function earning() { return $this->hasOne(\App\Models\Finance\LinehaulDriverEarning::class, 'linehaul_trip_id'); }
 }

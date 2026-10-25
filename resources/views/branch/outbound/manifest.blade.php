@@ -16,7 +16,7 @@ body{font-family:Arial,Helvetica,sans-serif;color:#0F1B3D;margin:24px;font-size:
 <div class="actions no-print"><button onclick="window.print()">Print</button><a href="{{ route('branch.outbound.index') }}">Back</a></div>
 <div class="head">
   <div><h1>ShopHop Linehaul Manifest</h1><p class="muted">{{ $m->code }} · {{ ucfirst(str_replace('_',' ',$m->status)) }}</p></div>
-  <div class="qr"><div id="manifestQr"></div><div><strong>MANIFEST QR</strong><div class="muted">Driver scans this once to accept the complete loaded manifest.</div><div style="margin-top:6px;font-weight:700">{{ $m->code }}</div></div></div>
+  <div class="qr"><div id="manifestQr"></div><div><strong>MANIFEST QR</strong><div class="muted">Driver scans this at origin to accept custody and depart. Destination Branch/Hub scans the same QR to acknowledge arrival.</div><div style="margin-top:6px;font-weight:700">{{ $m->code }}</div></div></div>
 </div>
 <div class="meta">
  <div><strong>From:</strong> {{ $center->name }}</div><div><strong>To:</strong> {{ $m->toCenter?->name ?? '—' }}</div>

@@ -26,7 +26,7 @@
         <div>
             <p class="eyebrow">{{ $center->name ?? 'Your branch' }}</p>
             <h1 class="title">Incoming Transfers</h1>
-            <p class="description">Actual parcels na ipinadala papunta sa branch/hub na ito. I-scan ang QR/tracking code ng physical parcel bago ito i-receive.</p>
+            <p class="description">Actual parcels na ipinadala papunta sa branch na ito. Normal Linehaul receipt uses the Manifest QR in the Logistics mobile scanner; individual Parcel QR is reserved for exceptions/reconciliation.</p>
         </div>
     </header>
 
@@ -67,8 +67,8 @@
     <section class="sh-surface sh-card-pad">
         <div class="sh-toolbar">
             <div>
-                <h2 class="text-base font-bold text-navy">Receive by QR / tracking code</h2>
-                <p class="mt-1 text-xs text-navy/45">USB scanner: i-focus ang field at i-scan ang parcel label. Pareho itong validation rules ng mobile Logistics scanner.</p>
+                <h2 class="text-base font-bold text-navy">Exception parcel receive by QR / tracking code</h2>
+                <p class="mt-1 text-xs text-navy/45">Gamitin ito kapag may count mismatch, damaged/wrong parcel, o kailangan ng individual reconciliation. Normal intact batches are received from the Manifest QR in Logistics mobile.</p>
             </div>
         </div>
 
@@ -203,15 +203,15 @@
                 @if ($canReceive)
                     <div class="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-border bg-white px-4 py-3">
                         <div>
-                            <p class="text-sm font-semibold text-navy">Physical receipt required</p>
-                            <p class="mt-0.5 text-xs text-navy/45">I-scan ang QR ng parcel sa receive box sa taas. Hindi sapat na nasa listahan lang ito.</p>
+                            <p class="text-sm font-semibold text-navy">Manifest receipt / exception reconciliation</p>
+                            <p class="mt-0.5 text-xs text-navy/45">For a normal intact batch, destination staff scans the Manifest QR in Logistics mobile. Use the parcel box above only for individual exceptions.</p>
                         </div>
                         <span class="sh-badge sh-badge-info shrink-0">Ready to scan</span>
                     </div>
                 @elseif ($isPreparing)
                     <div class="mt-4 rounded-2xl border border-gray-border bg-white px-4 py-3">
                         <p class="text-sm font-semibold text-navy">Hindi pa puwedeng i-receive</p>
-                        <p class="mt-0.5 text-xs text-navy/45">Hindi pa puwedeng i-receive habang scheduled/in transit ang Linehaul Trip. Pag nag-scan ang Driver ng arrival sa destination, lilipat ito sa Awaiting receipt.</p>
+                        <p class="mt-0.5 text-xs text-navy/45">Hindi pa puwedeng i-receive habang scheduled/in transit ang Linehaul Trip. Destination Branch staff must scan the Manifest QR to acknowledge arrival; the Driver cannot mark arrival.</p>
                     </div>
                 @endif
             </article>

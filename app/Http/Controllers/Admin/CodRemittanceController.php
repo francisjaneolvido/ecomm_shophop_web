@@ -15,7 +15,7 @@ class CodRemittanceController extends Controller
     public function index(): View
     {
         return view('admin.finance.cod-remittances', [
-            'settlements' => CodSettlement::with(['order', 'partner', 'remitter', 'reconciler'])
+            'settlements' => CodSettlement::with(['order.settlements', 'order.financial', 'partner', 'remitter', 'reconciler'])
                 ->where('status', CodSettlement::RECONCILED)->orderByDesc('id')->paginate(30),
         ]);
     }
@@ -38,6 +38,6 @@ class CodRemittanceController extends Controller
             $cash->update(['admin_received_amount' => $cash->expected_amount,
                 'admin_received_at' => now(), 'admin_received_by_user_id' => $request->user()->id]);
         });
-        return back()->with('status', 'ShopHop Admin confirmed COD receipt. Seller/Logistics payouts are still manual.');
+        return back()->with('status', 'ShopHop Admin confirmed COD receipt. Next: prepare and distribute the settlement; no beneficiary payout is automatic.');
     }
 }

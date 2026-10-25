@@ -207,7 +207,7 @@ class OutboundController extends Controller
             ])->all());
 
             $skipped = count($data['parcel_ids']) - $deliveries->count();
-            $message = "Nagawa ang {$manifest->code} ({$deliveries->count()} parcel). I-scan ngayon ang bawat parcel habang niloload.";
+            $message = "Nagawa ang {$manifest->code} ({$deliveries->count()} parcel). I-verify ang physical count ng batch bago i-confirm ang loading.";
             if ($skipped > 0) $message .= " {$skipped} ang nilaktawan.";
             return redirect()->route('branch.outbound.index')->with('status', $message);
         }, 3);
@@ -219,14 +219,14 @@ class OutboundController extends Controller
         ManifestLoadingService $loading
     ): RedirectResponse {
         $center = $this->center($request);
-        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:60']]);
+        $data = $request->validate(['physical_count' => ['required', 'integer', 'min:1', 'max:5000']]);
 
         try {
-            $result = $loading->load(
+            $result = $loading->confirmBatchLoad(
                 (int) $center->logistics_partner_id,
                 (int) $center->id,
                 $manifest,
-                $data['tracking_code'],
+                (int) $data['physical_count'],
                 (int) $request->user()->id,
                 null,
             );
@@ -234,8 +234,7 @@ class OutboundController extends Controller
             return back()->withErrors($e->errors())->withInput();
         }
 
-        $message = "Loaded {$result['tracking_code']} ({$result['loaded']}/{$result['expected']}).";
-        if ($result['ready']) $message .= ' Manifest complete—assign a Linehaul vehicle and driver.';
+        $message = "Confirmed complete load for {$result['manifest_code']} ({$result['loaded']}/{$result['expected']}). Assign a Linehaul vehicle and driver.";
         return redirect()->route('branch.outbound.index')->with('status', $message);
     }
 

@@ -535,6 +535,7 @@
                                         'sku' => $product->sku,
                                         'category' => $product->category,
                                         'price' => $product->price,
+                                        'weight_kg' => $product->weight_kg,
                                         'discount' => $product->discount,
                                         'stock' => $product->stock,
                                         'low_stock_threshold' =>
@@ -558,6 +559,7 @@
                                                 'name' => $variant->name,
                                                 'sku' => $variant->sku,
                                                 'price' => $variant->price,
+                                                'weight_kg' => $variant->weight_kg,
                                                 'stock' => $variant->stock,
                                                 'status' => $variant->status,
                                             ])
@@ -915,6 +917,7 @@
                                         'id' => $voucher->id,
                                         'name' => $voucher->name,
                                         'code' => $voucher->code,
+                                        'kind' => $voucher->kind ?? 'merchandise',
                                         'type' => $voucher->type,
                                         'value' => $voucher->value,
                                         'min_order_amount' => $voucher->min_order_amount,
@@ -932,6 +935,7 @@
                                         <p class="text-xs font-semibold text-navy">
                                             {{ $voucher->name }}
                                         </p>
+                                        <p class="text-[9px] text-navy/35">{{ ($voucher->kind ?? 'merchandise') === 'shipping' ? 'Seller-funded shipping' : 'Merchandise' }}</p>
 
                                         <p
                                             class="text-[10px] font-bold text-teal-dark mt-0.5"
@@ -1146,7 +1150,7 @@
                     </div>
 
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
 
                         <div class="sm:col-span-2">
                             <label class="text-xs font-semibold text-navy/60">
@@ -1408,6 +1412,28 @@
                             </p>
                         </div>
 
+
+                        <div>
+                            <label class="text-xs font-semibold text-navy/60">
+                                Parcel Weight (kg)
+                            </label>
+
+                            <input
+                                type="number"
+                                min="0.05"
+                                max="500"
+                                step="0.001"
+                                name="weight_kg"
+                                id="productWeightKg"
+                                value="0.500"
+                                required
+                                class="w-full h-10 mt-1 px-3 rounded-lg border border-gray-border text-xs text-navy focus:outline-none focus:border-teal/50"
+                            >
+
+                            <p class="mt-1 text-[10px] text-navy/30">
+                                Used to calculate shipping. Variant weight overrides this value.
+                            </p>
+                        </div>
 
                         <div>
                             <label class="text-xs font-semibold text-navy/60">
@@ -1689,6 +1715,16 @@
                         >
                     </div>
 
+
+                    <div>
+                        <label class="text-xs font-semibold text-navy/60">
+                            Voucher Applies To
+                        </label>
+                        <select name="kind" id="voucherKind" required class="w-full h-10 mt-1 px-3 rounded-lg border border-gray-border text-xs bg-white focus:outline-none focus:border-teal/50">
+                            <option value="merchandise">Merchandise (Seller-funded)</option>
+                            <option value="shipping">Shipping / Free Shipping (Seller-funded)</option>
+                        </select>
+                    </div>
 
                     <div>
                         <label class="text-xs font-semibold text-navy/60">
@@ -2007,6 +2043,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const productHasVariants =
         document.getElementById('productHasVariants');
 
+    const productWeightKg =
+        document.getElementById('productWeightKg');
+
     const productSellingPrice =
         document.getElementById('productSellingPrice');
 
@@ -2267,7 +2306,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 value="${escapeHtml(variant?.id ?? '')}"
             >
 
-            <div class="grid grid-cols-1 sm:grid-cols-[1.4fr_1fr_1fr_.7fr_auto] gap-2 items-end">
+            <div class="grid grid-cols-1 sm:grid-cols-[1.3fr_.9fr_.9fr_.8fr_.7fr_auto] gap-2 items-end">
 
                 <div>
                     <label class="text-[10px] font-semibold text-navy/45">
@@ -2310,6 +2349,23 @@ document.addEventListener('DOMContentLoaded', function () {
                         name="variants[${index}][price]"
                         value="${escapeHtml(variant?.price ?? '')}"
                         placeholder="Base price"
+                        class="w-full h-9 mt-1 px-3 rounded-lg border border-gray-border text-xs focus:outline-none focus:border-teal/50"
+                    >
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-semibold text-navy/45">
+                        Weight kg
+                    </label>
+
+                    <input
+                        type="number"
+                        step="0.001"
+                        min="0.05"
+                        max="500"
+                        name="variants[${index}][weight_kg]"
+                        value="${escapeHtml(variant?.weight_kg ?? '')}"
+                        placeholder="Base"
                         class="w-full h-9 mt-1 px-3 rounded-lg border border-gray-border text-xs focus:outline-none focus:border-teal/50"
                     >
                 </div>
@@ -2496,6 +2552,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             productStock.value =
                 product.stock ?? 0;
+
+            productWeightKg.value =
+                product.weight_kg ?? 0.5;
 
             productLowStockThreshold.value =
                 product.low_stock_threshold ??
@@ -3161,6 +3220,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const voucherCode =
         document.getElementById('voucherCode');
 
+    const voucherKind =
+        document.getElementById('voucherKind');
+
     const voucherType =
         document.getElementById('voucherType');
 
@@ -3208,6 +3270,9 @@ document.addEventListener('DOMContentLoaded', function () {
             voucherCode.value =
                 voucher.code ?? '';
 
+            voucherKind.value =
+                voucher.kind ?? 'merchandise';
+
             voucherType.value =
                 voucher.type ?? 'percent';
 
@@ -3241,6 +3306,9 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             voucherModalTitle.textContent =
                 'Create Voucher';
+
+            voucherKind.value =
+                'merchandise';
 
             voucherType.value =
                 'percent';

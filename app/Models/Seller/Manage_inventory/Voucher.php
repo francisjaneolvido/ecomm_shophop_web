@@ -13,6 +13,7 @@ class Voucher extends Model
         'seller_id',
         'name',
         'code',
+        'kind',
         'type',
         'value',
         'min_order_amount',

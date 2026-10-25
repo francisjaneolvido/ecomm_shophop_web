@@ -17,7 +17,7 @@
             <p class="eyebrow">{{ $center->name ?? 'Your branch' }}</p>
             <h1 class="title">Outbound Linehaul</h1>
             <p class="description">
-                Receive and sort parcels, build a manifest, scan every parcel while loading, then assign a registered truck/van and Linehaul Driver.
+                Receive and sort parcels, build a manifest, confirm the physical batch count, then assign a registered truck/van and Linehaul Driver.
                 @if($hub) Next hub: <span class="font-semibold text-navy">{{ $hub->name }}</span>. @endif
             </p>
         </div>
@@ -113,10 +113,13 @@
 
                 @if(in_array($m['status'], ['prepared','loading']))
                     <form method="POST" action="{{ route('branch.outbound.load', $m['id']) }}" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
-                        <label class="sh-field"><span class="sh-label">Scan parcel QR while loading</span><input name="tracking_code" class="sh-input" placeholder="SHP-YYYYMMDD-000001" required autofocus></label>
-                        <button class="sh-btn">Mark loaded</button>
+                        <label class="sh-field">
+                            <span class="sh-label">Physical parcel count loaded</span>
+                            <input type="number" name="physical_count" class="sh-input" min="1" max="5000" value="{{ $m['count'] }}" required>
+                        </label>
+                        <button class="sh-btn">Confirm complete batch loaded</button>
                     </form>
-                    <p class="text-xs text-navy/45">Missing: {{ max(0, $m['count']-$m['loaded']) }}. The manifest becomes Ready only at {{ $m['count'] }}/{{ $m['count'] }} loaded.</p>
+                    <p class="text-xs text-navy/45">Expected: {{ $m['count'] }} parcels. If the physical count does not match, do not confirm the batch; use Logistics mobile → Outbound Manifest → Exception / reconciliation mode for individual Parcel QR checks.</p>
                 @endif
 
                 @if($m['status']==='ready' && !$m['trip_code'])
@@ -141,7 +144,7 @@
                 @elseif($m['trip_status']==='in_transit')
                     <div class="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-navy">Truck is in transit to {{ $m['to'] }}.</div>
                 @elseif($m['trip_status']==='arrived')
-                    <div class="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-navy">Truck arrived. Destination staff must scan/unload the individual parcels.</div>
+                    <div class="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-navy">Destination confirmed the Manifest QR arrival. Receiving is now controlled by the destination Branch/Hub.</div>
                 @endif
             </article>
         @empty

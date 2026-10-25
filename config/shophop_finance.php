@@ -1,8 +1,7 @@
 <?php
 return [
-    // School-project examples; configurable here before generation of settlement entries.
+    // Legacy fallbacks only. New payouts and shipping rates come from marketplace_rate_settings.
     'commission_percent' => 10,
     'pickup_rider_fee' => 20.00,
-    'delivery_rider_fee' => 30.00,
-    'transit_rider_fee' => 40.00,
+    'delivery_rider_fee' => 25.00,
 ];

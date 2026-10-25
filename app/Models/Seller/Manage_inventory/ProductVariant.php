@@ -15,6 +15,7 @@ class ProductVariant extends Model
         'attributes',
         'sku',
         'price',
+        'weight_kg',
         'stock',
         'status',
     ];
@@ -22,6 +23,7 @@ class ProductVariant extends Model
     protected $casts = [
         'attributes' => 'array',
         'price' => 'decimal:2',
+        'weight_kg' => 'decimal:3',
         'stock' => 'integer',
     ];
 

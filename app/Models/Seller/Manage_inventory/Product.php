@@ -20,6 +20,7 @@ class Product extends Model
         'sku',
         'category',
         'price',
+        'weight_kg',
         'discount',
         'stock',
         'low_stock_threshold',
@@ -34,6 +35,7 @@ class Product extends Model
     protected $casts = [
         'has_variants' => 'boolean',
         'price' => 'decimal:2',
+        'weight_kg' => 'decimal:3',
         'discount' => 'integer',
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',

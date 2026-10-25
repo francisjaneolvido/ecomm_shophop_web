@@ -82,6 +82,7 @@ class InventoryController extends Controller
             ],
             'category' => ['required', 'string', 'max:255'],
             'price' => ['required', 'numeric', 'min:0'],
+            'weight_kg' => ['required', 'numeric', 'min:0.05', 'max:500'],
             'discount' => ['nullable', 'integer', 'min:0', 'max:100'],
             'stock' => ['nullable', 'integer', 'min:0'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
@@ -99,6 +100,7 @@ class InventoryController extends Controller
             'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
+            'variants.*.weight_kg' => ['nullable', 'numeric', 'min:0.05', 'max:500'],
             'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
             'variants.*.status' => ['nullable', 'string', 'in:active,archived'],
         ]);
@@ -125,6 +127,7 @@ class InventoryController extends Controller
             'sku' => $validated['sku'] ?? null,
             'category' => $validated['category'],
             'price' => $validated['price'],
+            'weight_kg' => $validated['weight_kg'],
             'discount' => $validated['discount'] ?? 0,
             'stock' => $stock,
             'low_stock_threshold' => $validated['low_stock_threshold'] ?? null,
@@ -246,6 +249,7 @@ class InventoryController extends Controller
                 'name' => $variant['name'],
                 'sku' => $variant['sku'] ?? null,
                 'price' => $variant['price'] ?? null,
+                'weight_kg' => $variant['weight_kg'] ?? null,
                 'stock' => (int) ($variant['stock'] ?? 0),
                 'status' => $variant['status'] ?? 'active',
             ];
@@ -308,6 +312,7 @@ class InventoryController extends Controller
                     ? 'unique:vouchers,code,' . $voucher->id
                     : 'unique:vouchers,code',
             ],
+            'kind' => ['required', 'in:merchandise,shipping'],
             'type' => ['required', 'in:percent,fixed'],
             'value' => ['required', 'numeric', 'min:0.01'],
             'min_order_amount' => ['nullable', 'numeric', 'min:0'],
@@ -328,6 +333,7 @@ class InventoryController extends Controller
             'seller_id' => Auth::id(),
             'name' => $validated['name'],
             'code' => Str::upper($validated['code']),
+            'kind' => $validated['kind'],
             'type' => $validated['type'],
             'value' => $validated['value'],
             'min_order_amount' => $validated['min_order_amount'] ?? 0,

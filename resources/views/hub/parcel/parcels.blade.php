@@ -17,7 +17,7 @@
     <header>
         <p class="sh-kicker">{{ $center->name }}</p>
         <h1 class="sh-title">Province Hub Parcel Operations</h1>
-        <p class="mt-2 max-w-4xl text-sm text-navy/55">Receive arriving parcels, validate the next hierarchy hop, consolidate them into manifests, scan every parcel while loading, then assign a Linehaul vehicle and driver.</p>
+        <p class="mt-2 max-w-4xl text-sm text-navy/55">Receive arriving parcels, validate the next hierarchy hop, consolidate them into manifests, confirm the physical batch count, then assign a Linehaul vehicle and driver.</p>
     </header>
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -28,10 +28,10 @@
     </section>
 
     <section class="sh-surface sh-card-pad space-y-4">
-        <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound parcels</h2><p class="mt-1 text-xs text-navy/50">The Linehaul Driver first marks the Manifest as arrived. Hub staff then scans each physical parcel during unloading.</p></div>
+        <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound Linehaul</h2><p class="mt-1 text-xs text-navy/50">Normal intact batch: use Logistics mobile → Receive inbound manifest, scan the Manifest QR, acknowledge arrival, then confirm the physical count. The parcel field below is only for individual exception/reconciliation.</p></div>
         <form method="POST" action="{{ route('logistics.hub.parcels.receive') }}" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
-            <label class="sh-field"><span class="sh-label">Parcel QR / tracking</span><input class="sh-input" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
-            <button class="sh-btn">Receive parcel</button>
+            <label class="sh-field"><span class="sh-label">Exception Parcel QR / tracking</span><input class="sh-input" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
+            <button class="sh-btn">Receive exception parcel</button>
         </form>
 
         @if($awaiting->isNotEmpty())
@@ -81,7 +81,7 @@
     </section>
 
     <section class="space-y-4">
-        <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 4</p><h2 class="sh-title-sm">Load & assign Linehaul</h2><p class="mt-1 text-xs text-navy/50">Staff scans every parcel during loading. Only a complete manifest can be assigned to a vehicle and driver.</p></div>
+        <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 4</p><h2 class="sh-title-sm">Load & assign Linehaul</h2><p class="mt-1 text-xs text-navy/50">Staff confirms the physical batch count once. Only a complete manifest can be assigned to a vehicle and driver.</p></div>
         @forelse($manifests as $m)
         <article class="sh-surface sh-card-pad space-y-4">
             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -94,9 +94,9 @@
 
             @if(in_array($m['status'],['prepared','loading']))
             <form method="POST" action="{{ route('logistics.hub.parcels.manifests.load',$m['id']) }}" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
-                <label class="sh-field"><span class="sh-label">Scan parcel QR while loading</span><input class="sh-input" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label><button class="sh-btn">Mark loaded</button>
+                <label class="sh-field"><span class="sh-label">Physical parcel count loaded</span><input type="number" class="sh-input" name="physical_count" min="1" max="5000" value="{{ $m['count'] }}" required></label><button class="sh-btn">Confirm complete batch loaded</button>
             </form>
-            <p class="text-xs text-navy/45">Missing {{ max(0,$m['count']-$m['loaded']) }} parcel(s).</p>
+            <p class="text-xs text-navy/45">Expected {{ $m['count'] }} parcel(s). If the count differs, use Logistics mobile → Outbound Manifest → Exception / reconciliation mode for individual Parcel QR checks.</p>
             @endif
 
             @if($m['status']==='ready' && !$m['trip_code'])
@@ -118,7 +118,7 @@
 
             @if($m['trip_status']==='scheduled')<div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-navy">Waiting for Driver to scan Manifest QR and Accept Load & Depart.</div>
             @elseif($m['trip_status']==='in_transit')<div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-navy">Truck is in transit to {{ $m['to'] }}.</div>
-            @elseif($m['trip_status']==='arrived')<div class="rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-navy">Truck arrived. Destination staff must unload and scan each parcel.</div>
+            @elseif($m['trip_status']==='arrived')<div class="rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-navy">Destination acknowledged the Manifest QR. Receiving is controlled by the destination center.</div>
             @endif
         </article>
         @empty

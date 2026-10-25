@@ -258,6 +258,7 @@ class CartController extends Controller
                 'title'        => $voucher->name,
                 'description'  => $this->describeVoucher($voucher),
                 'type'         => $voucher->type,
+                'kind'         => $voucher->kind ?? 'merchandise',
                 'value'        => (float) $voucher->value,
                 'min_spend'    => (float) $voucher->min_order_amount,
                 'max_discount' => null,
@@ -274,6 +275,7 @@ class CartController extends Controller
             ? $voucher->value . '% off'
             : '₱' . number_format($voucher->value) . ' off';
 
-        return $amount . ' on ₱' . number_format($voucher->min_order_amount) . ' minimum spend';
+        $target = ($voucher->kind ?? 'merchandise') === 'shipping' ? 'shipping' : 'merchandise';
+        return $amount . ' ' . $target . ' on ₱' . number_format($voucher->min_order_amount) . ' minimum spend';
     }
 }

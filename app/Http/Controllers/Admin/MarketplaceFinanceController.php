@@ -6,6 +6,7 @@ use App\Models\Buyer\Order\Order;
 use App\Models\Finance\OrderFinancial;
 use App\Models\Finance\PaymentSetting;
 use App\Models\Finance\PlatformVoucher;
+use App\Models\Finance\MarketplaceRateSetting;
 use App\Models\Finance\SettlementEntry;
 use App\Services\ShopHopFinance;
 use Illuminate\Http\RedirectResponse;
@@ -22,6 +23,7 @@ class MarketplaceFinanceController extends Controller
     {
         return view('admin.commission', [
             'setting' => PaymentSetting::current(),
+            'rates' => MarketplaceRateSetting::current(),
             'vouchers' => PlatformVoucher::orderByDesc('id')->limit(60)->get(),
             'finances' => OrderFinancial::orderByDesc('id')->paginate(20, ['*'], 'finance_page'),
             'settlements' => SettlementEntry::with('order')->orderByDesc('id')->paginate(30, ['*'], 'payout_page'),
@@ -29,10 +31,54 @@ class MarketplaceFinanceController extends Controller
                 ->where(fn ($q) => $q->where('payment_method', '!=', 'cod')
                     ->orWhereHas('codSettlement', fn ($cash) => $cash->whereNotNull('admin_received_at')
                         ->whereColumn('admin_received_amount', 'expected_amount')))
-                ->whereHas('financial', fn ($q) => $q->where('settlement_hold', false))
-                ->whereDoesntHave('settlements')->latest('id')->limit(40)->get(),
+                ->where(function ($query) {
+                    $query->whereDoesntHave('financial')
+                        ->orWhereHas('financial', fn ($financial) => $financial->where('settlement_hold', false));
+                })
+                ->whereDoesntHave('settlements')
+                ->with('financial')
+                ->latest('id')->limit(40)->get(),
             'commissionTotal' => (float) OrderFinancial::whereHas('order', fn ($q) => $q->where('status', Order::STATUS_COMPLETED))->sum('commission'),
+            'distributionOrders' => Order::with(['financial', 'settlements', 'codSettlement'])
+                ->whereHas('settlements', fn ($q) => $q->whereIn('kind', ['seller', 'logistics'])->where('status', 'pending'))
+                ->latest('id')->limit(40)->get(),
+            'availablePayouts' => SettlementEntry::with('order')
+                ->whereIn('kind', ['seller', 'logistics'])->where('status', 'available')
+                ->orderByDesc('distributed_at')->limit(80)->get(),
+            'pendingDistributionTotal' => (float) SettlementEntry::whereIn('kind', ['seller', 'logistics'])->where('status', 'pending')->sum('amount'),
+            'availablePayoutTotal' => (float) SettlementEntry::whereIn('kind', ['seller', 'logistics'])->where('status', 'available')->sum('amount'),
+            'paidPayoutTotal' => (float) SettlementEntry::whereIn('kind', ['seller', 'logistics'])->where('status', 'paid')->sum('amount'),
         ]);
+    }
+
+
+    public function updateRates(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'commission_percent' => ['required', 'numeric', 'min:0', 'max:100'],
+            'base_shipping_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'local_distance_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'same_province_distance_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'interprovince_distance_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'same_province_linehaul_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'interprovince_linehaul_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'included_weight_kg' => ['required', 'numeric', 'min:0.05', 'max:10000'],
+            'extra_weight_fee_per_kg' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'express_surcharge_percent' => ['required', 'numeric', 'min:0', 'max:500'],
+            'pickup_rider_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'delivery_rider_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'origin_branch_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'destination_branch_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'province_hub_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'linehaul_branch_hub_driver_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+            'linehaul_hub_hub_driver_fee' => ['required', 'numeric', 'min:0', 'max:100000'],
+        ]);
+
+        // The confirmed ShopHop business rule is 10%; keep Admin from silently drifting it.
+        $data['commission_percent'] = 10;
+        MarketplaceRateSetting::current()->update($data);
+
+        return back()->with('status', 'Shipping, handling and payout rates updated. ShopHop commission remains 10%.');
     }
 
     public function paymentSetting(Request $request): RedirectResponse
@@ -116,8 +162,19 @@ class MarketplaceFinanceController extends Controller
 
     public function prepare(int $order, ShopHopFinance $finance): RedirectResponse
     {
-        $finance->prepareForOrder($order);
-        return back()->with('status', 'Eligible Seller, Logistics and Rider earnings prepared (not yet paid).');
+        $legacyBackfilled = $finance->prepareForOrder($order);
+
+        $message = $legacyBackfilled
+            ? 'Historical Order financial snapshot reconstructed from its frozen checkout amounts. Seller, Logistics and Rider earnings are now prepared and pending distribution.'
+            : 'Eligible Seller, Logistics and Rider earnings prepared and pending distribution.';
+
+        return back()->with('status', $message);
+    }
+
+    public function distribute(Request $request, int $order, ShopHopFinance $finance): RedirectResponse
+    {
+        $reference = $finance->distributeOrder($order, (int) $request->user()->id);
+        return back()->with('status', 'Settlement distributed to beneficiary ledgers. Reference '.$reference.'. No external transfer was performed.');
     }
 
     public function paid(Request $request, int $entry, ShopHopFinance $finance): RedirectResponse

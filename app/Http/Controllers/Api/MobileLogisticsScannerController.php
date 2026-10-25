@@ -121,6 +121,150 @@ class MobileLogisticsScannerController extends Controller
             'data' => $result]);
     }
 
+    /** Normal fast path: confirm the whole outbound manifest by physical count. */
+    public function batchLoad(Request $request, ManifestLoadingService $loading): JsonResponse
+    {
+        $partner = $this->partner($request);
+        $actor = $request->user();
+        $data = $request->validate([
+            'sorting_center_id' => ['required', 'integer'],
+            'manifest_id' => ['required', 'integer'],
+            'physical_count' => ['required', 'integer', 'min:1', 'max:5000'],
+        ]);
+        $centerId = (int) $data['sorting_center_id'];
+        $this->requireBranchAccess($request, $partner, $centerId);
+
+        try {
+            $result = $loading->confirmBatchLoad(
+                (int) $partner->id,
+                $centerId,
+                (int) $data['manifest_id'],
+                (int) $data['physical_count'],
+                $actor instanceof User ? (int) $actor->id : (int) $partner->user_id,
+                $actor instanceof BranchStaff ? (int) $actor->id : null,
+            );
+        } catch (ValidationException $exception) {
+            return response()->json([
+                'success' => false,
+                'status' => 'count_mismatch',
+                'message' => collect($exception->errors())->flatten()->first() ?: 'Manifest load cannot be confirmed.',
+                'errors' => $exception->errors(),
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'ready_to_dispatch',
+            'message' => 'Complete manifest load confirmed. Assign a vehicle and Linehaul Driver.',
+            'data' => $result,
+        ]);
+    }
+
+    public function inboundManifestPreview(Request $request, ManifestLoadingService $loading): JsonResponse
+    {
+        $partner = $this->partner($request);
+        $data = $request->validate([
+            'sorting_center_id' => ['required', 'integer'],
+            'manifest_code' => ['required', 'string', 'max:80'],
+        ]);
+        $centerId = (int) $data['sorting_center_id'];
+        $this->requireBranchAccess($request, $partner, $centerId);
+
+        try {
+            $manifest = $loading->inspectInbound((int) $partner->id, $centerId, $data['manifest_code']);
+        } catch (ValidationException $exception) {
+            return response()->json([
+                'success' => false,
+                'status' => 'scan_conflict',
+                'message' => collect($exception->errors())->flatten()->first() ?: 'Inbound manifest cannot be opened.',
+                'errors' => $exception->errors(),
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'ready',
+            'message' => $manifest['arrival_acknowledged']
+                ? 'Destination arrival is already acknowledged.'
+                : 'Manifest verified for this destination. Confirm arrival to accept the Linehaul handoff.',
+            'data' => ['manifest' => $manifest],
+        ]);
+    }
+
+    public function acknowledgeManifestArrival(Request $request, ManifestLoadingService $loading): JsonResponse
+    {
+        $partner = $this->partner($request);
+        $actor = $request->user();
+        $data = $request->validate([
+            'sorting_center_id' => ['required', 'integer'],
+            'manifest_code' => ['required', 'string', 'max:80'],
+        ]);
+        $centerId = (int) $data['sorting_center_id'];
+        $this->requireBranchAccess($request, $partner, $centerId);
+
+        try {
+            $manifest = $loading->acknowledgeArrival(
+                (int) $partner->id,
+                $centerId,
+                $data['manifest_code'],
+                $actor instanceof User ? (int) $actor->id : (int) $partner->user_id,
+                $actor instanceof BranchStaff ? (int) $actor->id : null,
+            );
+        } catch (ValidationException $exception) {
+            return response()->json([
+                'success' => false,
+                'status' => 'scan_conflict',
+                'message' => collect($exception->errors())->flatten()->first() ?: 'Manifest arrival cannot be acknowledged.',
+                'errors' => $exception->errors(),
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'arrived',
+            'message' => 'Destination arrival acknowledged. Verify the physical parcel count, then Receive All Intact or use individual Parcel QR scanning for exceptions.',
+            'data' => ['manifest' => $manifest],
+        ]);
+    }
+
+    public function receiveManifestAll(Request $request, ManifestLoadingService $loading): JsonResponse
+    {
+        $partner = $this->partner($request);
+        $actor = $request->user();
+        $data = $request->validate([
+            'sorting_center_id' => ['required', 'integer'],
+            'manifest_code' => ['required', 'string', 'max:80'],
+            'physical_count' => ['required', 'integer', 'min:1', 'max:5000'],
+        ]);
+        $centerId = (int) $data['sorting_center_id'];
+        $this->requireBranchAccess($request, $partner, $centerId);
+
+        try {
+            $manifest = $loading->receiveAllIntact(
+                (int) $partner->id,
+                $centerId,
+                $data['manifest_code'],
+                (int) $data['physical_count'],
+                $actor instanceof User ? (int) $actor->id : (int) $partner->user_id,
+                $actor instanceof BranchStaff ? (int) $actor->id : null,
+            );
+        } catch (ValidationException $exception) {
+            return response()->json([
+                'success' => false,
+                'status' => 'count_mismatch',
+                'message' => collect($exception->errors())->flatten()->first() ?: 'Manifest cannot be received as an intact batch.',
+                'errors' => $exception->errors(),
+            ], 409);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'completed',
+            'message' => 'Manifest received intact. All parcel custody records were updated and the Linehaul Trip is complete.',
+            'data' => ['manifest' => $manifest],
+        ]);
+    }
+
     public function manifestSummary(Request $request, ManifestLoadingService $loading): JsonResponse
     {
         $partner = $this->partner($request);

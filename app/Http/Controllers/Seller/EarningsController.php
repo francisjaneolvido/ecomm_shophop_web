@@ -12,6 +12,7 @@ class EarningsController extends Controller
         $query = SettlementEntry::with('order')->where('kind', 'seller')->where('payee_id', $seller->id);
         return view('seller.earnings', [
             'pending' => (clone $query)->where('status', 'pending')->sum('amount'),
+            'available' => (clone $query)->where('status', 'available')->sum('amount'),
             'paid' => (clone $query)->where('status', 'paid')->sum('amount'),
             'entries' => $query->orderByDesc('id')->paginate(25),
         ]);

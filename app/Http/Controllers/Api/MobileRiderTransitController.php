@@ -46,10 +46,17 @@ class MobileRiderTransitController extends Controller
             ->latest()->limit(100)->get();
         return response()->json(['success' => true, 'status' => 'ok', 'message' => 'Rider earnings loaded.', 'data' => [
             'pending' => round((float) $entries->where('status', 'pending')->sum('amount'), 2),
+            'available' => round((float) $entries->where('status', 'available')->sum('amount'), 2),
             'paid' => round((float) $entries->where('status', 'paid')->sum('amount'), 2),
             'entries' => $entries->map(fn ($entry) => [
-                'order_id' => $entry->order_id, 'kind' => $entry->kind, 'amount' => (float) $entry->amount,
-                'status' => $entry->status, 'paid_at' => optional($entry->paid_at)?->toIso8601String(),
+                'order_id' => $entry->order_id,
+                'kind' => $entry->kind,
+                'amount' => (float) $entry->amount,
+                'status' => $entry->status,
+                'distribution_reference' => $entry->distribution_reference,
+                'payment_reference' => $entry->payment_reference,
+                'distributed_at' => optional($entry->distributed_at)?->toIso8601String(),
+                'paid_at' => optional($entry->paid_at)?->toIso8601String(),
             ])->values(),
         ]]);
     }

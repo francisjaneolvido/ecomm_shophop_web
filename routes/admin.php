@@ -73,9 +73,15 @@ Route::prefix('admin')
         Route::post('/returns-refunds/{case}/paid', [ReturnRefundController::class, 'paid'])->name('returns.refund-paid');
         Route::get('/commission', [MarketplaceFinanceController::class, 'index'])->name('commission');
         Route::post('/commission/qr', [MarketplaceFinanceController::class, 'paymentSetting'])->name('finance.qr');
+        Route::post('/commission/rates', [MarketplaceFinanceController::class, 'updateRates'])->name('finance.rates');
         Route::post('/commission/vouchers', [MarketplaceFinanceController::class, 'createVoucher'])->name('finance.vouchers.create');
         Route::post('/commission/vouchers/{voucher}/toggle', [MarketplaceFinanceController::class, 'toggleVoucher'])->name('finance.vouchers.toggle');
+        Route::get('/commission/orders/{order}/prepare', function () {
+            return redirect()->route('admin.finance.cod.index')
+                ->with('status', 'Prepare Settlement must be started from the COD Remittances or Finance page. No settlement action was run.');
+        })->name('finance.prepare.redirect');
         Route::post('/commission/orders/{order}/prepare', [MarketplaceFinanceController::class, 'prepare'])->name('finance.prepare');
+        Route::post('/commission/orders/{order}/distribute', [MarketplaceFinanceController::class, 'distribute'])->name('finance.distribute');
         Route::post('/commission/orders/{order}/hold', [MarketplaceFinanceController::class, 'hold'])->name('finance.hold');
         Route::post('/commission/payouts/{entry}/paid', [MarketplaceFinanceController::class, 'paid'])->name('finance.paid');
 

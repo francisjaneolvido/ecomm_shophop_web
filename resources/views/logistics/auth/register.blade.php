@@ -199,7 +199,7 @@
                     </div>
                     <div>
                         <h4 class="text-navy font-bold mb-1">5. COD &amp; Remittance</h4>
-                        <p>Cash-on-Delivery funds are held in trust for the seller and must be remitted in full, less the agreed handling fee, within 3 banking days of successful delivery.</p>
+                        <p>Cash-on-Delivery funds are held in trust and must be remitted in full. Rider and Logistics earnings are settled separately after successful delivery.</p>
                     </div>
                     <div>
                         <h4 class="text-navy font-bold mb-1">6. Lost / Damaged Package Liability</h4>

@@ -37,4 +37,9 @@ class LinehaulDriver extends Authenticatable
     {
         return $this->hasMany(LinehaulTrip::class, 'driver_id');
     }
+
+    public function earnings(): HasMany
+    {
+        return $this->hasMany(\App\Models\Finance\LinehaulDriverEarning::class, 'driver_id');
+    }
 }

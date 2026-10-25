@@ -101,6 +101,7 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/transfers/{transfer}/receive', [DeliveryController::class, 'receiveTransfer'])->name('transfers.receive');
             Route::get('/earnings', [EarningsController::class, 'index'])->name('earnings');
             Route::post('/earnings/{entry}/rider-paid', [EarningsController::class, 'payRider'])->name('earnings.rider-paid');
+            Route::post('/earnings/linehaul/{earning}/paid', [EarningsController::class, 'payLinehaulDriver'])->name('earnings.linehaul-paid');
             Route::get('/settlements', [CodSettlementController::class, 'index'])->name('settlements.index');
             Route::post('/settlements/{delivery}/reconcile', [CodSettlementController::class, 'reconcile'])->name('settlements.reconcile');
             Route::post('/settlements/{delivery}/remit-admin', [CodSettlementController::class, 'remitToAdmin'])->name('settlements.remit-admin');

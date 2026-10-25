@@ -32,6 +32,7 @@ class Order extends Model
         'logistics_partner_id',
         'voucher_id',
         'voucher_discount',
+        'seller_shipping_discount',
         'platform_voucher_id', 'shipping_voucher_id', 'platform_discount', 'shipping_discount',
         'note',
         'delivery_name',
@@ -56,6 +57,7 @@ class Order extends Model
         'shipping_fee' => 'decimal:2',
         'cod_fee' => 'decimal:2',
         'voucher_discount' => 'decimal:2',
+        'seller_shipping_discount' => 'decimal:2',
         'platform_discount' => 'decimal:2', 'shipping_discount' => 'decimal:2',
     ];
 
