@@ -427,6 +427,13 @@
                     'badge' => isset($pendingApplications) ? count($pendingApplications) : 0,
                 ],
 
+                [
+                    'label' => 'Fleet & Linehaul',
+                    'route' => 'logistics.fleet.index',
+                    'pattern' => 'logistics.fleet.*',
+                    'icon' => 'truck',
+                ],
+
             ],
         ],
 

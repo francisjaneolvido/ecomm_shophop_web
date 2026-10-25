@@ -27,7 +27,18 @@ Route::domain(config('app.logistics_domain'))
                     ->middleware('throttle:10,1')->name('station-hubs.set-password');
                 Route::post('/station-hubs/{stationHub}/toggle', [HubPortalController::class, 'toggleStationHub'])->name('station-hubs.toggle');
 
-                // Operations
-                Route::view('/parcels', 'hub.parcel.parcels')->name('parcels');
+                // Operations: receive -> sort -> outbound manifest -> dispatch
+                Route::get('/parcels', [HubPortalController::class, 'parcels'])->name('parcels');
+                Route::post('/parcels/receive', [HubPortalController::class, 'receiveParcel'])->name('parcels.receive');
+                Route::post('/parcels/sort', [HubPortalController::class, 'sortParcels'])->name('parcels.sort');
+                Route::post('/parcels/manifests', [HubPortalController::class, 'storeManifest'])->name('parcels.manifests.store');
+                Route::post('/parcels/manifests/{manifest}/load', [HubPortalController::class, 'loadManifest'])->whereNumber('manifest')->name('parcels.manifests.load');
+                Route::post('/parcels/manifests/{manifest}/assign-linehaul', [HubPortalController::class, 'assignLinehaul'])->whereNumber('manifest')->name('parcels.manifests.assign-linehaul');
+                Route::post('/parcels/manifests/{manifest}/dispatch', [HubPortalController::class, 'dispatchManifest'])
+                    ->whereNumber('manifest')->name('parcels.manifests.dispatch');
+                Route::post('/parcels/manifests/{manifest}/cancel', [HubPortalController::class, 'cancelManifest'])
+                    ->whereNumber('manifest')->name('parcels.manifests.cancel');
+                Route::get('/parcels/manifests/{manifest}/print', [HubPortalController::class, 'printManifest'])
+                    ->whereNumber('manifest')->name('parcels.manifests.print');
             });
     });

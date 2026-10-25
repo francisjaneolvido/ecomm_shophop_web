@@ -211,7 +211,7 @@ class OrderController extends Controller
     public function startPreparation(Request $request, int $order): RedirectResponse
     {
         return $this->transition($request, $order, Order::STATUS_CONFIRMED, Order::STATUS_PREPARING,
-            'Preparation started. Pack the items and attach the shipping label before requesting pickup.');
+            'Preparation started. Pack the items, then Mark Ready & Request Pickup. Print the routed ShopHop waybill after the pickup request is created.');
     }
 
     /** Seller selects the Logistics company and creates the explicit pickup request. */
@@ -285,9 +285,7 @@ class OrderController extends Controller
     public function shippingLabel(Request $request, int $order): View
     {
         $owned = $this->ownedOrder($request, $order);
-        abort_unless($owned->isPaymentEligible() && in_array($owned->status, [
-            Order::STATUS_CONFIRMED,
-            Order::STATUS_PREPARING,
+        abort_unless($owned->isPaymentEligible() && $owned->pickupRequest && in_array($owned->status, [
             Order::STATUS_READY_FOR_PICKUP,
             Order::STATUS_TO_RECEIVE,
             Order::STATUS_COMPLETED,
@@ -297,7 +295,7 @@ class OrderController extends Controller
             $owned->forceFill(['tracking_code' => $this->routing->trackingCode($owned)])->save();
         }
 
-        $owned->load(['seller', 'buyer', 'items.product', 'items.variant', 'pickupRequest.partner', 'pickupRequest.originSortingCenter']);
+        $owned->load(['seller', 'buyer', 'items.product', 'items.variant', 'logisticsPartner', 'pickupRequest.partner', 'pickupRequest.originSortingCenter']);
 
         return view('seller.orders.shipping-label', ['order' => $owned]);
     }

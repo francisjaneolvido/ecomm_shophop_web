@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Shipping Label · {{ $order->tracking_code }}</title>
+    <title>ShopHop Waybill · {{ $order->tracking_code }}</title>
     <style>
         * { box-sizing: border-box; }
         body { margin: 0; background: #eef2f4; color: #0f2c3f; font-family: Arial, sans-serif; }
@@ -36,13 +36,13 @@
 <body>
 <div class="toolbar">
     <a href="{{ route('seller.orders.show', $order) }}">Back to Order</a>
-    <button type="button" onclick="window.print()">Print Label</button>
+    <button type="button" onclick="window.print()">Print Waybill</button>
 </div>
 <section class="label">
     <div class="head">
         <div>
             <div class="brand">ShopHop</div>
-            <div class="muted">Seller parcel shipping label</div>
+            <div class="muted">Parcel waybill & shipping label</div>
         </div>
         <div>
             <div class="eyebrow" style="text-align:right">Tracking Code</div>
@@ -67,8 +67,8 @@
     </div>
 
     <div class="meta">
-        <div><div class="eyebrow">Logistics</div><strong>{{ $order->pickupRequest?->partner?->company_name ?? 'Pending selection' }}</strong></div>
-        <div><div class="eyebrow">Origin Center</div><strong>{{ $order->pickupRequest?->originSortingCenter?->name ?? 'Assigned after pickup request' }}</strong></div>
+        <div><div class="eyebrow">Logistics</div><strong>{{ $order->pickupRequest?->partner?->company_name ?? $order->logisticsPartner?->company_name ?? 'Unavailable' }}</strong></div>
+        <div><div class="eyebrow">Origin Center</div><strong>{{ $order->pickupRequest?->originSortingCenter?->name ?? 'Unavailable' }}</strong></div>
         <div><div class="eyebrow">Payment</div><strong>{{ strtoupper($order->payment_method ?? '—') }}</strong></div>
     </div>
 
@@ -83,10 +83,10 @@
 
     <div class="parcel-qr">
         <div id="parcelQr" role="img" aria-label="Parcel tracking QR code"></div>
-        <div><strong>SCAN AT SORTING CENTER</strong><p class="muted">This QR contains the tracking code only. Staff login and branch/status verification are required to receive the parcel.</p><strong>{{ $order->tracking_code }}</strong><p id="qrHelp" class="muted">If the QR fails to display, enter the tracking code manually.</p></div>
+        <div><strong>SHOPHOP WAYBILL · SCAN AT CUSTODY HANDOFFS</strong><p class="muted">This permanent QR contains the tracking code only. Pickup Riders scan it at Seller handoff; Branch/Hub staff scan it while receiving and loading/unloading manifests; Delivery Riders scan it for final-mile custody. Linehaul Drivers scan the separate Manifest QR for truck/van trips.</p><strong>{{ $order->tracking_code }}</strong><p id="qrHelp" class="muted">If the QR fails to display, enter the tracking code manually.</p></div>
     </div>
 
-    <div class="footer">Attach this label securely before Rider handoff. Logistics/Riders should verify the tracking code at parcel custody changes.</div>
+    <div class="footer">Attach this waybill securely before Rider handoff. Keep the QR visible and undamaged for every custody scan until final delivery.</div>
 </section>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" referrerpolicy="no-referrer"></script>
 <script>

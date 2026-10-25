@@ -8,6 +8,7 @@ use App\Models\EmailVerificationCode;
 use App\Models\User;
 // Mobile registration must not bypass the web registration document privacy contract.
 use App\Services\RegistrationDocuments;
+use App\Support\RegistrationIdentity;
 use App\Notifications\BuyerVerificationCodeNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,19 +21,32 @@ class MobileBuyerAuthController extends Controller
 {
     public function register(Request $request): JsonResponse
     {
+        // Keep mobile identity normalization and validation identical to the
+        // web Buyer registration flow. This prevents the two clients from
+        // creating records that disagree on email, mobile number, age, or
+        // password requirements.
+        $request->merge([
+            'email' => RegistrationIdentity::email($request->input('email')),
+            'contact_no' => RegistrationIdentity::mobile($request->input('contact_no')),
+            'first_name' => trim((string) $request->input('first_name')),
+            'last_name' => trim((string) $request->input('last_name')),
+        ]);
+
         $validated = $request->validate([
             'first_name' => [
                 'required',
                 'string',
-                'max:100',
-                'regex:/^[A-Za-zÀ-ÿñÑ\s\'.-]+$/',
+                'min:2',
+                'max:50',
+                'regex:/^[\p{L}][\p{L}\s\'.-]*$/u',
             ],
 
             'last_name' => [
                 'required',
                 'string',
-                'max:100',
-                'regex:/^[A-Za-zÀ-ÿñÑ\s\'.-]+$/',
+                'min:2',
+                'max:50',
+                'regex:/^[\p{L}][\p{L}\s\'.-]*$/u',
             ],
 
             'middle_initial' => [
@@ -54,18 +68,19 @@ class MobileBuyerAuthController extends Controller
                 'required',
                 'email',
                 'max:191',
-                'unique:users,email',
+                RegistrationIdentity::emailUnique(),
             ],
 
             'contact_no' => [
                 'required',
                 'regex:/^09\d{9}$/',
+                RegistrationIdentity::mobileUnique(),
             ],
 
             'birthday' => [
                 'required',
                 'date',
-                'before:today',
+                'before_or_equal:'.now()->subYears(18)->toDateString(),
             ],
 
             'region_code' => ['nullable', 'string', 'max:20'],
@@ -123,7 +138,8 @@ class MobileBuyerAuthController extends Controller
                 'confirmed',
                 Password::min(8)
                     ->mixedCase()
-                    ->numbers(),
+                    ->numbers()
+                    ->symbols(),
             ],
 
             'terms' => [
@@ -135,6 +151,7 @@ class MobileBuyerAuthController extends Controller
         $user = DB::transaction(function () use ($validated, $request) {
             $user = User::create([
                 'email' => $validated['email'],
+                'registration_contact_no' => $validated['contact_no'],
                 'password' => Hash::make($validated['password']),
                 'account_type' => 'buyer',
                 'status' => 'pending',
@@ -175,7 +192,7 @@ class MobileBuyerAuthController extends Controller
             [
                 'code_hash' => Hash::make($code),
                 'attempts' => 0,
-                'expires_at' => now()->addMinutes(10),
+                'expires_at' => now()->addMinutes(5),
                 'last_sent_at' => now(),
             ]
         );
@@ -223,7 +240,7 @@ class MobileBuyerAuthController extends Controller
         ]);
 
         $user = User::query()
-            ->where('email', $validated['email'])
+            ->where('email', RegistrationIdentity::email($validated['email']))
             ->where('account_type', 'buyer')
             ->first();
 
@@ -336,7 +353,7 @@ class MobileBuyerAuthController extends Controller
         ]);
 
         $user = User::query()
-            ->where('email', $validated['email'])
+            ->where('email', RegistrationIdentity::email($validated['email']))
             ->where('account_type', 'buyer')
             ->first();
 
@@ -381,7 +398,7 @@ class MobileBuyerAuthController extends Controller
             [
                 'code_hash' => Hash::make($code),
                 'attempts' => 0,
-                'expires_at' => now()->addMinutes(10),
+                'expires_at' => now()->addMinutes(5),
                 'last_sent_at' => now(),
             ]
         );

@@ -26,13 +26,17 @@
     @if ($delivery->rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::PICKUP_ASSIGNED)
         <form method="POST" action="{{ route('rider.deliveries.accept-pickup', $delivery) }}" class="mt-5">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Accept Pickup Assignment</button></form>
     @elseif ($delivery->rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::PICKUP_ACCEPTED)
-        <p class="mt-5 text-sm text-navy/60">Go to the Seller, collect the parcel, then confirm pickup.</p>
-        <form method="POST" action="{{ route('rider.deliveries.pickup', $delivery) }}" class="mt-3">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Confirm Parcel Pickup</button></form>
+        <div class="mt-5 rounded-xl bg-teal-50 p-4 text-sm text-teal-900">
+            <p class="font-semibold">QR custody scan required</p>
+            <p class="mt-1">Go to the Seller and use the center camera button in the ShopHop Rider mobile navigation. Scan <strong>{{ $delivery->tracking_code }}</strong> only when the parcel is physically handed to you.</p>
+        </div>
     @elseif ($delivery->pickup_rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::PICKED_UP)
         <p class="mt-5 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">Bring the parcel to the sorting center. Logistics must scan <strong>{{ $delivery->tracking_code }}</strong> to receive it.</p>
     @elseif ($delivery->rider_id === $currentRiderId && $delivery->delivery_rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::DELIVERY_ASSIGNED)
-        <p class="mt-5 text-sm text-navy/60">Pick up the sorted parcel from the sorting center before dispatch.</p>
-        <form method="POST" action="{{ route('rider.deliveries.out-for-delivery', $delivery) }}" class="mt-3">@csrf<button class="rounded bg-navy px-5 py-2 text-white">Mark Out for Delivery</button></form>
+        <div class="mt-5 rounded-xl bg-teal-50 p-4 text-sm text-teal-900">
+            <p class="font-semibold">QR custody scan required</p>
+            <p class="mt-1">At the destination branch, use the center camera button in the ShopHop Rider mobile navigation. The parcel becomes Out for Delivery only after its QR is scanned and confirmed.</p>
+        </div>
     @elseif ($delivery->rider_id === $currentRiderId && $delivery->delivery_rider_id === $currentRiderId && $delivery->status === \App\Models\Logistics\Delivery::OUT_FOR_DELIVERY)
         @if ($delivery->order?->isPaymentEligible())
             <form method="POST" enctype="multipart/form-data" action="{{ route('rider.deliveries.complete', $delivery) }}" class="mt-5 space-y-3 rounded-xl border p-4">@csrf

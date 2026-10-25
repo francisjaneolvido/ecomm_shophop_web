@@ -19,7 +19,7 @@
         <div>
             <p class="eyebrow">Operations · Parcel handoffs</p>
             <h1 class="title">Parcel Operations</h1>
-            <p class="description">This is your work queue. Pickup riders collect from sellers; branch staff receive and sort using the QR scanner; transit riders move parcels between branches when needed; delivery riders complete the last mile.</p>
+            <p class="description">This is your work queue. Pickup Riders handle Seller → Branch; Linehaul vehicles and Drivers move consolidated manifests between Branches/Hubs; Delivery Riders complete Branch → Buyer.</p>
         </div>
         <a href="{{ route('logistics.returns.index') }}" class="sh-btn-soft">Return-to-Seller Queue →</a>
         <a href="{{ route('logistics.dashboard') }}" class="sh-btn-ghost"><x-lucide-arrow-left class="h-4 w-4" /> Back to Dashboard</a>
@@ -182,35 +182,31 @@
                                     && $delivery->current_sorting_center_id
                                     && $delivery->destination_sorting_center_id
                                     && (int) $delivery->current_sorting_center_id !== (int) $delivery->destination_sorting_center_id;
+                                $transferPlan = $transferPlans[$delivery->id] ?? null;
                                 $areaRiders = $riders
                                     ->where('coverage_area_id', $delivery->destination_area_id)
                                     ->when($delivery->destination_sorting_center_id, fn ($items) => $items->where('sorting_center_id', $delivery->destination_sorting_center_id));
                             @endphp
                             @if ($needsCenterTransfer)
                                 <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                                    <div class="flex items-start gap-2"><x-lucide-arrow-left-right class="mt-0.5 h-4 w-4 shrink-0 text-amber-800" /><div><p class="text-sm font-bold text-amber-900">Branch transfer required</p><p class="mt-1 text-xs text-amber-800">{{ $delivery->currentSortingCenter?->name }} → {{ $delivery->destinationSortingCenter?->name }}</p></div></div>
+                                    <div class="flex items-start gap-2"><x-lucide-arrow-left-right class="mt-0.5 h-4 w-4 shrink-0 text-amber-800" /><div><p class="text-sm font-bold text-amber-900">Center transfer required</p><p class="mt-1 text-xs text-amber-800">{{ $delivery->currentSortingCenter?->name }} → {{ $activeTransfer?->toCenter?->name ?? $transferPlan['next']?->name ?? 'Routing unresolved' }} <span class="text-amber-700/70">· Final: {{ $delivery->destinationSortingCenter?->name }}</span></p></div></div>
                                     @if ($activeTransfer)
-                                        <p class="mt-3 text-xs leading-relaxed text-amber-800">Parcel transfer recorded. Assigned Transit Rider must confirm departure on mobile before the destination branch may scan receipt.</p>
-                                        <form method="POST" action="{{ route('logistics.transfers.receive', $activeTransfer) }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" data-confirm-title="Confirm destination hub receipt?" data-confirm-message="Only confirm after physically receiving and checking this transferred parcel." data-confirm-button="Receive transfer">
+                                        <p class="mt-3 text-xs leading-relaxed text-amber-800">Parcel is already moving on an existing transfer. New center-to-center movements are handled through a Linehaul Manifest, Vehicle, and Driver.</p>
+                                        <form method="POST" action="{{ route('logistics.transfers.receive', $activeTransfer) }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" data-confirm-title="Confirm next-center receipt?" data-confirm-message="Only confirm after physically receiving and checking this transferred parcel." data-confirm-button="Receive transfer">
                                             @csrf
                                             <label class="sh-field"><span class="sh-label">Tracking code</span><input name="tracking_code" required autocomplete="off" placeholder="{{ $delivery->tracking_code }}" class="sh-input"></label>
                                             <button class="sh-btn">Receive transfer</button>
                                         </form>
                                     @else
-                                        <form method="POST" action="{{ route('logistics.deliveries.transfer', $delivery) }}" class="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" data-confirm-title="Dispatch branch transfer?" data-confirm-message="This records the handoff of this parcel to the selected sorting center." data-confirm-button="Dispatch transfer">
-                                            @csrf
-                                            <label class="sh-field"><span class="sh-label">Next Sorting Center</span><select name="to_sorting_center_id" required class="sh-select"><option value="">Choose next center</option>
-                                                @foreach ($sortingCenters->where('id', '!=', $delivery->current_sorting_center_id) as $center)
-                                                    <option value="{{ $center->id }}" @selected((int) $center->id === (int) $delivery->destination_sorting_center_id)>{{ $center->name }}{{ (int) $center->id === (int) $delivery->destination_sorting_center_id ? ' · Destination' : ' · Transfer hub' }}</option>
-                                                @endforeach
-                                            </select></label>
-                                            <label class="sh-field sm:col-span-2"><span class="sh-label">Transit Rider (optional: select when a Rider handles inter-branch transport)</span><select name="transit_rider_id" class="sh-select"><option value="">Branch transport (no Rider transit fee)</option>
-                                                @foreach ($riders->where('sorting_center_id', $delivery->current_sorting_center_id) as $transitRider)
-                                                    <option value="{{ $transitRider->id }}">{{ $transitRider->name }} · {{ $transitRider->sortingCenter?->name }}</option>
-                                                @endforeach
-                                            </select></label>
-                                            <button class="sh-btn">Dispatch transfer</button>
-                                        </form>
+                                        @if (! $transferPlan || ! ($transferPlan['valid'] ?? false) || ! ($transferPlan['next'] ?? null))
+                                            <div class="mt-3 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-relaxed text-red-800">
+                                                Routing blocked: {{ $transferPlan['reason'] ?? 'The required next hub cannot be resolved.' }}
+                                            </div>
+                                        @else
+                                            <div class="mt-3 rounded-xl border border-teal-200 bg-teal-50 p-3 text-xs leading-relaxed text-teal-900">
+                                                Required next hop: <strong>{{ $transferPlan['next']->name }}</strong>. This parcel must be consolidated into an Outbound Manifest at its current Branch/Hub, scanned while loading, then assigned to a Linehaul Vehicle + Driver.
+                                            </div>
+                                        @endif
                                     @endif
                                 </div>
                             @else

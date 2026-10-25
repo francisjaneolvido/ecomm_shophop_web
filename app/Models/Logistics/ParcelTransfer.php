@@ -13,10 +13,12 @@ class ParcelTransfer extends Model
 
     protected $fillable = [
         'delivery_id',
+        'manifest_id',
         'from_sorting_center_id',
         'to_sorting_center_id',
         'status',
         'transit_rider_id',
+        'linehaul_trip_id',
         'departed_at',
         'dispatched_at',
         'received_at',
@@ -33,9 +35,20 @@ class ParcelTransfer extends Model
         return $this->belongsTo(Rider::class, 'transit_rider_id');
     }
 
+
+    public function linehaulTrip(): BelongsTo
+    {
+        return $this->belongsTo(LinehaulTrip::class, 'linehaul_trip_id');
+    }
+
     public function delivery(): BelongsTo
     {
         return $this->belongsTo(Delivery::class);
+    }
+
+    public function manifest(): BelongsTo
+    {
+        return $this->belongsTo(ParcelManifest::class, 'manifest_id');
     }
 
     public function fromCenter(): BelongsTo

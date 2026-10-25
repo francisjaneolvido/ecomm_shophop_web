@@ -38,7 +38,7 @@
             @else<p class="mt-3 text-xs text-amber-800">Logistics and Return Rider are handling the physical return.</p>@endif
           </section>
         @endif
-        @if ($order->tracking_code)
+        @if ($order->tracking_code && $order->pickupRequest)
             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal/20 bg-teal/5 p-4">
                 <div>
                     <p class="text-[10px] font-bold uppercase tracking-wider text-navy/40">Shipment tracking code</p>
@@ -48,7 +48,7 @@
                     @endif
                 </div>
                 <a href="{{ route('seller.orders.shipping-label', $order) }}" target="_blank" class="inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-white px-4 py-2 text-sm font-semibold text-teal-dark hover:bg-teal-light">
-                    <x-lucide-printer class="h-4 w-4" /> Print Shipping Label
+                    <x-lucide-printer class="h-4 w-4" /> Print Waybill
                 </a>
             </div>
         @endif
@@ -152,20 +152,18 @@
                         @method('PATCH')
                         <button class="rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark">Start Preparation</button>
                     </form>
-                    <a target="_blank" href="{{ route('seller.orders.shipping-label', $order) }}" class="rounded-lg border border-gray-border bg-white px-5 py-2.5 text-sm font-semibold text-navy hover:border-teal/30 hover:text-teal-dark">Preview Shipping Label</a>
                 </div>
             @elseif ($order->isPaymentEligible() && $order->status === \App\Models\Buyer\Order\Order::STATUS_PREPARING)
                 <div class="rounded-xl border border-gray-border bg-gray-bg/50 p-4">
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div>
-                            <p class="text-sm font-semibold text-navy">Packed and labeled?</p>
+                            <p class="text-sm font-semibold text-navy">Packed and ready for Logistics?</p>
                             <p class="mt-1 text-xs text-navy/55">
                                 {{ $order->logistics_partner_id
-                                    ? 'The Buyer already chose the courier for this order.'
-                                    : 'Select the Logistics company that will collect this parcel. Only providers covering the Buyer destination are shown.' }}
+                                    ? 'The Buyer already chose the courier. Mark the parcel ready so ShopHop can create the routed pickup request and waybill.'
+                                    : 'Select the Logistics company that will collect this parcel. The routed waybill becomes printable after the pickup request is created.' }}
                             </p>
                         </div>
-                        <a target="_blank" href="{{ route('seller.orders.shipping-label', $order) }}" class="text-xs font-semibold text-teal-dark hover:underline">Print label</a>
                     </div>
 
                     @if ($errors->has('logistics_partner_id'))
@@ -213,7 +211,15 @@
                     @endif
                 </div>
             @elseif ($order->status === \App\Models\Buyer\Order\Order::STATUS_READY_FOR_PICKUP)
-                <p class="text-sm text-navy/65">Pickup request sent. Keep the parcel sealed and labeled while waiting for Logistics to assign a Rider.</p>
+                <div class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-teal/20 bg-teal/5 p-4">
+                    <div>
+                        <p class="text-sm font-semibold text-navy">Pickup request sent.</p>
+                        <p class="mt-1 text-xs text-navy/55">Print and attach the routed ShopHop waybill, then keep the parcel sealed while waiting for the assigned Rider.</p>
+                    </div>
+                    <a target="_blank" href="{{ route('seller.orders.shipping-label', $order) }}" class="inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-white px-4 py-2 text-sm font-semibold text-teal-dark hover:bg-teal-light">
+                        <x-lucide-printer class="h-4 w-4" /> Print Waybill
+                    </a>
+                </div>
             @else
                 <p class="text-sm text-navy/65">No Seller fulfillment action is available for this payment and Order state.</p>
             @endif

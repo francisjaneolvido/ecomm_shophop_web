@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Logistics\Rider;
 use App\Models\Logistics\BranchStaff;
+use App\Models\Logistics\LinehaulDriver;
+use App\Models\Logistics\Rider;
+use App\Models\Logistics\SortingCenter;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,6 +36,15 @@ class MobileAuthController extends Controller
 
         if ($rider && $rider->password && Hash::check($validated['password'], $rider->password)) {
             return $this->loginRider($rider);
+        }
+
+        // Linehaul Drivers are provisioned by Logistics Fleet Management on web.
+        $driver = LinehaulDriver::query()
+            ->with(['partner.user'])
+            ->where('email', $email)
+            ->first();
+        if ($driver && Hash::check($validated['password'], $driver->password)) {
+            return $this->loginLinehaulDriver($driver);
         }
 
         // Company-provisioned branch operators have no public registration.
@@ -79,6 +90,19 @@ class MobileAuthController extends Controller
                 'data' => ['account_type' => 'logistics_staff', 'email' => $staff?->email,
                     'sorting_center_id' => $staff?->sorting_center_id, 'staff_role' => $staff?->role]]);
         }
+        if ($actor instanceof LinehaulDriver) {
+            $driver = $actor->fresh(['partner.user']);
+            $approved = $driver
+                && $driver->status === 'active'
+                && $driver->partner?->user?->status === 'approved';
+
+            return response()->json([
+                'success' => true,
+                'status' => $approved ? 'approved' : 'unavailable',
+                'message' => $approved ? 'Authenticated Linehaul Driver account loaded.' : 'Linehaul Driver account is unavailable.',
+                'data' => $driver ? $this->linehaulDriverData($driver) : ['account_type' => 'linehaul_driver'],
+            ], $approved ? 200 : 403);
+        }
         if ($actor instanceof Rider) {
             $rider = $actor->fresh(['partner.user', 'coverageArea.sortingCenter', 'sortingCenter']);
             if (! $rider) {
@@ -99,6 +123,25 @@ class MobileAuthController extends Controller
 
         /** @var User $user */
         $user = $actor;
+
+        if ($user->account_type === 'branch') {
+            $center = $this->branchCenterForUser($user);
+            $approved = $user->status === 'approved'
+                && $center
+                && $center->status === 'active'
+                && ! $center->archived_at
+                && $center->partner?->user?->status === 'approved';
+
+            return response()->json([
+                'success' => true,
+                'status' => $approved ? 'approved' : 'unavailable',
+                'message' => $approved
+                    ? 'Authenticated station hub account loaded.'
+                    : 'Station hub account is currently unavailable.',
+                'data' => $this->branchUserData($user, $center),
+            ]);
+        }
+
         $status = $user->status;
 
         if (
@@ -129,6 +172,10 @@ class MobileAuthController extends Controller
 
     private function loginMarketplaceUser(User $user): JsonResponse
     {
+        if ($user->account_type === 'branch') {
+            return $this->loginBranchUser($user);
+        }
+
         $data = $this->userData($user);
 
         if (
@@ -156,6 +203,71 @@ class MobileAuthController extends Controller
             'data' => [
                 ...$data,
                 'token' => $token,
+                'token_type' => 'Bearer',
+            ],
+        ]);
+    }
+
+    /**
+     * Station-hub accounts are created by the web Logistics workflow/seeder
+     * as normal User rows with account_type=branch. Mobile treats them as a
+     * branch-scanner identity and locks the scanner to their assigned center.
+     */
+    private function loginBranchUser(User $user): JsonResponse
+    {
+        $center = $this->branchCenterForUser($user);
+
+        if ($user->status !== 'approved' || ! $center || $center->status !== 'active' || $center->archived_at) {
+            return response()->json([
+                'success' => true,
+                'status' => 'unavailable',
+                'message' => 'Your station hub account or branch is currently inactive.',
+                'data' => $this->branchUserData($user, $center),
+            ], 403);
+        }
+
+        $center->loadMissing('partner.user');
+        if ($center->partner?->user?->status !== 'approved') {
+            return response()->json([
+                'success' => true,
+                'status' => 'unavailable',
+                'message' => 'Your Logistics company is currently unavailable.',
+                'data' => $this->branchUserData($user, $center),
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'approved',
+            'message' => 'Station hub scanner sign in successful.',
+            'data' => [
+                ...$this->branchUserData($user, $center),
+                'token' => $user->createToken('shophop-station-scanner')->plainTextToken,
+                'token_type' => 'Bearer',
+            ],
+        ]);
+    }
+
+    private function loginLinehaulDriver(LinehaulDriver $driver): JsonResponse
+    {
+        $data = $this->linehaulDriverData($driver);
+
+        if ($driver->status !== 'active' || $driver->partner?->user?->status !== 'approved') {
+            return response()->json([
+                'success' => true,
+                'status' => 'unavailable',
+                'message' => 'Your Linehaul Driver account or Logistics company is currently inactive.',
+                'data' => $data,
+            ], 403);
+        }
+
+        return response()->json([
+            'success' => true,
+            'status' => 'approved',
+            'message' => 'Linehaul Driver sign in successful.',
+            'data' => [
+                ...$data,
+                'token' => $driver->createToken('shophop-mobile-linehaul')->plainTextToken,
                 'token_type' => 'Bearer',
             ],
         ]);
@@ -240,11 +352,57 @@ class MobileAuthController extends Controller
 
     private function userData(User $user): array
     {
+        if ($user->account_type === 'branch') {
+            return $this->branchUserData($user, $this->branchCenterForUser($user));
+        }
+
         return [
             'email' => $user->email,
             'company_name' => $user->account_type === 'logistics' ? $user->logisticsPartner?->company_name : null,
             'account_type' => $user->account_type,
             'rejection_reason' => $user->rejection_reason,
+        ];
+    }
+
+    private function branchCenterForUser(User $user): ?SortingCenter
+    {
+        if ($user->account_type !== 'branch') {
+            return null;
+        }
+
+        return SortingCenter::query()
+            ->with('partner.user')
+            ->where('user_id', $user->id)
+            ->whereNull('archived_at')
+            ->first();
+    }
+
+    private function branchUserData(User $user, ?SortingCenter $center): array
+    {
+        return [
+            'email' => $user->email,
+            'account_type' => 'branch',
+            'company_name' => $center?->partner?->company_name,
+            'sorting_center_id' => $center?->id,
+            'sorting_center_name' => $center?->name,
+            'sorting_center_code' => $center?->code,
+            'sorting_center_address' => $center?->addressLabel(),
+            'rejection_reason' => $user->rejection_reason,
+        ];
+    }
+
+    private function linehaulDriverData(LinehaulDriver $driver): array
+    {
+        return [
+            'id' => $driver->id,
+            'name' => $driver->name,
+            'email' => $driver->email,
+            'contact_no' => $driver->contact_no,
+            'license_no' => $driver->license_no,
+            'license_expiry' => optional($driver->license_expiry)?->toDateString(),
+            'account_type' => 'linehaul_driver',
+            'logistics_company' => $driver->partner?->company_name,
+            'status' => $driver->status,
         ];
     }
 

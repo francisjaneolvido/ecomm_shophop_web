@@ -88,112 +88,35 @@ class MobileRiderDeliveryController extends Controller
 
     public function acceptPickup(Request $request, int $delivery): JsonResponse
     {
-        $rider = $this->activeRider($request);
+        $this->activeRider($request);
 
-        return DB::transaction(function () use ($rider, $delivery) {
-            $owned = $this->current($rider, $delivery, true);
-
-            if ($owned->status !== Delivery::PICKUP_ASSIGNED
-                || $owned->order?->status !== Order::STATUS_READY_FOR_PICKUP) {
-                return $this->stale();
-            }
-
-            $updated = Delivery::whereKey($owned->id)
-                ->where('status', Delivery::PICKUP_ASSIGNED)
-                ->where('rider_id', $rider->id)
-                ->update([
-                    'status' => Delivery::PICKUP_ACCEPTED,
-                    'pickup_accepted_at' => now(),
-                ]);
-
-            if ($updated !== 1) {
-                return $this->stale();
-            }
-
-            return $this->freshSuccess($rider, $owned->id, 'Pickup assignment accepted.');
-        });
+        return response()->json([
+            'success' => false,
+            'status' => 'qr_required',
+            'message' => 'Scan the parcel waybill QR at the Seller. The confirmed scan accepts the pickup assignment and records physical custody in one step.',
+        ], 409);
     }
 
     public function pickup(Request $request, int $delivery): JsonResponse
     {
-        $rider = $this->activeRider($request);
+        $this->activeRider($request);
 
-        return DB::transaction(function () use ($rider, $delivery) {
-            $owned = $this->current($rider, $delivery, true);
-
-            if ($owned->status !== Delivery::PICKUP_ACCEPTED
-                || $owned->order?->status !== Order::STATUS_READY_FOR_PICKUP
-                || ! $owned->order->isPaymentEligible()) {
-                return $this->stale();
-            }
-
-            $orderUpdated = Order::whereKey($owned->order_id)
-                ->where('status', Order::STATUS_READY_FOR_PICKUP)
-                ->paymentEligible()
-                ->update(['status' => Order::STATUS_TO_RECEIVE]);
-
-            $deliveryUpdated = Delivery::whereKey($owned->id)
-                ->where('status', Delivery::PICKUP_ACCEPTED)
-                ->where('rider_id', $rider->id)
-                ->update([
-                    'status' => Delivery::PICKED_UP,
-                    'picked_up_at' => now(),
-                    'pickup_rider_id' => $rider->id,
-                ]);
-
-            if ($orderUpdated !== 1 || $deliveryUpdated !== 1) {
-                throw ValidationException::withMessages([
-                    'delivery' => 'Delivery changed. Refresh and review it.',
-                ]);
-            }
-
-            PickupRequest::where('order_id', $owned->order_id)->update([
-                'status' => PickupRequest::PICKED_UP,
-                'picked_up_at' => now(),
-            ]);
-
-            return $this->freshSuccess(
-                $rider,
-                $owned->id,
-                'Parcel pickup confirmed. Bring it to the sorting center.',
-            );
-        });
+        return response()->json([
+            'success' => false,
+            'status' => 'qr_required',
+            'message' => 'Seller pickup requires the Rider camera QR custody scan.',
+        ], 409);
     }
 
     public function outForDelivery(Request $request, int $delivery): JsonResponse
     {
-        $rider = $this->activeRider($request);
+        $this->activeRider($request);
 
-        return DB::transaction(function () use ($rider, $delivery) {
-            $owned = $this->current($rider, $delivery, true);
-
-            if ($owned->status !== Delivery::DELIVERY_ASSIGNED
-                || (int) $owned->delivery_rider_id !== (int) $rider->id
-                || $owned->order?->status !== Order::STATUS_TO_RECEIVE
-                || ! $owned->order->isPaymentEligible()
-                || ($owned->destination_sorting_center_id
-                    && (int) $owned->destination_sorting_center_id !== (int) $rider->sorting_center_id)
-                || ($owned->current_sorting_center_id
-                    && (int) $owned->current_sorting_center_id !== (int) $rider->sorting_center_id)) {
-                return $this->stale();
-            }
-
-            $updated = Delivery::whereKey($owned->id)
-                ->where('status', Delivery::DELIVERY_ASSIGNED)
-                ->where('rider_id', $rider->id)
-                ->where('delivery_rider_id', $rider->id)
-                ->update([
-                    'status' => Delivery::OUT_FOR_DELIVERY,
-                    'out_for_delivery_at' => now(),
-                    'in_transit_at' => now(),
-                ]);
-
-            if ($updated !== 1) {
-                return $this->stale();
-            }
-
-            return $this->freshSuccess($rider, $owned->id, 'Parcel marked out for delivery.');
-        });
+        return response()->json([
+            'success' => false,
+            'status' => 'qr_required',
+            'message' => 'Branch release requires the Rider camera QR custody scan before Out for Delivery.',
+        ], 409);
     }
 
     public function complete(Request $request, int $delivery): JsonResponse
@@ -363,7 +286,7 @@ class MobileRiderDeliveryController extends Controller
 
     private function current(Rider $rider, int $deliveryId, bool $lock = false): Delivery
     {
-        $query = Delivery::with(['order.manualCashlessPayment'])
+        $query = Delivery::with(['order'])
             ->whereKey($deliveryId)
             ->where('rider_id', $rider->id)
             ->where('logistics_partner_id', $rider->logistics_partner_id);
@@ -422,8 +345,9 @@ class MobileRiderDeliveryController extends Controller
             'status' => $delivery->status,
             'status_label' => $delivery->statusLabel(),
             'assignment_type' => $isPickupRider ? 'pickup' : ($isDeliveryRider ? 'delivery' : 'history'),
-            'can_accept_pickup' => $isPickupRider && $delivery->status === Delivery::PICKUP_ASSIGNED,
-            'can_confirm_pickup' => $isPickupRider && $delivery->status === Delivery::PICKUP_ACCEPTED,
+            'can_accept_pickup' => false,
+            // Seller QR scan now accepts an assigned pickup and records collection atomically.
+            'can_confirm_pickup' => $isPickupRider && in_array($delivery->status, [Delivery::PICKUP_ASSIGNED, Delivery::PICKUP_ACCEPTED], true),
             'can_start_delivery' => $isDeliveryRider && $delivery->status === Delivery::DELIVERY_ASSIGNED,
             'can_complete_delivery' => $isDeliveryRider && $delivery->status === Delivery::OUT_FOR_DELIVERY,
             'can_fail_delivery' => $isDeliveryRider && $delivery->status === Delivery::OUT_FOR_DELIVERY,

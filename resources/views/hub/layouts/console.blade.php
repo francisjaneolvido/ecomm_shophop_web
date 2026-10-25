@@ -449,11 +449,11 @@
         </header>
 
         {{-- Session alerts --}}
-        @if (session('success'))
+        @if (session('success') || session('status'))
             <div class="px-3 sm:px-4 lg:px-5 pt-3 shrink-0">
                 <div role="status" class="max-w-[1600px] mx-auto flex items-center gap-3 rounded-xl bg-teal-light border border-teal/20 px-4 py-3">
                     <x-lucide-circle-check class="w-4 h-4 text-teal-dark shrink-0" />
-                    <p class="text-xs font-medium text-teal-dark">{{ session('success') }}</p>
+                    <p class="text-xs font-medium text-teal-dark">{{ session('success') ?? session('status') }}</p>
                 </div>
             </div>
         @endif

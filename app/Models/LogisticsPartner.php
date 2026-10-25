@@ -63,6 +63,22 @@ class LogisticsPartner extends Model
         return $this->hasMany(\App\Models\Logistics\BranchStaff::class, 'logistics_partner_id');
     }
 
+
+    public function fleetVehicles(): HasMany
+    {
+        return $this->hasMany(\App\Models\Logistics\FleetVehicle::class, 'logistics_partner_id');
+    }
+
+    public function linehaulDrivers(): HasMany
+    {
+        return $this->hasMany(\App\Models\Logistics\LinehaulDriver::class, 'logistics_partner_id');
+    }
+
+    public function linehaulTrips(): HasMany
+    {
+        return $this->hasMany(\App\Models\Logistics\LinehaulTrip::class, 'logistics_partner_id');
+    }
+
     public function mainSortingCenter(): HasOne
     {
         return $this->hasOne(\App\Models\Logistics\SortingCenter::class, 'logistics_partner_id')

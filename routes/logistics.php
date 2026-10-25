@@ -15,6 +15,7 @@ use App\Http\Controllers\Logistics\EarningsController;
 use App\Http\Controllers\Logistics\SortingCenterController;
 use App\Http\Controllers\Logistics\BranchStaffController;
 use App\Http\Controllers\Logistics\BranchStaffWorkspaceController;
+use App\Http\Controllers\Logistics\FleetController;
 
 /*
 | All Logistics public pages and private console live under LOGISTICS_DOMAIN.
@@ -70,6 +71,12 @@ Route::domain(config('app.logistics_domain'))
                 ->middleware('throttle:10,1')->name('staff.reset-password');
             Route::post('/staff/{staff}/set-password', [BranchStaffController::class, 'setPassword'])
                 ->middleware('throttle:10,1')->name('staff.set-password');
+
+            Route::get('/fleet', [FleetController::class, 'index'])->name('fleet.index');
+            Route::post('/fleet/vehicles', [FleetController::class, 'storeVehicle'])->name('fleet.vehicles.store');
+            Route::post('/fleet/vehicles/{vehicle}/status', [FleetController::class, 'updateVehicleStatus'])->name('fleet.vehicles.status');
+            Route::post('/fleet/drivers', [FleetController::class, 'storeDriver'])->name('fleet.drivers.store');
+            Route::post('/fleet/drivers/{driver}/toggle', [FleetController::class, 'toggleDriver'])->name('fleet.drivers.toggle');
 
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');

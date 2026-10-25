@@ -160,7 +160,13 @@
 
 @php
     $branchUser = auth()->user();
-    $branchCenter = $center ?? $branchUser?->sortingCenter;
+
+    // Kung walang ipinasa ang controller na $center, hanapin ang branch ng naka-login.
+    $branchCenter = $center
+        ?? ($branchUser
+            ? \App\Models\Logistics\SortingCenter::where('user_id', $branchUser->id)
+                ->where('status', 'active')->whereNull('archived_at')->first()
+            : null);
 
     $branchName  = $branchCenter->name ?? 'Branch';
     $branchCode  = $branchCenter->code ?? 'Sorting center';
@@ -178,29 +184,68 @@
         ? route('branch.logout')
         : (\Illuminate\Support\Facades\Route::has('logistics.logout') ? route('logistics.logout') : '#');
 
+    /*
+     * Station Hub (Branch) modules, ayon sa spec.
+     *  - 'route'   : pangalan ng route. Kapag may ganitong route na, kusang nagiging live ang item.
+     *  - 'pattern' : kung kailan naka-highlight (null = hindi kailanman).
+     *  - 'hash'    : anchor sa loob ng page (opsyonal).
+     *  - 'hold'    : true = patayin muna kahit may route (sira o sample pa ang page).
+     */
     $branchNavigation = [
         [
             'label' => 'Overview',
             'items' => [
-                ['label' => 'Dashboard', 'route' => 'branch.dashboard', 'pattern' => 'branch.dashboard', 'icon' => 'layout-dashboard'],
+                ['label' => 'Dashboard',       'route' => 'branch.dashboard',      'pattern' => 'branch.dashboard', 'icon' => 'layout-dashboard'],
+                // HOLD: sira pa ang ParcelController (maling columns). Alisin ang 'hold' kapag na-fix na.
+                ['label' => 'Parcel Tracking', 'route' => 'branch.parcels.index',  'pattern' => 'branch.parcels*',  'icon' => 'package', 'hold' => true],
             ],
         ],
         [
-            'label' => 'Parcels',
+            'label' => 'First Mile',
             'items' => [
-                ['label' => 'Incoming Transfers', 'route' => 'branch.transfers', 'pattern' => 'branch.transfers*', 'icon' => 'truck'],
-                ['label' => 'Branch Parcels', 'route' => 'branch.parcels', 'pattern' => 'branch.parcels*', 'icon' => 'package'],
-                ['label' => 'Dispatch', 'route' => 'branch.dispatch', 'pattern' => 'branch.dispatch*', 'icon' => 'send'],
+                ['label' => 'Pickup',                  'route' => 'branch.dispatch.index',  'pattern' => 'branch.dispatch*',  'icon' => 'map-pin', 'hash' => 'pickups'],
+                ['label' => 'Inbound',                 'route' => 'branch.transfers.index', 'pattern' => 'branch.transfers*', 'icon' => 'truck'],
+                ['label' => 'Outbound to Province Hub', 'route' => 'branch.outbound.index',  'pattern' => 'branch.outbound*',  'icon' => 'send'],
+            ],
+        ],
+        [
+            'label' => 'Last Mile',
+            'items' => [
+                ['label' => 'Delivery Assignment', 'route' => 'branch.dispatch.index',   'pattern' => null,                  'icon' => 'clipboard-list', 'hash' => 'deliveries'],
+                ['label' => 'Delivery Monitoring', 'route' => 'branch.monitoring.index', 'pattern' => 'branch.monitoring*',  'icon' => 'activity'],
+                ['label' => 'Failed & Returns',    'route' => 'branch.failed.index',     'pattern' => 'branch.failed*',      'icon' => 'rotate-ccw'],
             ],
         ],
         [
             'label' => 'Fleet & Cash',
             'items' => [
-                ['label' => 'Riders', 'route' => 'branch.riders', 'pattern' => 'branch.riders*', 'icon' => 'bike'],
-                ['label' => 'COD Remittance', 'route' => 'branch.cod', 'pattern' => 'branch.cod*', 'icon' => 'wallet'],
+                ['label' => 'Rider Management', 'route' => 'branch.riders.index', 'pattern' => 'branch.riders*', 'icon' => 'bike'],
+                ['label' => 'COD & Remittance', 'route' => 'branch.cod.index',    'pattern' => 'branch.cod*',    'icon' => 'wallet'],
+            ],
+        ],
+        [
+            'label' => 'Insights',
+            'items' => [
+                ['label' => 'Reports & Activity Log', 'route' => 'branch.reports.index',  'pattern' => 'branch.reports*',  'icon' => 'file-text'],
+                ['label' => 'Branch Settings',        'route' => 'branch.settings.index', 'pattern' => 'branch.settings*', 'icon' => 'settings'],
             ],
         ],
     ];
+
+    // Alamin kung live ang bawat item (may route at hindi naka-hold) at buuin ang URL.
+    $branchNavigation = collect($branchNavigation)->map(function ($section) {
+        $section['items'] = collect($section['items'])->map(function ($item) {
+            $item['pattern'] = $item['pattern'] ?? null;
+            $item['live'] = empty($item['hold']) && \Illuminate\Support\Facades\Route::has($item['route']);
+            $item['url'] = $item['live']
+                ? route($item['route']).(empty($item['hash']) ? '' : '#'.$item['hash'])
+                : '#';
+
+            return $item;
+        })->all();
+
+        return $section;
+    })->all();
 @endphp
 
 <body class="branch-console bg-gray-bg text-navy antialiased">
@@ -272,30 +317,42 @@
 
                     <div class="space-y-1">
                         @foreach ($section['items'] as $item)
-                            @php $active = request()->routeIs($item['pattern']); @endphp
+                            @php $active = $item['live'] && ! empty($item['pattern']) && request()->routeIs($item['pattern']); @endphp
 
                             <div class="relative group">
-                                <a href="{{ $routeUrl($item['route']) }}"
-                                   @if($active) aria-current="page" @endif
-                                   class="sidebar-nav-link relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] transition-all duration-150 {{ $active ? 'bg-white/10 text-white font-semibold' : 'text-white/55 hover:text-white hover:bg-white/[0.06]' }}">
+                                @if ($item['live'])
+                                    <a href="{{ $item['url'] }}"
+                                       @if($active) aria-current="page" @endif
+                                       class="sidebar-nav-link relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] transition-all duration-150 {{ $active ? 'bg-white/10 text-white font-semibold' : 'text-white/55 hover:text-white hover:bg-white/[0.06]' }}">
 
-                                    @if ($active)
-                                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-teal"></span>
-                                    @endif
+                                        @if ($active)
+                                            <span class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-teal"></span>
+                                        @endif
 
-                                    <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {{ $active ? 'bg-teal/15 text-teal' : 'text-white/45 group-hover:bg-white/[0.06] group-hover:text-teal' }}">
-                                        <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
-                                    </span>
+                                        <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {{ $active ? 'bg-teal/15 text-teal' : 'text-white/45 group-hover:bg-white/[0.06] group-hover:text-teal' }}">
+                                            <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
+                                        </span>
 
-                                    <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
+                                        <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
 
-                                    @if (!empty($item['badge']))
-                                        <span class="sidebar-expanded-only text-[10px] font-bold bg-coral text-white px-1.5 py-0.5 rounded-full leading-none shrink-0">{{ $item['badge'] }}</span>
-                                    @endif
-                                </a>
+                                        @if (!empty($item['badge']))
+                                            <span class="sidebar-expanded-only text-[10px] font-bold bg-coral text-white px-1.5 py-0.5 rounded-full leading-none shrink-0">{{ $item['badge'] }}</span>
+                                        @endif
+                                    </a>
+                                @else
+                                    {{-- Wala pang page: hindi clickable, may "Soon" label --}}
+                                    <div class="sidebar-nav-link relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] text-white/30 cursor-not-allowed select-none"
+                                         aria-disabled="true">
+                                        <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 text-white/25">
+                                            <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
+                                        </span>
+                                        <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
+                                        <span class="sidebar-expanded-only text-[8px] font-bold uppercase tracking-wider bg-white/10 text-white/45 px-1.5 py-0.5 rounded-full leading-none shrink-0">Soon</span>
+                                    </div>
+                                @endif
 
                                 <div class="sidebar-tooltip pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 z-[80] px-2.5 py-1.5 rounded-lg bg-navy-light text-white border border-white/10 shadow-lg text-[10px] font-medium whitespace-nowrap opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">
-                                    {{ $item['label'] }}
+                                    {{ $item['label'] }}{{ $item['live'] ? '' : ' (Soon)' }}
                                 </div>
                             </div>
                         @endforeach
@@ -401,7 +458,7 @@
     </div>
 </div>
 
-{{-- COMMAND / SEARCH PALETTE --}}
+{{-- COMMAND / SEARCH PALETTE (live pages lang) --}}
 <div id="branchSearchPalette" hidden class="fixed inset-0 z-[90] flex items-start justify-center px-3 pt-[10vh] sm:pt-[14vh]" aria-hidden="true">
     <button id="branchSearchBackdrop" type="button" class="absolute inset-0 bg-navy/50 backdrop-blur-[2px]" aria-label="Close search"></button>
 
@@ -418,7 +475,8 @@
 
             @foreach ($branchNavigation as $section)
                 @foreach ($section['items'] as $item)
-                    <a href="{{ $routeUrl($item['route']) }}" data-branch-command-item
+                    @continue(! $item['live'])
+                    <a href="{{ $item['url'] }}" data-branch-command-item
                        data-search-text="{{ strtolower($item['label'] . ' ' . $section['label']) }}"
                        class="group flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-gray-bg transition">
                         <div class="w-8 h-8 rounded-lg bg-gray-bg text-teal-dark flex items-center justify-center shrink-0">

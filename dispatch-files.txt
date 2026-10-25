@@ -1,0 +1,2687 @@
+﻿
+===== routes/branch.php =====
+
+<?php
+
+// routes/branch.php
+
+use App\Http\Controllers\Branch\DashboardController;
+use App\Http\Controllers\Branch\ParcelController;
+use App\Http\Controllers\Branch\TransferController;
+use Illuminate\Support\Facades\Route;
+
+Route::middleware(['auth', 'approved.role:branch'])->prefix('branch')->name('branch.')->group(function () {
+
+    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    Route::get('transfers', [TransferController::class, 'preview'])->name('transfers.index');
+    Route::post('receive', [TransferController::class, 'scan'])->name('receive');
+
+    Route::get('parcels', [ParcelController::class, 'index'])->name('parcels.index');
+    Route::post('parcels/assign', [ParcelController::class, 'assign'])->name('parcels.assign');
+});
+
+===== routes/logistics.php =====
+
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Logistics\ReturnController;
+
+use App\Http\Controllers\Logistics\AuthController as LogisticsAuthController;
+use App\Http\Controllers\Logistics\GoogleAuthController;
+use App\Http\Controllers\Logistics\RegistrationController as LogisticsRegistrationController;
+use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
+use App\Http\Controllers\Logistics\RiderController;
+use App\Http\Controllers\Logistics\DeliveryController;
+use App\Http\Controllers\Logistics\ReportController;
+use App\Http\Controllers\Logistics\CodSettlementController;
+use App\Http\Controllers\Logistics\EarningsController;
+use App\Http\Controllers\Logistics\SortingCenterController;
+use App\Http\Controllers\Logistics\BranchStaffController;
+use App\Http\Controllers\Logistics\BranchStaffWorkspaceController;
+
+/*
+| All Logistics public pages and private console live under LOGISTICS_DOMAIN.
+| Main marketplace routes are host-scoped in bootstrap/app.php.
+| Keep route names unchanged to preserve existing controller/view redirects.
+*/
+Route::domain(config('app.logistics_domain'))
+    ->name('logistics.')
+    ->group(function () {
+        Route::view('/', 'logistics.landing.index')->name('home');
+
+        Route::get('/apply', [LogisticsRegistrationController::class, 'create'])->name('register');
+        Route::post('/apply', [LogisticsRegistrationController::class, 'store'])->name('register.store');
+        Route::post('/verification/send', [LogisticsRegistrationController::class, 'sendVerificationCode'])
+            ->middleware('throttle:8,1')->name('verification.send');
+        Route::post('/verification/verify', [LogisticsRegistrationController::class, 'verifyVerificationCode'])
+            ->middleware('throttle:20,1')->name('verification.verify');
+        Route::get('/terms', [LogisticsRegistrationController::class, 'terms'])->name('terms');
+
+        Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])
+            ->middleware('throttle:10,1')->name('google.redirect');
+        Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])
+            ->middleware('throttle:20,1')->name('google.callback');
+
+        Route::get('/sign-in', [LogisticsAuthController::class, 'showLogin'])->name('login');
+        Route::post('/sign-in', [LogisticsAuthController::class, 'login'])
+            ->middleware('throttle:10,1')->name('login.submit');
+        Route::post('/sign-out', [LogisticsAuthController::class, 'logout'])->name('logout');
+
+        // Branch operators use a separate session guard: no access to company management routes.
+        Route::middleware('auth:logistics_staff')->group(function () {
+            Route::get('/staff/workspace', [BranchStaffWorkspaceController::class, 'index'])->name('staff.workspace');
+            Route::post('/staff/password', [BranchStaffWorkspaceController::class, 'changePassword'])
+                ->middleware('throttle:6,1')->name('staff.password');
+        });
+
+        Route::middleware(['auth', 'approved.role:logistics'])->group(function () {
+            Route::get('/dashboard', [LogisticsDashboardController::class, 'index'])->name('dashboard');
+
+            Route::get('/sorting-centers', [SortingCenterController::class, 'index'])->name('sorting-centers.index');
+            Route::get('/sorting-centers/archived', [SortingCenterController::class, 'archived'])->name('sorting-centers.archived');
+            Route::get('/sorting-centers/create', [SortingCenterController::class, 'create'])->name('sorting-centers.create');
+            Route::get('/sorting-centers/{center}', [SortingCenterController::class, 'show'])->name('sorting-centers.show');
+            Route::get('/sorting-centers/{center}/edit', [SortingCenterController::class, 'edit'])->name('sorting-centers.edit');
+            Route::post('/sorting-centers', [SortingCenterController::class, 'store'])->name('sorting-centers.store');
+            Route::post('/sorting-centers/{center}/update', [SortingCenterController::class, 'update'])->name('sorting-centers.update');
+            Route::post('/sorting-centers/{center}/toggle', [SortingCenterController::class, 'toggle'])->name('sorting-centers.toggle');
+            Route::post('/sorting-centers/{center}/archive', [SortingCenterController::class, 'archive'])->name('sorting-centers.archive');
+            Route::post('/sorting-centers/{center}/restore', [SortingCenterController::class, 'restore'])->name('sorting-centers.restore');
+            Route::post('/sorting-centers/{center}/staff', [BranchStaffController::class, 'store'])->name('staff.store');
+            Route::post('/staff/{staff}/toggle', [BranchStaffController::class, 'toggle'])->name('staff.toggle');
+            Route::post('/staff/{staff}/reset-password', [BranchStaffController::class, 'resetPassword'])
+                ->middleware('throttle:10,1')->name('staff.reset-password');
+            Route::post('/staff/{staff}/set-password', [BranchStaffController::class, 'setPassword'])
+                ->middleware('throttle:10,1')->name('staff.set-password');
+
+            Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
+            Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
+            Route::post('/riders/{rider}/approve', [RiderController::class, 'approve'])->name('riders.approve');
+            Route::post('/riders/{rider}/reject', [RiderController::class, 'reject'])->name('riders.reject');
+            Route::get('/riders/{rider}/documents/{slot}', [RiderController::class, 'document'])->name('riders.documents.show');
+            Route::post('/riders/{rider}/credentials', [RiderController::class, 'provision'])->name('riders.provision');
+            Route::post('/riders/{rider}/area', [RiderController::class, 'updateArea'])->name('riders.area');
+            Route::post('/riders/{rider}/suspend', [RiderController::class, 'suspend'])->name('riders.suspend');
+            Route::post('/riders/{rider}/activate', [RiderController::class, 'activate'])->name('riders.activate');
+
+            Route::get('/returns', [ReturnController::class, 'index'])->name('returns.index');
+            Route::post('/returns/deliveries/{delivery}', [ReturnController::class, 'initiate'])->name('returns.initiate');
+            Route::post('/returns/{case}/receive', [ReturnController::class, 'receive'])->name('returns.receive');
+            Route::post('/returns/{case}/assign', [ReturnController::class, 'assign'])->name('returns.assign');
+            Route::get('/deliveries', [DeliveryController::class, 'board'])->name('deliveries.board');
+            Route::post('/deliveries/{order}/assign', [DeliveryController::class, 'assign'])->name('deliveries.assign');
+            Route::post('/deliveries/{delivery}/receive', [DeliveryController::class, 'receive'])->name('deliveries.receive');
+            Route::post('/deliveries/{delivery}/sort', [DeliveryController::class, 'sort'])->name('deliveries.sort');
+            Route::post('/deliveries/{delivery}/assign-delivery', [DeliveryController::class, 'assignDelivery'])->name('deliveries.assign-delivery');
+            Route::post('/deliveries/{delivery}/transfer', [DeliveryController::class, 'dispatchTransfer'])->name('deliveries.transfer');
+            Route::post('/transfers/{transfer}/receive', [DeliveryController::class, 'receiveTransfer'])->name('transfers.receive');
+            Route::get('/earnings', [EarningsController::class, 'index'])->name('earnings');
+            Route::post('/earnings/{entry}/rider-paid', [EarningsController::class, 'payRider'])->name('earnings.rider-paid');
+            Route::get('/settlements', [CodSettlementController::class, 'index'])->name('settlements.index');
+            Route::post('/settlements/{delivery}/reconcile', [CodSettlementController::class, 'reconcile'])->name('settlements.reconcile');
+            Route::post('/settlements/{delivery}/remit-admin', [CodSettlementController::class, 'remitToAdmin'])->name('settlements.remit-admin');
+
+            Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+            Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+            Route::get('/reports/riders/{rider}/export/pdf', [ReportController::class, 'exportRiderPdf'])->name('reports.riders.export.pdf');
+        });
+    });
+
+// Province Hub portal lives in its own file.
+require __DIR__ . '/hub.php';
+
+===== app/Http/Controllers/branch/DashboardController.php =====
+
+<?php
+
+namespace App\Http\Controllers\Branch;
+
+use App\Http\Controllers\Controller;
+use App\Models\Logistics\Delivery;
+use App\Models\Logistics\ParcelTransfer;
+use App\Models\Logistics\PickupRequest;
+use App\Models\Logistics\SortingCenter;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class DashboardController extends Controller
+{
+    public function index(Request $request): View
+    {
+        $center = SortingCenter::where('user_id', $request->user()->id)
+            ->where('status', 'active')->whereNull('archived_at')->first();
+        abort_unless($center, 403, 'Walang aktibong branch na naka-link sa account mo.');
+
+        // Papunta sa branch: (a) pickup na dala ng rider, (b) transfers na umalis na
+        $pickedUp = Delivery::with('order.seller')
+            ->where('origin_sorting_center_id', $center->id)
+            ->where('status', Delivery::PICKED_UP);
+
+        $transfersIn = ParcelTransfer::with(['delivery', 'fromCenter'])
+            ->where('to_sorting_center_id', $center->id)
+            ->where('status', ParcelTransfer::IN_TRANSIT)
+            ->where(fn ($q) => $q->whereNull('transit_rider_id')->orWhereNotNull('departed_at'));
+
+        $awaiting = (clone $pickedUp)->latest('picked_up_at')->limit(10)->get()->map(fn ($d) => [
+            'tracking' => $d->tracking_code,
+            'label'    => 'Pickup mula sa seller',
+            'from'     => $d->order?->seller?->business_name ?? 'Seller',
+            'when'     => $d->picked_up_at?->diffForHumans() ?? 'â€”',
+        ])->concat(
+            (clone $transfersIn)->latest('dispatched_at')->limit(10)->get()->map(fn ($t) => [
+                'tracking' => $t->delivery?->tracking_code,
+                'label'    => 'Transfer',
+                'from'     => $t->fromCenter?->name ?? 'Hub',
+                'when'     => $t->dispatched_at?->diffForHumans() ?? 'â€”',
+            ])
+        )->filter(fn ($a) => $a['tracking'])->values();
+
+        $pendingPickups = PickupRequest::where('origin_sorting_center_id', $center->id)
+            ->where('status', PickupRequest::REQUESTED)->count();
+
+        $atBranch = Delivery::where('current_sorting_center_id', $center->id)
+            ->whereIn('status', [Delivery::AT_SORTING_CENTER, Delivery::SORTED])->count();
+
+        $toAssignQuery = Delivery::with('order')
+            ->where('destination_sorting_center_id', $center->id)
+            ->where('current_sorting_center_id', $center->id)
+            ->whereIn('status', [Delivery::SORTED, Delivery::DELIVERY_FAILED]);
+
+        $outForDelivery = Delivery::where('destination_sorting_center_id', $center->id)
+            ->whereIn('status', [Delivery::DELIVERY_ASSIGNED, Delivery::OUT_FOR_DELIVERY])->count();
+
+        $deliveredToday = Delivery::where('destination_sorting_center_id', $center->id)
+            ->where('status', Delivery::DELIVERED)->whereDate('delivered_at', today())->count();
+
+        $failed = Delivery::where('destination_sorting_center_id', $center->id)
+            ->where('status', Delivery::DELIVERY_FAILED)->count();
+
+        $stats = [
+            'pickups'          => $pendingPickups,
+            'to_receive'       => (clone $pickedUp)->count() + (clone $transfersIn)->count(),
+            'at_branch'        => $atBranch,
+            'to_assign'        => (clone $toAssignQuery)->count(),
+            'out_for_delivery' => $outForDelivery,
+            'delivered_today'  => $deliveredToday,
+            'failed'           => $failed,
+            'cod_with_riders'  => 0, // saka na kapag ginawa na ang rider/COD part
+        ];
+
+        $toAssign = $toAssignQuery->latest('updated_at')->limit(5)->get()->map(fn ($d) => [
+            'tracking' => $d->tracking_code,
+            'receiver' => $d->order?->delivery_name,
+            'barangay' => $d->order?->delivery_barangay_name ?: $d->order?->delivery_address,
+            'cod'      => $d->order && $d->order->payment_method === 'cod' ? (float) $d->order->total_amount : null,
+        ]);
+
+        $riders = []; // saka na
+
+        $alerts = [];
+        if ($failed > 0) {
+            $alerts[] = ['level' => 'warning', 'title' => "{$failed} parcel(s) failed delivery", 'detail' => 'Kailangan ng retry o return.'];
+        }
+        if ($pendingPickups > 0) {
+            $alerts[] = ['level' => 'info', 'title' => "{$pendingPickups} pickup request(s) naghihintay ng rider", 'detail' => 'I-assign sa Logistics board.'];
+        }
+
+        return view('branch.dashboard.index', compact('center', 'stats', 'awaiting', 'toAssign', 'riders', 'alerts'));
+    }
+}
+
+===== app/Http/Controllers/branch/ParcelController.php =====
+
+<?php
+
+// app/Http/Controllers/branch/ParcelController.php
+
+namespace App\Http\Controllers\branch;
+
+use App\Http\Controllers\Controller;
+use App\Models\Logistics\Delivery;
+use App\Models\Logistics\Rider;
+use App\Models\Logistics\SortingCenter;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
+
+class ParcelController extends Controller
+{
+    /**
+     * Tab key sa view => status values sa deliveries table.
+     * ASSUMPTION: i-adjust sa totoong status values ng Delivery model mo.
+     */
+    private const STATUS_MAP = [
+        'at_branch'        => ['at_branch', 'sorted'],
+        'out_for_delivery' => ['out_for_delivery'],
+        'delivered'        => ['delivered'],
+        'failed'           => ['failed', 'failed_attempt'],
+        'returning'        => ['returning', 'return_to_sender'],
+    ];
+
+    /** Mga status na pwedeng i-assign sa rider. */
+    private const ASSIGNABLE = ['at_branch', 'sorted', 'failed', 'failed_attempt'];
+
+    public function index(Request $request): View
+    {
+        $center = $this->currentCenter($request);
+
+        $status = $request->query('status', 'all');
+        if ($status !== 'all' && ! array_key_exists($status, self::STATUS_MAP)) {
+            $status = 'all';
+        }
+        $search = trim((string) $request->query('q', ''));
+
+        $base = Delivery::query()->where('sorting_center_id', $center->id);
+
+        // Stats (isang query, hindi apektado ng filter/search)
+        $rows = (clone $base)->select('status', DB::raw('COUNT(*) as total'))
+            ->groupBy('status')->pluck('total', 'status');
+
+        $countFor = fn (string $key) => collect(self::STATUS_MAP[$key])
+            ->sum(fn ($s) => (int) ($rows[$s] ?? 0));
+
+        $counts = [
+            'at_branch'        => $countFor('at_branch'),
+            'out_for_delivery' => $countFor('out_for_delivery'),
+            'failed'           => $countFor('failed'),
+        ];
+
+        $parcels = $base
+            ->with(['order', 'rider'])
+            ->when($status !== 'all', fn ($q) => $q->whereIn('status', self::STATUS_MAP[$status]))
+            ->when($search !== '', function ($q) use ($search) {
+                $like = '%'.str_replace(['%', '_'], ['\%', '\_'], $search).'%';
+                $q->where(function ($w) use ($like) {
+                    $w->where('tracking_number', 'like', $like)
+                      ->orWhere('receiver_name', 'like', $like)
+                      ->orWhereHas('order', fn ($o) => $o->where('order_number', 'like', $like));
+                });
+            })
+            ->latest('updated_at')
+            ->paginate(20)
+            ->withQueryString()
+            ->through(fn (Delivery $d) => $this->present($d));
+
+        $riders = Rider::query()
+            ->where('sorting_center_id', $center->id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('branch.parcels.index', [
+            'center'       => $center,
+            'parcels'      => $parcels,
+            'counts'       => $counts,
+            'riders'       => $riders,
+            'activeStatus' => $status,
+            'search'       => $search,
+        ]);
+    }
+
+    public function assign(Request $request): RedirectResponse
+    {
+        $center = $this->currentCenter($request);
+
+        $data = $request->validate([
+            'parcel_ids'   => ['required', 'array', 'min:1', 'max:100'],
+            'parcel_ids.*' => ['string', 'max:64'],
+            'rider_id'     => ['required', 'integer'],
+        ], [
+            'parcel_ids.required' => 'Pumili muna ng kahit isang parcel.',
+            'rider_id.required'   => 'Pumili ng rider.',
+        ]);
+
+        // Dapat rider ng branch na ito at active
+        $rider = Rider::query()
+            ->where('sorting_center_id', $center->id)
+            ->where('status', 'active')
+            ->find($data['rider_id']);
+
+        if (! $rider) {
+            return back()->with('error', 'Hindi valid ang rider na napili.');
+        }
+
+        $assigned = DB::transaction(function () use ($center, $rider, $data) {
+            $deliveries = Delivery::query()
+                ->where('sorting_center_id', $center->id)
+                ->whereIn('tracking_number', $data['parcel_ids'])
+                ->whereIn('status', self::ASSIGNABLE)
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($deliveries as $delivery) {
+                $delivery->update([
+                    'rider_id' => $rider->id,
+                    'status'   => 'out_for_delivery',
+                ]);
+            }
+
+            return $deliveries->count();
+        });
+
+        if ($assigned === 0) {
+            return back()->with('error', 'Walang na-assign. Baka na-update na ang mga parcel.');
+        }
+
+        $skipped = count($data['parcel_ids']) - $assigned;
+        $message = "{$assigned} parcel(s) na-assign kay {$rider->name}.";
+        if ($skipped > 0) {
+            $message .= " {$skipped} ang nilaktawan dahil hindi na pwedeng i-assign.";
+        }
+
+        return back()->with('success', $message);
+    }
+
+    /** Hugis ng data na hinihingi ng branch.parcels.index view. */
+    private function present(Delivery $d): array
+    {
+        $viewStatus = collect(self::STATUS_MAP)
+            ->search(fn ($values) => in_array($d->status, $values, true)) ?: 'at_branch';
+
+        return [
+            'tracking' => $d->tracking_number,
+            'order'    => $d->order->order_number ?? 'â€”',
+            'receiver' => $d->receiver_name,
+            'barangay' => $d->delivery_address,
+            'cod'      => (float) ($d->cod_amount ?? 0),
+            'status'   => $viewStatus,
+            'rider'    => $d->rider->name ?? null,
+            'updated'  => optional($d->updated_at)->format('M d, g:i A'),
+            'note'     => $d->failure_note ?? null,
+        ];
+    }
+
+    /**
+     * ASSUMPTION: paano malaman ang branch ng naka-login.
+     * Palitan ayon sa auth setup mo (guard, relation, o session).
+     */
+    private function currentCenter(Request $request): SortingCenter
+    {
+        $user = $request->user();
+
+        $center = SortingCenter::query()
+            ->where('id', $user->sorting_center_id ?? null)
+            ->first();
+
+        abort_unless($center, 403, 'Walang naka-link na branch sa account mo.');
+
+        return $center;
+    }
+}
+
+===== app/Http/Controllers/branch/TransferController.php =====
+
+<?php
+
+namespace App\Http\Controllers\Branch;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+
+class TransferController extends Controller
+{
+    public function index(Request $request)
+    {
+        $center = $request->user()->sortingCenter;
+        $status = $request->query('status', 'in_transit');
+
+        // TODO: palitan ng totoong query sa ParcelTransfer, naka-scope sa $center->id.
+        // Sample data pa lang ito.
+        return view('branch.transfers.index', $this->sample($status) + [
+            'center' => $center,
+            'status' => $status,
+        ]);
+    }
+
+    public function receive(Request $request, int $transfer)
+    {
+        $data = $request->validate([
+            'received_count' => ['required', 'integer', 'min:0'],
+            'parcel_ids'     => ['nullable', 'array'],
+            'parcel_ids.*'   => ['string', 'max:100'],
+            'note'           => ['nullable', 'string', 'max:500'],
+        ]);
+
+        // TODO (kapag nakita ko na ang ParcelTransfer model/migration):
+        // 1. Hanapin ang transfer na sa branch na ito lang ($request->user()->sortingCenter).
+        // 2. Siguraduhing in_transit pa ang status nito.
+        // 3. Kung received_count != expected -> status 'discrepancy' at kailangan ang 'note'.
+        // 4. Kung tugma -> status 'received', i-update ang parcels sa 'at_branch'.
+        // 5. Magtala ng parcel_events (sino, kailan, ilan).
+
+        return back()->with('status', 'Transfer received (sample).');
+    }
+
+    /**
+     * Para sa /preview/branch/transfers (walang login).
+     */
+    public function preview(Request $request)
+    {
+        $status = $request->query('status', 'in_transit');
+
+        return view('branch.transfers.index', $this->sample($status) + ['status' => $status]);
+    }
+
+    private function sample(string $status): array
+    {
+        $all = [
+            [
+                'id' => 1, 'code' => 'TR-0012', 'from' => 'Main hub', 'parcels' => 3,
+                'sent_at' => '2 hrs ago', 'status' => 'in_transit',
+                'items' => [
+                    ['tracking' => 'SH-100234', 'receiver' => 'Juan Dela Cruz', 'barangay' => 'Poblacion', 'cod' => 450],
+                    ['tracking' => 'SH-100235', 'receiver' => 'Maria Santos', 'barangay' => 'San Pablo Norte', 'cod' => null],
+                    ['tracking' => 'SH-100236', 'receiver' => 'Pedro Reyes', 'barangay' => 'Santo Angel', 'cod' => 1200],
+                ],
+            ],
+            [
+                'id' => 2, 'code' => 'TR-0013', 'from' => 'Main hub', 'parcels' => 8,
+                'sent_at' => '30 mins ago', 'status' => 'in_transit', 'items' => [],
+            ],
+            [
+                'id' => 3, 'code' => 'TR-0011', 'from' => 'Main hub', 'parcels' => 20,
+                'sent_at' => 'Yesterday', 'status' => 'received',
+                'received_count' => 20, 'received_at' => 'Today, 8:15 AM',
+            ],
+            [
+                'id' => 4, 'code' => 'TR-0010', 'from' => 'Main hub', 'parcels' => 15,
+                'sent_at' => '2 days ago', 'status' => 'discrepancy',
+                'received_count' => 13, 'received_at' => 'Yesterday, 4:40 PM',
+                'note' => '2 parcels ang hindi dumating, naka-report na sa main hub.',
+            ],
+        ];
+
+        $list = $status === 'all'
+            ? $all
+            : array_values(array_filter($all, fn ($t) => $t['status'] === $status));
+
+        return [
+            'transfers' => $list,
+            'counts' => ['in_transit' => 2, 'received_today' => 1, 'discrepancy' => 1],
+        ];
+    }
+}
+
+===== app/Http/Controllers/Logistics/DeliveryController.php =====
+
+<?php
+
+namespace App\Http\Controllers\Logistics;
+
+use App\Http\Controllers\Controller;
+use App\Models\Buyer\Order\Order;
+use App\Models\Logistics\Delivery;
+use App\Models\Logistics\Rider;
+use App\Models\Logistics\ParcelTransfer;
+use App\Models\Logistics\PickupRequest;
+use App\Models\Logistics\SortingCenter;
+use App\Models\LogisticsCoverageArea;
+use App\Models\LogisticsPartner;
+use App\Services\ParcelScanService;
+use App\Services\PhilippineDeliveryCoverage;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\View\View;
+
+class DeliveryController extends Controller
+{
+    public function board(Request $request): View
+    {
+        $partner = $this->partner($request);
+        $ready = self::readyFor($partner);
+        $deliveries = Delivery::with([
+            'order.seller', 'order.items.product', 'rider', 'pickupRider', 'deliveryRider',
+            'deliveredRider', 'destinationArea.sortingCenter',
+            'originSortingCenter', 'currentSortingCenter', 'destinationSortingCenter',
+            'transfers.fromCenter', 'transfers.toCenter', 'failureReports.rider',
+        ])->where('logistics_partner_id', $partner->id)->latest()->get();
+
+        $riders = Rider::with(['coverageArea.sortingCenter', 'sortingCenter'])
+            ->where('logistics_partner_id', $partner->id)
+            ->where('status', 'active')
+            ->whereNotNull('email')->whereNotNull('password')
+            ->orderBy('name')->get();
+        $coverageAreas = $partner->coverageAreas()->with('sortingCenter')->orderBy('area_name')->get();
+        $sortingCenters = $partner->sortingCenters()->where('status', 'active')->orderByDesc('is_main')->orderBy('name')->get();
+
+        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'sortingCenters'));
+    }
+
+    /** Assign the rider who will collect the parcel from the Seller and bring it to the sorting center. */
+    public function assign(Request $request, int $order): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $data = $request->validate(['rider_id' => ['required', 'integer']]);
+        $rider = $this->activeRider($partner, (int) $data['rider_id']);
+
+        try {
+            return DB::transaction(function () use ($partner, $rider, $order) {
+                $ready = Order::with('pickupRequest')->whereKey($order)->lockForUpdate()->firstOrFail();
+                $pickup = PickupRequest::where('order_id', $ready->id)->lockForUpdate()->first();
+                if ($ready->status !== Order::STATUS_READY_FOR_PICKUP || ! $ready->isPaymentEligible()
+                    || ! $pickup || (int) $pickup->logistics_partner_id !== (int) $partner->id
+                    || $pickup->status !== PickupRequest::REQUESTED
+                    || Delivery::where('order_id', $order)->exists()
+                    || ! $this->riderStillActive($rider, $partner)) {
+                    return $this->stale();
+                }
+
+                $originCenterId = $pickup->origin_sorting_center_id
+                    ?: $rider->sorting_center_id
+                    ?: $partner->mainSortingCenter()->value('id')
+                    ?: $partner->sortingCenters()->where('status', 'active')->value('id');
+
+                if ($originCenterId && $rider->sorting_center_id && (int) $rider->sorting_center_id !== (int) $originCenterId) {
+                    throw ValidationException::withMessages([
+                        'rider_id' => 'Choose a pickup Rider assigned to the requested origin Sorting Center.',
+                    ]);
+                }
+
+                Delivery::create([
+                    'order_id' => $ready->id,
+                    'tracking_code' => $ready->tracking_code ?: $this->trackingCode($ready),
+                    'logistics_partner_id' => $partner->id,
+                    'origin_sorting_center_id' => $originCenterId,
+                    'rider_id' => $rider->id,
+                    'status' => Delivery::PICKUP_ASSIGNED,
+                    'assigned_at' => now(),
+                ]);
+
+                $pickup->update([
+                    'status' => PickupRequest::ASSIGNED,
+                    'origin_sorting_center_id' => $originCenterId,
+                    'assigned_at' => now(),
+                ]);
+
+                return redirect()->route('logistics.deliveries.board')
+                    ->with('status', 'Pickup Rider assigned.');
+            });
+        } catch (QueryException $exception) {
+            if (Delivery::where('order_id', $order)->exists()) {
+                return $this->stale();
+            }
+            throw $exception;
+        }
+    }
+
+    /** Sorting-center scan/receipt after the pickup rider physically hands over the parcel. */
+    public function receive(Request $request, int $delivery, ParcelScanService $scanner): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:60']]);
+        $parcel = Delivery::where('logistics_partner_id', $partner->id)->findOrFail($delivery);
+        if (! hash_equals((string) $parcel->tracking_code, trim($data['tracking_code']))) {
+            throw ValidationException::withMessages(['tracking_code' => 'Tracking code does not match the selected delivery.']);
+        }
+        $centerId = (int) $parcel->origin_sorting_center_id;
+        abort_unless($centerId, 422, 'Origin branch must be configured first.');
+        $scanner->receive((int) $partner->id, $centerId, (int) $request->user()->id, $data['tracking_code']);
+        return back()->with('status', 'Pickup parcel received and recorded at origin branch.');
+    }
+
+    /** Record the destination area selected after reading the delivery address. */
+    public function sort(Request $request, int $delivery): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $data = $request->validate(['destination_area_id' => ['required', 'integer']]);
+        $area = LogisticsCoverageArea::where('logistics_partner_id', $partner->id)
+            ->findOrFail($data['destination_area_id']);
+
+        return DB::transaction(function () use ($partner, $delivery, $area) {
+            $owned = Delivery::with('order')->where('logistics_partner_id', $partner->id)
+                ->whereKey($delivery)->lockForUpdate()->firstOrFail();
+
+            if ($owned->status !== Delivery::AT_SORTING_CENTER || $owned->order?->status !== Order::STATUS_TO_RECEIVE) {
+                return $this->stale();
+            }
+
+            // The selected area must actually cover this order's recorded destination.
+            if (! $this->areaCoversOrder($area, $owned->order)) {
+                throw ValidationException::withMessages([
+                    'destination_area_id' => 'The selected area does not cover the recorded delivery address.',
+                ]);
+            }
+
+            $destinationCenterId = $area->sorting_center_id
+                ?: $partner->mainSortingCenter()->value('id');
+
+            $owned->update([
+                'destination_area_id' => $area->id,
+                'destination_sorting_center_id' => $destinationCenterId,
+                'status' => Delivery::SORTED,
+                'sorted_at' => now(),
+            ]);
+
+            return back()->with('status', 'Parcel sorted by destination area.');
+        });
+    }
+
+    /** Assign the rider responsible for final delivery after sorting, or after a failed attempt. */
+    public function assignDelivery(Request $request, int $delivery): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $data = $request->validate(['rider_id' => ['required', 'integer']]);
+        $rider = $this->activeRider($partner, (int) $data['rider_id']);
+
+        return DB::transaction(function () use ($partner, $delivery, $rider) {
+            $owned = Delivery::with(['order', 'destinationArea', 'transfers'])
+                ->where('logistics_partner_id', $partner->id)
+                ->whereKey($delivery)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($owned->status, [Delivery::SORTED, Delivery::DELIVERY_FAILED], true)
+                || $owned->order?->status !== Order::STATUS_TO_RECEIVE
+                || $owned->returnCase()->exists()
+                || ! $owned->destination_area_id || ! $this->riderStillActive($rider, $partner)) {
+                return $this->stale();
+            }
+
+            if ((int) $rider->coverage_area_id !== (int) $owned->destination_area_id) {
+                throw ValidationException::withMessages([
+                    'rider_id' => 'Choose an active Rider assigned to this parcel\'s destination area.',
+                ]);
+            }
+
+            if ($owned->destination_sorting_center_id
+                && (int) $owned->current_sorting_center_id !== (int) $owned->destination_sorting_center_id) {
+                throw ValidationException::withMessages([
+                    'rider_id' => 'Receive the parcel at its destination Sorting Center before assigning the final-delivery Rider.',
+                ]);
+            }
+
+            if ($owned->destination_sorting_center_id
+                && (int) $rider->sorting_center_id !== (int) $owned->destination_sorting_center_id) {
+                throw ValidationException::withMessages([
+                    'rider_id' => 'Choose a Rider assigned to the destination Sorting Center.',
+                ]);
+            }
+
+            if ($owned->transfers->contains(fn ($transfer) => $transfer->status === ParcelTransfer::IN_TRANSIT)) {
+                throw ValidationException::withMessages([
+                    'rider_id' => 'This parcel is still in transit between Sorting Centers.',
+                ]);
+            }
+
+            $owned->update([
+                'rider_id' => $rider->id,
+                'delivery_rider_id' => $rider->id,
+                'status' => Delivery::DELIVERY_ASSIGNED,
+                'delivery_assigned_at' => now(),
+                'delivery_attempts' => $owned->delivery_attempts + 1,
+            ]);
+
+            return back()->with('status', 'Delivery Rider assigned for the destination area.');
+        });
+    }
+
+    /** Dispatch a sorted parcel from its current center to the branch that owns the destination area. */
+    public function dispatchTransfer(Request $request, int $delivery): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $data = $request->validate([
+            'to_sorting_center_id' => ['required', 'integer'],
+            'transit_rider_id' => ['nullable', 'integer'],
+        ]);
+
+        return DB::transaction(function () use ($partner, $delivery, $data) {
+            $owned = Delivery::with(['order', 'transfers'])
+                ->where('logistics_partner_id', $partner->id)
+                ->whereKey($delivery)->lockForUpdate()->firstOrFail();
+
+            if ($owned->status !== Delivery::SORTED
+                || ! $owned->current_sorting_center_id
+                || ! $owned->destination_sorting_center_id
+                || (int) $owned->current_sorting_center_id === (int) $owned->destination_sorting_center_id) {
+                return $this->stale();
+            }
+
+            if ($owned->transfers->contains(fn ($transfer) => $transfer->status === ParcelTransfer::IN_TRANSIT)) {
+                return back()->withErrors(['delivery' => 'This parcel already has an active center transfer.']);
+            }
+
+            $from = SortingCenter::where('logistics_partner_id', $partner->id)->findOrFail($owned->current_sorting_center_id);
+            $to = SortingCenter::where('logistics_partner_id', $partner->id)
+                ->where('status', 'active')
+                ->findOrFail((int) $data['to_sorting_center_id']);
+
+            if ((int) $from->id === (int) $to->id) {
+                throw ValidationException::withMessages([
+                    'to_sorting_center_id' => 'Choose a different next Sorting Center.',
+                ]);
+            }
+
+            $transitRider = null;
+            if (! empty($data['transit_rider_id'])) {
+                $transitRider = $this->activeRider($partner, (int) $data['transit_rider_id']);
+                if ((int) $transitRider->sorting_center_id !== (int) $from->id) {
+                    throw ValidationException::withMessages([
+                        'transit_rider_id' => 'Transit Rider must belong to the dispatching branch.',
+                    ]);
+                }
+            }
+
+            ParcelTransfer::create([
+                'delivery_id' => $owned->id,
+                'from_sorting_center_id' => $from->id,
+                'transit_rider_id' => $transitRider?->id,
+                'to_sorting_center_id' => $to->id,
+                'status' => ParcelTransfer::IN_TRANSIT,
+                'dispatched_at' => now(),
+            ]);
+
+            return back()->with('status', 'Parcel dispatched to '.$to->name.'.');
+        });
+    }
+
+    /** Destination branch scan that closes the active hub-to-hub transfer. */
+    public function receiveTransfer(Request $request, int $transfer, ParcelScanService $scanner): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $data = $request->validate(['tracking_code' => ['required', 'string', 'max:60']]);
+        $parcelTransfer = ParcelTransfer::with('delivery')->findOrFail($transfer);
+        abort_unless((int) $parcelTransfer->delivery?->logistics_partner_id === (int) $partner->id, 404);
+        abort_unless($parcelTransfer->status === ParcelTransfer::IN_TRANSIT, 422, 'Transfer is not in transit.');
+        if (! hash_equals((string) $parcelTransfer->delivery->tracking_code, trim($data['tracking_code']))) {
+            throw ValidationException::withMessages(['tracking_code' => 'Tracking code does not match this transfer.']);
+        }
+        $scanner->receive((int) $partner->id, (int) $parcelTransfer->to_sorting_center_id,
+            (int) $request->user()->id, $data['tracking_code']);
+        return back()->with('status', 'Transfer received and recorded at destination branch.');
+    }
+
+    public static function readyFor(LogisticsPartner $partner): Collection
+    {
+        return Order::with(['seller', 'items.product', 'pickupRequest.originSortingCenter'])
+            ->where('status', Order::STATUS_READY_FOR_PICKUP)
+            ->paymentEligible()
+            ->whereHas('pickupRequest', function ($query) use ($partner) {
+                $query->where('logistics_partner_id', $partner->id)
+                    ->where('status', PickupRequest::REQUESTED);
+            })
+            ->whereNotIn('id', Delivery::select('order_id'))
+            ->latest()->get();
+    }
+
+    private function areaCoversOrder(LogisticsCoverageArea $area, Order $order): bool
+    {
+        $coverage = app(PhilippineDeliveryCoverage::class);
+        $partner = LogisticsPartner::findOrFail($area->logistics_partner_id);
+        return $coverage->coversOrder($area, $order)
+            && $coverage->availableForPartner($area, $partner);
+    }
+
+    private function activeRider(LogisticsPartner $partner, int $riderId): Rider
+    {
+        return Rider::where('logistics_partner_id', $partner->id)
+            ->where('status', 'active')->whereNotNull('email')->whereNotNull('password')
+            ->findOrFail($riderId);
+    }
+
+    private function riderStillActive(Rider $rider, LogisticsPartner $partner): bool
+    {
+        return Rider::whereKey($rider->id)->where('logistics_partner_id', $partner->id)
+            ->where('status', 'active')->whereNotNull('email')->whereNotNull('password')->exists();
+    }
+
+    private function trackingCode(Order $order): string
+    {
+        $date = ($order->created_at ?? now())->format('Ymd');
+        return 'SHP-'.$date.'-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+    }
+
+    private function partner(Request $request): LogisticsPartner
+    {
+        return LogisticsPartner::with('coverageAreas')->where('user_id', $request->user()->id)->first()
+            ?? abort(403, 'Logistics profile unavailable.');
+    }
+
+    private function stale(): RedirectResponse
+    {
+        return redirect()->route('logistics.deliveries.board')
+            ->withErrors(['delivery' => 'This delivery changed or is not eligible. Refresh and review it.']);
+    }
+}
+
+
+===== app/Models/Logistics/PickupRequest.php =====
+
+<?php
+
+namespace App\Models\Logistics;
+
+use App\Models\Buyer\Order\Order;
+use App\Models\LogisticsPartner;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class PickupRequest extends Model
+{
+    public const REQUESTED = 'requested';
+    public const ASSIGNED = 'assigned';
+    public const PICKED_UP = 'picked_up';
+    public const RECEIVED = 'received';
+
+    protected $fillable = [
+        'order_id',
+        'logistics_partner_id',
+        'origin_sorting_center_id',
+        'status',
+        'origin_province_code',
+        'origin_province_name',
+        'origin_municipality_code',
+        'origin_municipality_name',
+        'origin_barangay_code',
+        'origin_barangay_name',
+        'origin_street',
+        'requested_at',
+        'assigned_at',
+        'picked_up_at',
+        'received_at',
+    ];
+
+    protected $casts = [
+        'requested_at' => 'datetime',
+        'assigned_at' => 'datetime',
+        'picked_up_at' => 'datetime',
+        'received_at' => 'datetime',
+    ];
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    public function partner(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsPartner::class, 'logistics_partner_id');
+    }
+
+    public function originSortingCenter(): BelongsTo
+    {
+        return $this->belongsTo(SortingCenter::class, 'origin_sorting_center_id');
+    }
+
+    public function originAddressLabel(): string
+    {
+        return collect([
+            $this->origin_street,
+            $this->origin_barangay_name,
+            $this->origin_municipality_name,
+            $this->origin_province_name,
+        ])->filter()->implode(', ');
+    }
+}
+
+
+===== app/Models/Logistics/Delivery.php =====
+
+<?php
+
+namespace App\Models\Logistics;
+
+use App\Models\Buyer\Order\Order;
+use App\Models\LogisticsCoverageArea;
+use App\Models\LogisticsPartner;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+
+class Delivery extends Model
+{
+    public const PICKUP_ASSIGNED = 'assigned';
+    public const PICKUP_ACCEPTED = 'pickup_accepted';
+    public const PICKED_UP = 'picked_up';
+    public const AT_SORTING_CENTER = 'at_sorting_center';
+    public const SORTED = 'sorted';
+    public const DELIVERY_ASSIGNED = 'delivery_assigned';
+    public const OUT_FOR_DELIVERY = 'out_for_delivery';
+    public const DELIVERED = 'delivered';
+    public const DELIVERY_FAILED = 'delivery_failed';
+    public const RETURNED = 'returned';
+    public const RETURN_REQUESTED = 'return_requested';
+    public const RETURN_AT_BRANCH = 'return_at_branch';
+    public const RETURN_ASSIGNED = 'return_assigned';
+    public const RETURN_IN_TRANSIT = 'return_in_transit';
+    public const RETURN_AWAITING_SELLER = 'return_awaiting_seller';
+
+    // Order owns Buyer-facing grouping; Delivery owns the detailed courier/sorting lifecycle.
+    protected $fillable = [
+        'order_id',
+        'tracking_code',
+        'logistics_partner_id',
+        'origin_sorting_center_id',
+        'current_sorting_center_id',
+        'destination_sorting_center_id',
+        'destination_area_id',
+        'rider_id',
+        'delivery_rider_id',
+        'status',
+        'assigned_at',
+        'pickup_accepted_at',
+        'picked_up_at',
+        'at_sorting_center_at',
+        'sorted_at',
+        'delivery_assigned_at',
+        'out_for_delivery_at',
+        'in_transit_at',
+        'delivered_at',
+        'delivery_failed_at',
+        'failure_reason',
+        'returned_at',
+        'delivery_attempts',
+        'pickup_rider_id',
+        'transit_rider_id',
+        'delivered_rider_id',
+        'proof_path',
+    ];
+
+    protected $casts = [
+        'assigned_at' => 'datetime',
+        'pickup_accepted_at' => 'datetime',
+        'picked_up_at' => 'datetime',
+        'at_sorting_center_at' => 'datetime',
+        'sorted_at' => 'datetime',
+        'delivery_assigned_at' => 'datetime',
+        'out_for_delivery_at' => 'datetime',
+        'in_transit_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'delivery_failed_at' => 'datetime',
+        'returned_at' => 'datetime',
+        'delivery_attempts' => 'integer',
+    ];
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    /** Current rider responsible for the next Rider-owned action. */
+    public function rider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class);
+    }
+
+    public function deliveryRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'delivery_rider_id');
+    }
+
+    public function destinationArea(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsCoverageArea::class, 'destination_area_id');
+    }
+
+    public function partner(): BelongsTo
+    {
+        return $this->belongsTo(LogisticsPartner::class, 'logistics_partner_id');
+    }
+
+    public function returnCase(): HasOne
+    {
+        return $this->hasOne(ReturnCase::class);
+    }
+
+    public function codSettlement(): HasOne
+    {
+        return $this->hasOne(CodSettlement::class);
+    }
+
+
+    public function originSortingCenter(): BelongsTo
+    {
+        return $this->belongsTo(SortingCenter::class, 'origin_sorting_center_id');
+    }
+
+    public function currentSortingCenter(): BelongsTo
+    {
+        return $this->belongsTo(SortingCenter::class, 'current_sorting_center_id');
+    }
+
+    public function destinationSortingCenter(): BelongsTo
+    {
+        return $this->belongsTo(SortingCenter::class, 'destination_sorting_center_id');
+    }
+
+    public function transfers(): HasMany
+    {
+        return $this->hasMany(ParcelTransfer::class)->orderBy('id');
+    }
+
+
+    public function failureReports(): HasMany
+    {
+        return $this->hasMany(DeliveryFailureReport::class)->orderBy('reported_at')->orderBy('id');
+    }
+
+    public function pickupRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'pickup_rider_id');
+    }
+
+    public function deliveredRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'delivered_rider_id');
+    }
+
+    public function statusLabel(): string
+    {
+        if ($this->status === self::SORTED) {
+            $activeTransfer = $this->relationLoaded('transfers')
+                ? $this->transfers->firstWhere('status', ParcelTransfer::IN_TRANSIT)
+                : $this->transfers()->with('toCenter')->where('status', ParcelTransfer::IN_TRANSIT)->latest('id')->first();
+
+            if ($activeTransfer) {
+                $destination = $activeTransfer->toCenter?->name;
+                return $destination ? 'In Transfer to '.$destination : 'In Center Transfer';
+            }
+
+            if ($this->current_sorting_center_id && $this->destination_sorting_center_id
+                && (int) $this->current_sorting_center_id !== (int) $this->destination_sorting_center_id) {
+                return 'Sorted for Center Transfer';
+            }
+        }
+
+        return match ($this->status) {
+            self::PICKUP_ASSIGNED => 'Pickup Rider Assigned',
+            self::PICKUP_ACCEPTED => 'Pickup Accepted',
+            self::PICKED_UP => 'Picked Up',
+            self::AT_SORTING_CENTER => 'At Sorting Center',
+            self::SORTED => 'Sorted',
+            self::DELIVERY_ASSIGNED => 'Assigned to Delivery Rider',
+            self::OUT_FOR_DELIVERY => 'Out for Delivery',
+            self::DELIVERED => 'Delivered',
+            self::DELIVERY_FAILED => 'Delivery Failed / Reported',
+            // Kept only for historical rows created before ShopHop removed return processing.
+            self::RETURN_REQUESTED => 'Return Requested',
+            self::RETURN_AT_BRANCH => 'Return Received at Branch',
+            self::RETURN_ASSIGNED => 'Return Rider Assigned',
+            self::RETURN_IN_TRANSIT => 'Returning to Seller',
+            self::RETURN_AWAITING_SELLER => 'Awaiting Seller Receipt',
+            self::RETURNED => 'Returned to Seller',
+            default => ucfirst(str_replace('_', ' ', (string) $this->status)),
+        };
+    }
+}
+
+
+===== app/Models/Logistics/ParcelTransfer.php =====
+
+<?php
+
+namespace App\Models\Logistics;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class ParcelTransfer extends Model
+{
+    public const IN_TRANSIT = 'in_transit';
+    public const RECEIVED = 'received';
+    public const CANCELLED = 'cancelled';
+
+    protected $fillable = [
+        'delivery_id',
+        'from_sorting_center_id',
+        'to_sorting_center_id',
+        'status',
+        'transit_rider_id',
+        'departed_at',
+        'dispatched_at',
+        'received_at',
+    ];
+
+    protected $casts = [
+        'departed_at' => 'datetime',
+        'dispatched_at' => 'datetime',
+        'received_at' => 'datetime',
+    ];
+
+    public function transitRider(): BelongsTo
+    {
+        return $this->belongsTo(Rider::class, 'transit_rider_id');
+    }
+
+    public function delivery(): BelongsTo
+    {
+        return $this->belongsTo(Delivery::class);
+    }
+
+    public function fromCenter(): BelongsTo
+    {
+        return $this->belongsTo(SortingCenter::class, 'from_sorting_center_id');
+    }
+
+    public function toCenter(): BelongsTo
+    {
+        return $this->belongsTo(SortingCenter::class, 'to_sorting_center_id');
+    }
+}
+
+
+===== app/Services/LogisticsRoutingService.php =====
+
+<?php
+
+namespace App\Services;
+
+use App\Models\Buyer\Order\Order;
+use App\Models\Logistics\SortingCenter;
+use App\Models\LogisticsCoverageArea;
+use App\Models\LogisticsPartner;
+use App\Models\Seller;
+use Illuminate\Support\Collection;
+
+class LogisticsRoutingService
+{
+    public function __construct(private readonly PhilippineDeliveryCoverage $coverage)
+    {
+    }
+
+    public function eligiblePartners(Order $order): Collection
+    {
+        return LogisticsPartner::query()
+            ->whereHas('user', fn ($query) => $query->where('status', 'approved'))
+            ->with(['user', 'coverageAreas.sortingCenter', 'sortingCenters'])
+            ->orderBy('company_name')
+            ->get()
+            ->filter(fn (LogisticsPartner $partner) => $this->destinationArea($partner, $order) !== null
+                && $order->seller
+                && $this->originCenter($partner, $order->seller) !== null)
+            ->values();
+    }
+
+    /**
+     * Partners that can pick up from this Seller and deliver to a destination, before any Order exists.
+     * Used by Checkout so the Buyer only sees couriers that really cover the address.
+     *
+     * @param array<string, mixed> $destination delivery_* attributes (region/province/municipality names, address)
+     */
+    public function eligiblePartnersFor(Seller $seller, array $destination): Collection
+    {
+        // An unsaved Order only carries the destination fields the coverage rule reads.
+        $draft = new Order();
+        $draft->forceFill($destination);
+        $draft->setRelation('seller', $seller);
+
+        return $this->eligiblePartners($draft);
+    }
+
+    public function destinationArea(LogisticsPartner $partner, Order $order): ?LogisticsCoverageArea
+    {
+        return $partner->coverageAreas->first(
+            fn (LogisticsCoverageArea $area) => $this->coverage->coversOrder($area, $order)
+                && $this->coverage->availableForPartner($area, $partner)
+        );
+    }
+
+    public function originCenter(LogisticsPartner $partner, Seller $seller): ?SortingCenter
+    {
+        $areas = $partner->coverageAreas()->with('sortingCenter')->get();
+        $matched = $areas->first(fn (LogisticsCoverageArea $area) => $this->coverage->matches(
+            $area,
+            $seller->province_name,
+            (string) $seller->municipality_name,
+            $seller->region_name,
+        ) && $this->coverage->availableForPartner($area, $partner));
+
+        if (! $matched) {
+            return null;
+        }
+
+        // A matching inactive assigned branch must never reroute to the main hub.
+        // Only legacy, unassigned coverage belongs to the active main hub.
+        return $matched->sorting_center_id !== null
+            ? $matched->sortingCenter
+            : $partner->sortingCenters()->where('status', 'active')->where('is_main', true)->first();
+    }
+
+    public function trackingCode(Order $order): string
+    {
+        if ($order->tracking_code) {
+            return $order->tracking_code;
+        }
+
+        $date = ($order->created_at ?? now())->format('Ymd');
+        return 'SHP-'.$date.'-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+    }
+
+}
+
+===== app/Services/ParcelScanService.php =====
+
+<?php
+
+namespace App\Services;
+
+use App\Models\Buyer\Order\Order;
+use App\Models\Logistics\Delivery;
+use App\Models\Logistics\ParcelTransfer;
+use App\Models\Logistics\PickupRequest;
+use App\Models\Logistics\SortingCenter;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+
+/** One authoritative hand-off rule for Web and Mobile branch scan clients. */
+class ParcelScanService
+{
+    /**
+     * Read-only eligibility check for a parcel awaiting physical handoff.
+     * Receive always revalidates in its own locked transaction; preview is not authorization.
+     */
+    public function inspect(int $partnerId, int $centerId, string $trackingCode): array
+    {
+        $code = trim($trackingCode);
+        if (! preg_match('/^SHP-[0-9]{8}-[0-9]{6,}$/', $code)) {
+            throw ValidationException::withMessages(['tracking_code' => 'Scan a valid ShopHop shipping label.']);
+        }
+
+        $center = SortingCenter::where('logistics_partner_id', $partnerId)
+            ->where('status', 'active')->findOrFail($centerId);
+        $delivery = Delivery::with('order')->where('logistics_partner_id', $partnerId)
+            ->where('tracking_code', $code)->first();
+        if (! $delivery) {
+            throw ValidationException::withMessages(['tracking_code' => 'Parcel not found in your Logistics network.']);
+        }
+
+        if (! $delivery->order || $delivery->order->status !== Order::STATUS_TO_RECEIVE) {
+            throw ValidationException::withMessages(['tracking_code' => 'Parcel is not eligible for branch receipt.']);
+        }
+
+        if ($delivery->status === Delivery::PICKED_UP
+            && (int) $delivery->origin_sorting_center_id === $centerId) {
+            $action = 'Receive pickup from Rider';
+            $event = 'pickup_received';
+        } elseif ($delivery->status === Delivery::SORTED) {
+            $transfer = ParcelTransfer::where('delivery_id', $delivery->id)
+                ->where('status', ParcelTransfer::IN_TRANSIT)->first();
+            if (! $transfer || (int) $transfer->to_sorting_center_id !== $centerId
+                || ($transfer->transit_rider_id && ! $transfer->departed_at)) {
+                throw ValidationException::withMessages(['tracking_code' => 'No departed branch transfer is awaiting receipt here.']);
+            }
+            $action = 'Receive inter-branch transfer';
+            $event = 'transfer_received';
+        } else {
+            throw ValidationException::withMessages(['tracking_code' => 'Wrong branch, duplicate scan, or parcel not ready for receipt.']);
+        }
+
+        // Intentionally exclude recipient PII from scanner preview.
+        return [
+            'tracking_code' => $delivery->tracking_code,
+            'branch' => $center->name,
+            'delivery_status' => $delivery->status,
+            'event' => $event,
+            'next_action' => $action,
+            'can_receive' => true,
+        ];
+    }
+
+    public function receive(int $partnerId, int $centerId, int $operatorId, string $trackingCode, ?int $staffId = null): array
+    {
+        $code = trim($trackingCode);
+        if (! preg_match('/^SHP-[0-9]{8}-[0-9]{6,}$/', $code)) {
+            throw ValidationException::withMessages(['tracking_code' => 'Scan a valid ShopHop parcel label, not an external URL.']);
+        }
+
+        return DB::transaction(function () use ($partnerId, $centerId, $operatorId, $code, $staffId) {
+            $center = SortingCenter::where('logistics_partner_id', $partnerId)
+                ->where('status', 'active')->findOrFail($centerId);
+            $delivery = Delivery::with('order')->where('logistics_partner_id', $partnerId)
+                ->where('tracking_code', $code)->lockForUpdate()->firstOrFail();
+            if (! $delivery->order || $delivery->order->status !== Order::STATUS_TO_RECEIVE) {
+                throw ValidationException::withMessages(['tracking_code' => 'Parcel is not currently eligible for branch receipt.']);
+            }
+
+            if ($delivery->status === Delivery::PICKED_UP) {
+                if (! $delivery->origin_sorting_center_id || (int) $delivery->origin_sorting_center_id !== $centerId) {
+                    throw ValidationException::withMessages(['sorting_center_id' => 'This parcel belongs to a different pickup branch.']);
+                }
+                $delivery->update([
+                    'status' => Delivery::AT_SORTING_CENTER,
+                    'current_sorting_center_id' => $centerId,
+                    'at_sorting_center_at' => now(),
+                ]);
+                PickupRequest::where('order_id', $delivery->order_id)->update([
+                    'status' => PickupRequest::RECEIVED,
+                    'received_at' => now(),
+                ]);
+                $type = 'pickup_received';
+                $transferId = null;
+            } elseif ($delivery->status === Delivery::SORTED) {
+                $transfer = ParcelTransfer::where('delivery_id', $delivery->id)
+                    ->where('status', ParcelTransfer::IN_TRANSIT)->lockForUpdate()->first();
+                if (! $transfer || (int) $transfer->to_sorting_center_id !== $centerId
+                    || ($transfer->transit_rider_id && ! $transfer->departed_at)) {
+                    throw ValidationException::withMessages([
+                        'sorting_center_id' => 'No departed transfer is awaiting receipt at this branch.',
+                    ]);
+                }
+                $transfer->update(['status' => ParcelTransfer::RECEIVED, 'received_at' => now()]);
+                $delivery->update(['current_sorting_center_id' => $centerId]);
+                $type = 'transfer_received';
+                $transferId = $transfer->id;
+            } else {
+                throw ValidationException::withMessages([
+                    'tracking_code' => 'Parcel already received or currently at a different workflow stage.',
+                ]);
+            }
+
+            DB::table('parcel_scan_events')->insert([
+                'delivery_id' => $delivery->id,
+                'sorting_center_id' => $center->id,
+                'operator_user_id' => $operatorId,
+                'operator_staff_id' => $staffId,
+                'parcel_transfer_id' => $transferId,
+                'event_type' => $type,
+                'scanned_at' => now(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            return [
+                'delivery_id' => $delivery->id,
+                'tracking_code' => $delivery->tracking_code,
+                'event' => $type,
+                'delivery_status' => $delivery->status,
+                'branch' => $center->name,
+            ];
+        }, 3);
+    }
+}
+
+
+===== resources/views/branch/layout/app.blade.php =====
+
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {{-- Apply the persisted theme before the shell paints. --}}
+    @include('partials.theme-head')
+
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <title>@yield('title', 'Dashboard') - ShopHop Branch</title>
+
+    {{-- Tailwind + theme tokens (kapareho ng logistics console) --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: '#0F1B3D',
+                        'navy-light': '#1C3150',
+                        'navy-soft': '#244B61',
+                        teal: '#21C3A6',
+                        'teal-dark': '#18A98E',
+                        'teal-light': '#D4F5EE',
+                        mint: '#21C3A6',
+                        'mint-dark': '#18A98E',
+                        sky: '#4AA8E0',
+                        yellow: '#F7C948',
+                        coral: '#FF7A59',
+                        'gray-bg': '#F3F5F7',
+                        'gray-border': '#E2E6EA',
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        soft: '0 10px 30px rgba(15, 44, 63, 0.08)',
+                        panel: '0 18px 50px rgba(15, 44, 63, 0.12)',
+                    },
+                }
+            }
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root { color-scheme: light; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Poppins', sans-serif; }
+
+        .logistics-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.16) transparent; }
+        .logistics-scrollbar::-webkit-scrollbar { width: 6px; }
+        .logistics-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 999px; }
+        .content-scrollbar { scrollbar-width: thin; scrollbar-color: rgba(15,44,63,.15) transparent; }
+        .content-scrollbar::-webkit-scrollbar { width: 7px; }
+        .content-scrollbar::-webkit-scrollbar-thumb { background: rgba(15,44,63,.14); border-radius: 999px; }
+
+        #branchMobileOverlay[hidden], #branchSearchPalette[hidden], #branchConfirmModal[hidden] { display: none !important; }
+
+        /* Desktop collapse */
+        #branchSidebar[data-collapsed="true"] { width: 5rem; }
+        #branchSidebar .sidebar-collapsed-only { display: none; }
+        #branchSidebar[data-collapsed="true"] .sidebar-expanded-only { display: none; }
+        #branchSidebar[data-collapsed="true"] .sidebar-collapsed-only { display: flex; }
+        #branchSidebar[data-collapsed="true"] .sidebar-nav-link { justify-content: center; padding-left: .75rem; padding-right: .75rem; }
+        #branchSidebar[data-collapsed="true"] .sidebar-brand-wrap { justify-content: center; padding-left: .75rem; padding-right: .75rem; }
+        #branchSidebar[data-collapsed="true"] .sidebar-tooltip { display: block; }
+        .sidebar-tooltip { display: none; }
+
+        /* Mobile slide-in */
+        @media (max-width: 1023px) {
+            #branchSidebar { position: fixed; left: 0; top: 0; bottom: 0; width: 17rem !important; z-index: 60; transform: translateX(-100%); transition: transform .22s ease; }
+            #branchShell[data-mobile-open="true"] #branchSidebar { transform: translateX(0); }
+            #branchSidebar[data-collapsed="true"] .sidebar-expanded-only { display: initial; }
+            #branchSidebar[data-collapsed="true"] .sidebar-nav-link { justify-content: flex-start; padding-left: .75rem; padding-right: .75rem; }
+            #branchSidebar[data-collapsed="true"] .sidebar-brand-wrap { justify-content: flex-start; padding-left: 1.25rem; padding-right: 1.25rem; }
+            #branchSidebar .sidebar-tooltip { display: none !important; }
+            .sidebar-collapsed-only { display: none !important; }
+        }
+
+        .branch-profile-menu > summary::-webkit-details-marker { display: none; }
+        .branch-profile-menu > summary::marker { content: ''; }
+        .branch-console :is(button, a, input, select, textarea, summary):focus-visible { outline: 2px solid #18A98E; outline-offset: 3px; }
+        .branch-console main :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) { max-width: 100%; min-height: 2.5rem; background-color: #fff; }
+        .branch-console main :is(input, select, textarea):focus { border-color: #18A98E; box-shadow: 0 0 0 3px rgba(33,195,166,.12); outline: none; }
+        @media (prefers-reduced-motion: reduce) {
+            .branch-console * { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+        }
+    </style>
+
+    <style>
+        /* ShopHop shared component system (kapareho ng logistics console) */
+        .sh-page-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:1rem; }
+        .sh-page-header .eyebrow { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.16em; color:#18A98E; }
+        .sh-page-header .title { margin-top:.25rem; font-size:1.75rem; line-height:1.15; font-weight:700; color:#0F1B3D; letter-spacing:-.02em; }
+        .sh-page-header .description { margin-top:.4rem; max-width:42rem; font-size:.875rem; line-height:1.7; color:rgba(15,27,61,.58); }
+        .sh-surface { border:1px solid #E2E6EA; border-radius:1.5rem; background:#fff; box-shadow:0 10px 30px rgba(15,44,63,.06); }
+        .sh-surface-soft { border:1px solid #E2E6EA; border-radius:1.25rem; background:#F8FAFB; }
+        .sh-card-pad { padding:1.125rem; }
+        @media (min-width: 640px){ .sh-card-pad { padding:1.375rem; } }
+        .sh-stat { border:1px solid #E2E6EA; border-radius:1.25rem; background:#fff; padding:1rem; box-shadow:0 8px 20px rgba(15,44,63,.05); }
+        .sh-stat-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:rgba(15,27,61,.42); }
+        .sh-stat-value { margin-top:.35rem; font-size:1.7rem; font-weight:700; line-height:1; color:#0F1B3D; }
+        .sh-stat-note { margin-top:.35rem; font-size:.72rem; color:rgba(15,27,61,.5); }
+        .sh-btn, .sh-btn-secondary, .sh-btn-ghost, .sh-btn-danger, .sh-btn-soft {
+            min-height:2.6rem; display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+            border-radius:999px; padding:.68rem 1rem; font-size:.78rem; font-weight:700; transition:all .18s ease;
+            border:1px solid transparent; text-decoration:none;
+        }
+        .sh-btn { background:#0F1B3D; color:#fff; box-shadow:0 10px 25px rgba(15,27,61,.12); }
+        .sh-btn:hover { background:#18A98E; transform:translateY(-1px); }
+        .sh-btn-secondary { background:#D4F5EE; color:#11806B; }
+        .sh-btn-secondary:hover { background:#c4efe6; transform:translateY(-1px); }
+        .sh-btn-ghost { background:#fff; color:#0F1B3D; border-color:#DCE2E7; }
+        .sh-btn-ghost:hover { border-color:rgba(24,169,142,.35); color:#11806B; background:#F7FBFA; }
+        .sh-btn-soft { background:#F3F5F7; color:#0F1B3D; border-color:#E2E6EA; }
+        .sh-btn-soft:hover { background:#EAF8F4; color:#11806B; }
+        .sh-btn-danger { background:#fff; color:#C24141; border-color:#F3CACA; }
+        .sh-btn-danger:hover { background:#FEF2F2; }
+        .sh-input, .sh-select, .sh-textarea {
+            width:100%; border-radius:1rem; border:1px solid #D8DEE4; background:#fff; color:#0F1B3D;
+            padding:.7rem .9rem; font-size:.9rem; line-height:1.4; box-shadow: inset 0 1px 2px rgba(15,27,61,.02);
+        }
+        .sh-input::placeholder, .sh-textarea::placeholder { color:rgba(15,27,61,.33); }
+        .sh-select, .sh-input, .sh-textarea { transition:border-color .16s ease, box-shadow .16s ease, background-color .16s ease; }
+        .sh-field { display:grid; gap:.42rem; }
+        .sh-label { font-size:.73rem; font-weight:700; color:#0F1B3D; }
+        .sh-badge { display:inline-flex; align-items:center; gap:.35rem; border-radius:999px; padding:.38rem .72rem; font-size:.66rem; font-weight:700; }
+        .sh-badge-info { background:#EDF7FF; color:#2664A9; }
+        .sh-badge-success { background:#E9FBF6; color:#11806B; }
+        .sh-badge-warning { background:#FFF6DD; color:#A46700; }
+        .sh-badge-danger { background:#FEF2F2; color:#B42318; }
+        .sh-badge-neutral { background:#F2F4F7; color:#475467; }
+        .sh-stack { display:grid; gap:1rem; }
+        .sh-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; }
+        .sh-empty { border:1px dashed #D8DEE4; border-radius:1.25rem; background:#fff; padding:2rem 1.25rem; text-align:center; }
+        .sh-table-wrap { overflow-x:auto; }
+        .sh-table { width:100%; min-width:720px; border-collapse:separate; border-spacing:0; }
+        .sh-table thead th { background:#F7F9FA; padding:.9rem 1rem; font-size:.67rem; font-weight:700; color:rgba(15,27,61,.45); text-transform:uppercase; letter-spacing:.12em; text-align:left; border-bottom:1px solid #E2E6EA; }
+        .sh-table tbody td { padding:1rem; font-size:.82rem; color:#0F1B3D; border-bottom:1px solid rgba(226,230,234,.8); vertical-align:top; }
+        .sh-alert-success, .sh-alert-error { border-radius:1rem; padding:.95rem 1rem; font-size:.82rem; border:1px solid transparent; }
+        .sh-alert-success { background:#EAFBF5; color:#0F7B61; border-color:#B9EEDB; }
+        .sh-alert-error { background:#FEF2F2; color:#B42318; border-color:#F6C4C4; }
+        .sh-summary { list-style:none; cursor:pointer; }
+        .sh-summary::-webkit-details-marker { display:none; }
+        .sh-modal-backdrop { position:fixed; inset:0; background:rgba(15,27,61,.55); backdrop-filter: blur(3px); }
+        .sh-modal-card { position:relative; width:min(100%, 29rem); border-radius:1.5rem; background:#fff; border:1px solid #E2E6EA; box-shadow:0 30px 80px rgba(15,27,61,.24); overflow:hidden; }
+        .sh-modal-head { padding:1.1rem 1.25rem; border-bottom:1px solid #E2E6EA; }
+        .sh-modal-actions { padding:1rem 1.25rem 1.25rem; display:flex; justify-content:flex-end; gap:.65rem; }
+    </style>
+
+    @stack('styles')
+</head>
+
+@php
+    $branchUser = auth()->user();
+    $branchCenter = $center ?? $branchUser?->sortingCenter;
+
+    $branchName  = $branchCenter->name ?? 'Branch';
+    $branchCode  = $branchCenter->code ?? 'Sorting center';
+    $branchEmail = $branchUser?->email ?? 'branch@shophop.com';
+    $userName    = $branchUser?->name ?? $branchName;
+
+    $branchInitials = collect(preg_split('/[\s._-]+/', trim($userName)))
+        ->filter()
+        ->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))
+        ->take(2)
+        ->implode('') ?: 'BR';
+
+    $routeUrl = fn (string $name) => \Illuminate\Support\Facades\Route::has($name) ? route($name) : '#';
+    $logoutUrl = \Illuminate\Support\Facades\Route::has('branch.logout')
+        ? route('branch.logout')
+        : (\Illuminate\Support\Facades\Route::has('logistics.logout') ? route('logistics.logout') : '#');
+
+    $branchNavigation = [
+        [
+            'label' => 'Overview',
+            'items' => [
+                ['label' => 'Dashboard', 'route' => 'branch.dashboard', 'pattern' => 'branch.dashboard', 'icon' => 'layout-dashboard'],
+            ],
+        ],
+        [
+            'label' => 'Parcels',
+            'items' => [
+                ['label' => 'Incoming Transfers', 'route' => 'branch.transfers', 'pattern' => 'branch.transfers*', 'icon' => 'truck'],
+                ['label' => 'Branch Parcels', 'route' => 'branch.parcels', 'pattern' => 'branch.parcels*', 'icon' => 'package'],
+                ['label' => 'Dispatch', 'route' => 'branch.dispatch', 'pattern' => 'branch.dispatch*', 'icon' => 'send'],
+            ],
+        ],
+        [
+            'label' => 'Fleet & Cash',
+            'items' => [
+                ['label' => 'Riders', 'route' => 'branch.riders', 'pattern' => 'branch.riders*', 'icon' => 'bike'],
+                ['label' => 'COD Remittance', 'route' => 'branch.cod', 'pattern' => 'branch.cod*', 'icon' => 'wallet'],
+            ],
+        ],
+    ];
+@endphp
+
+<body class="branch-console bg-gray-bg text-navy antialiased">
+
+<div id="branchShell" data-mobile-open="false" class="flex h-screen overflow-hidden">
+
+    <button id="branchMobileOverlay" type="button" hidden
+            class="fixed inset-0 z-50 bg-navy/45 backdrop-blur-[1px] lg:hidden"
+            aria-label="Close navigation"></button>
+
+    {{-- SIDEBAR --}}
+    <aside id="branchSidebar" data-collapsed="false"
+           class="relative w-64 bg-navy text-white flex flex-col shrink-0 border-r border-white/5 transition-[width] duration-200">
+
+        <div class="pointer-events-none absolute -top-20 -left-20 w-48 h-48 rounded-full bg-teal/10 blur-2xl"></div>
+
+        <div class="sidebar-brand-wrap relative h-[68px] flex items-center gap-2 px-5 border-b border-white/10 shrink-0">
+            <a href="{{ $routeUrl('branch.dashboard') }}" class="flex items-center gap-3 min-w-0">
+                <div class="w-9 h-9 flex items-center justify-center shrink-0">
+                    <img src="{{ asset('images/logo.png') }}" alt="ShopHop Logo" class="w-9 h-9 object-contain">
+                </div>
+                <div class="sidebar-expanded-only min-w-0">
+                    <p class="text-[15px] font-bold leading-tight tracking-tight text-white">Shop<span class="text-teal">Hop</span></p>
+                    <p class="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold mt-0.5">Branch Portal</p>
+                </div>
+            </a>
+
+            <button id="branchDesktopCollapse" type="button"
+                    class="sidebar-expanded-only hidden lg:flex ml-auto w-7 h-7 rounded-lg items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition"
+                    aria-label="Collapse sidebar">
+                <x-lucide-panel-left-close class="w-3.5 h-3.5" />
+            </button>
+
+            <button id="branchSidebarClose" type="button"
+                    class="lg:hidden ml-auto w-8 h-8 flex items-center justify-center rounded-lg text-white/60 hover:text-white hover:bg-white/10 transition shrink-0"
+                    aria-label="Close menu">
+                <x-lucide-x class="w-4 h-4" />
+            </button>
+        </div>
+
+        <button id="branchDesktopExpand" type="button"
+                class="sidebar-collapsed-only absolute top-[22px] -right-3 z-30 w-6 h-6 rounded-full bg-white text-navy border border-gray-border shadow-md items-center justify-center hover:text-teal-dark hover:border-teal/30 transition"
+                aria-label="Expand sidebar">
+            <x-lucide-chevron-right class="w-3.5 h-3.5" />
+        </button>
+
+        {{-- Branch card --}}
+        <div class="sidebar-expanded-only px-3 pt-4">
+            <div class="rounded-xl bg-white/[0.05] border border-white/[0.06] p-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-teal/15 text-teal flex items-center justify-center shrink-0">
+                        <x-lucide-warehouse class="w-4 h-4" />
+                    </div>
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-semibold text-white truncate">{{ $branchName }}</p>
+                        <div class="flex items-center gap-1.5 mt-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-teal"></span>
+                            <p class="text-[8px] text-white/40 truncate">{{ $branchCode }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <nav class="logistics-scrollbar relative flex-1 overflow-y-auto px-3 py-4" aria-label="Branch navigation">
+            @foreach ($branchNavigation as $section)
+                <div class="{{ ! $loop->first ? 'mt-5' : '' }}">
+                    <p class="sidebar-expanded-only px-3 mb-1.5 text-[8px] uppercase tracking-[0.16em] font-bold text-white/25">{{ $section['label'] }}</p>
+
+                    <div class="space-y-1">
+                        @foreach ($section['items'] as $item)
+                            @php $active = request()->routeIs($item['pattern']); @endphp
+
+                            <div class="relative group">
+                                <a href="{{ $routeUrl($item['route']) }}"
+                                   @if($active) aria-current="page" @endif
+                                   class="sidebar-nav-link relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] transition-all duration-150 {{ $active ? 'bg-white/10 text-white font-semibold' : 'text-white/55 hover:text-white hover:bg-white/[0.06]' }}">
+
+                                    @if ($active)
+                                        <span class="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-teal"></span>
+                                    @endif
+
+                                    <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 {{ $active ? 'bg-teal/15 text-teal' : 'text-white/45 group-hover:bg-white/[0.06] group-hover:text-teal' }}">
+                                        <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
+                                    </span>
+
+                                    <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
+
+                                    @if (!empty($item['badge']))
+                                        <span class="sidebar-expanded-only text-[10px] font-bold bg-coral text-white px-1.5 py-0.5 rounded-full leading-none shrink-0">{{ $item['badge'] }}</span>
+                                    @endif
+                                </a>
+
+                                <div class="sidebar-tooltip pointer-events-none absolute left-[calc(100%+10px)] top-1/2 -translate-y-1/2 z-[80] px-2.5 py-1.5 rounded-lg bg-navy-light text-white border border-white/10 shadow-lg text-[10px] font-medium whitespace-nowrap opacity-0 translate-x-1 group-hover:opacity-100 group-hover:translate-x-0 transition">
+                                    {{ $item['label'] }}
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endforeach
+        </nav>
+
+        <div class="relative p-3 border-t border-white/10 shrink-0">
+            <div class="flex items-center gap-3 px-2 py-2 mb-1">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal to-sky text-navy flex items-center justify-center text-[10px] font-bold shrink-0">{{ $branchInitials }}</div>
+                <div class="sidebar-expanded-only min-w-0 flex-1">
+                    <p class="text-[10px] font-semibold text-white truncate">{{ $userName }}</p>
+                    <p class="text-[8px] text-white/30 truncate">Branch account</p>
+                </div>
+            </div>
+
+            <form action="{{ $logoutUrl }}" method="POST">
+                @csrf
+                <button type="submit"
+                        class="sidebar-nav-link w-full group flex items-center gap-3 px-3 py-2.5 rounded-xl text-[12px] font-medium text-white/45 hover:bg-red-400/10 hover:text-red-300 transition">
+                    <span class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"><x-lucide-log-out class="w-4 h-4" /></span>
+                    <span class="sidebar-expanded-only">Log Out</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    {{-- MAIN COLUMN --}}
+    <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
+
+        <header class="h-[68px] bg-white/95 backdrop-blur border-b border-gray-border flex items-center px-3 sm:px-4 lg:px-5 shrink-0 z-30">
+
+            <button id="branchMobileToggle" type="button"
+                    class="lg:hidden w-9 h-9 rounded-lg border border-gray-border text-navy/55 flex items-center justify-center hover:bg-gray-bg transition shrink-0"
+                    aria-label="Open menu">
+                <x-lucide-menu class="w-4 h-4" />
+            </button>
+
+            <button id="branchSearchTrigger" type="button"
+                    class="group ml-2 lg:ml-0 w-full max-w-md flex items-center gap-2.5 h-9 px-3 rounded-lg bg-gray-bg border border-transparent text-left hover:bg-white hover:border-gray-border transition"
+                    aria-label="Search branch tools">
+                <x-lucide-search class="w-3.5 h-3.5 text-navy/35 shrink-0" />
+                <span class="text-[11px] text-navy/35 truncate flex-1">Search branch tools...</span>
+                <kbd class="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white border border-gray-border text-[8px] font-semibold text-navy/30">Ctrl K</kbd>
+            </button>
+
+            <div class="ml-auto flex items-center gap-2">
+
+                @include('partials.theme-toggle')
+
+                <a href="{{ route('home') }}" target="_blank"
+                   class="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-[10px] font-semibold text-navy/45 hover:text-teal-dark hover:bg-gray-bg transition">
+                    <x-lucide-external-link class="w-3.5 h-3.5" />
+                    View ShopHop
+                </a>
+
+                <div class="hidden sm:block w-px h-6 bg-gray-border"></div>
+
+                <details class="branch-profile-menu relative">
+                    <summary class="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl px-1.5 transition hover:bg-gray-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" aria-label="Branch account menu">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal to-sky text-[10px] font-bold text-navy">{{ $branchInitials }}</span>
+                        <span class="hidden min-w-0 max-w-36 text-left md:block">
+                            <span class="block truncate text-[10px] font-semibold text-navy">{{ $userName }}</span>
+                            <span class="block truncate text-[8px] text-navy/40">{{ $branchEmail }}</span>
+                        </span>
+                        <x-lucide-chevron-down class="hidden h-3.5 w-3.5 text-navy/35 md:block" />
+                    </summary>
+                    <div class="absolute right-0 top-[calc(100%+10px)] z-[85] w-56 rounded-2xl border border-gray-border bg-white p-2 shadow-panel">
+                        <div class="border-b border-gray-border px-3 py-2">
+                            <p class="truncate text-[11px] font-bold text-navy">{{ $branchName }}</p>
+                            <p class="truncate text-[10px] text-navy/45">Branch account</p>
+                        </div>
+                        <a href="{{ $routeUrl('branch.dashboard') }}" class="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-layout-dashboard class="h-4 w-4" /> Dashboard</a>
+                        <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-external-link class="h-4 w-4" /> Main ShopHop</a>
+                        <form method="POST" action="{{ $logoutUrl }}" class="mt-1 border-t border-gray-border pt-1">@csrf
+                            <button type="submit" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold text-rose-600 hover:bg-rose-50"><x-lucide-log-out class="h-4 w-4" /> Sign out</button>
+                        </form>
+                    </div>
+                </details>
+            </div>
+        </header>
+
+        <main class="content-scrollbar flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 lg:px-5 lg:py-5">
+            <div class="max-w-[1600px] mx-auto">
+
+                @if (session('success') || session('status'))
+                    <div class="mb-4 flex items-center gap-3 rounded-xl bg-teal-light border border-teal/20 px-4 py-3" role="status">
+                        <x-lucide-circle-check class="w-4 h-4 text-teal-dark shrink-0" />
+                        <p class="text-xs font-medium text-teal-dark">{{ session('success') ?? session('status') }}</p>
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div role="alert" class="sh-alert-error mb-4">
+                        <p class="font-semibold">{{ $errors->first() }}</p>
+                    </div>
+                @endif
+
+                @yield('content')
+            </div>
+        </main>
+    </div>
+</div>
+
+{{-- COMMAND / SEARCH PALETTE --}}
+<div id="branchSearchPalette" hidden class="fixed inset-0 z-[90] flex items-start justify-center px-3 pt-[10vh] sm:pt-[14vh]" aria-hidden="true">
+    <button id="branchSearchBackdrop" type="button" class="absolute inset-0 bg-navy/50 backdrop-blur-[2px]" aria-label="Close search"></button>
+
+    <div class="relative w-full max-w-xl bg-white border border-gray-border rounded-2xl shadow-2xl overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="branchSearchTitle">
+        <div class="flex items-center gap-3 px-4 border-b border-gray-border">
+            <x-lucide-search class="w-4 h-4 text-teal-dark shrink-0" />
+            <input id="branchCommandInput" type="text" autocomplete="off" placeholder="Find a branch page or tool..."
+                   class="w-full h-12 bg-transparent text-xs sm:text-sm text-navy placeholder:text-navy/30 focus:outline-none">
+            <kbd class="px-1.5 py-0.5 rounded-md bg-gray-bg border border-gray-border text-[8px] font-semibold text-navy/30">ESC</kbd>
+        </div>
+
+        <div class="max-h-[360px] overflow-y-auto p-2">
+            <p id="branchSearchTitle" class="px-2 py-2 text-[8px] font-bold uppercase tracking-[0.14em] text-navy/30">Branch Navigation</p>
+
+            @foreach ($branchNavigation as $section)
+                @foreach ($section['items'] as $item)
+                    <a href="{{ $routeUrl($item['route']) }}" data-branch-command-item
+                       data-search-text="{{ strtolower($item['label'] . ' ' . $section['label']) }}"
+                       class="group flex items-center gap-3 px-2.5 py-2.5 rounded-xl hover:bg-gray-bg transition">
+                        <div class="w-8 h-8 rounded-lg bg-gray-bg text-teal-dark flex items-center justify-center shrink-0">
+                            <x-dynamic-component :component="'lucide-' . $item['icon']" class="w-4 h-4" />
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[11px] font-semibold text-navy">{{ $item['label'] }}</p>
+                            <p class="text-[8px] text-navy/35 mt-0.5">{{ $section['label'] }}</p>
+                        </div>
+                        <x-lucide-corner-down-left class="w-3.5 h-3.5 text-navy/20 group-hover:text-teal-dark" />
+                    </a>
+                @endforeach
+            @endforeach
+
+            <div id="branchCommandEmpty" hidden class="px-4 py-10 text-center">
+                <div class="w-10 h-10 mx-auto rounded-xl bg-gray-bg text-navy/25 flex items-center justify-center"><x-lucide-search-x class="w-4 h-4" /></div>
+                <p class="text-[11px] font-semibold text-navy/50 mt-3">No branch tool found</p>
+                <p class="text-[9px] text-navy/30 mt-1">Try another keyword.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- CONFIRM MODAL (gumagana sa mga form na may data-confirm-title) --}}
+<div id="branchConfirmModal" hidden class="fixed inset-0 z-[95] flex items-center justify-center px-4">
+    <button type="button" class="sh-modal-backdrop" data-confirm-close aria-label="Close confirmation dialog"></button>
+    <div class="sh-modal-card" role="dialog" aria-modal="true" aria-labelledby="branchConfirmTitle" aria-describedby="branchConfirmBody">
+        <div class="sh-modal-head flex items-start gap-3">
+            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700"><x-lucide-shield-alert class="h-5 w-5" /></div>
+            <div class="min-w-0">
+                <p id="branchConfirmTitle" class="text-base font-bold text-navy">Confirm action</p>
+                <p id="branchConfirmBody" class="mt-1 text-sm leading-relaxed text-navy/55">Please confirm to continue.</p>
+            </div>
+        </div>
+        <div class="sh-modal-actions">
+            <button type="button" class="sh-btn-ghost" data-confirm-close>Cancel</button>
+            <button type="button" class="sh-btn" id="branchConfirmAccept">Continue</button>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const shell = document.getElementById('branchShell');
+    const sidebar = document.getElementById('branchSidebar');
+    const toggle = document.getElementById('branchMobileToggle');
+    const overlay = document.getElementById('branchMobileOverlay');
+    const sidebarClose = document.getElementById('branchSidebarClose');
+
+    function openSidebar() {
+        shell?.setAttribute('data-mobile-open', 'true');
+        if (overlay) overlay.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+        shell?.setAttribute('data-mobile-open', 'false');
+        if (overlay) overlay.hidden = true;
+        document.body.style.overflow = '';
+    }
+    toggle?.addEventListener('click', openSidebar);
+    overlay?.addEventListener('click', closeSidebar);
+    sidebarClose?.addEventListener('click', closeSidebar);
+    document.querySelectorAll('#branchSidebar a, #branchSidebar button[type="submit"]').forEach(function (el) {
+        el.addEventListener('click', function () { if (window.innerWidth < 1024) closeSidebar(); });
+    });
+
+    /* Desktop collapse */
+    const key = 'shophop_branch_sidebar_collapsed';
+    function setCollapsed(collapsed) {
+        const apply = window.innerWidth >= 1024 && collapsed;
+        sidebar?.setAttribute('data-collapsed', apply ? 'true' : 'false');
+        localStorage.setItem(key, apply ? '1' : '0');
+    }
+    setCollapsed(localStorage.getItem(key) === '1');
+    document.getElementById('branchDesktopCollapse')?.addEventListener('click', function () { setCollapsed(true); });
+    document.getElementById('branchDesktopExpand')?.addEventListener('click', function (e) { e.preventDefault(); setCollapsed(false); });
+    window.addEventListener('resize', function () {
+        if (window.innerWidth >= 1024) { closeSidebar(); setCollapsed(localStorage.getItem(key) === '1'); }
+        else { setCollapsed(false); }
+    });
+
+    /* Command palette */
+    const searchTrigger = document.getElementById('branchSearchTrigger');
+    const searchPalette = document.getElementById('branchSearchPalette');
+    const searchBackdrop = document.getElementById('branchSearchBackdrop');
+    const commandInput = document.getElementById('branchCommandInput');
+    const commandItems = Array.from(document.querySelectorAll('[data-branch-command-item]'));
+    const commandEmpty = document.getElementById('branchCommandEmpty');
+
+    function filterCommands() {
+        const q = (commandInput?.value || '').trim().toLowerCase();
+        let visible = 0;
+        commandItems.forEach(function (item) {
+            const show = q === '' || (item.getAttribute('data-search-text') || '').includes(q);
+            item.hidden = !show;
+            if (show) visible++;
+        });
+        if (commandEmpty) commandEmpty.hidden = visible > 0;
+    }
+    function openPalette() {
+        if (!searchPalette) return;
+        searchPalette.hidden = false;
+        searchPalette.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function () { commandInput?.focus(); commandInput?.select(); }, 0);
+    }
+    function closePalette() {
+        if (!searchPalette) return;
+        searchPalette.hidden = true;
+        searchPalette.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        if (commandInput) commandInput.value = '';
+        filterCommands();
+    }
+    searchTrigger?.addEventListener('click', openPalette);
+    searchBackdrop?.addEventListener('click', closePalette);
+    commandInput?.addEventListener('input', filterCommands);
+    commandInput?.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        const first = commandItems.find(function (i) { return !i.hidden; });
+        if (first) window.location.href = first.href;
+    });
+    document.addEventListener('keydown', function (e) {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') { e.preventDefault(); openPalette(); return; }
+        if (e.key === 'Escape') {
+            if (searchPalette && !searchPalette.hidden) { closePalette(); return; }
+            if (shell?.getAttribute('data-mobile-open') === 'true') closeSidebar();
+        }
+    });
+    filterCommands();
+
+    /* Confirm modal */
+    const confirmModal = document.getElementById('branchConfirmModal');
+    const confirmTitle = document.getElementById('branchConfirmTitle');
+    const confirmBody = document.getElementById('branchConfirmBody');
+    const confirmAccept = document.getElementById('branchConfirmAccept');
+    let confirmHandler = null;
+    let previousFocus = null;
+
+    function openConfirm(o) {
+        if (!confirmModal) return;
+        confirmTitle.textContent = o.title || 'Confirm action';
+        confirmBody.textContent = o.message || 'Please confirm to continue.';
+        confirmAccept.textContent = o.confirmLabel || 'Continue';
+        confirmAccept.className = (o.danger ? 'sh-btn-danger' : 'sh-btn') + ' px-5';
+        confirmHandler = o.onConfirm || null;
+        previousFocus = document.activeElement;
+        confirmModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+    function closeConfirm() {
+        if (!confirmModal) return;
+        confirmModal.hidden = true;
+        document.body.style.overflow = (searchPalette && !searchPalette.hidden) ? 'hidden' : '';
+        confirmHandler = null;
+        previousFocus?.focus?.();
+        previousFocus = null;
+    }
+    document.querySelectorAll('[data-confirm-close]').forEach(function (b) { b.addEventListener('click', closeConfirm); });
+    confirmAccept?.addEventListener('click', function () {
+        if (typeof confirmHandler === 'function') { const run = confirmHandler; closeConfirm(); run(); }
+    });
+    document.addEventListener('submit', function (event) {
+        const form = event.target.closest('form[data-confirm-title]');
+        if (!form || form.dataset.confirmed === '1') { if (form) form.dataset.confirmed = '0'; return; }
+        event.preventDefault();
+        openConfirm({
+            title: form.dataset.confirmTitle,
+            message: form.dataset.confirmMessage || 'Please confirm to continue.',
+            confirmLabel: form.dataset.confirmButton || 'Continue',
+            danger: form.dataset.confirmDanger === '1',
+            onConfirm: function () { form.dataset.confirmed = '1'; form.requestSubmit(); }
+        });
+    }, true);
+    document.addEventListener('keydown', function (e) {
+        if (!confirmModal || confirmModal.hidden) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeConfirm(); }
+    }, true);
+});
+</script>
+
+@stack('scripts')
+
+</body>
+</html>
+
+===== resources/views/branch/dashboard/index.blade.php =====
+
+@extends('branch.layout.app')
+
+@section('title', 'Dashboard â€” Branch Console')
+@section('heading', 'Dashboard')
+
+@section('content')
+@php
+    $stats = array_merge([
+        'pickups' => 0, 'to_receive' => 0, 'at_branch' => 0, 'to_assign' => 0,
+        'out_for_delivery' => 0, 'delivered_today' => 0, 'failed' => 0, 'cod_with_riders' => 0,
+    ], $stats ?? []);
+    $awaiting = collect($awaiting ?? []);
+    $toAssign = collect($toAssign ?? []);
+    $riders   = collect($riders ?? []);
+    $alerts   = collect($alerts ?? []);
+
+    $has  = fn (string $name) => \Illuminate\Support\Facades\Route::has($name);
+    $link = fn (string $name) => $has($name) ? route($name) : null;
+
+    $cards = [
+        ['Pickup requests', $stats['pickups'], 'Naghihintay ng pickup rider'],
+        ['Awaiting receipt', $stats['to_receive'], 'Papunta sa branch, i-scan pagdating'],
+        ['At branch', $stats['at_branch'], 'Naka-receive na, naka-sort'],
+        ['To assign', $stats['to_assign'], 'Wala pang delivery rider'],
+        ['Out for delivery', $stats['out_for_delivery'], 'Hawak ng riders'],
+        ['Delivered today', $stats['delivered_today'], 'Tapos na at may proof'],
+        ['Failed / return', $stats['failed'], 'Kailangan ng aksyon'],
+    ];
+@endphp
+
+<div class="space-y-6">
+    <header class="sh-page-header">
+        <div>
+            <p class="eyebrow">{{ $center->name ?? 'Your branch' }}</p>
+            <h1 class="title">Branch Dashboard</h1>
+            <p class="description">I-receive ang dumarating na parcels, i-assign sa riders, at subaybayan ang deliveries ng branch mo.</p>
+        </div>
+        @if ($link('branch.parcels.index'))
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ $link('branch.parcels.index') }}" class="sh-btn">Assign riders</a>
+            </div>
+        @endif
+    </header>
+
+    @if (session('status'))
+        <div role="status" class="sh-alert-success">{{ session('status') }}</div>
+    @endif
+    @if ($errors->any())
+        <div role="alert" class="sh-alert-error">{{ $errors->first() }}</div>
+    @endif
+
+    {{-- Stat cards --}}
+    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        @foreach ($cards as [$label, $value, $note])
+            <div class="sh-stat">
+                <p class="sh-stat-label">{{ $label }}</p>
+                <p class="sh-stat-value">{{ number_format($value) }}</p>
+                <p class="sh-stat-note">{{ $note }}</p>
+            </div>
+        @endforeach
+    </section>
+
+    {{-- Alerts --}}
+    @if ($alerts->isNotEmpty())
+        <section class="grid gap-3">
+            @foreach ($alerts as $alert)
+                @php $level = $alert['level'] ?? 'info'; @endphp
+                <div class="flex items-start gap-3 rounded-2xl border border-gray-border bg-white px-4 py-3">
+                    <span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full {{ $level === 'danger' ? 'bg-coral' : ($level === 'warning' ? 'bg-yellow' : 'bg-teal') }}"></span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-semibold text-navy">{{ $alert['title'] ?? '' }}</p>
+                        @if (! empty($alert['detail']))
+                            <p class="mt-0.5 text-xs text-navy/50">{{ $alert['detail'] }}</p>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </section>
+    @endif
+
+    <div class="grid gap-5 xl:grid-cols-3">
+        {{-- Awaiting receipt --}}
+        <section class="sh-surface sh-card-pad xl:col-span-2">
+            <div class="sh-toolbar">
+                <div>
+                    <h2 class="text-base font-bold text-navy">Awaiting receipt</h2>
+                    <p class="mt-1 text-xs text-navy/45">Parcels na dala ng pickup rider o ng transfer. I-scan o i-type ang tracking code, tapos i-receive.</p>
+                </div>
+            </div>
+
+            {{-- Scan box: gumagana sa USB scanner (nagta-type + Enter) --}}
+            @if ($has('branch.receive'))
+                <form method="POST" action="{{ route('branch.receive') }}" class="mt-4 flex flex-wrap items-center gap-2">
+                    @csrf
+                    <input name="tracking_code" required autofocus autocomplete="off"
+                           placeholder="Scan tracking code (SHP-YYYYMMDD-000000)" class="sh-input min-w-0 flex-1">
+                    <button class="sh-btn">Receive</button>
+                </form>
+            @endif
+
+            <div class="mt-4 grid gap-3">
+                @forelse ($awaiting as $item)
+                    @php $i = (object) $item; @endphp
+                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-border bg-white px-4 py-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-bold text-navy">{{ $i->tracking }}</p>
+                            <p class="mt-0.5 text-xs text-navy/50">{{ $i->label }} Â· {{ $i->from }} Â· {{ $i->when }}</p>
+                        </div>
+                        @if ($has('branch.receive'))
+                            <form method="POST" action="{{ route('branch.receive') }}">
+                                @csrf
+                                <input type="hidden" name="tracking_code" value="{{ $i->tracking }}">
+                                <button class="sh-btn-soft"
+                                        onclick="return confirm('Na-check mo ba ang physical na parcel at tugma ang tracking code?')">Receive</button>
+                            </form>
+                        @endif
+                    </div>
+                @empty
+                    <div class="sh-empty">
+                        <p class="text-sm font-semibold text-navy">Walang hinihintay na parcel</p>
+                        <p class="mt-1 text-xs text-navy/45">Lalabas dito kapag na-pickup na ng rider o may transfer na papunta.</p>
+                    </div>
+                @endforelse
+            </div>
+        </section>
+
+        {{-- COD with riders --}}
+        <section class="sh-surface sh-card-pad">
+            <h2 class="text-base font-bold text-navy">COD with riders</h2>
+            <p class="mt-1 text-xs text-navy/45">Nakolekta pero hindi pa nai-remit ng riders.</p>
+            <p class="mt-5 text-3xl font-bold text-navy">â‚±{{ number_format($stats['cod_with_riders'], 2) }}</p>
+            @if ($link('branch.cod'))
+                <a href="{{ $link('branch.cod') }}" class="sh-btn-soft mt-5 inline-flex">Open remittance</a>
+            @endif
+        </section>
+    </div>
+
+    <div class="grid gap-5 xl:grid-cols-2">
+        {{-- To assign --}}
+        <section class="sh-surface sh-card-pad">
+            <div class="sh-toolbar">
+                <div>
+                    <h2 class="text-base font-bold text-navy">Ready to assign</h2>
+                    <p class="mt-1 text-xs text-navy/45">Nasa branch na, wala pang delivery rider.</p>
+                </div>
+                @if ($link('branch.parcels.index'))
+                    <a href="{{ $link('branch.parcels.index') }}" class="sh-btn-ghost">Open parcels</a>
+                @endif
+            </div>
+
+            <div class="mt-4 divide-y divide-gray-border">
+                @forelse ($toAssign->take(6) as $parcel)
+                    @php $p = (object) $parcel; @endphp
+                    <div class="flex items-center justify-between gap-3 py-3">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-navy">{{ $p->tracking ?? 'â€”' }}</p>
+                            <p class="truncate text-xs text-navy/50">{{ $p->receiver ?? '' }}{{ ! empty($p->barangay) ? ' Â· '.$p->barangay : '' }}</p>
+                        </div>
+                        @if (! empty($p->cod))
+                            <span class="sh-badge sh-badge-neutral shrink-0">COD â‚±{{ number_format($p->cod, 2) }}</span>
+                        @endif
+                    </div>
+                @empty
+                    <div class="sh-empty">
+                        <p class="text-xs text-navy/45">Wala nang naghihintay na i-assign.</p>
+                    </div>
+                @endforelse
+            </div>
+        </section>
+
+        {{-- Riders --}}
+        <section class="sh-surface sh-card-pad">
+            <div class="sh-toolbar">
+                <div>
+                    <h2 class="text-base font-bold text-navy">Riders</h2>
+                    <p class="mt-1 text-xs text-navy/45">Sino ang available at gaano karami ang hawak.</p>
+                </div>
+                @if ($link('branch.riders'))
+                    <a href="{{ $link('branch.riders') }}" class="sh-btn-ghost">View all</a>
+                @endif
+            </div>
+
+            <div class="mt-4 divide-y divide-gray-border">
+                @forelse ($riders->take(6) as $rider)
+                    @php $r = (object) $rider; @endphp
+                    <div class="flex items-center justify-between gap-3 py-3">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-semibold text-navy">{{ $r->name ?? 'â€”' }}</p>
+                            <p class="text-xs text-navy/50">{{ $r->active ?? 0 }} hawak Â· {{ $r->delivered ?? 0 }} natapos ngayon</p>
+                        </div>
+                        <span class="sh-badge {{ ($r->status ?? '') === 'available' ? 'sh-badge-success' : 'sh-badge-neutral' }}">{{ ucfirst($r->status ?? 'offline') }}</span>
+                    </div>
+                @empty
+                    <div class="sh-empty">
+                        <p class="text-xs text-navy/45">Wala pang rider na naka-assign sa branch mo.</p>
+                    </div>
+                @endforelse
+            </div>
+        </section>
+    </div>
+</div>
+@endsection
+
+===== resources/views/branch/parcels/index.blade.php =====
+
+{{-- resources/views/branch/parcels/index.blade.php --}}
+@extends('branch.layout.app')
+
+@section('title', 'Branch Parcels')
+
+@section('content')
+@php
+    // HARDCODED muna. Palitan ng $parcels galing controller kapag may data na.
+    $center = $center ?? (object) ['name' => 'Calamba Branch'];
+
+    $allParcels = collect([
+        ['tracking' => 'SH-20261011-0001', 'order' => 'ORD-10231', 'receiver' => 'Maria Santos',    'barangay' => 'Brgy. Real, Calamba',          'cod' => 1250.00, 'status' => 'at_branch',        'rider' => null,            'updated' => 'Oct 11, 9:14 AM'],
+        ['tracking' => 'SH-20261011-0002', 'order' => 'ORD-10232', 'receiver' => 'Juan dela Cruz', 'barangay' => 'Brgy. Parian, Calamba',        'cod' => 0,       'status' => 'at_branch',        'rider' => null,            'updated' => 'Oct 11, 9:14 AM'],
+        ['tracking' => 'SH-20261011-0003', 'order' => 'ORD-10228', 'receiver' => 'Ana Reyes',      'barangay' => 'Brgy. Halang, Calamba',        'cod' => 899.00,  'status' => 'out_for_delivery', 'rider' => 'Rico Mendoza',  'updated' => 'Oct 11, 10:02 AM'],
+        ['tracking' => 'SH-20261011-0004', 'order' => 'ORD-10229', 'receiver' => 'Pedro Garcia',   'barangay' => 'Brgy. Canlubang, Calamba',     'cod' => 0,       'status' => 'out_for_delivery', 'rider' => 'Rico Mendoza',  'updated' => 'Oct 11, 10:02 AM'],
+        ['tracking' => 'SH-20261010-0017', 'order' => 'ORD-10201', 'receiver' => 'Liza Fernandez', 'barangay' => 'Brgy. Mayapa, Calamba',        'cod' => 450.00,  'status' => 'delivered',        'rider' => 'Jomar Villanueva', 'updated' => 'Oct 10, 4:35 PM'],
+        ['tracking' => 'SH-20261010-0018', 'order' => 'ORD-10203', 'receiver' => 'Carlo Navarro',  'barangay' => 'Brgy. Bucal, Calamba',         'cod' => 0,       'status' => 'delivered',        'rider' => 'Jomar Villanueva', 'updated' => 'Oct 10, 5:10 PM'],
+        ['tracking' => 'SH-20261010-0021', 'order' => 'ORD-10207', 'receiver' => 'Grace Ramos',    'barangay' => 'Brgy. Pansol, Calamba',        'cod' => 2100.00, 'status' => 'failed',           'rider' => 'Rico Mendoza',  'updated' => 'Oct 10, 3:20 PM', 'note' => 'Walang tao sa address, 1st attempt.'],
+        ['tracking' => 'SH-20261009-0009', 'order' => 'ORD-10180', 'receiver' => 'Mark Aquino',    'barangay' => 'Brgy. Turbina, Calamba',       'cod' => 780.00,  'status' => 'returning',        'rider' => null,            'updated' => 'Oct 9, 2:45 PM',  'note' => 'Tinanggihan ng buyer.'],
+    ]);
+
+    $activeStatus = request('status', 'all');
+    $search = trim((string) request('q', ''));
+
+    $parcels = $allParcels
+        ->when($activeStatus !== 'all', fn ($c) => $c->where('status', $activeStatus))
+        ->when($search !== '', fn ($c) => $c->filter(fn ($p) =>
+            str_contains(strtolower($p['tracking'].' '.$p['order'].' '.$p['receiver']), strtolower($search))))
+        ->values();
+
+    $counts = [
+        'at_branch'        => $allParcels->where('status', 'at_branch')->count(),
+        'out_for_delivery' => $allParcels->where('status', 'out_for_delivery')->count(),
+        'failed'           => $allParcels->where('status', 'failed')->count(),
+    ];
+
+    $tabs = [
+        'all'              => 'All',
+        'at_branch'        => 'Nasa branch',
+        'out_for_delivery' => 'Out for delivery',
+        'delivered'        => 'Delivered',
+        'failed'           => 'Failed attempt',
+        'returning'        => 'Returning',
+    ];
+
+    $statusBadge = [
+        'at_branch'        => ['sh-badge-neutral', 'Nasa branch'],
+        'out_for_delivery' => ['sh-badge-info', 'Out for delivery'],
+        'delivered'        => ['sh-badge-success', 'Delivered'],
+        'failed'           => ['sh-badge-warning', 'Failed attempt'],
+        'returning'        => ['sh-badge-warning', 'Returning'],
+    ];
+
+    $riders = ['Rico Mendoza', 'Jomar Villanueva', 'Ernie Castillo'];
+@endphp
+
+<div class="space-y-6">
+    <header class="sh-page-header">
+        <div>
+            <p class="eyebrow">{{ $center->name }}</p>
+            <h1 class="title">Branch Parcels</h1>
+            <p class="description">Lahat ng parcels na hawak ng branch mo. Mag-assign ng rider sa mga nasa branch at bantayan ang mga failed attempt.</p>
+        </div>
+    </header>
+
+    {{-- Stats --}}
+    <section class="grid gap-4 sm:grid-cols-3">
+        <div class="sh-stat">
+            <p class="sh-stat-label">Nasa branch</p>
+            <p class="sh-stat-value">{{ number_format($counts['at_branch']) }}</p>
+            <p class="sh-stat-note">Hindi pa na-assign sa rider</p>
+        </div>
+        <div class="sh-stat">
+            <p class="sh-stat-label">Out for delivery</p>
+            <p class="sh-stat-value">{{ number_format($counts['out_for_delivery']) }}</p>
+            <p class="sh-stat-note">Hawak ng riders ngayon</p>
+        </div>
+        <div class="sh-stat">
+            <p class="sh-stat-label">Failed attempt</p>
+            <p class="sh-stat-value">{{ number_format($counts['failed']) }}</p>
+            <p class="sh-stat-note">Kailangan ng bagong attempt</p>
+        </div>
+    </section>
+
+    {{-- Filter tabs --}}
+    <nav class="flex flex-wrap gap-2" aria-label="Parcel status filter">
+        @foreach ($tabs as $key => $label)
+            <a href="{{ request()->fullUrlWithQuery(['status' => $key, 'page' => null]) }}"
+               class="{{ $activeStatus === $key ? 'sh-btn' : 'sh-btn-ghost' }}"
+               @if ($activeStatus === $key) aria-current="page" @endif>{{ $label }}</a>
+        @endforeach
+    </nav>
+
+    {{-- Search --}}
+    <form method="GET" class="flex flex-wrap items-end gap-3">
+        <input type="hidden" name="status" value="{{ $activeStatus }}">
+        <label class="sh-field min-w-[16rem] flex-1">
+            <span class="sh-label">Search</span>
+            <input type="search" name="q" value="{{ $search }}" placeholder="Tracking no., order no., o pangalan ng receiver" class="sh-input">
+        </label>
+        <button class="sh-btn">Search</button>
+        @if ($search !== '')
+            <a href="{{ request()->fullUrlWithQuery(['q' => null]) }}" class="sh-btn-ghost">Clear</a>
+        @endif
+    </form>
+
+    {{-- Bulk assign --}}
+    <form method="POST" action="#" id="assign-form" class="sh-surface sh-card-pad" hidden>
+        @csrf
+        <div class="sh-toolbar">
+            <p class="text-sm font-semibold text-navy"><span data-selected>0</span> parcel(s) napili</p>
+            <div class="flex flex-wrap items-end gap-3">
+                <label class="sh-field">
+                    <span class="sh-label">Rider</span>
+                    <select name="rider" required class="sh-input">
+                        <option value="">Pumili ng rider</option>
+                        @foreach ($riders as $r)
+                            <option value="{{ $r }}">{{ $r }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <button class="sh-btn">Assign rider</button>
+            </div>
+        </div>
+    </form>
+
+    {{-- Table --}}
+    <div class="sh-surface overflow-x-auto">
+        <table class="w-full min-w-[56rem] text-left text-sm">
+            <thead>
+                <tr class="border-b border-gray-border text-xs text-navy/50">
+                    <th class="w-10 px-4 py-3">
+                        <input type="checkbox" data-check-all aria-label="Select all assignable parcels" class="h-4 w-4 rounded border-gray-border text-teal focus:ring-teal">
+                    </th>
+                    <th class="px-4 py-3">Tracking</th>
+                    <th class="px-4 py-3">Receiver</th>
+                    <th class="px-4 py-3">COD</th>
+                    <th class="px-4 py-3">Rider</th>
+                    <th class="px-4 py-3">Status</th>
+                    <th class="px-4 py-3">Updated</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse ($parcels as $p)
+                    @php
+                        $p = (object) $p;
+                        [$badgeClass, $badgeLabel] = $statusBadge[$p->status];
+                    @endphp
+                    <tr class="border-b border-gray-border/60 align-top last:border-0">
+                        <td class="px-4 py-3">
+                            @if ($p->status === 'at_branch' || $p->status === 'failed')
+                                <input type="checkbox" name="parcel_ids[]" value="{{ $p->tracking }}" form="assign-form" data-parcel
+                                       aria-label="Select {{ $p->tracking }}"
+                                       class="h-4 w-4 rounded border-gray-border text-teal focus:ring-teal">
+                            @endif
+                        </td>
+                        <td class="px-4 py-3">
+                            <p class="font-semibold text-navy">{{ $p->tracking }}</p>
+                            <p class="text-xs text-navy/50">{{ $p->order }}</p>
+                        </td>
+                        <td class="px-4 py-3">
+                            <p class="text-navy">{{ $p->receiver }}</p>
+                            <p class="text-xs text-navy/50">{{ $p->barangay }}</p>
+                        </td>
+                        <td class="px-4 py-3">
+                            @if ($p->cod > 0)
+                                <span class="sh-badge sh-badge-neutral">â‚±{{ number_format($p->cod, 2) }}</span>
+                            @else
+                                <span class="text-xs text-navy/40">Prepaid</span>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-navy/70">{{ $p->rider ?? 'â€”' }}</td>
+                        <td class="px-4 py-3">
+                            <span class="sh-badge {{ $badgeClass }}">{{ $badgeLabel }}</span>
+                            @if (! empty($p->note))
+                                <p class="mt-1 max-w-[14rem] text-xs text-navy/50">{{ $p->note }}</p>
+                            @endif
+                        </td>
+                        <td class="px-4 py-3 text-xs text-navy/50">{{ $p->updated }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="px-4 py-10">
+                            <div class="sh-empty">
+                                <p class="text-sm font-semibold text-navy">Walang parcel na tumugma</p>
+                                <p class="mt-1 text-xs text-navy/45">Subukan ang ibang status o search.</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+(function () {
+    const form = document.getElementById('assign-form');
+    const boxes = Array.from(document.querySelectorAll('[data-parcel]'));
+    const checkAll = document.querySelector('[data-check-all]');
+    const selected = form.querySelector('[data-selected]');
+
+    function sync() {
+        const n = boxes.filter(function (b) { return b.checked; }).length;
+        selected.textContent = n;
+        form.hidden = n === 0;
+        if (checkAll) {
+            checkAll.checked = boxes.length > 0 && n === boxes.length;
+            checkAll.indeterminate = n > 0 && n < boxes.length;
+        }
+    }
+
+    boxes.forEach(function (b) { b.addEventListener('change', sync); });
+    checkAll && checkAll.addEventListener('change', function () {
+        boxes.forEach(function (b) { b.checked = checkAll.checked; });
+        sync();
+    });
+
+    sync();
+})();
+</script>
+@endpush
+
+===== database/migrations/2026_10_07_000005_add_seller_fulfillment_and_pickup_requests.php =====
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        $orderColumns = [
+            'tracking_code' => fn (Blueprint $table) => $table->string('tracking_code', 40)->nullable()->unique(),
+            'delivery_region_code' => fn (Blueprint $table) => $table->string('delivery_region_code', 20)->nullable(),
+            'delivery_region_name' => fn (Blueprint $table) => $table->string('delivery_region_name', 150)->nullable(),
+            'delivery_province_code' => fn (Blueprint $table) => $table->string('delivery_province_code', 20)->nullable(),
+            'delivery_province_name' => fn (Blueprint $table) => $table->string('delivery_province_name', 150)->nullable(),
+            'delivery_municipality_code' => fn (Blueprint $table) => $table->string('delivery_municipality_code', 20)->nullable(),
+            'delivery_municipality_name' => fn (Blueprint $table) => $table->string('delivery_municipality_name', 150)->nullable(),
+            'delivery_barangay_code' => fn (Blueprint $table) => $table->string('delivery_barangay_code', 20)->nullable(),
+            'delivery_barangay_name' => fn (Blueprint $table) => $table->string('delivery_barangay_name', 150)->nullable(),
+            'delivery_street' => fn (Blueprint $table) => $table->string('delivery_street', 255)->nullable(),
+        ];
+
+        foreach ($orderColumns as $column => $definition) {
+            if (! Schema::hasColumn('orders', $column)) {
+                Schema::table('orders', function (Blueprint $table) use ($definition) {
+                    $definition($table);
+                });
+            }
+        }
+
+
+        if (! Schema::hasTable('pickup_requests')) {
+            Schema::create('pickup_requests', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('order_id')->unique()->constrained('orders')->cascadeOnDelete();
+                $table->foreignId('logistics_partner_id')->constrained('logistics_partners')->restrictOnDelete();
+                $table->foreignId('origin_sorting_center_id')->nullable()->constrained('sorting_centers')->nullOnDelete();
+                $table->string('status', 30)->default('requested');
+                $table->string('origin_province_code', 20)->nullable();
+                $table->string('origin_province_name', 150)->nullable();
+                $table->string('origin_municipality_code', 20)->nullable();
+                $table->string('origin_municipality_name', 150)->nullable();
+                $table->string('origin_barangay_code', 20)->nullable();
+                $table->string('origin_barangay_name', 150)->nullable();
+                $table->string('origin_street', 255)->nullable();
+                $table->timestamp('requested_at')->nullable();
+                $table->timestamp('assigned_at')->nullable();
+                $table->timestamp('picked_up_at')->nullable();
+                $table->timestamp('received_at')->nullable();
+                $table->timestamps();
+
+                $table->index(['logistics_partner_id', 'status'], 'pickup_requests_partner_status_idx');
+            });
+        }
+
+        // Preserve historical Buyer address data as a structured Order snapshot where possible.
+        if (Schema::hasTable('buyers')) {
+            DB::table('orders')->orderBy('id')->get()->each(function ($order) {
+                $buyer = DB::table('buyers')->where('id', $order->buyer_id)->first();
+                if (! $buyer) {
+                    return;
+                }
+
+                $updates = [];
+                foreach ([
+                    'province_code' => 'delivery_province_code',
+                    'province_name' => 'delivery_province_name',
+                    'municipality_code' => 'delivery_municipality_code',
+                    'municipality_name' => 'delivery_municipality_name',
+                    'barangay_code' => 'delivery_barangay_code',
+                    'barangay_name' => 'delivery_barangay_name',
+                    'street_address' => 'delivery_street',
+                ] as $source => $target) {
+                    if (property_exists($buyer, $source) && $buyer->{$source}) {
+                        $updates[$target] = $buyer->{$source};
+                    }
+                }
+                if ($updates) {
+                    DB::table('orders')->where('id', $order->id)->update($updates);
+                }
+            });
+        }
+
+        // A deterministic shipment reference lets existing in-flight Orders print a label immediately.
+        DB::table('orders')->whereNull('tracking_code')->orderBy('id')->get()->each(function ($order) {
+            $date = $order->created_at ? date('Ymd', strtotime($order->created_at)) : date('Ymd');
+            DB::table('orders')->where('id', $order->id)->update([
+                'tracking_code' => 'SHP-'.$date.'-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
+            ]);
+        });
+
+        // Keep Delivery and Seller label references identical for existing Logistics records.
+        if (Schema::hasTable('deliveries') && Schema::hasColumn('deliveries', 'tracking_code')) {
+            DB::table('deliveries')->orderBy('id')->get()->each(function ($delivery) {
+                $order = DB::table('orders')->where('id', $delivery->order_id)->first();
+                if ($order?->tracking_code && $delivery->tracking_code !== $order->tracking_code) {
+                    DB::table('deliveries')->where('id', $delivery->id)->update(['tracking_code' => $order->tracking_code]);
+                }
+
+                if ($order && ! DB::table('pickup_requests')->where('order_id', $order->id)->exists()) {
+                    $seller = DB::table('sellers')->where('id', $order->seller_id)->first();
+                    DB::table('pickup_requests')->insert([
+                        'order_id' => $order->id,
+                        'logistics_partner_id' => $delivery->logistics_partner_id,
+                        'origin_sorting_center_id' => $delivery->origin_sorting_center_id ?? null,
+                        'status' => ($delivery->picked_up_at ?? null) ? 'picked_up' : 'assigned',
+                        'origin_province_code' => $seller->province_code ?? null,
+                        'origin_province_name' => $seller->province_name ?? null,
+                        'origin_municipality_code' => $seller->municipality_code ?? null,
+                        'origin_municipality_name' => $seller->municipality_name ?? null,
+                        'origin_barangay_code' => $seller->barangay_code ?? null,
+                        'origin_barangay_name' => $seller->barangay_name ?? null,
+                        'origin_street' => $seller->street_address ?? null,
+                        'requested_at' => $order->updated_at ?? now(),
+                        'assigned_at' => $delivery->assigned_at ?? null,
+                        'picked_up_at' => $delivery->picked_up_at ?? null,
+                        'created_at' => $order->updated_at ?? now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            });
+        }
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('pickup_requests');
+
+        $columns = [
+            'tracking_code',
+            'delivery_region_code', 'delivery_region_name',
+            'delivery_province_code', 'delivery_province_name',
+            'delivery_municipality_code', 'delivery_municipality_name',
+            'delivery_barangay_code', 'delivery_barangay_name',
+            'delivery_street',
+        ];
+        $existing = array_values(array_filter($columns, fn ($column) => Schema::hasColumn('orders', $column)));
+        if ($existing) {
+            Schema::table('orders', function (Blueprint $table) use ($existing) {
+                $table->dropColumn($existing);
+            });
+        }
+    }
+};
+
+
+===== database/migrations/2026_10_07_000001_expand_sorting_center_workflow.php =====
+
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Carbon;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::table('riders', function (Blueprint $table) {
+            // A rider can be assigned to one operational delivery area while remaining owned by one partner.
+            $table->foreignId('coverage_area_id')->nullable()->after('logistics_partner_id')
+                ->constrained('logistics_coverage_areas')->nullOnDelete();
+            $table->string('availability_status', 20)->default('available')->after('status');
+        });
+
+        Schema::table('deliveries', function (Blueprint $table) {
+            // One tracking code follows the same Seller Order across pickup, sorting, and final delivery.
+            $table->string('tracking_code', 40)->nullable()->unique()->after('id');
+            $table->foreignId('destination_area_id')->nullable()->after('logistics_partner_id')
+                ->constrained('logistics_coverage_areas')->nullOnDelete();
+            $table->foreignId('delivery_rider_id')->nullable()->after('rider_id')
+                ->constrained('riders')->restrictOnDelete();
+
+            // Sorting-center milestones required by the approved ERP flow.
+            $table->timestamp('pickup_accepted_at')->nullable()->after('assigned_at');
+            $table->timestamp('at_sorting_center_at')->nullable()->after('picked_up_at');
+            $table->timestamp('sorted_at')->nullable()->after('at_sorting_center_at');
+            $table->timestamp('delivery_assigned_at')->nullable()->after('sorted_at');
+            $table->timestamp('out_for_delivery_at')->nullable()->after('delivery_assigned_at');
+            $table->timestamp('delivery_failed_at')->nullable()->after('delivered_at');
+            $table->text('failure_reason')->nullable()->after('delivery_failed_at');
+            $table->timestamp('returned_at')->nullable()->after('failure_reason');
+            $table->unsignedSmallInteger('delivery_attempts')->default(0)->after('returned_at');
+        });
+
+        // Preserve existing assignments while giving every persisted shipment a scannable tracking code.
+        DB::table('deliveries')
+            ->leftJoin('orders', 'orders.id', '=', 'deliveries.order_id')
+            ->select('deliveries.id', 'deliveries.order_id', 'deliveries.status', 'deliveries.rider_id',
+                'deliveries.delivered_rider_id', 'deliveries.in_transit_at', 'orders.created_at as order_created_at')
+            ->orderBy('deliveries.id')
+            ->get()
+            ->each(function ($delivery) {
+                $date = $delivery->order_created_at
+                    ? Carbon::parse($delivery->order_created_at)->format('Ymd')
+                    : now()->format('Ymd');
+                $updates = [
+                    'tracking_code' => 'SHP-'.$date.'-'.str_pad((string) $delivery->order_id, 6, '0', STR_PAD_LEFT),
+                ];
+
+                // The previous in_transit stage represented the rider's final-mile movement.
+                if ($delivery->status === 'in_transit') {
+                    $updates['status'] = 'out_for_delivery';
+                    $updates['delivery_rider_id'] = $delivery->rider_id;
+                    $updates['out_for_delivery_at'] = $delivery->in_transit_at;
+                    $updates['delivery_attempts'] = 1;
+                } elseif ($delivery->status === 'delivered') {
+                    $updates['delivery_rider_id'] = $delivery->delivered_rider_id ?: $delivery->rider_id;
+                    $updates['delivery_attempts'] = 1;
+                }
+
+                DB::table('deliveries')->where('id', $delivery->id)->update($updates);
+            });
+    }
+
+    public function down(): void
+    {
+        Schema::table('deliveries', function (Blueprint $table) {
+            $table->dropUnique(['tracking_code']);
+            $table->dropConstrainedForeignId('destination_area_id');
+            $table->dropConstrainedForeignId('delivery_rider_id');
+            $table->dropColumn([
+                'tracking_code',
+                'pickup_accepted_at',
+                'at_sorting_center_at',
+                'sorted_at',
+                'delivery_assigned_at',
+                'out_for_delivery_at',
+                'delivery_failed_at',
+                'failure_reason',
+                'returned_at',
+                'delivery_attempts',
+            ]);
+        });
+
+        Schema::table('riders', function (Blueprint $table) {
+            $table->dropConstrainedForeignId('coverage_area_id');
+            $table->dropColumn('availability_status');
+        });
+    }
+};
+

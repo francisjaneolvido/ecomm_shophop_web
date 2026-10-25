@@ -73,6 +73,12 @@ class SortingCenter extends Model
         return $this->hasMany(BranchStaff::class, 'sorting_center_id');
     }
 
+
+    public function fleetVehicles(): HasMany
+    {
+        return $this->hasMany(FleetVehicle::class, 'home_hub_id');
+    }
+
     public function outgoingTransfers(): HasMany
     {
         return $this->hasMany(ParcelTransfer::class, 'from_sorting_center_id');

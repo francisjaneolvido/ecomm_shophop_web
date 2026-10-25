@@ -195,6 +195,8 @@ class LagunaLogisticsSeeder extends Seeder
     /** @return bool true when a new station hub was created */
     private function stationHub(LogisticsPartner $partner, SortingCenter $provinceHub, string $city, int $sequence): bool
     {
+        $account = $this->stationAccount($city);
+
         $existing = SortingCenter::where('parent_id', $provinceHub->id)
             ->where('type', 'station_hub')
             ->where('municipality', $city)
@@ -202,24 +204,14 @@ class LagunaLogisticsSeeder extends Seeder
             ->first();
 
         if ($existing) {
+            // Older/demo databases may already have the branch row but no
+            // mobile/web login assigned to it. Repair that relationship on
+            // every seeder run instead of silently skipping it.
+            if ((int) $existing->user_id !== (int) $account->id) {
+                $existing->forceFill(['user_id' => $account->id])->save();
+            }
             $this->ensureCoverage($existing);
             return false;
-        }
-
-        $email = 'laguna.'.Str::slug($city).'@example.com';
-
-        $account = User::where('email', $email)->first();
-        if (! $account) {
-            $account = new User();
-            $account->forceFill([
-                'email' => $email,
-                'password' => Hash::make(self::PASSWORD),
-                'account_type' => 'branch',
-                'status' => 'approved',
-                'email_verified_at' => now(),
-                'reviewed_at' => now(),
-                'notes' => 'Seeded station hub login (LagunaLogisticsSeeder).',
-            ])->save();
         }
 
         $station = SortingCenter::create([
@@ -243,6 +235,23 @@ class LagunaLogisticsSeeder extends Seeder
         $this->ensureCoverage($station);
 
         return true;
+    }
+
+    private function stationAccount(string $city): User
+    {
+        $email = 'laguna.'.Str::slug($city).'@example.com';
+        $account = User::firstOrNew(['email' => $email]);
+
+        $account->forceFill([
+            'password' => Hash::make(self::PASSWORD),
+            'account_type' => 'branch',
+            'status' => 'approved',
+            'email_verified_at' => $account->email_verified_at ?? now(),
+            'reviewed_at' => $account->reviewed_at ?? now(),
+            'notes' => 'Seeded station hub login (LagunaLogisticsSeeder).',
+        ])->save();
+
+        return $account;
     }
 
     /** The city of the station hub is its delivery coverage (the observer does this too; this is the fallback). */

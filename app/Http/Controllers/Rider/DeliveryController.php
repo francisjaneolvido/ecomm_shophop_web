@@ -67,66 +67,20 @@ class DeliveryController extends Controller
 
     public function pickup(Request $request, int $delivery): RedirectResponse
     {
-        return DB::transaction(function () use ($request, $delivery) {
-            $rider = $request->user('rider');
-            $owned = $this->current($request, $delivery, true);
-            $this->assertActive($rider->id, $owned->logistics_partner_id);
+        $this->visible($request, $delivery);
 
-            if ($owned->status !== Delivery::PICKUP_ACCEPTED
-                || $owned->order?->status !== Order::STATUS_READY_FOR_PICKUP
-                || ! $owned->order->isPaymentEligible()) {
-                return $this->stale();
-            }
-
-            if (Order::whereKey($owned->order_id)->where('status', Order::STATUS_READY_FOR_PICKUP)
-                    ->paymentEligible()->update(['status' => Order::STATUS_TO_RECEIVE]) !== 1
-                || Delivery::whereKey($owned->id)->where('status', Delivery::PICKUP_ACCEPTED)
-                    ->where('rider_id', $rider->id)->update([
-                        'status' => Delivery::PICKED_UP,
-                        'picked_up_at' => now(),
-                        'pickup_rider_id' => $rider->id,
-                    ]) !== 1) {
-                throw ValidationException::withMessages([
-                    'delivery' => 'Delivery changed. Refresh and review it.',
-                ]);
-            }
-
-            PickupRequest::where('order_id', $owned->order_id)->update([
-                'status' => PickupRequest::PICKED_UP,
-                'picked_up_at' => now(),
-            ]);
-
-            return back()->with('status', 'Parcel pickup confirmed. Bring it to the sorting center.');
-        });
+        return back()->withErrors([
+            'delivery' => 'Seller pickup now requires the ShopHop Rider mobile camera QR custody scan.',
+        ]);
     }
 
     public function outForDelivery(Request $request, int $delivery): RedirectResponse
     {
-        return DB::transaction(function () use ($request, $delivery) {
-            $rider = $request->user('rider');
-            $owned = $this->current($request, $delivery, true);
-            $this->assertActive($rider->id, $owned->logistics_partner_id);
+        $this->visible($request, $delivery);
 
-            if ($owned->status !== Delivery::DELIVERY_ASSIGNED
-                || (int) $owned->delivery_rider_id !== (int) $rider->id
-                || $owned->order?->status !== Order::STATUS_TO_RECEIVE
-                || ! $owned->order->isPaymentEligible()) {
-                return $this->stale();
-            }
-
-            if (Delivery::whereKey($owned->id)->where('status', Delivery::DELIVERY_ASSIGNED)
-                ->where('rider_id', $rider->id)->where('delivery_rider_id', $rider->id)
-                ->update([
-                    'status' => Delivery::OUT_FOR_DELIVERY,
-                    'out_for_delivery_at' => now(),
-                    'in_transit_at' => now(),
-                    'transit_rider_id' => $rider->id,
-                ]) !== 1) {
-                return $this->stale();
-            }
-
-            return back()->with('status', 'Parcel marked out for delivery.');
-        });
+        return back()->withErrors([
+            'delivery' => 'Destination-branch release now requires the ShopHop Rider mobile camera QR custody scan.',
+        ]);
     }
 
     /** Backward-compatible route name for old links; the legal stage is now final-delivery dispatch. */

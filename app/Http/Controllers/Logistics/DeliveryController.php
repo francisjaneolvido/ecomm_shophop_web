@@ -11,6 +11,7 @@ use App\Models\Logistics\PickupRequest;
 use App\Models\Logistics\SortingCenter;
 use App\Models\LogisticsCoverageArea;
 use App\Models\LogisticsPartner;
+use App\Services\LogisticsRoutingService;
 use App\Services\ParcelScanService;
 use App\Services\PhilippineDeliveryCoverage;
 use Illuminate\Database\QueryException;
@@ -23,7 +24,7 @@ use Illuminate\View\View;
 
 class DeliveryController extends Controller
 {
-    public function board(Request $request): View
+    public function board(Request $request, LogisticsRoutingService $routing): View
     {
         $partner = $this->partner($request);
         $ready = self::readyFor($partner);
@@ -40,9 +41,11 @@ class DeliveryController extends Controller
             ->whereNotNull('email')->whereNotNull('password')
             ->orderBy('name')->get();
         $coverageAreas = $partner->coverageAreas()->with('sortingCenter')->orderBy('area_name')->get();
-        $sortingCenters = $partner->sortingCenters()->where('status', 'active')->orderByDesc('is_main')->orderBy('name')->get();
+        $transferPlans = $deliveries->mapWithKeys(fn (Delivery $delivery) => [
+            $delivery->id => $routing->transferPlan($delivery),
+        ]);
 
-        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'sortingCenters'));
+        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'transferPlans'));
     }
 
     /** Assign the rider who will collect the parcel from the Seller and bring it to the sorting center. */
@@ -212,62 +215,11 @@ class DeliveryController extends Controller
     }
 
     /** Dispatch a sorted parcel from its current center to the branch that owns the destination area. */
-    public function dispatchTransfer(Request $request, int $delivery): RedirectResponse
+    public function dispatchTransfer(Request $request, int $delivery, LogisticsRoutingService $routing): RedirectResponse
     {
-        $partner = $this->partner($request);
-        $data = $request->validate([
-            'to_sorting_center_id' => ['required', 'integer'],
-            'transit_rider_id' => ['nullable', 'integer'],
+        return back()->withErrors([
+            'delivery' => 'Center-to-center transport now uses Outbound Manifest + Linehaul Vehicle/Driver. Open the origin Branch/Hub outbound workspace instead of dispatching a single parcel.',
         ]);
-
-        return DB::transaction(function () use ($partner, $delivery, $data) {
-            $owned = Delivery::with(['order', 'transfers'])
-                ->where('logistics_partner_id', $partner->id)
-                ->whereKey($delivery)->lockForUpdate()->firstOrFail();
-
-            if ($owned->status !== Delivery::SORTED
-                || ! $owned->current_sorting_center_id
-                || ! $owned->destination_sorting_center_id
-                || (int) $owned->current_sorting_center_id === (int) $owned->destination_sorting_center_id) {
-                return $this->stale();
-            }
-
-            if ($owned->transfers->contains(fn ($transfer) => $transfer->status === ParcelTransfer::IN_TRANSIT)) {
-                return back()->withErrors(['delivery' => 'This parcel already has an active center transfer.']);
-            }
-
-            $from = SortingCenter::where('logistics_partner_id', $partner->id)->findOrFail($owned->current_sorting_center_id);
-            $to = SortingCenter::where('logistics_partner_id', $partner->id)
-                ->where('status', 'active')
-                ->findOrFail((int) $data['to_sorting_center_id']);
-
-            if ((int) $from->id === (int) $to->id) {
-                throw ValidationException::withMessages([
-                    'to_sorting_center_id' => 'Choose a different next Sorting Center.',
-                ]);
-            }
-
-            $transitRider = null;
-            if (! empty($data['transit_rider_id'])) {
-                $transitRider = $this->activeRider($partner, (int) $data['transit_rider_id']);
-                if ((int) $transitRider->sorting_center_id !== (int) $from->id) {
-                    throw ValidationException::withMessages([
-                        'transit_rider_id' => 'Transit Rider must belong to the dispatching branch.',
-                    ]);
-                }
-            }
-
-            ParcelTransfer::create([
-                'delivery_id' => $owned->id,
-                'from_sorting_center_id' => $from->id,
-                'transit_rider_id' => $transitRider?->id,
-                'to_sorting_center_id' => $to->id,
-                'status' => ParcelTransfer::IN_TRANSIT,
-                'dispatched_at' => now(),
-            ]);
-
-            return back()->with('status', 'Parcel dispatched to '.$to->name.'.');
-        });
     }
 
     /** Destination branch scan that closes the active hub-to-hub transfer. */
