@@ -168,7 +168,11 @@
         .sh-modal-actions { padding:1rem 1.25rem 1.25rem; display:flex; justify-content:flex-end; gap:.65rem; }
     </style>
 
+    {{-- Phase 3–5: shared compact logistics workspaces (Partner / Hub / Branch). --}}
+    <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase345.css') }}?v=20261027">
     @stack('styles')
+    {{-- Shared required-field styling; no field schema changes. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
 </head>
 
 @php
@@ -720,6 +724,8 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261027"></script>
 @stack('scripts')
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
 </body>
 </html>

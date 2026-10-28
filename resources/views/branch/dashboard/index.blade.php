@@ -28,7 +28,7 @@
     ];
 @endphp
 
-<div class="space-y-6">
+<div class="space-y-5 sh-ui-workspace">
     <header class="sh-page-header">
         <div>
             <p class="eyebrow">{{ $center->name ?? 'Your branch' }}</p>
@@ -49,8 +49,14 @@
         <div role="alert" class="sh-alert-error">{{ $errors->first() }}</div>
     @endif
 
+    <nav class="sh-ui-jump" aria-label="Branch quick actions">
+        @if($has('branch.receive'))<a href="#branch-receiving">Receive parcels <span>{{ $stats['to_receive'] }}</span></a>@endif
+        @if($link('branch.parcels.index'))<a href="{{ $link('branch.parcels.index') }}">Assign delivery riders <span>{{ $stats['to_assign'] }}</span></a>@endif
+        @if($link('branch.outbound.index'))<a href="{{ $link('branch.outbound.index') }}">Outbound manifests →</a>@endif
+    </nav>
+
     {{-- Stat cards --}}
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4 sh-ui-branch-kpis">
         @foreach ($cards as [$label, $value, $note])
             <div class="sh-stat">
                 <p class="sh-stat-label">{{ $label }}</p>
@@ -80,7 +86,7 @@
 
     <div class="grid gap-5 xl:grid-cols-3">
         {{-- Awaiting receipt --}}
-        <section class="sh-surface sh-card-pad xl:col-span-2">
+        <section id="branch-receiving" class="sh-surface sh-card-pad xl:col-span-2 scroll-mt-6">
             <div class="sh-toolbar">
                 <div>
                     <h2 class="text-base font-bold text-navy">Awaiting receipt</h2>
@@ -90,7 +96,7 @@
 
             {{-- Scan box: gumagana sa USB scanner (nagta-type + Enter) --}}
             @if ($has('branch.receive'))
-                <form method="POST" action="{{ route('branch.receive') }}" class="mt-4 flex flex-wrap items-center gap-2">
+                <form method="POST" action="{{ route('branch.receive') }}" class="mt-4 flex flex-wrap items-center gap-2" data-confirm-title="Receive scanned parcel?" data-confirm-message="Please confirm the parcel is physically present and the scanned tracking code matches." data-confirm-button="Receive parcel">
                     @csrf
                     <input name="tracking_code" required autofocus autocomplete="off"
                            placeholder="Scan tracking code (SHP-YYYYMMDD-000000)" class="sh-input min-w-0 flex-1">
@@ -107,11 +113,10 @@
                             <p class="mt-0.5 text-xs text-navy/50">{{ $i->label }} · {{ $i->from }} · {{ $i->when }}</p>
                         </div>
                         @if ($has('branch.receive'))
-                            <form method="POST" action="{{ route('branch.receive') }}">
+                            <form method="POST" action="{{ route('branch.receive') }}" data-confirm-title="Receive this parcel?" data-confirm-message="Please verify the physical parcel and tracking code before confirming receipt." data-confirm-subject="{{ $i->tracking }}" data-confirm-button="Receive parcel">
                                 @csrf
                                 <input type="hidden" name="tracking_code" value="{{ $i->tracking }}">
-                                <button class="sh-btn-soft"
-                                        onclick="return confirm('Na-check mo ba ang physical na parcel at tugma ang tracking code?')">Receive</button>
+                                <button class="sh-btn-soft">Receive</button>
                             </form>
                         @endif
                     </div>

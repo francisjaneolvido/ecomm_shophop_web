@@ -40,7 +40,11 @@
         @endforeach
     </div>
 
-    <section class="sh-surface sh-card-pad" aria-label="Delivery process overview">
+    <nav class="sh-ui-jump" aria-label="Parcel operation queues"><a href="#pickup-queue">Pickup requests <span>{{ $ready->count() }}</span></a><a href="#active-deliveries">Active deliveries <span>{{ $deliveries->count() }}</span></a><a href="{{ route('logistics.returns.index') }}">Returns ↗</a></nav>
+
+    <details class="sh-surface sh-ui-guide" aria-label="Delivery process overview">
+        <summary class="sh-ui-guide-summary"><strong>Parcel handling guide</strong><span>Expand workflow steps</span><x-lucide-chevron-down class="h-4 w-4" /></summary>
+        <div class="sh-card-pad">
         <div class="flex items-start gap-3">
             <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-light text-teal-dark"><x-lucide-route class="h-5 w-5" /></div>
             <div>
@@ -56,7 +60,8 @@
                 </div>
             @endforeach
         </div>
-    </section>
+        </div>
+    </details>
 
     <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-teal/25 bg-teal-light/30 p-4 text-xs text-navy/70">
         <p><strong>Branch routing:</strong> Each branch is a warehouse/sorting hub in one Logistics company. Staff scan at their assigned branch; riders carry parcels between locations.</p>
@@ -225,7 +230,7 @@
                             @endif
                             @if ($delivery->status === \App\Models\Logistics\Delivery::DELIVERY_FAILED)
                                 <div class="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3"><p class="text-xs font-bold text-rose-900">Delivery failure reported</p><p class="mt-1 text-xs text-rose-800">{{ $delivery->failure_reason }}</p><p class="mt-2 text-[11px] text-rose-700">Choose whether to retry delivery or initiate a Return-to-Seller case. Both actions require real handoffs.</p></div>
-                                <form action="{{ route('logistics.returns.initiate', $delivery) }}" method="POST" class="mt-3 rounded-xl border border-rose-200 bg-white p-3" onsubmit="return confirm('Start Return-to-Seller? Seller payout will be held and retry will no longer be available.')">@csrf
+                                <form action="{{ route('logistics.returns.initiate', $delivery) }}" method="POST" class="mt-3 rounded-xl border border-rose-200 bg-white p-3" data-confirm-title="Start Return-to-Seller?" data-confirm-message="This will hold the seller payout and disable further delivery retries. Continue only after reviewing the failed delivery." data-confirm-button="Start return" data-confirm-danger="1" data-confirm-subject="Order #{{ $delivery->order_id }}">@csrf
                                     <label class="sh-field"><span class="sh-label">Return decision reason (minimum 10 characters)</span><textarea required minlength="10" maxlength="1000" name="reason" class="sh-input" rows="2" placeholder="Why delivery will not be retried"></textarea></label>
                                     <button class="sh-btn mt-2" type="submit">Initiate Return to Seller</button>
                                 </form>

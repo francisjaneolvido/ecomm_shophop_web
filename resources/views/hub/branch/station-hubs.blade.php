@@ -46,7 +46,7 @@
         <div class="divide-y divide-gray-border">
             @forelse($stationHubs as $hub)
                 @php $active = $hub->status === 'active'; @endphp
-                <div class="grid gap-4 p-4 transition hover:bg-gray-bg/40 sm:p-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-center">
+                <div class="sh-ui-directory-row grid gap-3 p-4 transition hover:bg-gray-bg/40 sm:p-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-center">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
                             <h3 class="text-sm font-bold">{{ $hub->name }}</h3>
@@ -112,7 +112,7 @@
                 </div>
             @endif
 
-            <section class="space-y-4">
+            <section class="sh-ui-form-section space-y-4">
                 <h3 class="text-sm font-bold">1. Station details</h3>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <label class="sh-field"><span class="sh-label">Station hub name *</span><input class="sh-input" name="name" value="{{ old('name') }}" required maxlength="180"></label>
@@ -120,7 +120,7 @@
                 </div>
             </section>
 
-            <section class="space-y-4">
+            <section class="sh-ui-form-section space-y-4">
                 <h3 class="text-sm font-bold">2. Station address</h3>
                 <div class="grid gap-4 sm:grid-cols-2">
                     <label class="sh-field"><span class="sh-label">Province</span><input class="sh-input bg-gray-bg" value="{{ $center->province }}, {{ $center->region }}" disabled></label>
@@ -133,7 +133,7 @@
                 </div>
             </section>
 
-            <section class="space-y-4">
+            <section class="sh-ui-form-section space-y-4">
                 <h3 class="text-sm font-bold">3. Station hub login</h3>
                 <label class="sh-field"><span class="sh-label">Email (login) *</span><input class="sh-input" type="email" name="manager_email" value="{{ old('manager_email') }}" required maxlength="190" placeholder="station@example.com"></label>
                 <label class="sh-field"><span class="sh-label">Password *</span>

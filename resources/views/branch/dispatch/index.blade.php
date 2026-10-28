@@ -18,7 +18,8 @@
         </div>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-3">
+    <nav class="sh-ui-jump" aria-label="Dispatch queues"><a href="#dispatch-pickups">Pickup requests</a><a href="#dispatch-deliveries">Ready for delivery</a></nav>
+    <section class="grid gap-3 sm:grid-cols-3">
         <div class="sh-stat">
             <p class="sh-stat-label">Pickup requests</p>
             <p class="sh-stat-value">{{ number_format($pickups->count()) }}</p>
@@ -38,7 +39,7 @@
 
     {{-- 1. PICKUP REQUESTS --}}
     <section id="pickups" class="sh-surface sh-card-pad">
-        <h2 class="text-base font-bold text-navy">Pickup requests</h2>
+        <h2 id="dispatch-pickups" class="text-base font-bold text-navy scroll-mt-6">Pickup requests</h2>
         <p class="mt-1 text-xs text-navy/45">Rider na kukuha ng parcel sa seller papunta sa branch mo.</p>
 
         <div class="mt-4 grid gap-3">
@@ -93,7 +94,7 @@
 
     {{-- 2. READY FOR DELIVERY --}}
     <section id="deliveries" class="sh-surface sh-card-pad">
-        <h2 class="text-base font-bold text-navy">Ready for delivery</h2>
+        <h2 id="dispatch-deliveries" class="text-base font-bold text-navy scroll-mt-6">Ready for delivery</h2>
         <p class="mt-1 text-xs text-navy/45">Naka-sort na sa branch mo. Rider lang na naka-assign sa delivery area ng parcel ang lalabas sa dropdown.</p>
 
         <div class="mt-4 grid gap-3">

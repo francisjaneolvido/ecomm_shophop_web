@@ -46,7 +46,7 @@
                 <span class="sh-btn-soft">Open rider form</span>
             </summary>
 
-            <form method="POST" action="{{ route('logistics.riders.store') }}" class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <form method="POST" action="{{ route('logistics.riders.store') }}" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3" data-confirm-title="Create rider account?" data-confirm-message="This adds a new rider under your logistics partner. Double-check the rider's email and assigned branch." data-confirm-button="Create rider">
                 @csrf
                 <label class="sh-field"><span class="sh-label">Rider name</span><input id="rider-name" name="name" required maxlength="150" value="{{ old('name') }}" class="sh-input"></label>
                 <label class="sh-field"><span class="sh-label">Vehicle type</span><input id="rider-vehicle" name="vehicle_type" required maxlength="80" value="{{ old('vehicle_type') }}" class="sh-input"></label>
@@ -60,7 +60,13 @@
         </details>
     </section>
 
-    <div id="rider-directory" class="grid grid-cols-1 gap-5 2xl:grid-cols-2">
+    <section class="sh-ui-filter" aria-label="Filter rider directory">
+        <div class="sh-ui-filter-title"><strong>Rider directory</strong><span>Search and review applications without leaving the page.</span></div>
+        <label class="sh-ui-search"><span class="sr-only">Search visible riders</span><input class="sh-input" type="search" placeholder="Search rider, email, branch…" data-ui-list-search="rider-directory" autocomplete="off"></label>
+        <label><span class="sr-only">Filter rider status</span><select class="sh-select" data-ui-status-select="rider-directory"><option value="all">All statuses</option><option value="pending">Pending</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="rejected">Rejected</option></select></label>
+        <span class="sh-ui-count" data-ui-count="rider-directory" aria-live="polite"></span>
+    </section>
+    <div id="rider-directory" class="sh-ui-directory grid grid-cols-1 gap-3 xl:grid-cols-2" data-ui-collection>
         @forelse ($riders as $rider)
             @php
                 $statusClasses = match ($rider->status) {
@@ -72,7 +78,7 @@
                 };
             @endphp
 
-            <article class="sh-surface sh-card-pad">
+            <article class="sh-surface sh-rider-card sh-ui-record" data-ui-record data-ui-status="{{ $rider->status }}">
                 <div class="sh-toolbar items-start">
                     <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2">
@@ -92,6 +98,9 @@
                     </div>
                 </div>
 
+                <details class="sh-record-details" @if($rider->status === 'pending') open @endif>
+                    <summary class="sh-record-summary"><span>View rider details & actions</span><x-lucide-chevron-down class="h-4 w-4" /></summary>
+                    <div class="sh-rider-expanded">
                 @if ($rider->applied_at)
                     <div class="mt-4 sh-surface-soft p-4 text-xs text-navy/65">
                         <div class="grid gap-2 sm:grid-cols-2">
@@ -115,11 +124,11 @@
                 @if ($rider->status === 'pending')
                     @if ($rider->email_verified_at)
                         <div class="mt-4 grid gap-3 lg:grid-cols-2">
-                            <form method="POST" action="{{ route('logistics.riders.approve', $rider) }}" data-confirm-title="Approve this rider?" data-confirm-message="The rider will become active and can be assigned to deliveries." data-confirm-button="Approve rider">
+                            <form method="POST" action="{{ route('logistics.riders.approve', $rider) }}" data-confirm-subject="{{ $rider->name }}" data-confirm-title="Approve this rider?" data-confirm-message="The rider will become active and can be assigned to deliveries." data-confirm-button="Approve rider">
                                 @csrf
                                 <button class="sh-btn w-full">Approve rider</button>
                             </form>
-                            <form method="POST" action="{{ route('logistics.riders.reject', $rider) }}" class="sh-surface-soft p-4" data-confirm-title="Reject this rider application?" data-confirm-message="This decision marks the application as rejected. Make sure the rejection reason is complete." data-confirm-button="Reject rider" data-confirm-danger="1">
+                            <form method="POST" action="{{ route('logistics.riders.reject', $rider) }}" class="sh-surface-soft p-4" data-confirm-subject="{{ $rider->name }}" data-confirm-title="Reject this rider application?" data-confirm-message="This decision marks the application as rejected. Make sure the rejection reason is complete." data-confirm-button="Reject rider" data-confirm-danger="1">
                                 @csrf
                                 <label class="sh-field"><span class="sh-label">Reason for rejection</span><textarea name="rejection_reason" required maxlength="1000" rows="3" placeholder="Explain why the rider application is being rejected." class="sh-textarea"></textarea></label>
                                 <div class="mt-3 flex justify-end"><button class="sh-btn-danger">Reject rider</button></div>
@@ -146,7 +155,7 @@
                         </div>
                     </div>
 
-                    <form method="POST" action="{{ route('logistics.riders.area', $rider) }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1.4fr_auto] sm:items-end">
+                    <form method="POST" action="{{ route('logistics.riders.area', $rider) }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_1.4fr_auto] sm:items-end" data-confirm-title="Update rider assignment?" data-confirm-message="This changes the rider's home branch and/or coverage area. Confirm that these are correct before saving." data-confirm-subject="{{ $rider->name }}" data-confirm-button="Save assignment">
                         @csrf
                         <label class="sh-field"><span class="sh-label">Sorting center</span><select name="sorting_center_id" class="sh-select"><option value="">Select home branch</option>@foreach ($sortingCenters->where('status', 'active') as $center)<option value="{{ $center->id }}" @selected($rider->sorting_center_id === $center->id)>{{ $center->name }}</option>@endforeach</select></label>
                         <label class="sh-field"><span class="sh-label">Coverage area</span><select name="coverage_area_id" class="sh-select"><option value="">Pickup only / unassigned</option>@foreach ($coverageAreas as $area)<option value="{{ $area->id }}" @selected($rider->coverage_area_id === $area->id)>{{ $area->sortingCenter?->name ? $area->sortingCenter->name.' · ' : '' }}{{ $area->area_name }}{{ $area->cities ? ' · '.$area->cities : '' }}</option>@endforeach</select></label>
@@ -167,11 +176,13 @@
                         </form>
                     @endif
 
-                    <form method="POST" action="{{ $rider->status === 'active' ? route('logistics.riders.suspend', $rider) : route('logistics.riders.activate', $rider) }}" class="mt-4" data-confirm-title="{{ $rider->status === 'active' ? 'Suspend this rider?' : 'Reactivate this rider?' }}" data-confirm-message="{{ $rider->status === 'active' ? 'The rider will no longer be assignable until reactivated.' : 'The rider will become available for assignment again.' }}" data-confirm-button="{{ $rider->status === 'active' ? 'Suspend rider' : 'Activate rider' }}" data-confirm-danger="{{ $rider->status === 'active' ? '1' : '0' }}">
+                    <form method="POST" action="{{ $rider->status === 'active' ? route('logistics.riders.suspend', $rider) : route('logistics.riders.activate', $rider) }}" class="mt-4" data-confirm-subject="{{ $rider->name }}" data-confirm-title="{{ $rider->status === 'active' ? 'Suspend this rider?' : 'Reactivate this rider?' }}" data-confirm-message="{{ $rider->status === 'active' ? 'The rider will no longer be assignable until reactivated.' : 'The rider will become available for assignment again.' }}" data-confirm-button="{{ $rider->status === 'active' ? 'Suspend rider' : 'Activate rider' }}" data-confirm-danger="{{ $rider->status === 'active' ? '1' : '0' }}">
                         @csrf
                         <button class="{{ $rider->status === 'active' ? 'sh-btn-danger' : 'sh-btn-ghost' }}">{{ $rider->status === 'active' ? 'Suspend rider' : 'Activate rider' }}</button>
                     </form>
                 @endif
+                    </div>
+                </details>
             </article>
         @empty
             <div class="sh-empty 2xl:col-span-2">

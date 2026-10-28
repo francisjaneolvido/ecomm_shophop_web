@@ -46,6 +46,8 @@
         @media (max-width:390px) {.lp-header-links .lp-marketplace{display:none;}.lp-header-links{gap:7px;}}
     </style>
     @stack('styles')
+    {{-- Shared required-field styling; no field schema changes. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
 </head>
 <body class="lp-site" style="min-height:100vh;display:flex;flex-direction:column">
     @include('logistics.partials.public-header')
@@ -53,5 +55,6 @@
     @include('logistics.partials.public-footer')
     <script src="{{ asset('js/shophop-ph-address.js') }}"></script>
     @stack('scripts')
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
 </body>
 </html>

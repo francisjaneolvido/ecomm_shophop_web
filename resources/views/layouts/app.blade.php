@@ -53,6 +53,8 @@
     {{-- Page-specific styles --}}
     @stack('styles')
 
+    {{-- Shared required-field styling; no field schema changes. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
 </head>
 
 
@@ -168,6 +170,7 @@
 @endif
 
 
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
 </body>
 
 </html>

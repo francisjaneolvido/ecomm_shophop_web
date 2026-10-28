@@ -334,8 +334,14 @@
         .sh-modal-actions { padding:1rem 1.25rem 1.25rem; display:flex; justify-content:flex-end; gap:.65rem; }
     </style>
 
+    {{-- Phase 1+2: Partner dashboard, compact navigation, shared form / modal system. --}}
+    <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase12.css') }}?v=20261026">
+    {{-- Phase 3–5: shared compact logistics workspaces (Partner / Hub / Branch). --}}
+    <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase345.css') }}?v=20261027">
     @stack('styles')
 
+    {{-- Shared required-field styling; no field schema changes. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
 </head>
 
 
@@ -452,6 +458,12 @@
 
                 // COD custody is a distinct persisted operation beside delivery fulfillment.
                 [
+                    'label' => 'Returns & Exceptions',
+                    'route' => 'logistics.returns.index',
+                    'pattern' => 'logistics.returns.*',
+                    'icon' => 'package-x',
+                ],
+                [
                     'label' => 'COD Settlements',
                     'route' => 'logistics.settlements.index',
                     'pattern' => 'logistics.settlements.*',
@@ -521,7 +533,7 @@
         id="logisticsSidebar"
         data-collapsed="false"
         class="relative
-               w-64
+               w-60
                bg-navy
                text-white
                flex flex-col
@@ -1339,16 +1351,22 @@
 
 
 
-<div id="logisticsConfirmModal" hidden class="fixed inset-0 z-[95] flex items-center justify-center px-4">
+<div id="logisticsConfirmModal" hidden class="fixed inset-0 z-[95] flex items-center justify-center px-4 py-5" aria-hidden="true">
     <button type="button" class="sh-modal-backdrop" data-confirm-close aria-label="Close confirmation dialog"></button>
     <div class="sh-modal-card" role="dialog" aria-modal="true" aria-labelledby="logisticsConfirmTitle" aria-describedby="logisticsConfirmBody">
         <div class="sh-modal-head flex items-start gap-3">
-            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-700">
+            <div id="logisticsConfirmIcon" class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
                 <x-lucide-shield-alert class="h-5 w-5" />
             </div>
             <div class="min-w-0">
                 <p id="logisticsConfirmTitle" class="text-base font-bold text-navy">Confirm action</p>
                 <p id="logisticsConfirmBody" class="mt-1 text-sm leading-relaxed text-navy/55">Please confirm to continue.</p>
+            </div>
+        </div>
+        <div class="sh-modal-body" id="logisticsConfirmContextWrap" hidden>
+            <div class="sh-confirm-context">
+                <span class="sh-confirm-context-label">Selected item</span>
+                <strong id="logisticsConfirmContext" class="sh-confirm-context-value"></strong>
             </div>
         </div>
         <div class="sh-modal-actions">
@@ -1733,6 +1751,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmTitle = document.getElementById('logisticsConfirmTitle');
     const confirmBody = document.getElementById('logisticsConfirmBody');
     const confirmAccept = document.getElementById('logisticsConfirmAccept');
+    const confirmContextWrap = document.getElementById('logisticsConfirmContextWrap');
+    const confirmContext = document.getElementById('logisticsConfirmContext');
+    const confirmIcon = document.getElementById('logisticsConfirmIcon');
     let confirmHandler = null;
     let previousConfirmFocus = null;
 
@@ -1741,10 +1762,17 @@ document.addEventListener('DOMContentLoaded', function () {
         confirmTitle.textContent = options.title || 'Confirm action';
         confirmBody.textContent = options.message || 'Please confirm to continue.';
         confirmAccept.textContent = options.confirmLabel || 'Continue';
-        confirmAccept.className = (options.danger ? 'sh-btn-danger' : 'sh-btn') + ' px-5';
+        confirmAccept.className = (options.danger ? 'sh-btn-danger sh-btn-danger-solid' : 'sh-btn') + ' px-5';
+        if (confirmIcon) confirmIcon.className = 'flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ' + (options.danger ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700');
+        if (confirmContextWrap && confirmContext) {
+            const subject = String(options.subject || '').trim();
+            confirmContext.textContent = subject;
+            confirmContextWrap.hidden = !subject;
+        }
         confirmHandler = options.onConfirm || null;
         previousConfirmFocus = document.activeElement;
         confirmModal.hidden = false;
+        confirmModal.setAttribute('aria-hidden', 'false');
         document.body.style.overflow = 'hidden';
         confirmModal.querySelector('[data-confirm-close]:not(.sh-modal-backdrop)')?.focus();
     }
@@ -1752,6 +1780,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function closeConfirmModal() {
         if (!confirmModal) return;
         confirmModal.hidden = true;
+        confirmModal.setAttribute('aria-hidden', 'true');
         if (searchPalette && !searchPalette.hidden) {
             document.body.style.overflow = 'hidden';
         } else {
@@ -1774,10 +1803,38 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Shared password-confirmation validation for rider, driver and hub forms.
+    // Uses built-in constraint validation; no credentials leave the browser here.
+    function validateMatchingPassword(form) {
+        if (!(form instanceof HTMLFormElement)) return;
+        const confirmField = form.querySelector('input[name="password_confirmation"]');
+        const passwordField = form.querySelector('input[name="password"]');
+        if (!confirmField || !passwordField) return;
+        confirmField.setCustomValidity(
+            confirmField.value && passwordField.value !== confirmField.value
+                ? 'Passwords do not match.' : ''
+        );
+    }
+    document.addEventListener('input', function(event) {
+        if (event.target.matches('input[name="password"], input[name="password_confirmation"]')) {
+            validateMatchingPassword(event.target.form);
+        }
+    });
+    document.addEventListener('submit', function(event) {
+        validateMatchingPassword(event.target);
+        const confirmField = event.target.querySelector?.('input[name="password_confirmation"]');
+        if (confirmField && !confirmField.checkValidity()) {
+            event.preventDefault();
+            confirmField.reportValidity();
+        }
+    }, true);
+
     document.addEventListener('submit', function(event){
+        if (event.defaultPrevented) return;
         const form = event.target.closest('form[data-confirm-title]');
-        if (!form || form.dataset.confirmed === '1') {
-            if (form) form.dataset.confirmed = '0';
+        if (!form) return;
+        if (form.dataset.confirmed === '1') {
+            form.dataset.confirmed = '0';
             return;
         }
         event.preventDefault();
@@ -1786,8 +1843,10 @@ document.addEventListener('DOMContentLoaded', function () {
             message: form.dataset.confirmMessage || 'Please confirm to continue.',
             confirmLabel: form.dataset.confirmButton || 'Continue',
             danger: form.dataset.confirmDanger === '1',
+            subject: form.dataset.confirmSubject || '',
             onConfirm: function(){
                 form.dataset.confirmed = '1';
+                // requestSubmit preserves native validation, submit handlers and the clicked form.
                 form.requestSubmit();
             }
         });
@@ -1862,8 +1921,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 <script src="{{ asset('js/shophop-ph-address.js') }}"></script>
-    @stack('scripts')
+    <script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261027"></script>
+@stack('scripts')
 
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
 </body>
 
 </html>

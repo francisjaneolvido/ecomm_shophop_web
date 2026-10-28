@@ -28,9 +28,10 @@
         <div class="sh-stat"><p class="sh-stat-label">Reconciled</p><p class="sh-stat-value">{{ $reconciled }}</p><p class="sh-stat-note">Received and confirmed</p></div>
     </div>
 
-    <div class="sh-stack">
+    <section class="sh-ui-filter" aria-label="Filter COD records"><div class="sh-ui-filter-title"><strong>Cash custody records</strong><span>Filters only the records currently loaded on this page.</span></div><label class="sh-ui-search"><span class="sr-only">Search COD records</span><input class="sh-input" type="search" data-ui-list-search="codRecords" placeholder="Order, rider or seller"></label><label><span class="sr-only">Filter COD status</span><select class="sh-select" data-ui-status-select="codRecords"><option value="all">All statuses</option><option value="collected">Collected</option><option value="remitted">Remitted</option><option value="reconciled">Reconciled</option><option value="none">No record</option></select></label><span data-ui-count="codRecords" class="sh-ui-count" aria-live="polite"></span></section>
+    <div class="sh-stack" id="codRecords" data-ui-collection>
         @forelse ($deliveries as $delivery)
-            <article class="sh-surface sh-card-pad">
+            <article class="sh-surface sh-card-pad sh-ui-record" data-ui-record data-ui-status="{{ strtolower($delivery->codSettlement?->status ?? 'none') }}">
                 <div class="sh-toolbar items-start">
                     <div>
                         <h2 class="text-base font-bold text-navy">Order #{{ $delivery->order_id }}</h2>

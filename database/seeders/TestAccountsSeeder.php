@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Admin;
 use App\Models\Buyer;
 use App\Models\LogisticsPartner;
 use App\Models\Seller;
@@ -19,8 +20,12 @@ class TestAccountsSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException('Demo account seeders can run only in local/testing environments.');
+        }
+
         // ----- Test Buyer -----
-        $buyerUser = User::updateOrCreate(
+        $buyerUser = User::firstOrCreate(
             ['email' => 'test.buyer@example.com'],
             [
                 'password' => 'password123', // auto-hashed ng 'hashed' cast sa User model
@@ -30,7 +35,11 @@ class TestAccountsSeeder extends Seeder
             ]
         );
 
-        Buyer::updateOrCreate(
+        if ($buyerUser->account_type !== 'buyer') {
+            throw new \RuntimeException('Cannot seed buyer account: email belongs to another role.');
+        }
+
+        Buyer::firstOrCreate(
             ['user_id' => $buyerUser->id],
             [
                 'first_name' => 'Test',
@@ -53,7 +62,7 @@ class TestAccountsSeeder extends Seeder
         );
 
         // ----- Test Seller -----
-        $sellerUser = User::updateOrCreate(
+        $sellerUser = User::firstOrCreate(
             ['email' => 'test.seller@example.com'],
             [
                 'password' => 'password123',
@@ -63,7 +72,11 @@ class TestAccountsSeeder extends Seeder
             ]
         );
 
-        Seller::updateOrCreate(
+        if ($sellerUser->account_type !== 'seller') {
+            throw new \RuntimeException('Cannot seed seller account: email belongs to another role.');
+        }
+
+        Seller::firstOrCreate(
             ['user_id' => $sellerUser->id],
             [
                 'first_name' => 'Test',
@@ -89,7 +102,7 @@ class TestAccountsSeeder extends Seeder
         );
 
         // ----- Test Logistics Partner -----
-        $logisticsUser = User::updateOrCreate(
+        $logisticsUser = User::firstOrCreate(
             ['email' => 'test.logistics@example.com'],
             [
                 'password' => 'password123',
@@ -99,7 +112,11 @@ class TestAccountsSeeder extends Seeder
             ]
         );
 
-        LogisticsPartner::updateOrCreate(
+        if ($logisticsUser->account_type !== 'logistics') {
+            throw new \RuntimeException('Cannot seed logistics account: email belongs to another role.');
+        }
+
+        LogisticsPartner::firstOrCreate(
             ['user_id' => $logisticsUser->id],
             [
                 // Step 1: Terms & Agreement
@@ -136,8 +153,8 @@ class TestAccountsSeeder extends Seeder
         );
 
         // ----- Test Admin -----
-        // Walang hiwalay na profile table; User record lang ang kailangan.
-        User::updateOrCreate(
+        // Admin needs a matching admins profile for account management.
+        $adminUser = User::firstOrCreate(
             ['email' => 'test.admin@example.com'],
             [
                 'password' => 'password123',
@@ -147,10 +164,18 @@ class TestAccountsSeeder extends Seeder
             ]
         );
 
-        $this->command->info('Test accounts ready:');
-        $this->command->info('Buyer:     test.buyer@example.com / password123');
-        $this->command->info('Seller:    test.seller@example.com / password123');
-        $this->command->info('Logistics: test.logistics@example.com / password123');
-        $this->command->info('Admin:     test.admin@example.com / password123');
+        if ($adminUser->account_type !== 'admin') {
+            throw new \RuntimeException('Cannot seed Admin: test.admin@example.com belongs to another role.');
+        }
+        Admin::firstOrCreate(
+            ['user_id' => $adminUser->id],
+            ['first_name' => 'Test', 'last_name' => 'Admin', 'role' => 'super_admin']
+        );
+
+        $this->command?->info('Test accounts available (passwords apply to NEW accounts only):');
+        $this->command?->info('Buyer:     test.buyer@example.com / password123');
+        $this->command?->info('Seller:    test.seller@example.com / password123');
+        $this->command?->info('Logistics: test.logistics@example.com / password123');
+        $this->command?->info('Admin:     test.admin@example.com / password123');
     }
 }

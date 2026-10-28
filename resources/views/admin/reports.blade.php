@@ -27,7 +27,7 @@
         <div class="bg-white rounded-2xl border border-slate-200 p-5 sm:p-6">
             <h2 class="text-base font-semibold text-navy">Separate Admin workflows</h2>
             <p class="text-sm text-slate-500 mt-2">Registration moderation remains a separate review workflow.</p>
-            <p class="text-sm text-slate-500 mt-2">Orders, COD handling and manual cashless payment review do not provide business report generation, commission accounting or Seller payout reporting here.</p>
+            <p class="text-sm text-slate-500 mt-2">Order and COD operations are tracked separately from this business reporting page.</p>
         </div>
     </section>
 @endsection

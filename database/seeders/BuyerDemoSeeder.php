@@ -12,9 +12,13 @@ class BuyerDemoSeeder extends Seeder
 {
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException('Demo account seeders can run only in local/testing environments.');
+        }
+
         DB::transaction(function () {
 
-            $user = User::updateOrCreate(
+            $user = User::firstOrCreate(
                 [
                     'email' => 'buyer@shophop.test',
                 ],
@@ -26,7 +30,11 @@ class BuyerDemoSeeder extends Seeder
                 ]
             );
 
-            Buyer::updateOrCreate(
+            if ($user->account_type !== 'buyer') {
+                throw new \RuntimeException('Demo email already belongs to another account type.');
+            }
+
+            Buyer::firstOrCreate(
                 [
                     'user_id' => $user->id,
                 ],

@@ -54,7 +54,7 @@
     $riders = ['Rico Mendoza', 'Jomar Villanueva', 'Ernie Castillo'];
 @endphp
 
-<div class="space-y-6">
+<div class="space-y-5 sh-ui-workspace">
     <header class="sh-page-header">
         <div>
             <p class="eyebrow">{{ $center->name }}</p>
@@ -63,6 +63,7 @@
         </div>
     </header>
 
+    <div class="sh-ui-demo-banner" role="status"><strong>Demo preview — sample parcels</strong><span>This page currently builds parcel rows from hard-coded Blade data, not live Laravel deliveries. Real assignment and counts must be connected to the validated Branch backend before operational use.</span></div>
     {{-- Stats --}}
     <section class="grid gap-4 sm:grid-cols-3">
         <div class="sh-stat">
@@ -105,7 +106,7 @@
     </form>
 
     {{-- Bulk assign --}}
-    <form method="POST" action="#" id="assign-form" class="sh-surface sh-card-pad" hidden>
+    <form method="POST" action="#" id="assign-form" class="sh-surface sh-card-pad" onsubmit="return false" hidden>
         @csrf
         <div class="sh-toolbar">
             <p class="text-sm font-semibold text-navy"><span data-selected>0</span> parcel(s) napili</p>
@@ -119,7 +120,7 @@
                         @endforeach
                     </select>
                 </label>
-                <button class="sh-btn">Assign rider</button>
+                <button class="sh-btn" type="button" disabled title="Disabled for sample data">Assign rider (demo only)</button>
             </div>
         </div>
     </form>

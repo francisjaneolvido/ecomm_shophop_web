@@ -27,7 +27,8 @@
         <div class="sh-alert-error">Walang active Province Hub na naka-link sa branch na ito.</div>
     @endunless
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <nav class="sh-ui-jump" aria-label="Outbound processing steps"><a href="#branch-sort">1. Sort</a><a href="#branch-manifests">2. Create manifest</a><a href="#branch-linehaul">3. Load & assign</a></nav>
+    <section class="grid gap-3 grid-cols-2 xl:grid-cols-4">
         <div class="sh-stat"><p class="sh-stat-label">To sort</p><p class="sh-stat-value">{{ number_format($stats['to_sort']) }}</p><p class="sh-stat-note">Received at branch</p></div>
         <div class="sh-stat"><p class="sh-stat-label">Ready for manifest</p><p class="sh-stat-value">{{ number_format($stats['ready']) }}</p><p class="sh-stat-note">Not reserved yet</p></div>
         <div class="sh-stat"><p class="sh-stat-label">Loading / Ready</p><p class="sh-stat-value">{{ number_format($stats['prepared']) }}</p><p class="sh-stat-note">Waiting for Linehaul</p></div>
@@ -36,7 +37,7 @@
 
     <section class="sh-surface sh-card-pad">
         <p class="sh-kicker">Step 1</p>
-        <h2 class="sh-title-sm">Sort received parcels</h2>
+        <h2 id="branch-sort" class="sh-title-sm scroll-mt-6">Sort received parcels</h2>
         <p class="mt-1 text-xs text-navy/50">Local parcels stay here for Delivery Rider. Parcels for another station are routed to the required Province Hub.</p>
         @if($toSort->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">Nothing to sort</p></div>
@@ -62,7 +63,7 @@
 
     <section class="sh-surface sh-card-pad">
         <p class="sh-kicker">Step 2</p>
-        <h2 class="sh-title-sm">Create manifest</h2>
+        <h2 id="branch-manifests" class="sh-title-sm scroll-mt-6">Create manifest</h2>
         <p class="mt-1 text-xs text-navy/50">One manifest = one origin + one next hub + many parcels. Transport is assigned only after loading is verified.</p>
         @if($ready->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">No parcels ready for a new manifest</p></div>
@@ -93,7 +94,7 @@
     <section class="space-y-4">
         <div class="sh-surface sh-card-pad">
             <p class="sh-kicker">Step 3</p>
-            <h2 class="sh-title-sm">Load parcels & assign Linehaul</h2>
+            <h2 id="branch-linehaul" class="sh-title-sm scroll-mt-6">Load parcels & assign Linehaul</h2>
             <p class="mt-1 text-xs text-navy/50">Branch staff scans every parcel while it is physically loaded. The Driver scans only the Manifest QR when taking custody of the complete load.</p>
         </div>
 
@@ -136,7 +137,7 @@
                 @endif
 
                 @if(in_array($m['status'], ['prepared','loading','ready']) && !$m['trip_code'])
-                    <form method="POST" action="{{ route('branch.outbound.cancel', $m['id']) }}">@csrf<button class="sh-btn-danger" onclick="return confirm('Cancel this manifest?')">Cancel manifest</button></form>
+                    <form method="POST" action="{{ route('branch.outbound.cancel', $m['id']) }}" data-confirm-title="Cancel this manifest?" data-confirm-message="Cancelling an active manifest changes the outbound processing queue. Continue only if the manifest must be cancelled." data-confirm-subject="{{ $m['code'] }}" data-confirm-button="Cancel manifest" data-confirm-danger="1">@csrf<button class="sh-btn-danger">Cancel manifest</button></form>
                 @endif
 
                 @if($m['trip_code'] && $m['trip_status']==='scheduled')

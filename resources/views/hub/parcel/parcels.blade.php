@@ -27,9 +27,10 @@
         <div class="sh-stat"><p class="sh-stat-label">Ready for manifest</p><p class="sh-stat-value">{{ $stats['ready'] }}</p><p class="sh-stat-note">Sorted by next hop</p></div>
     </section>
 
-    <section class="sh-surface sh-card-pad space-y-4">
+    <nav class="sh-ui-jump" aria-label="Hub parcel process stages"><a href="#hub-receive">1. Receive</a><a href="#hub-sort">2. Sort</a><a href="#hub-manifest">3. Manifest</a><a href="#hub-linehaul">4. Linehaul</a></nav>
+    <section id="hub-receive" class="sh-surface sh-card-pad space-y-4 scroll-mt-6">
         <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound Linehaul</h2><p class="mt-1 text-xs text-navy/50">Normal intact batch: use Logistics mobile → Receive inbound manifest, scan the Manifest QR, acknowledge arrival, then confirm the physical count. The parcel field below is only for individual exception/reconciliation.</p></div>
-        <form method="POST" action="{{ route('logistics.hub.parcels.receive') }}" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
+        <form method="POST" action="{{ route('logistics.hub.parcels.receive') }}" data-confirm-title="Receive exception parcel?" data-confirm-message="Verify the physical parcel and its tracking code before recording hub receipt." data-confirm-button="Confirm receipt" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
             <label class="sh-field"><span class="sh-label">Exception Parcel QR / tracking</span><input class="sh-input" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
             <button class="sh-btn">Receive exception parcel</button>
         </form>
@@ -49,7 +50,7 @@
         @endif
     </section>
 
-    <section class="sh-surface sh-card-pad">
+    <section id="hub-sort" class="sh-surface sh-card-pad scroll-mt-6">
         <p class="sh-kicker">Step 2</p><h2 class="sh-title-sm">Sort & validate next hop</h2>
         @if($toSort->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">Nothing to sort</p></div>
@@ -64,7 +65,7 @@
         @endif
     </section>
 
-    <section class="space-y-4">
+    <section id="hub-manifest" class="space-y-4 scroll-mt-6">
         <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 3</p><h2 class="sh-title-sm">Create outbound manifest by next hop</h2><p class="mt-1 text-xs text-navy/50">Each group below has one enforced next hub/station.</p></div>
         @forelse($ready as $group)
         <form method="POST" action="{{ route('logistics.hub.parcels.manifests.store') }}" data-bulk class="sh-surface sh-card-pad space-y-4">@csrf
@@ -80,7 +81,7 @@
         @endforelse
     </section>
 
-    <section class="space-y-4">
+    <section id="hub-linehaul" class="space-y-4 scroll-mt-6">
         <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 4</p><h2 class="sh-title-sm">Load & assign Linehaul</h2><p class="mt-1 text-xs text-navy/50">Staff confirms the physical batch count once. Only a complete manifest can be assigned to a vehicle and driver.</p></div>
         @forelse($manifests as $m)
         <article class="sh-surface sh-card-pad space-y-4">
@@ -93,7 +94,7 @@
             </div>
 
             @if(in_array($m['status'],['prepared','loading']))
-            <form method="POST" action="{{ route('logistics.hub.parcels.manifests.load',$m['id']) }}" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
+            <form method="POST" action="{{ route('logistics.hub.parcels.manifests.load',$m['id']) }}" data-confirm-title="Confirm manifest loaded?" data-confirm-message="Verify the physical batch count before confirming loaded parcels." data-confirm-subject="{{ $m['code'] }}" data-confirm-button="Confirm loaded" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
                 <label class="sh-field"><span class="sh-label">Physical parcel count loaded</span><input type="number" class="sh-input" name="physical_count" min="1" max="5000" value="{{ $m['count'] }}" required></label><button class="sh-btn">Confirm complete batch loaded</button>
             </form>
             <p class="text-xs text-navy/45">Expected {{ $m['count'] }} parcel(s). If the count differs, use Logistics mobile → Outbound Manifest → Exception / reconciliation mode for individual Parcel QR checks.</p>
@@ -113,7 +114,7 @@
             @endif
 
             @if(in_array($m['status'],['prepared','loading','ready']) && !$m['trip_code'])
-            <form method="POST" action="{{ route('logistics.hub.parcels.manifests.cancel',$m['id']) }}">@csrf<button class="sh-btn-danger" onclick="return confirm('Cancel manifest?')">Cancel manifest</button></form>
+            <form method="POST" action="{{ route('logistics.hub.parcels.manifests.cancel',$m['id']) }}" data-confirm-title="Cancel this manifest?" data-confirm-message="This removes the manifest from active outbound processing. Verify its status before continuing." data-confirm-button="Cancel manifest" data-confirm-danger="1">@csrf<button class="sh-btn-danger">Cancel manifest</button></form>
             @endif
 
             @if($m['trip_status']==='scheduled')<div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-navy">Waiting for Driver to scan Manifest QR and Accept Load & Depart.</div>

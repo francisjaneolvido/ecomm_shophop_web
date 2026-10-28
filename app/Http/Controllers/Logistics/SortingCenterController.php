@@ -7,7 +7,6 @@ use App\Models\Logistics\SortingCenter;
 use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\Delivery;
 use App\Services\BranchLifecycleService;
-use Illuminate\Support\Str;
 use App\Models\LogisticsPartner;
 use App\Services\PhilippineDeliveryCoverage;
 use Illuminate\Http\RedirectResponse;
@@ -15,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class SortingCenterController extends Controller
@@ -101,7 +101,9 @@ class SortingCenterController extends Controller
 
             $email = strtolower(trim($data['manager_email']));
             BranchStaffController::assertNewEmail($email);
-            $password = Str::password(18);
+            // Honor the validated password entered/generated in the Create Hub form.
+            // BranchStaff uses the Eloquent `hashed` cast; do not hash twice.
+            $password = $data['manager_password'];
             $center->staff()->create([
                 'logistics_partner_id' => $partner->id,
                 'name' => trim($data['manager_name']),
@@ -215,6 +217,8 @@ class SortingCenterController extends Controller
             'unit_no' => ['nullable', 'string', 'max:180'],
             'manager_name' => ['required', 'string', 'min:2', 'max:150'],
             'manager_email' => ['required', 'email', 'max:190'],
+            'manager_password' => ['required', 'string', 'confirmed', 'max:100', Password::min(8)->letters()->numbers()],
+            'manager_password_confirmation' => ['required', 'string', 'max:100'],
         ]);
     }
 

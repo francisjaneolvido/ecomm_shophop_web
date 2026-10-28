@@ -12,7 +12,7 @@
         </div>
     </header>
 
-    <form method="GET" action="{{ route('logistics.reports.index') }}" class="sh-surface sh-card-pad">
+    <form method="GET" action="{{ route('logistics.reports.index') }}" class="sh-surface sh-card-pad sh-ui-filter-form">
         <div class="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
             <label class="sh-field">
                 <span class="sh-label">From</span>
@@ -26,7 +26,7 @@
         </div>
     </form>
 
-    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <div class="grid gap-3 grid-cols-2 lg:grid-cols-4 sh-ui-report-stats">
         @foreach ([
             \App\Models\Logistics\Delivery::PICKUP_ASSIGNED => 'Pickup assigned',
             \App\Models\Logistics\Delivery::PICKED_UP => 'Picked up',

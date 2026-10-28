@@ -14,6 +14,10 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        if (! app()->environment(['local', 'testing'])) {
+            throw new \RuntimeException('Demo account seeders can run only in local/testing environments.');
+        }
+
         $this->call([
             /*
             |--------------------------------------------------------------------------
@@ -44,6 +48,9 @@ class DatabaseSeeder extends Seeder
             */
 
             SellerDemoSeeder::class,
+
+            // Additional test Buyer, Seller, Logistics, and Admin profiles.
+            TestAccountsSeeder::class,
         ]);
     }
 }

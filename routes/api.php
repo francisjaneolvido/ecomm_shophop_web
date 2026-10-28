@@ -7,7 +7,6 @@ use App\Http\Controllers\Api\MobileBuyerCartController;
 use App\Http\Controllers\Api\MobileBuyerCheckoutController;
 use App\Http\Controllers\Api\MobileBuyerOrderController;
 use App\Http\Controllers\Api\MobileBuyerAddressController;
-use App\Http\Controllers\Api\MobileBuyerPaymentController;
 use App\Http\Controllers\Api\MobileBuyerFavoriteController;
 use App\Http\Controllers\Api\MobileRiderAuthController;
 use App\Http\Controllers\Api\MobileSellerAuthController;
@@ -220,7 +219,7 @@ Route::prefix('mobile')->group(function () {
 
             /*
             |--------------------------------------------------------------------------
-            | Buyer Mobile Checkout + Manual Online Payment
+            | Buyer Mobile Checkout (Cash on Delivery only)
             |--------------------------------------------------------------------------
             | Checkout uses the same BuyerCheckoutService as the web checkout.
             */
@@ -237,25 +236,6 @@ Route::prefix('mobile')->group(function () {
             Route::get('/orders', [MobileBuyerOrderController::class, 'index']);
             Route::post('/orders/{order}/confirm-receipt', [MobileBuyerOrderController::class, 'confirmReceipt'])->whereNumber('order');
 
-            Route::get(
-                '/payments/{payment}',
-                [MobileBuyerPaymentController::class, 'show']
-            )->whereNumber('payment');
-
-            Route::post(
-                '/payments/{payment}/simulate',
-                [MobileBuyerPaymentController::class, 'simulate']
-            )->whereNumber('payment');
-
-            Route::post(
-                '/payments/{payment}/submit',
-                [MobileBuyerPaymentController::class, 'submit']
-            )->whereNumber('payment');
-
-            Route::post(
-                '/payments/{payment}/cancel',
-                [MobileBuyerPaymentController::class, 'cancel']
-            )->whereNumber('payment');
         });
     });
 });
