@@ -80,46 +80,47 @@
 
                 {{-- GALLERY --}}
                 <div class="p-3 sm:p-4 lg:p-5 border-b lg:border-b-0 lg:border-r border-gray-border/90">
-                    <div class="relative aspect-square rounded-xl overflow-hidden bg-gray-bg/70">
-                        <img
-                            id="mainProductImage"
-                            src="{{ $productImageUrl($gallery[0]) }}"
-                            alt="{{ $product['name'] }}"
-                            class="w-full h-full object-contain bg-white p-4 sm:p-6 transition duration-300"
-                        >
-
+                    @php
+                        $mediaItems = $product['media'] ?? [];
+                        if (empty($mediaItems)) {
+                            $mediaItems = collect($gallery)->map(fn ($url) => ['type' => 'image', 'url' => $productImageUrl($url)])->all();
+                            if (!empty($product['video_url'])) {
+                                $videoItem = ['type' => 'video', 'url' => $product['video_url']];
+                                if (($product['media_first'] ?? 'image') === 'video') array_unshift($mediaItems, $videoItem);
+                                else $mediaItems[] = $videoItem;
+                            }
+                        }
+                        $firstItem = $mediaItems[0] ?? ['type' => 'image', 'url' => $productImageUrl($gallery[0])];
+                        $posterUrl = $productImageUrl($gallery[0]);
+                    @endphp
+                    <div class="relative aspect-square rounded-xl overflow-hidden bg-gray-50 border border-gray-border/80" aria-label="Product media preview">
+                        <img id="mainProductImage" src="{{ $firstItem['type'] === 'image' ? $firstItem['url'] : $posterUrl }}"
+                            alt="{{ $product['name'] }}" class="{{ $firstItem['type'] === 'video' ? 'hidden' : '' }} w-full h-full object-contain bg-white p-3 sm:p-5 transition-opacity duration-200">
+                        <video id="mainProductVideo"
+                            class="{{ $firstItem['type'] !== 'video' ? 'hidden' : '' }} w-full h-full object-contain bg-black"
+                            controls muted loop playsinline preload="metadata" poster="{{ $posterUrl }}"
+                            @if($firstItem['type'] === 'video') src="{{ $firstItem['url'] }}" autoplay @endif></video>
                         @if (($product['discount'] ?? 0) > 0)
-                            <span class="absolute top-2.5 left-2.5 bg-teal text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-sm">
-                                -{{ $product['discount'] }}%
-                            </span>
+                            <span class="absolute top-2.5 left-2.5 bg-teal text-white text-[9px] font-bold px-2 py-1 rounded-md shadow-sm pointer-events-none">-{{ $product['discount'] }}%</span>
                         @endif
-
-                        <button
-                            type="button"
-                            data-wishlist-unavailable
-                            data-product-id="{{ $product['id'] }}"
-                            disabled
-                            title="Wishlist is unavailable: saved items are not available yet"
-                            aria-label="Wishlist unavailable: saved items are not available yet"
-                            class="wishlist-toggle absolute top-2.5 right-2.5 w-8 h-8 rounded-lg bg-white/95 border border-gray-border shadow-sm flex items-center justify-center text-navy/45 cursor-not-allowed opacity-55"
-                        >
-                            <x-lucide-heart class="w-3.5 h-3.5" />
-                        </button>
                     </div>
-
-                    @if (count($gallery) > 1)
-                        <div class="grid grid-cols-5 gap-1.5 sm:gap-2 mt-2.5">
-                            @foreach ($gallery as $index => $image)
-                                <button
-                                    type="button"
-                                    data-gallery-thumb="{{ $productImageUrl($image) }}"
-                                    class="gallery-thumb aspect-square rounded-lg overflow-hidden border {{ $index === 0 ? 'border-teal ring-1 ring-teal/20' : 'border-gray-border hover:border-teal/40' }} bg-gray-bg transition"
-                                >
-                                    <img src="{{ $productImageUrl($image) }}" alt="Product thumbnail {{ $index + 1 }}" class="w-full h-full object-cover">
-                                </button>
-                            @endforeach
-                        </div>
-                    @endif
+                    <div class="flex gap-2 overflow-x-auto pb-2 mt-3" aria-label="Product images and video">
+                        @foreach ($mediaItems as $index => $item)
+                            <button type="button" data-media-thumb data-media-type="{{ $item['type'] }}" data-media-url="{{ $item['url'] }}"
+                                aria-label="Show {{ $item['type'] }} {{ $index + 1 }}" aria-pressed="{{ $index === 0 ? 'true' : 'false' }}"
+                                class="gallery-thumb relative shrink-0 w-16 h-16 sm:w-[72px] sm:h-[72px] rounded-lg overflow-hidden border-2 {{ $index === 0 ? 'border-teal ring-2 ring-teal/20' : 'border-gray-border hover:border-teal/40' }} bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal transition">
+                                @if($item['type'] === 'video')
+                                    <div class="w-full h-full flex items-center justify-center bg-navy text-white">
+                                        <x-lucide-play-circle class="w-7 h-7" />
+                                        <span class="absolute bottom-1 text-[9px] font-bold">VIDEO</span>
+                                    </div>
+                                @else
+                                    <img src="{{ $item['url'] }}" alt="Thumbnail {{ $index + 1 }}" class="w-full h-full object-cover" loading="lazy">
+                                @endif
+                            </button>
+                        @endforeach
+                    </div>
+                    <p class="text-[11px] text-navy/45 mt-1" aria-live="polite" id="mediaGalleryStatus">{{ $firstItem['type'] === 'video' ? 'Product video · starts muted' : 'Photo 1 of '.count($mediaItems) }}</p>
 
                     <div class="flex items-center justify-between mt-3 pt-3 border-t border-gray-border/70 text-[10px]">
                         <button type="button" data-share-product class="inline-flex items-center gap-1.5 text-navy/45 hover:text-teal-dark transition">
@@ -747,15 +748,39 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     const mainProductImage = document.getElementById('mainProductImage');
-    const galleryThumbs = document.querySelectorAll('[data-gallery-thumb]');
-    galleryThumbs.forEach(function (thumb) {
-        thumb.addEventListener('click', function () {
-            if (mainProductImage) mainProductImage.src = thumb.dataset.galleryThumb;
-            galleryThumbs.forEach(function (item) { item.classList.remove('border-teal', 'ring-1', 'ring-teal/20'); item.classList.add('border-gray-border'); });
-            thumb.classList.remove('border-gray-border');
-            thumb.classList.add('border-teal', 'ring-1', 'ring-teal/20');
+    const mainProductVideo = document.getElementById('mainProductVideo');
+    const galleryThumbs = [...document.querySelectorAll('[data-media-thumb]')];
+    const mediaGalleryStatus = document.getElementById('mediaGalleryStatus');
+    galleryThumbs.forEach((thumb, index) => thumb.addEventListener('click', () => {
+        const isVideo = thumb.dataset.mediaType === 'video';
+        if (mainProductVideo) {
+            mainProductVideo.pause();
+            mainProductVideo.classList.toggle('hidden', !isVideo);
+            if (isVideo) {
+                if (mainProductVideo.getAttribute('src') !== thumb.dataset.mediaUrl) {
+                    mainProductVideo.src = thumb.dataset.mediaUrl;
+                    mainProductVideo.load();
+                }
+                mainProductVideo.muted = true;
+                mainProductVideo.play().catch(() => {});
+            }
+        }
+        if (mainProductImage) {
+            mainProductImage.classList.toggle('hidden', isVideo);
+            if (!isVideo) mainProductImage.src = thumb.dataset.mediaUrl;
+        }
+        galleryThumbs.forEach(item => {
+            item.classList.remove('border-teal', 'ring-2', 'ring-teal/20');
+            item.classList.add('border-gray-border');
+            item.setAttribute('aria-pressed', 'false');
         });
-    });
+        thumb.classList.remove('border-gray-border');
+        thumb.classList.add('border-teal', 'ring-2', 'ring-teal/20');
+        thumb.setAttribute('aria-pressed', 'true');
+        if (mediaGalleryStatus) mediaGalleryStatus.textContent = isVideo
+            ? 'Product video · tap to pause or unmute'
+            : `Photo ${index + 1} of ${galleryThumbs.length} media items`;
+    }));
 
     const toast = document.getElementById('productToast');
     const toastMessage = toast ? toast.querySelector('[data-toast-message]') : null;

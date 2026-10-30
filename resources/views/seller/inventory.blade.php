@@ -400,7 +400,7 @@
                 >
                     <option value="">All Categories</option>
 
-                    @foreach ($categories as $category)
+                    @foreach ($filterCategories as $category)
                         <option value="{{ $category }}">{{ $category }}</option>
                     @endforeach
                 </select>
@@ -534,6 +534,7 @@
                                         'name' => $product->name,
                                         'sku' => $product->sku,
                                         'category' => $product->category,
+                                        'subcategory' => $product->subcategory,
                                         'price' => $product->price,
                                         'weight_kg' => $product->weight_kg,
                                         'discount' => $product->discount,
@@ -543,6 +544,9 @@
                                                 ?? $defaultLowStockThreshold,
                                         'has_variants' => (bool) $product->has_variants,
                                         'description' => $product->description,
+                                        'video_url' => $product->video_url,
+                                        'media_first' => $product->is_video_first ? 'video' : 'image',
+                                        'media' => $product->ordered_media,
                                         'legacy_image_url' => $product->image
                                             ? asset('storage/' . $product->image)
                                             : null,
@@ -573,7 +577,7 @@
                                     data-row
                                     data-name="{{ strtolower($product->name . ' ' . ($product->sku ?? '')) }}"
                                     data-name-original="{{ $product->name }}"
-                                    data-category="{{ $product->category }}"
+                                    data-category="{{ $product->subcategory }}"
                                     data-stock="{{ (int) $product->stock }}"
                                     data-stock-state="{{ $meta['state'] }}"
                                     data-status="{{ $product->status }}"
@@ -1124,6 +1128,7 @@
 
             <input type="hidden" name="product_id" id="productId">
             <input type="hidden" name="primary_image_id" id="primaryImageId">
+            <input type="hidden" name="media_first" id="productMediaFirst" value="image">
 
             <div id="removeImageInputs"></div>
 
@@ -1190,22 +1195,26 @@
 
 
                         <div>
+                            <p class="text-[11px] text-navy/60 mb-1">Registered business: <span class="font-semibold text-teal-dark">{{ $registeredCategory ?: 'Not specified' }}</span></p>
                             <label class="text-xs font-semibold text-navy/60">
-                                Category <span class="text-coral">*</span>
+                                Subcategory <span class="text-red-600">*</span>
                             </label>
 
                             <select
-                                name="category"
+                                name="subcategory"
                                 id="productCategory"
                                 required
                                 class="w-full h-10 mt-1 px-3 rounded-lg border border-gray-border text-xs text-navy bg-white focus:outline-none focus:border-teal/50"
                             >
+                                <option value="" selected disabled>Select a {{ $registeredCategory ?: 'registered' }} subcategory</option>
                                 @foreach ($categories as $category)
-                                    <option value="{{ $category }}">
-                                        {{ $category }}
-                                    </option>
+                                    <option value="{{ $category }}">{{ $category }}</option>
                                 @endforeach
                             </select>
+                            @if (count($categories) === 0)
+                                <p class="mt-2 text-xs text-red-600">Your registered category is not available in the ShopHop category list. Ask Admin to correct your registered business category before adding products.</p>
+                            @endif
+                            @error('subcategory') <p class="mt-1 text-xs text-red-600">{{ $message }}</p> @enderror
                         </div>
 
 
@@ -1228,8 +1237,29 @@
                 </section>
 
 
+                {{-- Photos + video in one ordered upload experience. --}}
+                <section class="rounded-2xl border border-teal/25 bg-teal-light/20 p-4 space-y-3">
+                    <div class="flex items-center gap-2">
+                        <x-lucide-images class="w-5 h-5 text-teal-dark" />
+                        <div>
+                            <h3 class="text-sm font-bold text-navy">Product media</h3>
+                            <p class="text-xs text-navy/60">Add photos and one MP4 in the same picker. The first added item is featured. You can reorder below.</p>
+                        </div>
+                    </div>
+                    <label class="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-teal/35 bg-white px-4 py-4 text-xs font-bold text-teal-dark cursor-pointer hover:bg-teal-light/50 focus-within:ring-2 focus-within:ring-teal">
+                        <x-lucide-upload class="w-4 h-4" /> Add photos or video
+                        <input type="file" id="unifiedProductMediaInput" accept="image/jpeg,image/png,image/webp,video/mp4" multiple class="sr-only">
+                    </label>
+                    <p class="text-[11px] text-navy/50">Up to 8 photos (5 MB each) and 1 MP4 video (30 MB). Newly selected files are previews until saved.</p>
+                    <input type="hidden" name="media_sequence" id="productMediaSequence" value="[]">
+                    <div id="unifiedMediaStrip" class="flex gap-2 overflow-x-auto pb-2" aria-label="Media upload order"></div>
+                    <video id="unifiedUploadVideoPreview" controls muted playsinline preload="metadata"
+                        class="hidden w-full max-w-sm aspect-video rounded-xl bg-navy" aria-label="Uploaded product video preview"></video>
+                    <p id="unifiedMediaMessage" class="text-xs text-navy/60" aria-live="polite">Add photos or video to see the order here.</p>
+                </section>
+
                 {{-- Images --}}
-                <section>
+                <section class="hidden">
 
                     <div class="flex items-center gap-2 mb-3">
                         <div class="w-7 h-7 rounded-lg bg-sky/10 text-sky flex items-center justify-center">
@@ -1285,6 +1315,37 @@
 
                 </section>
 
+
+                {{-- Optional product video --}}
+                <section class="hidden mt-4" aria-labelledby="productVideoHeading">
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-7 h-7 rounded-lg bg-teal/10 text-teal-dark flex items-center justify-center">
+                            <x-lucide-video class="w-4 h-4" />
+                        </div>
+                        <div>
+                            <h3 id="productVideoHeading" class="text-sm font-bold text-navy">Product Video (optional)</h3>
+                            <p class="text-[10px] text-navy/50">One MP4, up to 30 MB. Choose a short, clear video showing the actual item.</p>
+                        </div>
+                    </div>
+                    <input id="productVideo" name="video" type="file" accept="video/mp4,.mp4"
+                        class="block w-full text-xs text-navy/70 file:mr-3 file:rounded-lg file:border-0 file:bg-teal-light file:px-3 file:py-2 file:font-semibold file:text-teal-dark">
+                    <div id="productVideoPreview" class="hidden mt-3">
+                        <video id="productVideoPlayer" controls playsinline preload="metadata" class="w-full max-w-md aspect-video rounded-xl bg-navy"></video>
+                    </div>
+                    <label id="removeProductVideoRow" class="hidden mt-3 items-center gap-2 text-xs text-navy/65">
+                        <input type="checkbox" id="removeProductVideo" name="remove_video" value="1" class="rounded border-gray-border">
+                        Remove the existing video when saving
+                    </label>
+                </section>
+
+                <section class="hidden rounded-xl border border-teal/20 bg-teal-light/30 p-4">
+                    <label for="featuredMediaPreference" class="block text-xs font-bold text-navy mb-1">First media shown to buyers</label>
+                    <select id="featuredMediaPreference" class="w-full rounded-lg border border-gray-border bg-white px-3 py-2 text-xs">
+                        <option value="image">Photo first</option>
+                        <option value="video">Video first — muted preview when supported</option>
+                    </select>
+                    <p class="mt-1 text-[11px] text-navy/50">Automatically follows whichever media you select first for a new product. You can change it here. Video-first requires a saved or newly uploaded video.</p>
+                </section>
 
                 {{-- Pricing --}}
                 <section>
@@ -2052,6 +2113,192 @@ document.addEventListener('DOMContentLoaded', function () {
     const productImages =
         document.getElementById('productImages');
 
+    const productVideoInput = document.getElementById('productVideo');
+    const productVideoPreview = document.getElementById('productVideoPreview');
+    const productVideoPlayer = document.getElementById('productVideoPlayer');
+    const removeProductVideoRow = document.getElementById('removeProductVideoRow');
+    const removeProductVideo = document.getElementById('removeProductVideo');
+    let currentVideoPreviewUrl = null;
+
+    function resetProductVideo(url = null) {
+        if (currentVideoPreviewUrl) URL.revokeObjectURL(currentVideoPreviewUrl);
+        currentVideoPreviewUrl = null;
+        if (productVideoInput) productVideoInput.value = '';
+        if (removeProductVideo) removeProductVideo.checked = false;
+        if (removeProductVideoRow) {
+            removeProductVideoRow.classList.toggle('hidden', !url);
+            removeProductVideoRow.classList.toggle('flex', Boolean(url));
+        }
+        if (productVideoPlayer) {
+            productVideoPlayer.pause();
+            productVideoPlayer.removeAttribute('src');
+            if (url) productVideoPlayer.src = url;
+            productVideoPlayer.load();
+        }
+        productVideoPreview?.classList.toggle('hidden', !url);
+    }
+
+    const mediaFirstField = document.getElementById('productMediaFirst');
+    const mediaPreference = document.getElementById('featuredMediaPreference');
+    let mediaWasSelected = false;
+    mediaPreference?.addEventListener('change', () => {
+        if (mediaFirstField) mediaFirstField.value = mediaPreference.value;
+        mediaWasSelected = true;
+    });
+    function firstMediaChosen(type) {
+        if (mediaWasSelected) return;
+        mediaWasSelected = true;
+        if (mediaPreference) mediaPreference.value = type;
+        if (mediaFirstField) mediaFirstField.value = type;
+    }
+
+    // Unified ordered gallery: stable image IDs plus file-index tokens for new uploads.
+    const mediaPicker = document.getElementById('unifiedProductMediaInput');
+    const mediaStrip = document.getElementById('unifiedMediaStrip');
+    const mediaSequenceField = document.getElementById('productMediaSequence');
+    const mediaMessage = document.getElementById('unifiedMediaMessage');
+    let mediaTokens = [];
+    let mediaExisting = [];
+    let mediaObjectUrls = [];
+    function mediaPreviewUrl(file) {
+        const url = URL.createObjectURL(file);
+        mediaObjectUrls.push(url);
+        return url;
+    }
+    function renderMediaOrder() {
+        if (!mediaStrip) return;
+        mediaObjectUrls.forEach(url => URL.revokeObjectURL(url));
+        mediaObjectUrls = [];
+        mediaStrip.replaceChildren();
+        const urls = new Map(mediaExisting.map(item => [item.key, item.url]));
+        const visible = mediaTokens.filter(token => {
+            if (token.startsWith('image:') && removedImageIds.has(Number(token.slice(6)))) return false;
+            return token !== 'video' || Boolean(productVideoInput?.files?.length || currentExistingMediaVideo);
+        });
+        mediaTokens = visible;
+        mediaSequenceField.value = JSON.stringify(mediaTokens);
+        mediaTokens.forEach((token, index) => {
+            const video = token === 'video';
+            const file = token.startsWith('new:') ? productImages.files[Number(token.slice(4))] : null;
+            const src = file ? mediaPreviewUrl(file) : urls.get(token);
+            const row = document.createElement('div');
+            row.className = 'shrink-0 w-28 rounded-xl border border-gray-border bg-white p-2 space-y-1.5';
+            const tile = document.createElement('div');
+            tile.className = 'relative aspect-square rounded-lg bg-gray-bg overflow-hidden flex items-center justify-center';
+            if (video) {
+                const label = document.createElement('span'); label.textContent = '▶ VIDEO';
+                label.className = 'text-xs font-bold text-white bg-navy rounded-md px-2 py-1'; tile.append(label);
+            } else if (src) {
+                const img = document.createElement('img'); img.src = src; img.alt = 'Product media preview';
+                img.className = 'w-full h-full object-cover'; tile.append(img);
+            }
+            if (index === 0) {
+                const featured = document.createElement('span'); featured.textContent = 'FEATURED';
+                featured.className = 'absolute top-1 left-1 bg-teal-dark text-white text-[9px] px-1 rounded';
+                tile.append(featured);
+            }
+            const label = document.createElement('p');
+            label.className = 'text-[10px] truncate text-navy/70';
+            label.textContent = video ? 'Product video' : file ? file.name : `Photo ${index+1}`;
+            const actions = document.createElement('div'); actions.className = 'flex items-center gap-1';
+            [['★', 'Feature', 0], ['←', 'Move left', Math.max(0,index-1)], ['→','Move right',Math.min(mediaTokens.length-1,index+1)]].forEach(([icon,title,destination]) => {
+                const b = document.createElement('button'); b.type = 'button'; b.title = title;
+                b.setAttribute('aria-label', title); b.textContent = icon;
+                b.className = 'flex-1 rounded border border-gray-border text-[12px] text-navy hover:border-teal';
+                b.disabled = destination === index;
+                b.addEventListener('click', () => {
+                    const [value] = mediaTokens.splice(index,1); mediaTokens.splice(destination,0,value); renderMediaOrder();
+                }); actions.append(b);
+            });
+            row.append(tile,label,actions);mediaStrip.append(row);
+        });
+        if (mediaMessage) mediaMessage.textContent = mediaTokens.length
+            ? `${mediaTokens.length} media item(s). Featured = first. Use arrows to reorder.`
+            : 'No product media selected.';
+        const first = mediaTokens[0] === 'video' ? 'video' : 'image';
+        if (mediaFirstField) mediaFirstField.value = first;
+        if (mediaPreference) mediaPreference.value = first;
+    }
+    const unifiedVideoPreview = document.getElementById('unifiedUploadVideoPreview');
+    let unifiedVideoObjectUrl = null;
+    let currentExistingMediaVideo = false;
+    function initializeMediaOrder(product) {
+        mediaTokens = (product?.media || []).map(item => item.key).filter(Boolean);
+        mediaExisting = product?.media || [];
+        currentExistingMediaVideo = Boolean(product?.video_url);
+        if (!mediaTokens.length) {
+            mediaTokens = (product?.images || []).map(image => `image:${image.id}`);
+            if (currentExistingMediaVideo) {
+                if (product?.media_first === 'video') mediaTokens.unshift('video');
+                else mediaTokens.push('video');
+            }
+        }
+        renderMediaOrder();
+        if (unifiedVideoPreview) {
+            unifiedVideoPreview.pause();
+            unifiedVideoPreview.classList.toggle('hidden', !currentExistingMediaVideo);
+            if (currentExistingMediaVideo && product?.video_url) {
+                unifiedVideoPreview.src = product.video_url;
+                unifiedVideoPreview.load();
+            } else { unifiedVideoPreview.removeAttribute('src'); }
+        }
+    }
+    mediaPicker?.addEventListener('change', () => {
+        const incoming = [...(mediaPicker.files || [])];
+        const imageFiles = [...(productImages?.files || [])];
+        let videoFile = productVideoInput?.files?.[0] || null;
+        const addedTokens = [];
+        for (const file of incoming) {
+            if (file.type === 'video/mp4') {
+                if (file.size > 30*1024*1024) { alert('MP4 must be 30 MB or smaller.'); continue; }
+                videoFile = file;
+                if (!mediaTokens.includes('video')) addedTokens.push('video');
+            } else if (['image/jpeg','image/png','image/webp'].includes(file.type)) {
+                if (file.size > 5*1024*1024 || imageFiles.length >= 8) {
+                    alert('Maximum 8 images, 5 MB each.'); continue;
+                }
+                addedTokens.push(`new:${imageFiles.length}`); imageFiles.push(file);
+            }
+        }
+        const photoTransfer = new DataTransfer(); imageFiles.forEach(f => photoTransfer.items.add(f));
+        productImages.files = photoTransfer.files;
+        const videoTransfer = new DataTransfer(); if (videoFile) videoTransfer.items.add(videoFile);
+        productVideoInput.files = videoTransfer.files;
+        if (videoFile && removeProductVideo) removeProductVideo.checked = false;
+        if (videoFile) {
+            currentExistingMediaVideo = true;
+            if (unifiedVideoObjectUrl) URL.revokeObjectURL(unifiedVideoObjectUrl);
+            unifiedVideoObjectUrl = URL.createObjectURL(videoFile);
+            if (unifiedVideoPreview) {
+                unifiedVideoPreview.src = unifiedVideoObjectUrl;
+                unifiedVideoPreview.load();unifiedVideoPreview.classList.remove('hidden');
+            }
+        }
+        if (!mediaTokens.length && addedTokens.length) firstMediaChosen(addedTokens[0] === 'video' ? 'video' : 'image');
+        mediaTokens.push(...addedTokens);renderMediaOrder();
+        mediaPicker.value = '';
+    });
+    removeProductVideo?.addEventListener('change', () => {
+        if (removeProductVideo.checked) { currentExistingMediaVideo = false;mediaTokens = mediaTokens.filter(v => v !== 'video'); }
+        renderMediaOrder();
+    });
+
+    productVideoInput?.addEventListener('change', () => {
+        const file = productVideoInput.files?.[0];
+        if (!file) return;
+        if (file.size > 30 * 1024 * 1024 || file.type !== 'video/mp4') {
+            alert('Choose an MP4 video of 30 MB or less.');
+            productVideoInput.value = '';
+            return;
+        }
+        if (currentVideoPreviewUrl) URL.revokeObjectURL(currentVideoPreviewUrl);
+        currentVideoPreviewUrl = URL.createObjectURL(file);
+        productVideoPlayer.src = currentVideoPreviewUrl;
+        productVideoPlayer.load();
+        productVideoPreview?.classList.remove('hidden');
+        if (removeProductVideo) removeProductVideo.checked = false;
+    });
+
     const existingImageGallery =
         document.getElementById('existingImageGallery');
 
@@ -2079,6 +2326,15 @@ document.addEventListener('DOMContentLoaded', function () {
     let variantIndex = 0;
     let removedImageIds = new Set();
 
+
+    // Positive-only inputs for Seller inventory; backend validation remains
+    // authoritative even if these client-side restrictions are bypassed.
+    document.querySelectorAll('#productModal input[type="number"]').forEach((input) => {
+        if (!input.hasAttribute('min')) input.min = input.name.includes('weight_kg') ? '0.05' : '0';
+        input.addEventListener('input', () => {
+            if (input.value !== '' && Number(input.value) < 0) input.value = '0';
+        });
+    });
 
     function updateSellingPrice() {
         const price =
@@ -2219,6 +2475,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     Number(removeButton.dataset.removeImage);
 
                 removedImageIds.add(id);
+                renderMediaOrder();
 
                 renderRemoveImageInputs();
 
@@ -2243,6 +2500,7 @@ document.addEventListener('DOMContentLoaded', function () {
     productImages?.addEventListener(
         'change',
         function () {
+            if (productImages.files?.length) firstMediaChosen('image');
             newImagePreview.innerHTML = '';
 
             Array.from(productImages.files || [])
@@ -2521,6 +2779,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function openProductModal(product = null) {
         resetProductForm();
+        resetProductVideo(product?.video_url ?? null);
+        mediaWasSelected = Boolean(product);
+        if (mediaPreference) mediaPreference.value = product?.media_first === 'video' ? 'video' : 'image';
+        if (mediaFirstField) mediaFirstField.value = mediaPreference?.value ?? 'image';
+        initializeMediaOrder(product);
 
         if (product) {
             productModalTitle.textContent =
@@ -2541,8 +2804,10 @@ document.addEventListener('DOMContentLoaded', function () {
             productSku.value =
                 product.sku ?? '';
 
-            productCategory.value =
-                product.category ?? '';
+            productCategory.value = product.subcategory ?? '';
+            // Existing legacy category may not be an allowed subcategory.
+            // Force the Seller to choose a valid category on an edited product.
+            if (productCategory.selectedIndex < 0) productCategory.value = '';
 
             productPrice.value =
                 product.price ?? '';

@@ -220,6 +220,7 @@
                 ['label' => 'Sorting', 'route' => 'logistics.hub.sorting', 'pattern' => 'logistics.hub.sorting*', 'icon' => 'scan-barcode', 'keywords' => 'sort destination route assign'],
                 ['label' => 'Outbound', 'route' => 'logistics.hub.outbound', 'pattern' => 'logistics.hub.outbound*', 'icon' => 'truck', 'keywords' => 'dispatch manifest batch send'],
                 ['label' => 'Parcel Tracking', 'route' => 'logistics.hub.parcels', 'pattern' => 'logistics.hub.parcels*', 'icon' => 'package-search', 'keywords' => 'parcels tracking number timeline status'],
+                ['label' => 'QR Scanner', 'route' => 'logistics.hub.scanner', 'pattern' => 'logistics.hub.scanner*', 'icon' => 'scan-barcode', 'keywords' => 'scan manifest parcel receive loading camera'],
                 ['label' => 'Returns & Failed', 'route' => 'logistics.hub.returns', 'pattern' => 'logistics.hub.returns*', 'icon' => 'rotate-ccw', 'keywords' => 'return failed delivery retry reassign damaged missing'],
             ],
         ],

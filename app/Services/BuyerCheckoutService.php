@@ -139,7 +139,7 @@ class BuyerCheckoutService
                 ?? $shippingMethods[(string) $sellerId]
                 ?? 'standard';
 
-            if (! in_array($shippingMethod, ['standard', 'express'], true)) {
+            if (! in_array($shippingMethod, ['standard'], true)) {
                 throw ValidationException::withMessages([
                     'shipping_method' => 'Choose shipping for every shop.',
                 ]);
@@ -349,7 +349,7 @@ class BuyerCheckoutService
             $pricingGroups = [];
             foreach ($groupedBySeller as $shopId => $shopItems) {
                 $method = $data['shipping_method'][$shopId] ?? null;
-                if (! in_array($method, ['standard', 'express'], true)) {
+                if (! in_array($method, ['standard'], true)) {
                     throw ValidationException::withMessages(['shipping_method' => 'Choose shipping for every shop.']);
                 }
                 $subtotal = round($shopItems->sum(fn ($item) => $item->unitPrice() * $item->quantity), 2);
@@ -386,7 +386,7 @@ class BuyerCheckoutService
 
             foreach ($groupedBySeller as $sellerId => $items) {
                 $shippingMethod = $data['shipping_method'][$sellerId] ?? null;
-                if (! in_array($shippingMethod, ['standard', 'express'], true)) {
+                if (! in_array($shippingMethod, ['standard'], true)) {
                     throw ValidationException::withMessages([
                         'shipping_method' => 'Choose shipping for every shop.',
                     ]);

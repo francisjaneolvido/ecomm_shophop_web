@@ -209,6 +209,7 @@
             'items' => [
                 ['label' => 'Pickup',                  'route' => 'branch.dispatch.index',  'pattern' => 'branch.dispatch*',  'icon' => 'map-pin', 'hash' => 'pickups'],
                 ['label' => 'Inbound',                 'route' => 'branch.transfers.index', 'pattern' => 'branch.transfers*', 'icon' => 'truck'],
+                ['label' => 'QR Scanner', 'route' => 'branch.scanner', 'pattern' => 'branch.scanner*', 'icon' => 'scan-barcode'],
                 ['label' => 'Outbound to Province Hub', 'route' => 'branch.outbound.index',  'pattern' => 'branch.outbound*',  'icon' => 'send'],
             ],
         ],

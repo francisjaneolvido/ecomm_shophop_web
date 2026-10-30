@@ -72,10 +72,11 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ route('branch.receive') }}" class="mt-4 flex flex-wrap items-center gap-2">
+        <form method="POST" action="{{ route('branch.receive') }}" data-confirm-title="Receive exception parcel?" data-confirm-message="Verify physical custody and tracking code before recording receipt at this branch." data-confirm-button="Confirm receipt" class="mt-4 flex flex-wrap items-center gap-2">
             @csrf
             <input
                 name="tracking_code"
+                id="branch-exception-code"
                 value="{{ old('tracking_code') }}"
                 required
                 autofocus
@@ -85,6 +86,7 @@
             >
             <button class="sh-btn">Receive parcel</button>
         </form>
+        @include('partials.logistics-qr-scanner', ['inputId' => 'branch-exception-code'])
     </section>
 
     <nav class="flex flex-wrap gap-2" aria-label="Incoming transfer status filter">

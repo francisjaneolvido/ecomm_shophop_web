@@ -68,7 +68,7 @@ class CheckoutController extends Controller
             'items' => 'required|array|min:1',
             'items.*.quantity' => 'required|integer|min:1',
             'shipping_method' => 'required|array',
-            'shipping_method.*' => 'required|in:standard,express',
+            'shipping_method.*' => 'required|in:standard',
             'payment_method' => 'required|in:cod',
             'voucher_code' => 'nullable|string',
             'merchandise_voucher_code' => 'nullable|string|max:40',

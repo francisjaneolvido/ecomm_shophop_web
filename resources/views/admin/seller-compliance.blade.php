@@ -153,17 +153,25 @@
                         'rejection_reason' => $product->rejection_reason,
                         'rejection_notes' => $product->rejection_notes,
                         'images' => $product->images->map(fn ($img) => ['image_path' => $img->image_path])->values(),
+                        'video_url' => $product->video_url,
+                        'media_first' => $product->is_video_first ? 'video' : 'image',
+                        'media' => $product->ordered_media,
                     ];
                 @endphp
 
                 <div class="flex items-center justify-between gap-4 px-5 py-4">
                     <div class="flex items-center gap-3 min-w-0">
                         <div class="w-14 h-14 rounded-xl bg-gray-bg overflow-hidden shrink-0 border border-slate-200">
+                            @if ($product->is_video_first && $product->video_url)
+                                <video src="{{ $product->video_url }}" muted playsinline preload="metadata"
+                                    class="w-full h-full object-cover"></video>
+                            @else
                             <img
                                 src="{{ $thumbnail ? asset('storage/' . $thumbnail->image_path) : asset('images/products/placeholder.png') }}"
                                 alt="{{ $product->name }}"
                                 class="w-full h-full object-cover"
                             >
+                            @endif
                         </div>
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-navy truncate">{{ $product->name }}</p>
@@ -308,7 +316,12 @@
 
                 <div class="space-y-4">
                     <div class="bg-slate-50 rounded-xl p-4">
-                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">Product Images</p>
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">Product Media</p>
+                        <div id="modalVideoWrap" class="hidden mb-3">
+                            <p class="mb-2 text-xs font-semibold text-navy">Uploaded product video (review before approval)</p>
+                            <video id="modalProductVideo" controls playsinline preload="metadata"
+                                class="w-full max-h-72 rounded-lg bg-navy"></video>
+                        </div>
                         <div id="modalImages" class="grid grid-cols-3 gap-3"></div>
                     </div>
                 </div>
@@ -455,23 +468,68 @@
                 rejectionWrap.classList.add('hidden');
             }
 
+            const videoWrap = document.getElementById('modalVideoWrap');
+            const videoPlayer = document.getElementById('modalProductVideo');
             const imagesGrid = document.getElementById('modalImages');
-            imagesGrid.innerHTML = '';
-            (product.images || []).forEach(img => {
-                const div = document.createElement('div');
-                div.className = 'aspect-square rounded-lg overflow-hidden border border-slate-200 bg-slate-100';
-                div.innerHTML = `<img src="/storage/${img.image_path}" class="w-full h-full object-cover">`;
-                imagesGrid.appendChild(div);
-            });
-            if ((product.images || []).length === 0) {
-                imagesGrid.innerHTML = '<p class="text-xs text-slate-400 col-span-3">No images uploaded.</p>';
+            const media = (product.media || []);
+            const display = media.length ? media : [
+                ...(product.images || []).map(img => ({type:'image', url: '/storage/' + img.image_path})),
+                ...(product.video_url ? [{type:'video', url: product.video_url}] : [])
+            ];
+            // The review modal displays one selected media item, just like Buyer details.
+            if (videoPlayer) { videoPlayer.pause(); videoPlayer.removeAttribute('src'); }
+            let reviewImage = document.getElementById('modalFeaturedImage');
+            if (!reviewImage) {
+                reviewImage = document.createElement('img');
+                reviewImage.id = 'modalFeaturedImage';
+                reviewImage.alt = 'Product media selected for compliance review';
+                reviewImage.className = 'w-full max-h-72 object-contain rounded-xl bg-white border border-slate-200 mb-3';
+                videoWrap?.parentNode?.insertBefore(reviewImage, videoWrap);
             }
+            const choose = (item) => {
+                if (videoPlayer) { videoPlayer.pause(); videoPlayer.removeAttribute('src'); }
+                const video = item.type === 'video';
+                videoWrap?.classList.toggle('hidden', !video);
+                reviewImage.classList.toggle('hidden', video);
+                if (video && videoPlayer) { videoPlayer.src = item.url; videoPlayer.load(); }
+                else if (!video) reviewImage.src = item.url;
+            };
+            if (imagesGrid) {
+                imagesGrid.className = 'flex gap-2 overflow-x-auto pb-2';
+                imagesGrid.replaceChildren();
+                display.forEach((item, index) => {
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 ' +
+                        (index === 0 ? 'border-teal' : 'border-slate-200');
+                    button.setAttribute('aria-label', `Preview ${item.type} ${index + 1}`);
+                    if (item.type === 'video') {
+                        button.textContent = '▶ Video';
+                        button.classList.add('bg-slate-900','text-white','text-xs');
+                    } else {
+                        const img = document.createElement('img'); img.src = item.url;
+                        img.alt = ''; img.className = 'w-full h-full object-cover'; button.appendChild(img);
+                    }
+                    button.addEventListener('click', () => {
+                        choose(item);
+                        imagesGrid.querySelectorAll('button').forEach(btn => {
+                            btn.classList.remove('border-teal'); btn.classList.add('border-slate-200');
+                        });
+                        button.classList.add('border-teal'); button.classList.remove('border-slate-200');
+                    });
+                    imagesGrid.appendChild(button);
+                });
+            }
+            if (display[0]) choose(display[0]);
+            else { videoWrap?.classList.add('hidden'); reviewImage.classList.add('hidden'); }
 
             document.getElementById('modalApproveBtn').classList.toggle('hidden', product.compliance_status === 'approved');
             document.getElementById('modalRejectBtn').classList.toggle('hidden', product.compliance_status === 'rejected');
         }
 
         function closeProductModal() {
+            const video = document.getElementById('modalProductVideo');
+            if (video) video.pause();
             panel.classList.add('translate-y-2', 'opacity-0');
             setTimeout(() => {
                 overlay.classList.add('hidden');

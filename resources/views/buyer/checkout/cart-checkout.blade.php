@@ -199,7 +199,6 @@
                 @foreach ($cartGroups as $groupIndex => $group)
                     @php
                         $standardFee = (float) $group['shipping_fee_standard'];
-                        $expressFee = (float) $group['shipping_fee_express'];
                         $shopId = $group['shop']['id'];
                         $shippingQuote = $group['shipping_quote'] ?? [];
 
@@ -211,7 +210,6 @@
                     <section
                         class="checkout-shop-group bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm"
                         data-standard-fee="{{ $standardFee }}"
-                        data-express-fee="{{ $expressFee }}"
                         data-shop-index="{{ $groupIndex }}"
                         data-shop-id="{{ $shopId }}"
                         data-base-fee="{{ $shippingQuote['base_fee'] ?? 0 }}"
@@ -219,7 +217,6 @@
                         data-linehaul-fee="{{ $shippingQuote['linehaul_fee'] ?? 0 }}"
                         data-included-weight="{{ $shippingQuote['included_weight_kg'] ?? 1 }}"
                         data-extra-weight-fee="{{ $shippingQuote['extra_weight_fee_per_kg'] ?? 0 }}"
-                        data-express-percent="{{ ($standardFee > 0 ? (($expressFee / $standardFee) - 1) * 100 : 0) }}"
                     >
 
                         {{-- Shop header --}}
@@ -418,34 +415,6 @@
                                     </span>
                                 </label>
 
-
-                                <label class="shipping-option flex items-center justify-between gap-2
-                                              border border-gray-border rounded-xl px-3 py-2.5
-                                              cursor-pointer hover:border-teal/40 transition"
-                                       data-shipping-option>
-
-                                    <div class="flex items-start gap-2">
-
-                                        <input
-                                            type="radio"
-                                            name="shipping_method[{{ $shopId }}]"
-                                            value="express"
-                                            data-fee="{{ $expressFee }}"
-                                            {{ ($group['selected_shipping_method'] ?? 'standard') === 'express' ? 'checked' : '' }}
-                                            class="mt-0.5 accent-teal-dark w-3.5 h-3.5"
-                                        >
-
-                                        <div>
-                                            <p class="text-[10px] font-semibold text-navy">Express</p>
-                                            {{-- Express changes the fixed charge, but no carrier timetable is persisted. --}}
-                                            <p class="text-[8.5px] text-navy/40 mt-0.5">Delivery time unavailable</p>
-                                        </div>
-                                    </div>
-
-                                    <span class="text-[10px] font-bold text-navy shrink-0" data-shipping-price="express">
-                                        ₱{{ number_format($expressFee, 2) }}
-                                    </span>
-                                </label>
 
                             </div>
                             <div class="mt-2 rounded-lg bg-gray-bg/60 px-3 py-2 text-[8.5px] text-navy/45">
@@ -1120,19 +1089,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const linehaulFee = Number(group.dataset.linehaulFee || 0);
             const includedWeight = Number(group.dataset.includedWeight || 1);
             const extraWeightFee = Number(group.dataset.extraWeightFee || 0);
-            const expressPercent = Number(group.dataset.expressPercent || 0);
             const extraKg = Math.max(0, groupWeight - includedWeight);
             const weightFee = Math.ceil(Math.max(0, extraKg - 0.000001)) * extraWeightFee;
             const standardDynamic = Math.round((baseFee + distanceFee + linehaulFee + weightFee) * 100) / 100;
-            const expressDynamic = Math.round((standardDynamic * (1 + expressPercent / 100)) * 100) / 100;
             const standardRadio = group.querySelector('input[value="standard"][name^="shipping_method"]');
-            const expressRadio = group.querySelector('input[value="express"][name^="shipping_method"]');
             if (standardRadio) standardRadio.dataset.fee = standardDynamic;
-            if (expressRadio) expressRadio.dataset.fee = expressDynamic;
             const standardPrice = group.querySelector('[data-shipping-price="standard"]');
-            const expressPrice = group.querySelector('[data-shipping-price="express"]');
             if (standardPrice) standardPrice.textContent = formatPeso(standardDynamic);
-            if (expressPrice) expressPrice.textContent = formatPeso(expressDynamic);
             const weightLabel = group.querySelector('[data-shipping-weight]');
             if (weightLabel) weightLabel.textContent = groupWeight.toFixed(3) + ' kg';
             const weightFeeNote = group.querySelector('[data-weight-fee-note]');

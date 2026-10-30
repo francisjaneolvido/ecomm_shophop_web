@@ -325,6 +325,9 @@ class MobileBuyerCatalogController extends Controller
                 ...$this->productCard($item),
                 'description' => $item->description,
                 'gallery' => $gallery,
+                'video_url' => $item->video_url,
+                'media_first' => $item->is_video_first ? 'video' : 'image',
+                'media' => $item->ordered_media,
                 'has_variants' => (bool) $item->has_variants,
                 'variants' => $variants,
                 'vouchers' => $shopVouchers,
@@ -350,7 +353,7 @@ class MobileBuyerCatalogController extends Controller
     {
         $query = Product::query()
             ->publiclyDiscoverable()
-            ->with('seller');
+            ->with(['seller', 'images']);
 
         if (Schema::hasTable('reviews')) {
             $query
@@ -377,6 +380,7 @@ class MobileBuyerCatalogController extends Controller
             'id' => $product->id,
             'name' => $product->name,
             'category' => $product->category,
+            'subcategory' => $product->subcategory,
             'price' => $finalPrice,
             'original_price' => $discount > 0 ? $price : null,
             'discount_percent' => $discount,

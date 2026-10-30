@@ -29,7 +29,8 @@
             return asset($path);
         }
 
-        return asset('images/' . $path);
+        // Seller gallery files are stored under public/storage/products.
+        return asset('storage/' . $path);
     };
 
     // Guest cards use canonical inventory only; fixtures would make Search lie.
@@ -378,11 +379,19 @@
 
                         <div class="relative aspect-4/3 overflow-hidden bg-gray-bg">
 
-                            <img
-                                src="{{ $landingProductImageUrl($product['image']) }}"
-                                alt="{{ $product['name'] }}"
-                                class="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
-                            >
+                            @if ($product->is_video_first && $product->video_url)
+                                <video class="w-full h-full object-cover" muted autoplay loop playsinline preload="metadata"
+                                    poster="{{ $landingProductImageUrl($product['image']) }}"
+                                    aria-label="Video preview for {{ $product->name }}">
+                                    <source src="{{ $product->video_url }}" type="video/mp4">
+                                </video>
+                                <span class="absolute bottom-2 left-2 rounded-md bg-navy/85 text-white px-2 py-1 text-[9px]">Video preview · muted</span>
+                            @else
+                                <img src="{{ $landingProductImageUrl($product['image']) }}"
+                                    alt="{{ $product['name'] }}"
+                                    class="w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                                    onerror="this.onerror=null;this.src='{{ asset('images/placeholder-product.jpg') }}';">
+                            @endif
 
                         <span class="absolute left-2 top-2 rounded-md bg-navy px-2 py-1 text-[8px] font-bold text-white shadow-sm">
                             {{ (int) $product->stock }} in stock

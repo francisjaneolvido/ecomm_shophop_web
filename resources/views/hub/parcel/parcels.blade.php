@@ -31,9 +31,10 @@
     <section id="hub-receive" class="sh-surface sh-card-pad space-y-4 scroll-mt-6">
         <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound Linehaul</h2><p class="mt-1 text-xs text-navy/50">Normal intact batch: use Logistics mobile → Receive inbound manifest, scan the Manifest QR, acknowledge arrival, then confirm the physical count. The parcel field below is only for individual exception/reconciliation.</p></div>
         <form method="POST" action="{{ route('logistics.hub.parcels.receive') }}" data-confirm-title="Receive exception parcel?" data-confirm-message="Verify the physical parcel and its tracking code before recording hub receipt." data-confirm-button="Confirm receipt" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
-            <label class="sh-field"><span class="sh-label">Exception Parcel QR / tracking</span><input class="sh-input" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
+            <label class="sh-field"><span class="sh-label">Exception Parcel QR / tracking</span><input class="sh-input" id="hub-exception-code" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
             <button class="sh-btn">Receive exception parcel</button>
         </form>
+        @include('partials.logistics-qr-scanner', ['inputId' => 'hub-exception-code'])
 
         @if($awaiting->isNotEmpty())
         <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[46rem] text-left text-sm">

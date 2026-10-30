@@ -5,6 +5,8 @@
 use App\Http\Controllers\hub\HubPortalController;
 use App\Http\Middleware\EnsureHubManager;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\MobileLogisticsScannerController;
+use App\Http\Controllers\Logistics\WebScannerController;
 
 /*
 | Province hub portal. URL: <LOGISTICS_DOMAIN>/hub/...   Route names: logistics.hub.*
@@ -16,6 +18,20 @@ Route::domain(config('app.logistics_domain'))
 
         Route::middleware(['auth:logistics_staff', EnsureHubManager::class])
             ->prefix('hub')->name('hub.')->group(function () {
+
+                // Role-locked Web scanner using existing Mobile scanner policies.
+                Route::get('/scanner', [WebScannerController::class, 'hub'])->name('scanner');
+                Route::prefix('scanner/api')->name('scanner.api.')->group(function () {
+                    Route::get('branches', [MobileLogisticsScannerController::class, 'branches'])->name('branches');
+                    Route::get('inbound-preview', [MobileLogisticsScannerController::class, 'inboundManifestPreview'])->name('inbound-preview');
+                    Route::post('arrival', [MobileLogisticsScannerController::class, 'acknowledgeManifestArrival'])->middleware('throttle:20,1')->name('arrival');
+                    Route::post('receive-all', [MobileLogisticsScannerController::class, 'receiveManifestAll'])->middleware('throttle:20,1')->name('receive-all');
+                    Route::get('outbound-manifests', [MobileLogisticsScannerController::class, 'manifests'])->name('outbound-manifests');
+                    Route::get('outbound-preview', [MobileLogisticsScannerController::class, 'loadPreview'])->name('outbound-preview');
+                    Route::post('outbound-load', [MobileLogisticsScannerController::class, 'loadParcel'])->middleware('throttle:30,1')->name('outbound-load');
+                    Route::get('parcel-preview', [MobileLogisticsScannerController::class, 'preview'])->name('parcel-preview');
+                    Route::post('parcel-receive', [MobileLogisticsScannerController::class, 'receive'])->middleware('throttle:30,1')->name('parcel-receive');
+                });
 
                 // Overview
                 Route::get('/', [HubPortalController::class, 'dashboard'])->name('dashboard');

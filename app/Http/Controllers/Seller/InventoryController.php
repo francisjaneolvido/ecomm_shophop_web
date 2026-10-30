@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seller;
 
 use App\Http\Controllers\Controller;
+use App\Support\SellerProductCategories;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductImage;
 use App\Models\Seller\Manage_inventory\Voucher;
@@ -17,26 +18,6 @@ use Illuminate\View\View;
 
 class InventoryController extends Controller
 {
-    /**
-     * Categories are hardcoded for now since there's no categories
-     * table yet — same placeholder list used in the seller
-     * registration modal. Swap this for a real query once a
-     * categories table exists.
-     */
-    protected array $categories = [
-        'Fashion & Apparel',
-        'Electronics & Gadgets',
-        'Health & Beauty',
-        'Home & Living',
-        'Groceries & Food',
-        'Toys, Kids & Baby',
-        'Sports & Outdoors',
-        'Automotive',
-        'Books, Hobbies & Stationery',
-        'Pet Supplies',
-        'Other',
-    ];
-
     protected int $defaultLowStockThreshold = 10;
 
     public function index(): View
@@ -53,10 +34,15 @@ class InventoryController extends Controller
             ->latest()
             ->get();
 
+        $allowed = SellerProductCategories::forBusiness(Auth::user()?->seller?->business_category);
+        $filterCategories = $products->pluck('subcategory')->filter()->unique()->sort()->values()->all();
+
         return view('seller.inventory', [
             'products' => $products,
             'vouchers' => $vouchers,
-            'categories' => $this->categories,
+            'categories' => $allowed,
+            'filterCategories' => $filterCategories,
+            'registeredCategory' => Auth::user()?->seller?->business_category,
             'defaultLowStockThreshold' => $this->defaultLowStockThreshold,
         ]);
     }
@@ -70,6 +56,8 @@ class InventoryController extends Controller
                 ->findOrFail($request->input('product_id'));
         }
 
+        $allowed = SellerProductCategories::forBusiness(Auth::user()?->seller?->business_category);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'sku' => [
@@ -80,7 +68,7 @@ class InventoryController extends Controller
                     ? 'unique:products,sku,' . $product->id
                     : 'unique:products,sku',
             ],
-            'category' => ['required', 'string', 'max:255'],
+            'subcategory' => ['required', 'string', 'max:255', Rule::in($allowed)],
             'price' => ['required', 'numeric', 'min:0'],
             'weight_kg' => ['required', 'numeric', 'min:0.05', 'max:500'],
             'discount' => ['nullable', 'integer', 'min:0', 'max:100'],
@@ -94,6 +82,10 @@ class InventoryController extends Controller
             'remove_image_ids' => ['nullable', 'array'],
             'remove_image_ids.*' => ['integer'],
             'primary_image_id' => ['nullable', 'integer'],
+            'video' => ['nullable', 'file', 'mimetypes:video/mp4', 'max:30720'],
+            'remove_video' => ['nullable', 'boolean'],
+            'media_first' => ['nullable', Rule::in(['image', 'video'])],
+            'media_sequence' => ['nullable', 'json', 'max:3000'],
 
             'variants' => ['nullable', 'array'],
             'variants.*.id' => ['nullable', 'integer'],
@@ -104,6 +96,10 @@ class InventoryController extends Controller
             'variants.*.stock' => ['required_with:variants', 'integer', 'min:0'],
             'variants.*.status' => ['nullable', 'string', 'in:active,archived'],
         ]);
+
+        if ($allowed === []) {
+            return back()->withErrors(['subcategory' => 'Your registered business category is not supported by the ShopHop category tree. Contact Admin before adding products.'])->withInput();
+        }
 
         $hasVariants = $request->boolean('has_variants');
         $variantsInput = collect($request->input('variants', []));
@@ -125,7 +121,8 @@ class InventoryController extends Controller
             'seller_id' => Auth::id(),
             'name' => $validated['name'],
             'sku' => $validated['sku'] ?? null,
-            'category' => $validated['category'],
+            'category' => Auth::user()->seller->business_category,
+            'subcategory' => $validated['subcategory'],
             'price' => $validated['price'],
             'weight_kg' => $validated['weight_kg'],
             'discount' => $validated['discount'] ?? 0,
@@ -149,7 +146,14 @@ class InventoryController extends Controller
                 $product = Product::create($payload);
             }
 
-            $this->syncImages($product, $request);
+            $newImageIds = $this->syncImages($product, $request);
+            $this->syncVideo($product, $request);
+            $sequence = $request->input('media_sequence');
+            if (! $sequence) {
+                $sequence = json_encode($request->input('media_first', 'image') === 'video'
+                    ? ['video'] : []);
+            }
+            $product->saveMediaSequence($sequence, $newImageIds);
             $this->syncVariants($product, $hasVariants ? $variantsInput : collect());
         });
 
@@ -189,8 +193,9 @@ class InventoryController extends Controller
             ->with('status', 'Stock updated.');
     }
 
-    protected function syncImages(Product $product, Request $request): void
+    protected function syncImages(Product $product, Request $request): array
     {
+        $createdIds = [];
         $removeIds = collect($request->input('remove_image_ids', []))->map(fn ($id) => (int) $id);
 
         if ($removeIds->isNotEmpty()) {
@@ -213,10 +218,11 @@ class InventoryController extends Controller
 
                 $path = $file->store('products', 'public');
 
-                $product->images()->create([
+                $created = $product->images()->create([
                     'image_path' => $path,
                     'is_primary' => false,
                 ]);
+                $createdIds[] = $created->id;
 
                 $existingCount++;
             }
@@ -230,6 +236,24 @@ class InventoryController extends Controller
             $product->images()->where('id', $primaryId)->update(['is_primary' => true]);
         } elseif ($first = $product->images()->first()) {
             $first->update(['is_primary' => true]);
+        }
+
+        return $createdIds;
+    }
+
+    /** Replace a single optional product video. A media change triggers the
+     * same compliance resubmission as a full product edit.
+     */
+    protected function syncVideo(Product $product, Request $request): void
+    {
+        $oldPath = $product->getRawOriginal('video_path');
+        if ($request->hasFile('video')) {
+            $newPath = $request->file('video')->store('product-videos', 'public');
+            $product->forceFill(['video_path' => $newPath])->save();
+            if ($oldPath) Storage::disk('public')->delete($oldPath);
+        } elseif ($request->boolean('remove_video') && $oldPath) {
+            $product->forceFill(['video_path' => null])->save();
+            Storage::disk('public')->delete($oldPath);
         }
     }
 

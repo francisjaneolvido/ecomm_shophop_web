@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\MobileBuyerFavoriteController;
 use App\Http\Controllers\Api\MobileRiderAuthController;
 use App\Http\Controllers\Api\MobileSellerAuthController;
 use App\Http\Controllers\Api\MobileSellerEarningsController;
+use App\Http\Controllers\Api\MobileSellerWorkspaceController;
 use App\Http\Controllers\Api\MobileRiderDeliveryController;
 use App\Http\Controllers\Api\MobileLogisticsScannerController;
 use App\Http\Controllers\Api\MobileLinehaulController;
@@ -48,7 +49,7 @@ Route::prefix('mobile')->group(function () {
         )->middleware('throttle:6,1');
     });
 
-    // Mobile Seller onboarding only. Seller dashboard remains web-only.
+    // Seller registration/verification; authenticated workspace is registered below.
     Route::prefix('seller')->group(function () {
         Route::post('/register', [MobileSellerAuthController::class, 'register'])
             ->middleware('throttle:5,1');
@@ -87,6 +88,23 @@ Route::prefix('mobile')->group(function () {
         );
 
         Route::get('/seller/earnings', [MobileSellerEarningsController::class, 'index']);
+
+        // Seller workspace mirrors Seller Web; all actions remain owner-scoped in the controller.
+        Route::prefix('seller')->group(function () {
+            Route::get('/dashboard', [MobileSellerWorkspaceController::class, 'dashboard']);
+            Route::get('/orders', [MobileSellerWorkspaceController::class, 'orders']);
+            Route::get('/inventory', [MobileSellerWorkspaceController::class, 'inventory']);
+            Route::get('/reports', [MobileSellerWorkspaceController::class, 'reports']);
+            Route::get('/profile', [MobileSellerWorkspaceController::class, 'profile']);
+            Route::get('/orders/{order}/couriers', [MobileSellerWorkspaceController::class, 'couriers'])->whereNumber('order');
+            Route::post('/orders/{order}/accept', [MobileSellerWorkspaceController::class, 'accept'])->whereNumber('order')->middleware('throttle:20,1');
+            Route::post('/orders/{order}/prepare', [MobileSellerWorkspaceController::class, 'prepare'])->whereNumber('order')->middleware('throttle:20,1');
+            Route::post('/orders/{order}/ready', [MobileSellerWorkspaceController::class, 'ready'])->whereNumber('order')->middleware('throttle:20,1');
+            Route::patch('/inventory/{product}/stock', [MobileSellerWorkspaceController::class, 'updateStock'])->whereNumber('product')->middleware('throttle:30,1');
+            Route::post('/inventory/products', [MobileSellerWorkspaceController::class, 'saveProduct'])->middleware('throttle:12,1');
+            Route::post('/inventory/products/{product}', [MobileSellerWorkspaceController::class, 'saveProduct'])->whereNumber('product')->middleware('throttle:12,1');
+            Route::post('/inventory/products/{product}/toggle', [MobileSellerWorkspaceController::class, 'toggleProduct'])->whereNumber('product')->middleware('throttle:12,1');
+        });
 
         /*
         |--------------------------------------------------------------------------

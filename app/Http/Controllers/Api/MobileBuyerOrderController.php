@@ -116,7 +116,7 @@ class MobileBuyerOrderController extends Controller
                 'variant' => $item->variantLabel(),
                 'quantity' => (int) $item->quantity,
                 'price' => (float) $item->price,
-                'image' => $item->product?->image ? Storage::url($item->product->image) : null,
+                'image' => $item->product?->image ? asset('storage/' . ltrim($item->product->image, '/')) : null,
             ])->values(),
             'timeline' => $timeline,
         ];

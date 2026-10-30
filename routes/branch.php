@@ -8,10 +8,28 @@ use App\Http\Controllers\Branch\OutboundController;
 use App\Http\Controllers\Branch\ParcelController;
 use App\Http\Controllers\Branch\TransferController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\MobileLogisticsScannerController;
+use App\Http\Controllers\Logistics\WebScannerController;
 
 Route::middleware(['auth', 'approved.role:branch'])->prefix('branch')->name('branch.')->group(function () {
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Browser QR scanner: session-authenticated wrapper over the same validated
+    // manifest/parcel scanner service used by Mobile. No Sanctum token exposed.
+    Route::get('scanner', [WebScannerController::class, 'branch'])->name('scanner');
+    Route::prefix('scanner/api')->name('scanner.api.')->group(function () {
+        Route::get('branches', [MobileLogisticsScannerController::class, 'branches'])->name('branches');
+        Route::get('inbound-preview', [MobileLogisticsScannerController::class, 'inboundManifestPreview'])->name('inbound-preview');
+        Route::post('arrival', [MobileLogisticsScannerController::class, 'acknowledgeManifestArrival'])->middleware('throttle:20,1')->name('arrival');
+        Route::post('receive-all', [MobileLogisticsScannerController::class, 'receiveManifestAll'])->middleware('throttle:20,1')->name('receive-all');
+        Route::get('outbound-manifests', [MobileLogisticsScannerController::class, 'manifests'])->name('outbound-manifests');
+        Route::get('outbound-preview', [MobileLogisticsScannerController::class, 'loadPreview'])->name('outbound-preview');
+        Route::post('outbound-load', [MobileLogisticsScannerController::class, 'loadParcel'])->middleware('throttle:30,1')->name('outbound-load');
+        Route::get('parcel-preview', [MobileLogisticsScannerController::class, 'preview'])->name('parcel-preview');
+        Route::post('parcel-receive', [MobileLogisticsScannerController::class, 'receive'])->middleware('throttle:30,1')->name('parcel-receive');
+    });
+
 
     Route::get('transfers', [TransferController::class, 'index'])->name('transfers.index');
     Route::post('receive', [TransferController::class, 'scan'])->name('receive');

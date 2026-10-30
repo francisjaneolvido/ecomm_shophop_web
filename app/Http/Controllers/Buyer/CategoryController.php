@@ -86,10 +86,10 @@ class CategoryController extends Controller
             ->withSum('orderItems as sold_count', 'quantity');
 
         if ($activeSub) {
-            // Only applies if you also store a subcategory column on products.
-            // Safe to leave — it's a no-op if the column doesn't exist... actually
-            // remove this block if you don't have a `subcategory` column yet.
-            // $query->where('subcategory', $subName-you-resolved-from-slug);
+            $selected = collect($activeCategoryData['subcategories'])
+                ->first(fn ($name) => Str::slug($name) === $activeSub);
+            abort_if(! $selected, 404);
+            $query->where('subcategory', $selected);
         }
 
         if ($min = $request->query('price_min')) {

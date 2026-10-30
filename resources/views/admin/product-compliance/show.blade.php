@@ -18,7 +18,15 @@
         </section>
     </div>
     {{-- Escaped storage URLs and text avoid the reference modal's HTML interpolation of Product data. --}}
+    @if($product->is_video_first && $product->video_url)
+        <section class="pc-panel"><h2>Featured video — first uploaded / selected</h2>
+            <video controls muted playsinline preload="metadata" style="max-width:480px;width:100%;border-radius:12px" src="{{ $product->video_url }}"></video>
+        </section>
+    @endif
     <section class="pc-panel"><h2>Product images</h2><div class="pc-images">@forelse($product->images as $image)<img src="{{ asset('storage/'.$image->image_path) }}" alt="{{ $product->name }}">@empty @if($product->image)<img src="{{ asset('storage/'.$product->image) }}" alt="{{ $product->name }}">@else<p>No images supplied.</p>@endif @endforelse</div></section>
+    @if($product->video_url && ! $product->is_video_first)
+        <section class="pc-panel"><h2>Product video</h2><video controls playsinline preload="metadata" style="max-width:480px;width:100%;border-radius:12px" src="{{ $product->video_url }}"></video></section>
+    @endif
     {{-- Explicit native confirmation sections remain keyboard usable and never promise archived merchandise is live. --}}
     <div class="pc-grid">
         <details class="pc-panel"><summary>Approve Product</summary><p>Confirm approval for Buyer visibility when active and stocked. This clears rejection details.</p><form method="POST" action="{{ route('admin.compliance.approve', $product) }}">@csrf @method('PATCH')<button class="pc-button" type="submit">Confirm approval</button></form></details>
