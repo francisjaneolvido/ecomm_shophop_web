@@ -11,6 +11,8 @@ use App\Http\Controllers\Admin\ReturnRefundController;
 use App\Http\Controllers\Admin\CodRemittanceController;
 // Product review uses the same current Admin identity and middleware boundary as the rest of the Admin area.
 use App\Http\Controllers\Admin\ProductComplianceController;
+// Live support chat between Admin and buyers / sellers / logistics partners.
+use App\Http\Controllers\Admin\ChatController as AdminChatController;
 // use App\Http\Controllers\Admin\CommissionController;
 
 
@@ -92,9 +94,13 @@ Route::prefix('admin')
             return view('admin.reports');
         })->name('reports');
 
-        Route::get('/chat', function () {
-            return view('admin.chat-messaging');
-        })->name('chat');
+        // Chat / Messaging: live inbox. JSON endpoints are polled by the page.
+        Route::get('/chat', [AdminChatController::class, 'index'])->name('chat');
+        Route::get('/chat/conversations', [AdminChatController::class, 'conversations'])->name('chat.conversations');
+        Route::post('/chat/conversations', [AdminChatController::class, 'start'])->name('chat.start');
+        Route::get('/chat/users', [AdminChatController::class, 'users'])->name('chat.users');
+        Route::get('/chat/conversations/{conversation}/messages', [AdminChatController::class, 'messages'])->name('chat.messages');
+        Route::post('/chat/conversations/{conversation}/messages', [AdminChatController::class, 'send'])->name('chat.send');
 
         Route::get('/settings', function () {
             return view('admin.platform-settings');

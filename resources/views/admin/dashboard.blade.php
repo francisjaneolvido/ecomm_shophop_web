@@ -9,12 +9,22 @@
     |--------------------------------------------------------------------------
     | BACKEND-SAFE VIEW DEFAULTS
     |--------------------------------------------------------------------------
-    | No new controller variables are required for this dashboard version.
     */
     $pendingRegistrations = $pendingRegistrations ?? 0;
     $activeUserAccounts = $activeUserAccounts ?? 0;
-    // No dispute or Commission domain exists; availability cards must not accept fabricated metric defaults.
     $recentRegistrations = collect($recentRegistrations ?? []);
+
+    // Real finance data supplied by DashboardController (cod_settlements / order_financials).
+    $emptyBucket = ['count' => 0, 'amount' => 0.0];
+    $cod = array_merge([
+        'with_riders' => $emptyBucket,
+        'with_logistics' => $emptyBucket,
+        'awaiting_confirmation' => $emptyBucket,
+        'received' => $emptyBucket,
+    ], $cod ?? []);
+    $pendingCodConfirmations = $pendingCodConfirmations ?? 0;
+    $commissionTotal = $commissionTotal ?? 0;
+    $platformNetTotal = $platformNetTotal ?? 0;
 
     $authUser = auth()->user();
 
@@ -23,8 +33,8 @@
         ?? ($authUser?->email ? explode('@', $authUser->email)[0] : null)
         ?? 'Admin';
 
-    // Attention reflects queried registrations only, never an assumed absence of disputes.
-    $needsAttention = $pendingRegistrations;
+    // Attention = pending registrations + COD receipts awaiting Admin confirmation.
+    $needsAttention = $pendingRegistrations + $pendingCodConfirmations;
 
     $registrationMix = [
         'buyer' => $recentRegistrations->where('account_type', 'buyer')->count(),
@@ -200,8 +210,7 @@
                                    text-[9px] font-semibold"
                         >
                             <x-lucide-circle-check class="w-3 h-3" />
-                            {{-- A queried registration queue cannot establish platform-wide dispute clearance. --}}
-                            No pending registrations
+                            Nothing pending
                         </span>
                     @endif
 
@@ -209,8 +218,7 @@
 
 
                 <p class="text-xs sm:text-sm text-navy/45 mt-1 max-w-2xl">
-                    {{-- Unsupported dispute monitoring is represented by availability, not live platform state. --}}
-                    Monitor registrations and accounts, and check workflow availability.
+                    Monitor registrations, accounts and COD collections, and check workflow availability.
                 </p>
 
             </div>
@@ -454,15 +462,11 @@
                         <x-lucide-message-square-warning class="w-4 h-4" />
                     </div>
 
-
-                    {{-- Urgency cannot be inferred without persisted dispute state. --}}
-
                 </div>
 
 
                 <div class="mt-3">
 
-                    {{-- Availability remains visible even when compact density hides supporting copy. --}}
                     <p class="text-lg sm:text-xl font-bold text-navy">
                         Unavailable
                     </p>
@@ -480,7 +484,6 @@
                            text-[9px] sm:text-[10px] text-navy/35"
                 >
                     <span>
-                        {{-- There is no authoritative live case count or resolution workflow. --}}
                         Dispute workflow unavailable
                     </span>
 
@@ -495,7 +498,7 @@
             </a>
 
 
-            {{-- Commission accounting is unavailable, so this card must not imply calculated monthly earnings. --}}
+            {{-- Commission: real sum of OrderFinancial.commission for completed orders. --}}
             <a
                 href="{{ route('admin.commission') }}"
                 class="group relative overflow-hidden
@@ -525,21 +528,17 @@
                         <x-lucide-wallet-cards class="w-4 h-4" />
                     </div>
 
-
-                    {{-- No configured commission rate or ledger supports an earnings badge. --}}
-
                 </div>
 
 
                 <div class="mt-3">
 
-                    {{-- No monthly financial amount is calculated by this application. --}}
-                    <p class="text-lg sm:text-xl font-bold text-navy">
-                        Unavailable
+                    <p class="text-lg sm:text-xl font-bold text-navy tabular-nums">
+                        ₱{{ number_format($commissionTotal, 2) }}
                     </p>
 
                     <p class="text-[10px] sm:text-xs font-medium text-navy/55 mt-0.5">
-                        Commission accounting unavailable
+                        Platform Commission
                     </p>
 
                 </div>
@@ -550,8 +549,7 @@
                            flex items-center mt-2
                            text-[9px] sm:text-[10px] text-navy/35"
                 >
-                    {{-- The destination explains the absent accounting and payout contract. --}}
-                    <span>Accounting and payouts unavailable</span>
+                    <span>Net ₱{{ number_format($platformNetTotal, 2) }} · completed orders</span>
 
                     <x-lucide-arrow-up-right
                         class="w-3 h-3 ml-auto
@@ -562,6 +560,55 @@
                     />
                 </div>
             </a>
+
+        </div>
+    </section>
+
+
+    {{-- =========================================================
+        COD COLLECTIONS
+    ========================================================= --}}
+    <section data-dashboard-widget="collections" class="dash-section">
+        <div class="bg-white border border-gray-border rounded-xl dash-card-pad">
+
+            <div class="flex items-start justify-between gap-3 mb-3">
+                <div>
+                    <h2 class="text-sm font-bold text-navy">COD Collections</h2>
+                    <p class="text-[10px] sm:text-xs text-navy/40 mt-0.5">
+                        Where the cash-on-delivery money currently sits.
+                    </p>
+                </div>
+
+                <a
+                    href="{{ route('admin.finance.cod.index') }}"
+                    class="inline-flex items-center gap-1
+                           text-[10px] sm:text-xs font-semibold
+                           text-teal-dark hover:text-navy
+                           transition-colors shrink-0"
+                >
+                    COD Remittances
+                    <x-lucide-arrow-right class="w-3 h-3" />
+                </a>
+            </div>
+
+            <div class="grid grid-cols-2 xl:grid-cols-4 dash-gap">
+                @foreach ([
+                    ['label' => 'With riders', 'key' => 'with_riders', 'hint' => 'Collected, not yet remitted', 'box' => 'bg-gray-bg', 'text' => 'text-navy'],
+                    ['label' => 'With logistics partners', 'key' => 'with_logistics', 'hint' => 'Not yet remitted to ShopHop', 'box' => 'bg-gray-bg', 'text' => 'text-navy'],
+                    ['label' => 'Awaiting your confirmation', 'key' => 'awaiting_confirmation', 'hint' => 'Remitted, needs Admin check', 'box' => 'bg-amber-50', 'text' => 'text-amber-700'],
+                    ['label' => 'Received by ShopHop', 'key' => 'received', 'hint' => 'Confirmed by Admin', 'box' => 'bg-teal/10', 'text' => 'text-teal-dark'],
+                ] as $tile)
+                    <div class="rounded-lg {{ $tile['box'] }} px-3 py-3">
+                        <p class="text-[10px] font-medium text-navy/55">{{ $tile['label'] }}</p>
+                        <p class="text-lg font-bold {{ $tile['text'] }} mt-1 tabular-nums">
+                            ₱{{ number_format($cod[$tile['key']]['amount'], 2) }}
+                        </p>
+                        <p class="text-[9px] text-navy/40 mt-0.5">
+                            {{ number_format($cod[$tile['key']]['count']) }} order(s) · {{ $tile['hint'] }}
+                        </p>
+                    </div>
+                @endforeach
+            </div>
 
         </div>
     </section>
@@ -600,8 +647,7 @@
                     <div class="flex flex-wrap items-center gap-2">
 
                         <h2 class="text-sm sm:text-base font-bold text-white">
-                            {{-- The count below covers registrations, not unsupported dispute state. --}}
-                            Registration attention
+                            Needs attention
                         </h2>
 
 
@@ -622,8 +668,7 @@
                                        px-2 py-0.5 rounded-full"
                             >
                                 <x-lucide-circle-check class="w-3 h-3" />
-                                {{-- Clearance is limited to the persisted registration queue. --}}
-                                No pending registrations
+                                Nothing pending
                             </span>
                         @endif
 
@@ -631,8 +676,7 @@
 
 
                     <p class="text-[10px] sm:text-xs text-white/45 mt-1 max-w-md">
-                        {{-- Dispute availability stays explicit beside the real registration attention count. --}}
-                        Review pending registrations. Dispute workflow is unavailable.
+                        Review pending registrations and confirm COD cash received. Dispute workflow is unavailable.
                     </p>
 
                 </div>
@@ -641,6 +685,46 @@
 
 
             <div class="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+
+                <a
+                    href="{{ route('admin.finance.cod.index') }}"
+                    class="group flex items-center gap-2
+                           sm:min-w-40 px-3 py-2.5
+                           rounded-lg
+                           bg-white/10 hover:bg-white/15
+                           border border-white/10
+                           transition-colors"
+                >
+                    <div
+                        class="w-7 h-7 rounded-lg
+                               bg-amber-400/10 text-amber-300
+                               flex items-center justify-center"
+                    >
+                        <x-lucide-banknote class="w-3.5 h-3.5" />
+                    </div>
+
+                    <div class="min-w-0">
+
+                        <p class="text-[9px] text-white/40">
+                            COD to confirm
+                        </p>
+
+                        <p class="text-xs font-semibold text-white truncate">
+                            {{ $pendingCodConfirmations }} pending
+                        </p>
+
+                    </div>
+
+                    <x-lucide-chevron-right
+                        class="hidden sm:block
+                               w-3.5 h-3.5 ml-auto
+                               text-white/25
+                               group-hover:text-amber-300
+                               group-hover:translate-x-0.5
+                               transition"
+                    />
+                </a>
+
 
                 <a
                     href="{{ route('admin.registrations') }}"
@@ -706,7 +790,6 @@
                         </p>
 
                         <p class="text-xs font-semibold text-white truncate">
-                            {{-- The shortcut cannot report an open count without a dispute domain. --}}
                             Unavailable
                         </p>
 
@@ -1134,7 +1217,6 @@
                         ],
                         [
                             'route' => 'admin.disputes',
-                            // The existing destination explains availability; it cannot resolve cases.
                             'label' => 'Dispute availability',
                             'icon' => 'message-square-warning',
                             'classes' => 'bg-red-50 text-red-500',
@@ -1231,8 +1313,7 @@
                 [
                     'route' => 'admin.commission',
                     'label' => 'Commission',
-                    // No ledger supports earnings review; preserve the truthful informational destination.
-                    'desc' => 'Accounting availability',
+                    'desc' => 'Finance & payouts',
                     'icon' => 'landmark',
                 ],
                 [
@@ -1544,6 +1625,7 @@
 
                         @foreach ([
                             ['key' => 'stats', 'label' => 'Overview Cards', 'icon' => 'layout-dashboard'],
+                            ['key' => 'collections', 'label' => 'COD Collections', 'icon' => 'banknote'],
                             ['key' => 'attention', 'label' => 'Needs Attention', 'icon' => 'bell-ring'],
                             ['key' => 'registrations', 'label' => 'Recent Registrations', 'icon' => 'user-round-check'],
                             ['key' => 'snapshot', 'label' => 'Registration Snapshot', 'icon' => 'chart-no-axes-column-increasing'],
@@ -1664,6 +1746,7 @@ document.addEventListener('DOMContentLoaded', function () {
         focusMode: false,
         widgets: {
             stats: true,
+            collections: true,
             attention: true,
             registrations: true,
             snapshot: true,
