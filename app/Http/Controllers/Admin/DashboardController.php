@@ -13,14 +13,21 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
-        $pendingRegistrations = User::where('status', 'pending')->count();
+        // Same eligible set as Admin > Account Registrations queue
+        // (buyer/seller/logistics with verified email).
+        $registrationBase = User::whereIn('account_type', ['buyer', 'seller', 'logistics'])
+            ->whereNotNull('email_verified_at');
+
+        $pendingRegistrations = (clone $registrationBase)
+            ->where('status', 'pending')
+            ->count();
 
         $activeUserAccounts = User::where('status', 'approved')
             ->where('account_type', '!=', 'admin')
             ->count();
 
-        $recentRegistrations = User::with(['buyer', 'seller', 'logisticsPartner'])
-            ->where('account_type', '!=', 'admin')
+        $recentRegistrations = (clone $registrationBase)
+            ->with(['buyer', 'seller', 'logisticsPartner'])
             ->latest()
             ->take(5)
             ->get();

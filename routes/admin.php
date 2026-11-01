@@ -13,6 +13,10 @@ use App\Http\Controllers\Admin\CodRemittanceController;
 use App\Http\Controllers\Admin\ProductComplianceController;
 // Live support chat between Admin and buyers / sellers / logistics partners.
 use App\Http\Controllers\Admin\ChatController as AdminChatController;
+// Complaints & Disputes case management.
+use App\Http\Controllers\Admin\DisputeController;
+// Live business reports and CSV exports.
+use App\Http\Controllers\Admin\ReportController as AdminReportController;
 // use App\Http\Controllers\Admin\CommissionController;
 
 
@@ -65,9 +69,14 @@ Route::prefix('admin')
         Route::post('/users/{user}/reactivate', [UserAccountController::class, 'reactivate'])
             ->name('users.reactivate');
 
-        Route::get('/complaints-disputes', function () {
-            return view('admin.complaints-disputes');
-        })->name('disputes');
+        // Complaints & Disputes
+        Route::get('/complaints-disputes', [DisputeController::class, 'index'])->name('disputes');
+        Route::post('/complaints-disputes', [DisputeController::class, 'store'])->name('disputes.store');
+        Route::get('/complaints-disputes/{dispute}', [DisputeController::class, 'show'])->name('disputes.show');
+        Route::patch('/complaints-disputes/{dispute}/status', [DisputeController::class, 'updateStatus'])->name('disputes.status');
+        Route::post('/complaints-disputes/{dispute}/messages', [DisputeController::class, 'message'])->name('disputes.message');
+        Route::post('/complaints-disputes/{dispute}/resolve', [DisputeController::class, 'resolve'])->name('disputes.resolve');
+        Route::post('/complaints-disputes/{dispute}/reopen', [DisputeController::class, 'reopen'])->name('disputes.reopen');
 
         Route::get('/cod-remittances', [CodRemittanceController::class, 'index'])->name('finance.cod.index');
         Route::post('/cod-remittances/{settlement}/confirm', [CodRemittanceController::class, 'confirm'])->name('finance.cod.confirm');
@@ -90,9 +99,11 @@ Route::prefix('admin')
         // Route::get('/commissions/export-pdf', [CommissionController::class, 'exportPdf'])
 //     ->name('commissions.export-pdf');
 
-        Route::get('/reports', function () {
-            return view('admin.reports');
-        })->name('reports');
+        // Reports: live figures + CSV export per section.
+        Route::get('/reports', [AdminReportController::class, 'index'])->name('reports');
+        Route::get('/reports/export/{section}', [AdminReportController::class, 'export'])
+            ->where('section', 'orders|finance|cod|returns|registrations|disputes')
+            ->name('reports.export');
 
         // Chat / Messaging: live inbox. JSON endpoints are polled by the page.
         Route::get('/chat', [AdminChatController::class, 'index'])->name('chat');
