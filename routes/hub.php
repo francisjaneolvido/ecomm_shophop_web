@@ -50,6 +50,8 @@ Route::domain(config('app.logistics_domain'))
                 Route::post('/parcels/manifests', [HubPortalController::class, 'storeManifest'])->name('parcels.manifests.store');
                 Route::post('/parcels/manifests/{manifest}/load', [HubPortalController::class, 'loadManifest'])->whereNumber('manifest')->name('parcels.manifests.load');
                 Route::post('/parcels/manifests/{manifest}/assign-linehaul', [HubPortalController::class, 'assignLinehaul'])->whereNumber('manifest')->name('parcels.manifests.assign-linehaul');
+                Route::post('/parcels/manifests/{manifest}/cargo-book', [HubPortalController::class, 'bookCargo'])->whereNumber('manifest')->name('parcels.manifests.cargo-book');
+                Route::post('/parcels/manifests/{manifest}/cargo-depart', [HubPortalController::class, 'departCargo'])->whereNumber('manifest')->name('parcels.manifests.cargo-depart');
                 Route::post('/parcels/manifests/{manifest}/dispatch', [HubPortalController::class, 'dispatchManifest'])
                     ->whereNumber('manifest')->name('parcels.manifests.dispatch');
                 Route::post('/parcels/manifests/{manifest}/cancel', [HubPortalController::class, 'cancelManifest'])

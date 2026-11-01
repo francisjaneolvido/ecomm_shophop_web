@@ -54,6 +54,11 @@ class ParcelManifest extends Model
     }
 
 
+    public function cargoTransfer(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(InterislandCargoTransfer::class, 'manifest_id');
+    }
+
     public function linehaulTrip(): BelongsTo
     {
         return $this->belongsTo(LinehaulTrip::class, 'linehaul_trip_id');

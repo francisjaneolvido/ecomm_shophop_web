@@ -9,6 +9,7 @@ use App\Http\Controllers\Logistics\RegistrationController as LogisticsRegistrati
 use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
 use App\Http\Controllers\Logistics\RiderController;
 use App\Http\Controllers\Logistics\DeliveryController;
+use App\Http\Controllers\Logistics\PickupCoverageController;
 use App\Http\Controllers\Logistics\ReportController;
 use App\Http\Controllers\Logistics\CodSettlementController;
 use App\Http\Controllers\Logistics\EarningsController;
@@ -16,6 +17,8 @@ use App\Http\Controllers\Logistics\SortingCenterController;
 use App\Http\Controllers\Logistics\BranchStaffController;
 use App\Http\Controllers\Logistics\BranchStaffWorkspaceController;
 use App\Http\Controllers\Logistics\FleetController;
+use App\Http\Controllers\Logistics\RouteNetworkController;
+use App\Http\Controllers\Logistics\DemoNetworkDirectoryController;
 
 /*
 | All Logistics public pages and private console live under LOGISTICS_DOMAIN.
@@ -72,6 +75,10 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/staff/{staff}/set-password', [BranchStaffController::class, 'setPassword'])
                 ->middleware('throttle:10,1')->name('staff.set-password');
 
+            Route::get('/route-network', [RouteNetworkController::class, 'index'])->name('route-network.index');
+            Route::post('/route-network', [RouteNetworkController::class, 'store'])->name('route-network.store')->middleware('throttle:30,1');
+            Route::post('/route-network/{link}/verify', [RouteNetworkController::class, 'verify'])->name('route-network.verify')->middleware('throttle:10,1');
+            Route::post('/route-network/{link}/suspend', [RouteNetworkController::class, 'suspend'])->name('route-network.suspend')->middleware('throttle:10,1');
             Route::get('/fleet', [FleetController::class, 'index'])->name('fleet.index');
             Route::post('/fleet/vehicles', [FleetController::class, 'storeVehicle'])->name('fleet.vehicles.store');
             Route::post('/fleet/vehicles/{vehicle}/status', [FleetController::class, 'updateVehicleStatus'])->name('fleet.vehicles.status');
@@ -79,12 +86,16 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/fleet/drivers/{driver}/toggle', [FleetController::class, 'toggleDriver'])->name('fleet.drivers.toggle');
 
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
+            Route::get('/demo-network', [DemoNetworkDirectoryController::class, 'index'])->name('demo-network.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
             Route::post('/riders/{rider}/approve', [RiderController::class, 'approve'])->name('riders.approve');
             Route::post('/riders/{rider}/reject', [RiderController::class, 'reject'])->name('riders.reject');
             Route::get('/riders/{rider}/documents/{slot}', [RiderController::class, 'document'])->name('riders.documents.show');
             Route::post('/riders/{rider}/credentials', [RiderController::class, 'provision'])->name('riders.provision');
             Route::post('/riders/{rider}/area', [RiderController::class, 'updateArea'])->name('riders.area');
+            Route::post('/riders/operational-areas', [RiderController::class, 'storeOperationalArea'])->name('riders.operational-areas.store');
+            Route::post('/riders/operational-areas/{area}/delete', [RiderController::class, 'removeOperationalArea'])->name('riders.operational-areas.delete');
+            Route::post('/riders/{rider}/operational-areas', [RiderController::class, 'syncRiderOperationalAreas'])->name('riders.operational-areas.sync');
             Route::post('/riders/{rider}/suspend', [RiderController::class, 'suspend'])->name('riders.suspend');
             Route::post('/riders/{rider}/activate', [RiderController::class, 'activate'])->name('riders.activate');
 
@@ -94,6 +105,8 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/returns/{case}/assign', [ReturnController::class, 'assign'])->name('returns.assign');
             Route::get('/deliveries', [DeliveryController::class, 'board'])->name('deliveries.board');
             Route::post('/deliveries/{order}/assign', [DeliveryController::class, 'assign'])->name('deliveries.assign');
+            Route::post('/deliveries/{order}/enable-pickup-coverage', [PickupCoverageController::class, 'enable'])
+                ->middleware('throttle:12,1')->name('deliveries.pickup-coverage.enable');
             Route::post('/deliveries/{delivery}/receive', [DeliveryController::class, 'receive'])->name('deliveries.receive');
             Route::post('/deliveries/{delivery}/sort', [DeliveryController::class, 'sort'])->name('deliveries.sort');
             Route::post('/deliveries/{delivery}/assign-delivery', [DeliveryController::class, 'assignDelivery'])->name('deliveries.assign-delivery');

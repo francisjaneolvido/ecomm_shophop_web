@@ -14,6 +14,25 @@ use Illuminate\Validation\ValidationException;
 
 class LinehaulService
 {
+    /** Directional branch-to-branch road trips require a real verified link.
+     * Legacy station-to-parent-hub transfers retain the existing process. */
+    private function requireVerifiedStationRoad(int $partnerId, \App\Models\Logistics\SortingCenter $from,
+        \App\Models\Logistics\SortingCenter $to): void
+    {
+        if ((int) $from->parent_id === (int) $to->id && $to->type === 'province_hub') return;
+        $islands = app(PhilippineIslandGroup::class);
+        if (! $islands->forCenter($from) || ! $islands->forCenter($to)
+            || $islands->isCrossGroup($from, $to)
+            || ! \App\Models\Logistics\RouteLink::query()
+                ->where('logistics_partner_id', $partnerId)
+                ->where('from_center_id', $from->id)->where('to_center_id', $to->id)
+                ->where('mode', 'road')->where('status', 'verified')
+                ->whereNotNull('verified_at')->exists()) {
+            throw ValidationException::withMessages(['linehaul' =>
+                'Direct station-to-station road transport requires a verified directional ROAD connection. Configure it in Transport Routes first.']);
+        }
+    }
+
     public function assignManifest(
         ParcelManifest $manifest,
         int $driverId,
@@ -50,6 +69,29 @@ class LinehaulService
             }
 
             $from = $locked->fromCenter()->firstOrFail();
+            $to = $locked->toCenter()->firstOrFail();
+            $islands = app(PhilippineIslandGroup::class);
+            if ($islands->isCrossGroup($from, $to)) {
+                throw ValidationException::withMessages(['linehaul' =>
+                    'Inter-island route detected. Do not assign one road vehicle/driver from '. $from->name .' to '. $to->name .'. Book a verified Sea/Air cargo leg at the origin Province Hub.']);
+            }
+            if ($from->type === 'province_hub' && $to->type === 'province_hub') {
+                if (! $islands->forCenter($from) || ! $islands->forCenter($to)) {
+                    throw ValidationException::withMessages(['linehaul'=>'Missing/unknown PSGC Region on one Province Hub. Fix it before assigning road transport.']);
+                }
+                $roadLink = \App\Models\Logistics\RouteLink::where('logistics_partner_id', $locked->logistics_partner_id)
+                    ->where('from_center_id', $from->id)->where('to_center_id', $to->id)
+                    ->where('status', 'verified')->whereNotNull('verified_at')->where('mode', 'road')->exists();
+                if (! $roadLink) {
+                    throw ValidationException::withMessages(['linehaul' => 'No verified ROAD connection for this hub-to-hub leg. Configure a real route before assigning a road driver.']);
+                }
+            }
+            if ($from->type === 'station_hub' && $to->type === 'station_hub') {
+                $this->requireVerifiedStationRoad($locked->logistics_partner_id, $from, $to);
+            }
+            if ($locked->cargoTransfer()->exists()) {
+                throw ValidationException::withMessages(['linehaul' => 'Manifest already has a cargo booking.']);
+            }
             $requiredHomeHubId = $from->type === 'province_hub' ? $from->id : $from->parent_id;
             if ($requiredHomeHubId && (int) $vehicle->home_hub_id !== (int) $requiredHomeHubId) {
                 throw ValidationException::withMessages([
@@ -93,13 +135,14 @@ class LinehaulService
     {
         $manifest = $this->driverManifest($driver, $manifestCode);
         $trip = $manifest->linehaulTrip;
+        $needsReview = app(PhilippineIslandGroup::class)->isCrossGroup($trip->fromCenter, $trip->toCenter);
 
         $counts = DB::table('parcel_manifest_items')
             ->where('manifest_id', $manifest->id)
             ->selectRaw('COUNT(*) as expected, COUNT(loaded_at) as loaded, COUNT(received_at) as received')
             ->first();
 
-        $action = $trip->status === LinehaulTrip::SCHEDULED ? 'depart' : 'none';
+        $action = ! $needsReview && $trip->status === LinehaulTrip::SCHEDULED ? 'depart' : 'none';
 
         return [
             'manifest_id' => $manifest->id,
@@ -108,6 +151,9 @@ class LinehaulService
             'trip_code' => $trip->code,
             'trip_status' => $trip->status,
             'action' => $action,
+            'transport_mode' => 'road',
+            'requires_review' => $needsReview,
+            'route_warning' => $needsReview ? 'Legacy inter-island ROAD trip needs operator reconciliation. It cannot be confirmed as a single road trip.' : null,
             'from' => $trip->fromCenter?->name,
             'to' => $trip->toCenter?->name,
             'vehicle_code' => $trip->vehicle?->code,
@@ -117,11 +163,11 @@ class LinehaulService
             'expected' => (int) ($counts->expected ?? 0),
             'loaded' => (int) ($counts->loaded ?? 0),
             'received' => (int) ($counts->received ?? 0),
-            'confirm_label' => $action === 'depart'
+            'confirm_label' => $needsReview ? 'Blocked — inter-island road trip requires review' : ($action === 'depart'
                 ? 'Accept load & depart'
                 : ($trip->status === LinehaulTrip::IN_TRANSIT
                     ? 'Waiting for destination Manifest scan'
-                    : 'No action required'),
+                    : 'No action required')),
         ];
     }
 
@@ -139,6 +185,24 @@ class LinehaulService
             }
 
             $trip = LinehaulTrip::whereKey($manifest->linehaul_trip_id)->lockForUpdate()->firstOrFail();
+            if (app(PhilippineIslandGroup::class)->isCrossGroup($trip->fromCenter()->firstOrFail(), $trip->toCenter()->firstOrFail())) {
+                throw ValidationException::withMessages(['manifest_code' => 'Legacy inter-island road assignment is blocked. Contact Logistics to reconcile the existing trip.']);
+            }
+            if ($trip->fromCenter()->value('type') === 'province_hub' && $trip->toCenter()->value('type') === 'province_hub') {
+                if (! \App\Models\Logistics\RouteLink::where('logistics_partner_id',$trip->logistics_partner_id)
+                    ->where('from_center_id',$trip->from_sorting_center_id)->where('to_center_id',$trip->to_sorting_center_id)
+                    ->where('status','verified')->whereNotNull('verified_at')->where('mode','road')->exists()) {
+                    throw ValidationException::withMessages(['manifest_code'=>'Verified ROAD link missing or suspended. Departure blocked.']);
+                }
+            }
+            if ($trip->fromCenter()->value('type') === 'station_hub'
+                && $trip->toCenter()->value('type') === 'station_hub') {
+                $this->requireVerifiedStationRoad(
+                    (int) $trip->logistics_partner_id,
+                    $trip->fromCenter()->firstOrFail(),
+                    $trip->toCenter()->firstOrFail()
+                );
+            }
             if ((int) $trip->driver_id !== (int) $driver->id || $trip->status !== LinehaulTrip::SCHEDULED) {
                 throw ValidationException::withMessages(['manifest_code' => 'This manifest is not awaiting departure by your Driver account.']);
             }

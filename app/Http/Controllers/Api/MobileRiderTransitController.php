@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
 use App\Models\Finance\SettlementEntry;
+use App\Services\PickupRiderAccrualService;
 use App\Models\Logistics\Delivery;
 use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\Rider;
@@ -48,6 +49,7 @@ class MobileRiderTransitController extends Controller
             'pending' => round((float) $entries->where('status', 'pending')->sum('amount'), 2),
             'available' => round((float) $entries->where('status', 'available')->sum('amount'), 2),
             'paid' => round((float) $entries->where('status', 'paid')->sum('amount'), 2),
+            'pickup_provisional' => app(PickupRiderAccrualService::class)->unpaidPreview((int)$rider->logistics_partner_id, (int)$rider->id),
             'entries' => $entries->map(fn ($entry) => [
                 'order_id' => $entry->order_id,
                 'kind' => $entry->kind,

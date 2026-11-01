@@ -36,6 +36,7 @@ class TransferController extends Controller
                 'transitRider',
                 'linehaulTrip.vehicle',
                 'linehaulTrip.driver',
+                'cargoTransfer',
             ])
             ->where('to_sorting_center_id', $center->id)
             ->whereHas('delivery', fn ($query) => $query
@@ -46,9 +47,10 @@ class TransferController extends Controller
         $receivable = fn ($query) => $query
             ->where('status', ParcelTransfer::IN_TRANSIT)
             ->where(function ($q) {
-                $q->whereHas('linehaulTrip', fn ($trip) => $trip->whereIn('status', ['arrived', 'completed']))
+                $q->whereHas('cargoTransfer', fn ($cargo) => $cargo->whereIn('status', ['arrived','completed']))
+                    ->orWhereHas('linehaulTrip', fn ($trip) => $trip->whereIn('status', ['arrived', 'completed']))
                     ->orWhere(function ($legacy) {
-                        $legacy->whereNull('linehaul_trip_id')
+                        $legacy->whereNull('linehaul_trip_id')->whereNull('cargo_transfer_id')
                             ->where(fn ($state) => $state
                                 ->whereNull('transit_rider_id')
                                 ->orWhereNotNull('departed_at'));
@@ -58,9 +60,10 @@ class TransferController extends Controller
         $preparing = fn ($query) => $query
             ->where('status', ParcelTransfer::IN_TRANSIT)
             ->where(function ($q) {
-                $q->whereHas('linehaulTrip', fn ($trip) => $trip->whereIn('status', ['scheduled', 'in_transit']))
+                $q->whereHas('cargoTransfer', fn ($cargo) => $cargo->whereIn('status', ['booked','in_transit']))
+                    ->orWhereHas('linehaulTrip', fn ($trip) => $trip->whereIn('status', ['scheduled', 'in_transit']))
                     ->orWhere(function ($legacy) {
-                        $legacy->whereNull('linehaul_trip_id')
+                        $legacy->whereNull('linehaul_trip_id')->whereNull('cargo_transfer_id')
                             ->whereNotNull('transit_rider_id')
                             ->whereNull('departed_at');
                     });

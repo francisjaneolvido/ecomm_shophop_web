@@ -17,7 +17,7 @@
     <header>
         <p class="sh-kicker">{{ $center->name }}</p>
         <h1 class="sh-title">Province Hub Parcel Operations</h1>
-        <p class="mt-2 max-w-4xl text-sm text-navy/55">Receive arriving parcels, validate the next hierarchy hop, consolidate them into manifests, confirm the physical batch count, then assign a Linehaul vehicle and driver.</p>
+        <p class="mt-2 max-w-4xl text-sm text-navy/55">Receive arriving parcels, validate the next hierarchy hop, consolidate them into manifests, confirm the physical batch count, then choose a verified Road driver or Sea/Air cargo leg.</p>
     </header>
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -27,9 +27,9 @@
         <div class="sh-stat"><p class="sh-stat-label">Ready for manifest</p><p class="sh-stat-value">{{ $stats['ready'] }}</p><p class="sh-stat-note">Sorted by next hop</p></div>
     </section>
 
-    <nav class="sh-ui-jump" aria-label="Hub parcel process stages"><a href="#hub-receive">1. Receive</a><a href="#hub-sort">2. Sort</a><a href="#hub-manifest">3. Manifest</a><a href="#hub-linehaul">4. Linehaul</a></nav>
+    <nav class="sh-ui-jump" aria-label="Hub parcel process stages"><a href="#hub-receive">1. Receive</a><a href="#hub-sort">2. Sort</a><a href="#hub-manifest">3. Manifest</a><a href="#hub-linehaul">4. Transport</a></nav>
     <section id="hub-receive" class="sh-surface sh-card-pad space-y-4 scroll-mt-6">
-        <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound Linehaul</h2><p class="mt-1 text-xs text-navy/50">Normal intact batch: use Logistics mobile → Receive inbound manifest, scan the Manifest QR, acknowledge arrival, then confirm the physical count. The parcel field below is only for individual exception/reconciliation.</p></div>
+        <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound Road / Sea / Air</h2><p class="mt-1 text-xs text-navy/50">Normal intact batch: use Logistics mobile → Receive inbound manifest, scan the Manifest QR, acknowledge arrival, then confirm the physical count. The parcel field below is only for individual exception/reconciliation.</p></div>
         <form method="POST" action="{{ route('logistics.hub.parcels.receive') }}" data-confirm-title="Receive exception parcel?" data-confirm-message="Verify the physical parcel and its tracking code before recording hub receipt." data-confirm-button="Confirm receipt" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
             <label class="sh-field"><span class="sh-label">Exception Parcel QR / tracking</span><input class="sh-input" id="hub-exception-code" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
             <button class="sh-btn">Receive exception parcel</button>
@@ -83,13 +83,17 @@
     </section>
 
     <section id="hub-linehaul" class="space-y-4 scroll-mt-6">
-        <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 4</p><h2 class="sh-title-sm">Load & assign Linehaul</h2><p class="mt-1 text-xs text-navy/50">Staff confirms the physical batch count once. Only a complete manifest can be assigned to a vehicle and driver.</p></div>
+        <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 4</p><h2 class="sh-title-sm">Load & assign transport</h2><p class="mt-1 text-xs text-navy/50">Staff confirms the physical batch count once. Only verified transport is allowed. Road uses a driver and vehicle; Sea/Air uses a carrier booking and hub handoff.</p></div>
         @forelse($manifests as $m)
         <article class="sh-surface sh-card-pad space-y-4">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div><div class="flex flex-wrap items-center gap-2"><h3 class="font-bold text-navy">{{ $m['code'] }}</h3><span class="sh-badge {{ $m['status']==='received' ? 'sh-badge-success' : ($m['status']==='dispatched' ? 'sh-badge-info' : ($m['status']==='ready' ? 'sh-badge-success' : 'sh-badge-warning')) }}">{{ ucfirst(str_replace('_',' ',$m['status'])) }}</span></div>
                 <p class="mt-1 text-xs text-navy/55">{{ $m['count'] }} → {{ $m['to'] }} · Loaded {{ $m['loaded'] }}/{{ $m['count'] }} · Received {{ $m['received'] }}/{{ $m['count'] }}</p>
-                @if($m['trip_code'])<p class="mt-1 text-xs text-navy/55">Trip {{ $m['trip_code'] }} · {{ $m['vehicle'] }} {{ $m['plate'] ? '('.$m['plate'].')' : '' }} · {{ $m['driver'] }} · {{ ucfirst(str_replace('_',' ',$m['trip_status'])) }}</p>@endif
+                @if($m['cargo_mode'])
+                <p class="mt-1 text-xs font-semibold text-teal">{{ strtoupper($m['cargo_mode']) }} CARGO · {{ $m['carrier_name'] }} · Ref {{ $m['booking_reference'] }} · {{ ucfirst(str_replace('_',' ', $m['cargo_status'])) }}</p>
+                @elseif($m['trip_code'])
+                <p class="mt-1 text-xs text-navy/55">ROAD · {{ $m['trip_code'] }} · {{ $m['vehicle'] }} · {{ $m['driver'] }} · {{ ucfirst(str_replace('_',' ',$m['trip_status'])) }}</p>
+                @endif
                 </div>
                 <a class="sh-btn-ghost" target="_blank" href="{{ route('logistics.hub.parcels.manifests.print',$m['id']) }}">Print Manifest QR</a>
             </div>
@@ -102,23 +106,48 @@
             @endif
 
             @if($m['status']==='ready' && !$m['trip_code'])
-                @if($drivers->isEmpty() || $vehicles->isEmpty())
-                    <div class="sh-alert-error">No available Linehaul Driver/vehicle. Register them in Logistics → Fleet & Linehaul.</div>
-                @else
-                <form method="POST" action="{{ route('logistics.hub.parcels.manifests.assign-linehaul',$m['id']) }}" class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">@csrf
-                    <label class="sh-field"><span class="sh-label">Vehicle</span><select class="sh-select" name="vehicle_id" required><option value="">Select</option>@foreach($vehicles as $v)<option value="{{ $v->id }}">{{ $v->code }} · {{ $v->plate_number }}@if($v->is_primary) · PRIMARY @endif</option>@endforeach</select></label>
-                    <label class="sh-field"><span class="sh-label">Driver</span><select class="sh-select" name="driver_id" required><option value="">Select</option>@foreach($drivers as $d)<option value="{{ $d->id }}">{{ $d->name }}</option>@endforeach</select></label>
-                    <label class="sh-field"><span class="sh-label">Trip note</span><input class="sh-input" name="trip_note" maxlength="255"></label>
-                    <button class="sh-btn">Assign Linehaul</button>
-                </form>
+                @if(!$m['region_known'])<div class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">Unknown Province Hub region. Correct PSGC region metadata before assigning road or cargo.</div>@endif
+                @if($m['cross_group'] || !empty($m['cargo_links']))
+                    @if(empty($m['cargo_links']))
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-navy">Inter-island shipment: no verified Sea/Air connection for this exact destination. Add one in Logistics → Transport Routes; ROAD assignment is blocked.</div>
+                    @else
+                    <form method="POST" action="{{ route('logistics.hub.parcels.manifests.cargo-book',$m['id']) }}" class="rounded-xl border border-teal/25 bg-teal/5 p-3 space-y-3">@csrf
+                        <div class="flex flex-wrap items-center gap-2"><span class="sh-badge sh-badge-info">SEA / AIR CARGO</span><p class="text-xs text-navy/60">Requires verified connection and physical carrier handoff.</p></div>
+                        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4 xl:items-end">
+                            <label class="sh-field"><span class="sh-label">Verified connection *</span><select class="sh-select" name="route_link_id" required><option value="">Choose transport</option>@foreach($m['cargo_links'] as $link)<option value="{{ $link['id'] }}">{{ strtoupper($link['mode']) }} · {{ $link['notes'] }}</option>@endforeach</select></label>
+                            <label class="sh-field"><span class="sh-label">Carrier / operator *</span><input class="sh-input" name="carrier_name" placeholder="Actual shipping / airline carrier" maxlength="150" required></label>
+                            <label class="sh-field"><span class="sh-label">Booking reference *</span><input class="sh-input" name="booking_reference" placeholder="Carrier waybill / booking" maxlength="120" required></label>
+                            <button class="sh-btn">Book carrier</button>
+                        </div>
+                    </form>
+                    @endif
+                @endif
+                @if(!$m['cross_group'] && $m['region_known'])
+                    @if($drivers->isEmpty() || $vehicles->isEmpty())
+                        <div class="sh-alert-error">No available Road Linehaul Driver/vehicle. Register them under Fleet & Linehaul.</div>
+                    @else
+                        <form method="POST" action="{{ route('logistics.hub.parcels.manifests.assign-linehaul',$m['id']) }}" class="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end">@csrf
+                            <label class="sh-field"><span class="sh-label">Road vehicle</span><select class="sh-select" name="vehicle_id" required><option value="">Select vehicle</option>@foreach($vehicles as $v)<option value="{{ $v->id }}">{{ $v->code }} · {{ $v->plate_number }}</option>@endforeach</select></label>
+                            <label class="sh-field"><span class="sh-label">Road driver</span><select class="sh-select" name="driver_id" required><option value="">Select driver</option>@foreach($drivers as $d)<option value="{{ $d->id }}">{{ $d->name }}</option>@endforeach</select></label>
+                            <label class="sh-field"><span class="sh-label">Trip note</span><input class="sh-input" name="trip_note" maxlength="255"></label>
+                            <button class="sh-btn">Assign Road Linehaul</button>
+                        </form>
+                    @endif
                 @endif
             @endif
-
+            @if($m['cargo_status']==='booked')
+            <form method="POST" action="{{ route('logistics.hub.parcels.manifests.cargo-depart',$m['id']) }}" data-confirm-title="Carrier physically accepted cargo?" data-confirm-message="This starts the Sea/Air transport leg and records parcel transfers. Verify real carrier custody first." data-confirm-button="Confirm departure" class="rounded-xl border border-teal/25 p-3 flex flex-wrap items-center justify-between gap-3">@csrf
+                <div><p class="text-sm font-bold text-navy">Carrier booking ready for handoff</p><p class="text-xs text-navy/55">Confirm only after verifying manifest load and real carrier custody.</p></div>
+                <input type="hidden" name="custody_confirmation" value="CONFIRM_CARRIER_HANDOFF"><button class="sh-btn">Confirm carrier handoff</button>
+            </form>
+            @endif
             @if(in_array($m['status'],['prepared','loading','ready']) && !$m['trip_code'])
             <form method="POST" action="{{ route('logistics.hub.parcels.manifests.cancel',$m['id']) }}" data-confirm-title="Cancel this manifest?" data-confirm-message="This removes the manifest from active outbound processing. Verify its status before continuing." data-confirm-button="Cancel manifest" data-confirm-danger="1">@csrf<button class="sh-btn-danger">Cancel manifest</button></form>
             @endif
 
-            @if($m['trip_status']==='scheduled')<div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-navy">Waiting for Driver to scan Manifest QR and Accept Load & Depart.</div>
+            @if($m['cross_group'] && $m['trip_code'] && !$m['cargo_mode'])<div class="rounded-xl border border-red-200 bg-red-50 p-3 text-xs font-bold text-red-700">LEGACY INVALID ROAD TRIP — do not confirm Davao receipt. Reconcile this active trip manually.</div>@endif
+            @if($m['cargo_mode'])<div class="text-xs text-navy/55">Sea/Air cargo status: {{ str_replace('_',' ',$m['cargo_status']) }}. Destination scans the same Manifest QR to acknowledge arrival and receive parcels.</div>
+            @elseif($m['trip_status']==='scheduled')<div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-navy">Waiting for Driver to scan Manifest QR and Accept Load & Depart.</div>
             @elseif($m['trip_status']==='in_transit')<div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-navy">Truck is in transit to {{ $m['to'] }}.</div>
             @elseif($m['trip_status']==='arrived')<div class="rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-navy">Destination acknowledged the Manifest QR. Receiving is controlled by the destination center.</div>
             @endif

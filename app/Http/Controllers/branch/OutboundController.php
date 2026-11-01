@@ -51,14 +51,23 @@ class OutboundController extends Controller
             });
 
         $ready = $this->readyQuery($center)->with('order')->latest('sorted_at')->get()
-            ->map(fn (Delivery $d) => [
-                'id' => $d->id,
-                'tracking' => $d->tracking_code,
-                'receiver' => $d->order?->delivery_name,
-                'barangay' => $d->order?->delivery_barangay_name ?: $d->order?->delivery_address,
-                'final' => $names[$d->destination_sorting_center_id] ?? '-',
-                'cod' => $d->order && $d->order->payment_method === 'cod' ? (float) $d->order->total_amount : null,
-            ]);
+            ->map(function (Delivery $d) use ($routing, $names) {
+                $plan = $routing->transferPlan($d);
+                return [
+                    'id' => $d->id,
+                    'tracking' => $d->tracking_code,
+                    'receiver' => $d->order?->delivery_name,
+                    'barangay' => $d->order?->delivery_barangay_name ?: $d->order?->delivery_address,
+                    'final' => $names[$d->destination_sorting_center_id] ?? '-',
+                    'cod' => $d->order && $d->order->payment_method === 'cod' ? (float) $d->order->total_amount : null,
+                    'next_id' => ($plan['valid'] ?? false) && ! ($plan['complete'] ?? false)
+                        ? (int) ($plan['next']?->id ?? 0) : 0,
+                    'next_name' => $plan['next']?->name ?? null,
+                    'leg' => $plan['leg'] ?? null,
+                    'issue' => $plan['reason'] ?? 'No next transfer required.',
+                ];
+            });
+        $readyGroups = $ready->filter(fn ($p) => $p['next_id'] > 0)->groupBy('next_id');
 
         $manifestModels = ParcelManifest::with([
                 'toCenter',
@@ -113,7 +122,7 @@ class OutboundController extends Controller
             ->orderByDesc('is_primary')->orderBy('code')->get() : collect();
 
         return view('branch.outbound.index', compact(
-            'center', 'hub', 'toSort', 'ready', 'manifests', 'stats', 'drivers', 'vehicles'
+            'center', 'hub', 'toSort', 'ready', 'readyGroups', 'manifests', 'stats', 'drivers', 'vehicles'
         ));
     }
 
@@ -169,29 +178,36 @@ class OutboundController extends Controller
         $data = $request->validate([
             'parcel_ids' => ['required', 'array', 'min:1', 'max:200'],
             'parcel_ids.*' => ['integer'],
+            'next_sorting_center_id' => ['required', 'integer'],
             'note' => ['nullable', 'string', 'max:255'],
         ], ['parcel_ids.required' => 'Pumili muna ng kahit isang parcel.']);
 
-        return DB::transaction(function () use ($request, $center, $hub, $data, $routing) {
+        $target = SortingCenter::query()
+            ->where('logistics_partner_id', $center->logistics_partner_id)
+            ->where('status', 'active')->whereNull('archived_at')
+            ->find((int) $data['next_sorting_center_id']);
+        if (! $target) return $this->fail('Invalid or inactive destination center.');
+
+        return DB::transaction(function () use ($request, $center, $target, $data, $routing) {
             $candidates = $this->readyQuery($center)
                 ->with(['destinationSortingCenter.parent'])
                 ->whereIn('id', $data['parcel_ids'])
                 ->lockForUpdate()->get();
 
-            $deliveries = $candidates->filter(function (Delivery $delivery) use ($routing, $hub) {
+            $deliveries = $candidates->filter(function (Delivery $delivery) use ($routing, $target) {
                 $plan = $routing->transferPlan($delivery);
                 return ($plan['valid'] ?? false)
                     && ! ($plan['complete'] ?? false)
-                    && (int) (($plan['next']?->id) ?? 0) === (int) $hub->id;
+                    && (int) (($plan['next']?->id) ?? 0) === (int) $target->id;
             })->values();
 
-            if ($deliveries->isEmpty()) return $this->fail('Walang eligible na parcel para sa required Province Hub.');
+            if ($deliveries->isEmpty()) return $this->fail('No eligible parcels for the selected verified next hop. Refresh the routing preview.');
 
             $manifest = ParcelManifest::create([
                 'code' => $this->manifestCode($center),
                 'logistics_partner_id' => $center->logistics_partner_id,
                 'from_sorting_center_id' => $center->id,
-                'to_sorting_center_id' => $hub->id,
+                'to_sorting_center_id' => $target->id,
                 'created_by_user_id' => $request->user()->id,
                 'transit_rider_id' => null,
                 'linehaul_trip_id' => null,

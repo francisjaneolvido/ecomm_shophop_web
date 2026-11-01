@@ -425,6 +425,13 @@ class MobileAuthController extends Controller
             'coverage_area' => $rider->coverageArea?->area_name,
             'coverage_area_type' => $rider->coverageArea?->area_type,
             'coverage_area_sorting_center' => $rider->coverageArea?->sortingCenter?->name,
+            'operational_service_areas' => $rider->operationalServiceAreas()
+                ->orderBy('municipality')->orderBy('barangay')->get()
+                ->map(fn ($area) => ['id' => $area->id, 'barangay' => $area->barangay,
+                    'municipality' => $area->municipality, 'province' => $area->province,
+                    'service_type' => $area->service_type, 'label' => $area->label()])->values()->all(),
+            'operational_area_mode' => app(\App\Services\RiderServiceAreaService::class)
+                ->configured((int) $rider->sorting_center_id) ? 'configured' : 'legacy',
             'availability_status' => $rider->availability_status,
         ];
     }

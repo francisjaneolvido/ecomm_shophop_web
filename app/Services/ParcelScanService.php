@@ -9,6 +9,7 @@ use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\PickupRequest;
 use App\Models\Logistics\SortingCenter;
 use Illuminate\Support\Facades\DB;
+use App\Services\PickupRiderAccrualService;
 use Illuminate\Validation\ValidationException;
 
 /** One authoritative physical receiving rule for Web and Mobile Logistics scanners. */
@@ -41,7 +42,7 @@ class ParcelScanService
             $action = 'Receive pickup from Rider';
             $event = 'pickup_received';
         } elseif ($delivery->status === Delivery::SORTED) {
-            $transfer = ParcelTransfer::with('linehaulTrip')
+            $transfer = ParcelTransfer::with(['linehaulTrip','cargoTransfer'])
                 ->where('delivery_id', $delivery->id)
                 ->where('status', ParcelTransfer::IN_TRANSIT)
                 ->latest('id')
@@ -53,7 +54,7 @@ class ParcelScanService
 
             $this->assertTransferArrived($transfer);
 
-            $action = 'Receive Linehaul transfer';
+            $action = $transfer->cargo_transfer_id ? 'Receive Sea/Air cargo transfer' : 'Receive Linehaul transfer';
             $event = 'transfer_received';
         } else {
             throw ValidationException::withMessages(['tracking_code' => 'Wrong center, duplicate scan, or parcel not ready for receipt.']);
@@ -96,6 +97,7 @@ class ParcelScanService
             }
 
             $linehaulTripId = null;
+            $cargoTransferId = null;
             $manifestId = null;
 
             if ($delivery->status === Delivery::PICKED_UP) {
@@ -117,7 +119,7 @@ class ParcelScanService
                 $type = 'pickup_received';
                 $transferId = null;
             } elseif ($delivery->status === Delivery::SORTED) {
-                $transfer = ParcelTransfer::with('linehaulTrip')
+                $transfer = ParcelTransfer::with(['linehaulTrip','cargoTransfer'])
                     ->where('delivery_id', $delivery->id)
                     ->where('status', ParcelTransfer::IN_TRANSIT)
                     ->latest('id')
@@ -142,6 +144,7 @@ class ParcelScanService
                 $type = 'transfer_received';
                 $transferId = $transfer->id;
                 $linehaulTripId = $transfer->linehaul_trip_id;
+                $cargoTransferId = $transfer->cargo_transfer_id;
                 $manifestId = $transfer->manifest_id;
 
                 if ($manifestId) {
@@ -159,6 +162,11 @@ class ParcelScanService
                 throw ValidationException::withMessages([
                     'tracking_code' => 'Parcel already received or currently at a different workflow stage.',
                 ]);
+            }
+
+            // Once per verified pickup handoff; same transaction as the custody scan.
+            if ($type === 'pickup_received') {
+                app(PickupRiderAccrualService::class)->recordAtVerifiedReceipt($delivery, $centerId);
             }
 
             DB::table('parcel_scan_events')->insert([
@@ -182,6 +190,7 @@ class ParcelScanService
                 'delivery_status' => $delivery->status,
                 'branch' => $center->name,
                 '_linehaul_trip_id' => $linehaulTripId,
+                '_cargo_transfer_id' => $cargoTransferId,
             ];
         }, 3);
 
@@ -189,16 +198,30 @@ class ParcelScanService
             app(LinehaulService::class)->completeTripIfReceived((int) $result['_linehaul_trip_id']);
         }
 
+        if (! empty($result['_cargo_transfer_id'])) {
+            app(InterislandCargoService::class)->completeIfReceived((int) $result['_cargo_transfer_id']);
+        }
+        unset($result['_cargo_transfer_id']);
         unset($result['_linehaul_trip_id']);
         return $result;
     }
 
     private function assertTransferArrived(ParcelTransfer $transfer): void
     {
+        if ($transfer->cargo_transfer_id) {
+            $cargo=$transfer->cargoTransfer ?: \App\Models\Logistics\InterislandCargoTransfer::find($transfer->cargo_transfer_id);
+            if (! $cargo || ! in_array($cargo->status,['arrived','completed'],true) || ! $cargo->arrived_at) {
+                throw ValidationException::withMessages(['tracking_code'=>'Sea/Air cargo arrival must first be confirmed by the destination Hub using the Manifest QR.']);
+            }
+            return;
+        }
         if ($transfer->linehaul_trip_id) {
             $trip = $transfer->linehaulTrip
                 ?: LinehaulTrip::find($transfer->linehaul_trip_id);
 
+            if ($trip && app(PhilippineIslandGroup::class)->isCrossGroup($trip->fromCenter()->firstOrFail(),$trip->toCenter()->firstOrFail())) {
+                throw ValidationException::withMessages(['tracking_code'=>'Legacy inter-island road trip needs manual Logistics reconciliation.']);
+            }
             if (! $trip || ! in_array($trip->status, [LinehaulTrip::ARRIVED, LinehaulTrip::COMPLETED], true) || ! $trip->arrived_at) {
                 throw ValidationException::withMessages([
                     'tracking_code' => 'The destination Branch/Hub has not scanned and acknowledged this Manifest QR yet.',

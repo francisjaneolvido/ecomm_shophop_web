@@ -12,6 +12,8 @@ use App\Models\Logistics\SortingCenter;
 use App\Models\LogisticsCoverageArea;
 use App\Models\LogisticsPartner;
 use App\Services\LogisticsRoutingService;
+use App\Services\LogisticsJourneyService;
+use App\Services\RiderServiceAreaService;
 use App\Services\ParcelScanService;
 use App\Services\PhilippineDeliveryCoverage;
 use Illuminate\Database\QueryException;
@@ -24,7 +26,7 @@ use Illuminate\View\View;
 
 class DeliveryController extends Controller
 {
-    public function board(Request $request, LogisticsRoutingService $routing): View
+    public function board(Request $request, LogisticsRoutingService $routing, LogisticsJourneyService $journeys, RiderServiceAreaService $serviceAreas): View
     {
         $partner = $this->partner($request);
         $ready = self::readyFor($partner);
@@ -39,24 +41,28 @@ class DeliveryController extends Controller
             ->where('logistics_partner_id', $partner->id)
             ->where('status', 'active')
             ->whereNotNull('email')->whereNotNull('password')
+            ->with('operationalServiceAreas')
             ->orderBy('name')->get();
         $coverageAreas = $partner->coverageAreas()->with('sortingCenter')->orderBy('area_name')->get();
         $transferPlans = $deliveries->mapWithKeys(fn (Delivery $delivery) => [
             $delivery->id => $routing->transferPlan($delivery),
         ]);
+        $journeyPreviews = $deliveries->mapWithKeys(fn (Delivery $delivery) => [
+            $delivery->id => $journeys->preview($delivery),
+        ]);
 
-        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'transferPlans'));
+        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'transferPlans', 'journeyPreviews', 'serviceAreas'));
     }
 
     /** Assign the rider who will collect the parcel from the Seller and bring it to the sorting center. */
-    public function assign(Request $request, int $order): RedirectResponse
+    public function assign(Request $request, int $order, RiderServiceAreaService $serviceAreas): RedirectResponse
     {
         $partner = $this->partner($request);
         $data = $request->validate(['rider_id' => ['required', 'integer']]);
         $rider = $this->activeRider($partner, (int) $data['rider_id']);
 
         try {
-            return DB::transaction(function () use ($partner, $rider, $order) {
+            return DB::transaction(function () use ($partner, $rider, $order, $serviceAreas) {
                 $ready = Order::with('pickupRequest')->whereKey($order)->lockForUpdate()->firstOrFail();
                 $pickup = PickupRequest::where('order_id', $ready->id)->lockForUpdate()->first();
                 if ($ready->status !== Order::STATUS_READY_FOR_PICKUP || ! $ready->isPaymentEligible()
@@ -76,6 +82,11 @@ class DeliveryController extends Controller
                     throw ValidationException::withMessages([
                         'rider_id' => 'Choose a pickup Rider assigned to the requested origin Sorting Center.',
                     ]);
+                }
+
+                if (! $serviceAreas->pickupEligible($rider, (int) $originCenterId, $ready->seller)) {
+                    throw ValidationException::withMessages(['rider_id' =>
+                        'This rider is not eligible for the Seller barangay or assigned origin branch. Configure Rider Service Areas first.']);
                 }
 
                 Delivery::create([
@@ -121,14 +132,14 @@ class DeliveryController extends Controller
     }
 
     /** Record the destination area selected after reading the delivery address. */
-    public function sort(Request $request, int $delivery): RedirectResponse
+    public function sort(Request $request, int $delivery, LogisticsRoutingService $routing): RedirectResponse
     {
         $partner = $this->partner($request);
         $data = $request->validate(['destination_area_id' => ['required', 'integer']]);
         $area = LogisticsCoverageArea::where('logistics_partner_id', $partner->id)
             ->findOrFail($data['destination_area_id']);
 
-        return DB::transaction(function () use ($partner, $delivery, $area) {
+        return DB::transaction(function () use ($partner, $delivery, $area, $routing) {
             $owned = Delivery::with('order')->where('logistics_partner_id', $partner->id)
                 ->whereKey($delivery)->lockForUpdate()->firstOrFail();
 
@@ -140,6 +151,17 @@ class DeliveryController extends Controller
             if (! $this->areaCoversOrder($area, $owned->order)) {
                 throw ValidationException::withMessages([
                     'destination_area_id' => 'The selected area does not cover the recorded delivery address.',
+                ]);
+            }
+
+            // Prevent the historical province-wide DEMO station from swallowing
+            // NEW parcels when a matching dedicated city branch now exists.
+            $preferred = $routing->destinationArea($partner->loadMissing('coverageAreas.sortingCenter'), $owned->order);
+            if ($preferred && (int) $preferred->id !== (int) $area->id
+                && str_starts_with((string) $preferred->sortingCenter?->code, 'NW-C-')) {
+                throw ValidationException::withMessages([
+                    'destination_area_id' => 'Choose the dedicated '.($preferred->sortingCenter?->name ?? 'city branch')
+                        .' for this destination instead of the legacy province-wide demo station.',
                 ]);
             }
 
@@ -158,13 +180,13 @@ class DeliveryController extends Controller
     }
 
     /** Assign the rider responsible for final delivery after sorting, or after a failed attempt. */
-    public function assignDelivery(Request $request, int $delivery): RedirectResponse
+    public function assignDelivery(Request $request, int $delivery, RiderServiceAreaService $serviceAreas): RedirectResponse
     {
         $partner = $this->partner($request);
         $data = $request->validate(['rider_id' => ['required', 'integer']]);
         $rider = $this->activeRider($partner, (int) $data['rider_id']);
 
-        return DB::transaction(function () use ($partner, $delivery, $rider) {
+        return DB::transaction(function () use ($partner, $delivery, $rider, $serviceAreas) {
             $owned = Delivery::with(['order', 'destinationArea', 'transfers'])
                 ->where('logistics_partner_id', $partner->id)
                 ->whereKey($delivery)->lockForUpdate()->firstOrFail();
@@ -176,7 +198,8 @@ class DeliveryController extends Controller
                 return $this->stale();
             }
 
-            if ((int) $rider->coverage_area_id !== (int) $owned->destination_area_id) {
+            $configured = $serviceAreas->configured((int) $owned->destination_sorting_center_id);
+            if (! $configured && (int) $rider->coverage_area_id !== (int) $owned->destination_area_id) {
                 throw ValidationException::withMessages([
                     'rider_id' => 'Choose an active Rider assigned to this parcel\'s destination area.',
                 ]);
@@ -187,6 +210,11 @@ class DeliveryController extends Controller
                 throw ValidationException::withMessages([
                     'rider_id' => 'Receive the parcel at its destination Sorting Center before assigning the final-delivery Rider.',
                 ]);
+            }
+
+            if (! $serviceAreas->deliveryEligible($rider, (int) $owned->destination_sorting_center_id, $owned->order)) {
+                throw ValidationException::withMessages(['rider_id' =>
+                    'Rider does not cover the Buyer barangay or is unavailable. Assign exact service areas first.']);
             }
 
             if ($owned->destination_sorting_center_id

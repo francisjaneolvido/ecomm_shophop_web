@@ -23,13 +23,14 @@ class DashboardController extends Controller
             ->where('origin_sorting_center_id', $center->id)
             ->where('status', Delivery::PICKED_UP);
 
-        $transfersIn = ParcelTransfer::with(['delivery', 'fromCenter', 'linehaulTrip'])
+        $transfersIn = ParcelTransfer::with(['delivery', 'fromCenter', 'linehaulTrip','cargoTransfer'])
             ->where('to_sorting_center_id', $center->id)
             ->where('status', ParcelTransfer::IN_TRANSIT)
             ->where(function ($q) {
-                $q->whereHas('linehaulTrip', fn ($trip) => $trip->whereIn('status', ['arrived', 'completed']))
+                $q->whereHas('cargoTransfer', fn ($cargo) => $cargo->whereIn('status', ['arrived','completed']))
+                    ->orWhereHas('linehaulTrip', fn ($trip) => $trip->whereIn('status', ['arrived', 'completed']))
                     ->orWhere(function ($legacy) {
-                        $legacy->whereNull('linehaul_trip_id')
+                        $legacy->whereNull('linehaul_trip_id')->whereNull('cargo_transfer_id')
                             ->where(fn ($legacyState) => $legacyState
                                 ->whereNull('transit_rider_id')
                                 ->orWhereNotNull('departed_at'));

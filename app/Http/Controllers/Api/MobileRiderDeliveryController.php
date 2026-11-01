@@ -352,6 +352,9 @@ class MobileRiderDeliveryController extends Controller
             'can_complete_delivery' => $isDeliveryRider && $delivery->status === Delivery::OUT_FOR_DELIVERY,
             'can_fail_delivery' => $isDeliveryRider && $delivery->status === Delivery::OUT_FOR_DELIVERY,
             'destination_area' => $delivery->destinationArea?->area_name,
+            'is_local_branch_delivery' => (int) $delivery->origin_sorting_center_id > 0
+                && (int) $delivery->destination_sorting_center_id > 0
+                && (int) $delivery->origin_sorting_center_id === (int) $delivery->destination_sorting_center_id,
             'origin_sorting_center' => $this->sortingCenterData($delivery->originSortingCenter),
             'current_sorting_center' => $this->sortingCenterData($delivery->currentSortingCenter),
             'destination_sorting_center' => $this->sortingCenterData($delivery->destinationSortingCenter),

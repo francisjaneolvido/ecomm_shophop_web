@@ -7,6 +7,7 @@ use App\Models\Finance\LogisticsOrderAllocation;
 use App\Models\Finance\MarketplaceRateSetting;
 use App\Models\Finance\OrderFinancial;
 use App\Models\Finance\SettlementEntry;
+use App\Models\Finance\PickupRiderAccrual;
 use App\Models\Logistics\CodSettlement;
 use App\Models\Logistics\Delivery;
 use App\Models\Logistics\ParcelTransfer;
@@ -140,7 +141,12 @@ class ShopHopFinance
 
             $pickupFee = 0.0;
             if ((int) $delivery->pickup_rider_id > 0) {
-                $pickupFee = round(min($remaining, max(0, (float) $rates->pickup_rider_fee)), 2);
+                // Honor the first-mile amount reserved at verified receipt; no double credit.
+                $accrual = PickupRiderAccrual::where('order_id', $orderId)->first();
+                if ($accrual && (int) $accrual->rider_id !== (int) $delivery->pickup_rider_id) {
+                    throw ValidationException::withMessages(['order' => 'Pickup Rider mismatch between verified handoff and settlement. Review manually.']);
+                }
+                $pickupFee = round(min($remaining, max(0, (float) ($accrual?->amount ?? $rates->pickup_rider_fee))), 2);
                 $remaining = max(0, round($remaining - $pickupFee, 2));
                 SettlementEntry::firstOrCreate(
                     ['order_id' => $orderId, 'kind' => 'pickup_rider'],

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Logistics\BranchStaff;
 use App\Models\Logistics\SortingCenter;
+use App\Models\Logistics\Delivery;
+use App\Services\LogisticsJourneyService;
 use App\Models\Logistics\ParcelManifest;
 use App\Services\ManifestLoadingService;
 use App\Services\ParcelScanService;
@@ -22,19 +24,32 @@ class MobileLogisticsScannerController extends Controller
         $partner = $this->partner($request);
         $actor = $request->user();
         $branchCenter = $this->branchCenterForActor($actor);
-        $centers = $partner->sortingCenters()->where('status', 'active');
+        // Company scanners must search a large nationwide network instead of
+        // rendering 1,600+ dropdown options on low-memory Android devices.
+        $search = trim((string) $request->query('search', ''));
+        abort_if(mb_strlen($search) > 90, 422, 'Branch search is too long.');
+        $centers = $partner->sortingCenters()->where('status', 'active')->whereNull('archived_at');
         if ($actor instanceof BranchStaff) {
             $centers->whereKey($actor->sorting_center_id);
         } elseif ($branchCenter) {
             $centers->whereKey($branchCenter->id);
+        } elseif ($search !== '') {
+            $centers->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')
+                ->orWhere('municipality', 'like', '%'.$search.'%')
+                ->orWhere('province', 'like', '%'.$search.'%')
+                ->orWhere('code', 'like', '%'.$search.'%'));
         }
-        return response()->json(['success' => true, 'status' => 'ok', 'message' => 'Active sorting centers loaded.', 'data' => [
+        $results = $centers->orderByDesc('is_main')->orderBy('name')->limit(81)
+            ->get(['id','code','name','municipality','province','region']);
+        return response()->json(['success' => true, 'status' => 'ok',
+            'message' => 'Active sorting centers loaded.', 'data' => [
             'company' => $partner->company_name,
             'operator' => $actor instanceof BranchStaff
-                ? $actor->name
-                : ($branchCenter?->name ?? $partner->company_name),
+                ? $actor->name : ($branchCenter?->name ?? $partner->company_name),
             'branch_locked' => $actor instanceof BranchStaff || $branchCenter !== null,
-            'branches' => $centers->orderByDesc('is_main')->orderBy('name')->get(['id','code','name','municipality','province','region']),
+            'branches' => $results->take(80)->values(),
+            'more_branches' => $results->count() > 80,
+            'branch_search' => $search,
         ]]);
     }
 
@@ -45,7 +60,7 @@ class MobileLogisticsScannerController extends Controller
         $centerId = (int) $data['sorting_center_id'];
         $this->requireBranchAccess($request, $partner, $centerId);
 
-        $manifests = ParcelManifest::with(['toCenter', 'linehaulTrip.vehicle', 'linehaulTrip.driver'])
+        $manifests = ParcelManifest::with(['toCenter', 'linehaulTrip.vehicle', 'linehaulTrip.driver', 'cargoTransfer'])
             ->where('logistics_partner_id', $partner->id)
             ->where('from_sorting_center_id', $centerId)
             ->whereIn('status', [ParcelManifest::PREPARED, ParcelManifest::LOADING, ParcelManifest::READY])
@@ -62,7 +77,9 @@ class MobileLogisticsScannerController extends Controller
                     'to' => $manifest->toCenter?->name,
                     'expected' => (int) ($counts->expected ?? 0),
                     'loaded' => (int) ($counts->loaded ?? 0),
-                    'trip_code' => $manifest->linehaulTrip?->code,
+                    'trip_code' => $manifest->linehaulTrip?->code ?? $manifest->cargoTransfer?->booking_reference,
+                    'transport_mode' => $manifest->cargoTransfer?->mode ?? 'road',
+                    'carrier_name' => $manifest->cargoTransfer?->carrier_name,
                     'vehicle' => $manifest->linehaulTrip?->vehicle?->code,
                     'driver' => $manifest->linehaulTrip?->driver?->name,
                 ];
@@ -117,7 +134,7 @@ class MobileLogisticsScannerController extends Controller
                 'message' => collect($exception->errors())->flatten()->first() ?: 'Parcel cannot be loaded.'], 409);
         }
         return response()->json(['success' => true, 'status' => $result['ready'] ? 'ready_to_dispatch' : 'loaded',
-            'message' => $result['ready'] ? 'All manifest parcels are loaded. Assign a vehicle and Linehaul Driver.' : 'Parcel marked loaded.',
+            'message' => $result['ready'] ? 'All parcels loaded. Assign Road Linehaul or book verified Sea/Air cargo in the Web Hub Portal.' : 'Parcel marked loaded.',
             'data' => $result]);
     }
 
@@ -186,7 +203,7 @@ class MobileLogisticsScannerController extends Controller
             'status' => 'ready',
             'message' => $manifest['arrival_acknowledged']
                 ? 'Destination arrival is already acknowledged.'
-                : 'Manifest verified for this destination. Confirm arrival to accept the Linehaul handoff.',
+                : 'Manifest verified for this destination. Confirm physical arrival of the assigned transport leg.',
             'data' => ['manifest' => $manifest],
         ]);
     }
@@ -260,7 +277,7 @@ class MobileLogisticsScannerController extends Controller
         return response()->json([
             'success' => true,
             'status' => 'completed',
-            'message' => 'Manifest received intact. All parcel custody records were updated and the Linehaul Trip is complete.',
+            'message' => 'Manifest received intact. All parcel custody records were updated and the transport leg is complete.',
             'data' => ['manifest' => $manifest],
         ]);
     }
@@ -284,7 +301,7 @@ class MobileLogisticsScannerController extends Controller
     }
 
     /** Confirm eligibility before a staff member physically accepts a parcel. */
-    public function preview(Request $request, ParcelScanService $scanner): JsonResponse
+    public function preview(Request $request, ParcelScanService $scanner, LogisticsJourneyService $journeys): JsonResponse
     {
         $partner = $this->partner($request);
         $data = $request->validate([
@@ -297,6 +314,15 @@ class MobileLogisticsScannerController extends Controller
         } catch (ValidationException $exception) {
             return response()->json(['success' => false, 'status' => 'scan_conflict',
                 'message' => collect($exception->errors())->flatten()->first() ?: 'Parcel cannot be received.'], 409);
+        }
+        // Same read-only route preview as Logistics Web. Existing Mobile screens
+        // that do not yet render `route` remain compatible with this extra key.
+        $delivery = Delivery::query()
+            ->where('logistics_partner_id', $partner->id)
+            ->where('tracking_code', $parcel['tracking_code'])
+            ->first();
+        if ($delivery) {
+            $parcel['route'] = $journeys->preview($delivery);
         }
         return response()->json(['success' => true, 'status' => 'ready',
             'message' => 'Verify the physical parcel before confirming receipt.', 'data' => ['parcel' => $parcel]]);

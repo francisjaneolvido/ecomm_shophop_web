@@ -12,7 +12,8 @@ use Illuminate\Support\Collection;
 
 class LogisticsRoutingService
 {
-    public function __construct(private readonly PhilippineDeliveryCoverage $coverage)
+    public function __construct(private readonly PhilippineDeliveryCoverage $coverage,
+        private readonly ConnectedLogisticsRoutePlanner $connections)
     {
     }
 
@@ -45,33 +46,44 @@ class LogisticsRoutingService
         return $this->eligiblePartners($draft);
     }
 
+    /**
+     * A city-specific active branch outranks the old province-wide demo station.
+     * This ONLY applies to selecting a center for NEW work; existing parcel
+     * origin/destination IDs and custody records are never changed.
+     */
+    private function preferredArea(LogisticsPartner $partner, Collection $areas, ?string $province, ?string $city,
+        ?string $region): ?LogisticsCoverageArea
+    {
+        if (! filled($city)) return null;
+        return $areas->filter(fn (LogisticsCoverageArea $area) =>
+            $this->coverage->matches($area, $province, (string) $city, $region)
+            && $this->coverage->availableForPartner($area, $partner)
+        )->sortByDesc(function (LogisticsCoverageArea $area) {
+            $cityNames = collect(preg_split('/[|,]+/', (string) $area->cities))
+                ->map(fn ($name) => trim((string) $name))->filter();
+            $specific = $cityNames->isNotEmpty() && !$cityNames->contains(fn ($name) => strcasecmp($name, 'all') === 0);
+            $code = (string) $area->sortingCenter?->code;
+            $manual = !str_starts_with($code, 'NW-');
+            $dedicated = str_starts_with($code, 'NW-C-');
+            return ($specific ? 100 : 0) + ($manual ? 20 : 0) + ($dedicated ? 10 : 0);
+        })->first();
+    }
+
     public function destinationArea(LogisticsPartner $partner, Order $order): ?LogisticsCoverageArea
     {
-        return $partner->coverageAreas->first(
-            fn (LogisticsCoverageArea $area) => $this->coverage->coversOrder($area, $order)
-                && $this->coverage->availableForPartner($area, $partner)
-        );
+        [$province, $city, $region] = $this->coverage->destination($order);
+        return $this->preferredArea($partner, $partner->coverageAreas, $province, $city, $region);
     }
 
     public function originCenter(LogisticsPartner $partner, Seller $seller): ?SortingCenter
     {
         $areas = $partner->coverageAreas()->with('sortingCenter')->get();
-        $matched = $areas->first(fn (LogisticsCoverageArea $area) => $this->coverage->matches(
-            $area,
-            $seller->province_name,
-            (string) $seller->municipality_name,
-            $seller->region_name,
-        ) && $this->coverage->availableForPartner($area, $partner));
-
-        if (! $matched) {
-            return null;
-        }
-
-        // A matching inactive assigned branch must never reroute to the main hub.
-        // Only legacy, unassigned coverage belongs to the active main hub.
+        $matched = $this->preferredArea($partner, $areas, $seller->province_name,
+            $seller->municipality_name, $seller->region_name);
+        if (! $matched) return null;
         return $matched->sorting_center_id !== null
             ? $matched->sortingCenter
-            : $partner->sortingCenters()->where('status', 'active')->where('is_main', true)->first();
+            : $partner->sortingCenters()->where('status','active')->where('is_main', true)->first();
     }
 
 
@@ -151,6 +163,21 @@ class LogisticsRoutingService
         }
 
         if ($current->type === 'station_hub') {
+            // Phase 2: an explicitly VERIFIED directional road link may bypass the
+            // Province Hub. No inferred city adjacency and no unverified shortcut.
+            // The receiving station still requires a manifest, driver departure,
+            // destination QR arrival and physical parcel receipt.
+            if ($this->verifiedDirectStationRoad($delivery, $current, $destination)) {
+                return [
+                    'valid' => true,
+                    'complete' => false,
+                    'next' => $destination,
+                    'leg' => 'verified_direct_station_road',
+                    'reason' => null,
+                    'current' => $current,
+                    'destination' => $destination,
+                ];
+            }
             if (! $current->parent_id) {
                 return $this->invalidTransferPlan('The current station has no Province Hub parent.', $current, $destination);
             }
@@ -191,18 +218,64 @@ class LogisticsRoutingService
                 ];
             }
 
-            return [
-                'valid' => true,
-                'complete' => false,
-                'next' => $destinationHub,
-                'leg' => 'province_hub_to_province_hub',
-                'reason' => null,
-                'current' => $current,
-                'destination' => $destination,
-            ];
+            // Region metadata is mandatory for responsible inter-province transport.
+            $islandGroups = app(PhilippineIslandGroup::class);
+            if (! $islandGroups->forCenter($current) || ! $islandGroups->forCenter($destinationHub)) {
+                return $this->invalidTransferPlan('Hub region is missing or not recognized. Correct the PSGC region before planning transport.', $current, $destination);
+            }
+            // All Province Hub transfers require verified connected transport, never a guessed road leg.
+            {
+                $network = $this->connections->find(
+                    (int) $delivery->logistics_partner_id,
+                    $currentId,
+                    (int) $destinationHub->id,
+                    true // Hub-only: station branch transfer still uses existing guarded process.
+                );
+                if (($network['status'] ?? '') !== 'connected' || empty($network['legs'])) {
+                    return $this->invalidTransferPlan(
+                        'No verified connected transport path. An inter-island journey needs Sea/Air links; configure the required hubs before dispatch.',
+                        $current,
+                        $destination
+                    );
+                }
+                $nextHub = SortingCenter::query()
+                    ->where('logistics_partner_id', $delivery->logistics_partner_id)
+                    ->where('type', 'province_hub')->where('status','active')->whereNull('archived_at')
+                    ->find((int) $network['legs'][0]['to_id']);
+                if (! $nextHub) {
+                    return $this->invalidTransferPlan('Verified next hub became unavailable.', $current, $destination);
+                }
+                return [
+                    'valid' => true,
+                    'complete' => false,
+                    'next' => $nextHub,
+                    'leg' => 'province_hub_to_province_hub',
+                    'reason' => null,
+                    'current' => $current,
+                    'destination' => $destination,
+                ];
+            }
+
         }
 
         return $this->invalidTransferPlan('Unsupported sorting-center type for parcel transfer.', $current, $destination);
+    }
+
+    /** No guessed local shortcut: only a verified road connection, same partner,
+     * known island groups, and an active origin/destination station are eligible. */
+    private function verifiedDirectStationRoad(Delivery $delivery, SortingCenter $from, SortingCenter $to): bool
+    {
+        if ($from->type !== 'station_hub' || $to->type !== 'station_hub') return false;
+        $islands = app(PhilippineIslandGroup::class);
+        if (! $islands->forCenter($from) || ! $islands->forCenter($to)
+            || $islands->isCrossGroup($from, $to)) return false;
+
+        return \App\Models\Logistics\RouteLink::query()
+            ->where('logistics_partner_id', $delivery->logistics_partner_id)
+            ->where('from_center_id', $from->id)
+            ->where('to_center_id', $to->id)
+            ->where('mode', 'road')->where('status', 'verified')
+            ->whereNotNull('verified_at')->exists();
     }
 
     private function invalidTransferPlan(

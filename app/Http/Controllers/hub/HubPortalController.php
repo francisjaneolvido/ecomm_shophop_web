@@ -9,12 +9,15 @@ use App\Models\Logistics\Delivery;
 use App\Models\Logistics\FleetVehicle;
 use App\Models\Logistics\LinehaulDriver;
 use App\Models\Logistics\ParcelManifest;
+use App\Models\Logistics\RouteLink;
 use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\Rider;
 use App\Models\Logistics\SortingCenter;
 use App\Models\LogisticsCoverageArea;
 use App\Models\User;
 use App\Services\LinehaulService;
+use App\Services\InterislandCargoService;
+use App\Services\PhilippineIslandGroup;
 use App\Services\LogisticsRoutingService;
 use App\Services\ManifestLoadingService;
 use App\Services\ParcelScanService;
@@ -141,6 +144,7 @@ class HubPortalController extends Controller
                 'delivery.destinationSortingCenter.parent',
                 'fromCenter',
                 'linehaulTrip',
+                'cargoTransfer',
                 'manifest',
             ])
             ->where('to_sorting_center_id', $center->id)
@@ -151,9 +155,11 @@ class HubPortalController extends Controller
             ->get();
 
         $awaiting = $incoming->filter(fn ($t) =>
-            $t->linehaul_trip_id
-                ? in_array($t->linehaulTrip?->status, ['arrived', 'completed'], true)
-                : (! $t->transit_rider_id || $t->departed_at)
+            $t->cargo_transfer_id
+                ? in_array($t->cargoTransfer?->status, ['arrived','completed'], true)
+                : ($t->linehaul_trip_id
+                    ? in_array($t->linehaulTrip?->status, ['arrived', 'completed'], true)
+                    : (! $t->transit_rider_id || $t->departed_at))
         )->values();
         $notDeparted = $incoming->filter(fn ($t) => ! $awaiting->contains('id', $t->id))->values();
 
@@ -244,7 +250,7 @@ class HubPortalController extends Controller
             })
             ->values();
 
-        $manifestRows = ParcelManifest::with(['toCenter', 'linehaulTrip.vehicle', 'linehaulTrip.driver'])
+        $manifestRows = ParcelManifest::with(['toCenter', 'linehaulTrip.vehicle', 'linehaulTrip.driver', 'cargoTransfer'])
             ->where('from_sorting_center_id', $center->id)
             ->latest('id')
             ->limit(40)
@@ -258,7 +264,12 @@ class HubPortalController extends Controller
             ->get()
             ->keyBy('manifest_id');
 
-        $manifests = $manifestRows->map(function (ParcelManifest $manifest) use ($manifestCounts) {
+        $cargoLinks = RouteLink::where('logistics_partner_id', $center->logistics_partner_id)
+            ->where('from_center_id', $center->id)->where('status', 'verified')
+            ->whereNotNull('verified_at')->whereIn('mode', ['sea','air'])
+            ->get()->groupBy('to_center_id');
+        $islands = app(PhilippineIslandGroup::class);
+        $manifests = $manifestRows->map(function (ParcelManifest $manifest) use ($manifestCounts, $cargoLinks, $center, $islands) {
             $counts = $manifestCounts->get($manifest->id);
 
             return [
@@ -270,8 +281,17 @@ class HubPortalController extends Controller
                 'loaded' => (int) ($counts->loaded ?? 0),
                 'received' => (int) ($counts->received ?? 0),
                 'status' => $manifest->status,
-                'trip_code' => $manifest->linehaulTrip?->code,
-                'trip_status' => $manifest->linehaulTrip?->status,
+                'trip_code' => $manifest->linehaulTrip?->code ?? $manifest->cargoTransfer?->booking_reference,
+                'cargo_mode' => $manifest->cargoTransfer?->mode,
+                'cargo_status' => $manifest->cargoTransfer?->status,
+                'carrier_name' => $manifest->cargoTransfer?->carrier_name,
+                'booking_reference' => $manifest->cargoTransfer?->booking_reference,
+                'cross_group' => $manifest->toCenter ? $islands->isCrossGroup($center, $manifest->toCenter) : false,
+                'region_known' => $manifest->toCenter && $manifest->toCenter->type === 'province_hub'
+                    ? (bool) ($islands->forCenter($center) && $islands->forCenter($manifest->toCenter)) : true,
+                'cargo_links' => ($cargoLinks->get($manifest->to_sorting_center_id) ?? collect())
+                    ->map(fn ($link) => ['id' => $link->id, 'mode' => $link->mode, 'notes' => $link->notes])->values()->all(),
+                'trip_status' => $manifest->linehaulTrip?->status ?? $manifest->cargoTransfer?->status,
                 'driver' => $manifest->linehaulTrip?->driver?->name,
                 'vehicle' => $manifest->linehaulTrip?->vehicle?->code,
                 'plate' => $manifest->linehaulTrip?->vehicle?->plate_number,
@@ -495,7 +515,7 @@ class HubPortalController extends Controller
             return back()->withErrors($e->errors())->withInput();
         }
 
-        $message = "Confirmed complete load for {$result['manifest_code']} ({$result['loaded']}/{$result['expected']}). Assign a Linehaul vehicle and driver.";
+        $message = "Confirmed complete load for {$result['manifest_code']} ({$result['loaded']}/{$result['expected']}). Choose verified Road linehaul or Sea/Air cargo transport.";
         return redirect()->route('logistics.hub.parcels')->with('status', $message);
     }
 
@@ -529,6 +549,39 @@ class HubPortalController extends Controller
             ->with('status', "Linehaul {$trip->code} assigned. Driver must scan manifest {$record->code} and Accept Load & Depart.");
     }
 
+    /** Book only a verified Sea/Air connection; it does not yet dispatch parcels. */
+    public function bookCargo(Request $request, int $manifest, InterislandCargoService $cargo): RedirectResponse
+    {
+        $center=$this->center(mutating: true);
+        $data=$request->validate([
+            'route_link_id'=>['required','integer'],
+            'carrier_name'=>['required','string','min:2','max:150'],
+            'booking_reference'=>['required','string','min:3','max:120'],
+        ]);
+        $record=ParcelManifest::whereKey($manifest)->where('logistics_partner_id',$center->logistics_partner_id)
+            ->where('from_sorting_center_id',$center->id)->firstOrFail();
+        try {
+            $cargo->book($record,(int)$data['route_link_id'],$data['carrier_name'],
+                $data['booking_reference'],$this->partnerUserId($center));
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+        return back()->with('status','Sea/Air carrier booked. Confirm physical carrier custody separately before departure.');
+    }
+
+    public function departCargo(Request $request, int $manifest, InterislandCargoService $cargo): RedirectResponse
+    {
+        $center=$this->center(mutating: true);
+        $data=$request->validate(['custody_confirmation'=>['required','in:CONFIRM_CARRIER_HANDOFF']]);
+        try {
+            $cargo->depart($manifest,$center->id,(int)$center->logistics_partner_id,
+                $this->partnerUserId($center),(int)$this->staff()->id);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors());
+        }
+        return back()->with('status','Sea/Air carrier handoff recorded. Destination Hub must acknowledge physical arrival and receive the manifest.');
+    }
+
     /** Dispatch is now owned by the assigned Linehaul Driver manifest scan. */
     public function dispatchManifest(Request $request, int $manifest): RedirectResponse
     {
@@ -547,7 +600,7 @@ class HubPortalController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if (! $record) {
+            if (! $record || $record->cargoTransfer()->exists()) {
                 return $this->parcelStale();
             }
 
@@ -563,7 +616,7 @@ class HubPortalController extends Controller
     {
         $center = $this->center();
 
-        $record = ParcelManifest::with(['toCenter', 'linehaulTrip.vehicle', 'linehaulTrip.driver'])
+        $record = ParcelManifest::with(['toCenter', 'linehaulTrip.vehicle', 'linehaulTrip.driver', 'cargoTransfer'])
             ->whereKey($manifest)
             ->where('from_sorting_center_id', $center->id)
             ->firstOrFail();

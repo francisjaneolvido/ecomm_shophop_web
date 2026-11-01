@@ -77,7 +77,7 @@
                 <div>
                     <p class="sh-kicker">Step 1 · Seller pickup</p>
                     <h2 class="mt-1 text-base font-bold text-navy">Pickup requests</h2>
-                    <p class="mt-1 text-xs text-navy/50">Orders ready for pickup that need a qualified rider.</p>
+                    <p class="mt-1 text-xs text-navy/50">Orders ready for pickup. If no rider is eligible, open the exact-barangay coverage action below; then assign pickup.</p>
                 </div>
                 <span class="sh-badge {{ $ready->count() ? 'sh-badge-warning' : 'sh-badge-success' }}">{{ $ready->count() }} waiting</span>
             </div>
@@ -96,27 +96,84 @@
                             <div><p class="sh-stat-label">Destination</p><p class="mt-1 break-words font-medium text-navy">{{ $order->delivery_address ?? 'Unavailable' }}</p></div>
                             <div><p class="sh-stat-label">Items / payment</p><p class="mt-1 font-medium text-navy">{{ $order->items->sum('quantity') }} items · {{ strtoupper($order->payment_method) }} · ₱{{ number_format($order->total_amount, 2) }}</p></div>
                             <div><p class="sh-stat-label">Requested hub</p><p class="mt-1 font-medium text-navy">{{ $order->pickupRequest?->originSortingCenter?->name ?? 'Main Sorting Center' }}</p></div>
+                            <div class="sm:col-span-2"><p class="sh-stat-label">Seller pickup location (rider matching)</p><p class="mt-1 font-medium text-navy">{{ collect([$order->seller?->barangay_name, $order->seller?->municipality_name, $order->seller?->province_name])->filter()->implode(', ') ?: 'Seller location missing — review Seller account' }}</p></div>
                         </div>
                         <div class="mt-3 rounded-xl border border-gray-border bg-white px-3 py-2 text-xs text-navy/60">Tracking: <span class="font-semibold text-navy">{{ $order->tracking_code ?? 'Pending' }}</span></div>
                         @php
-                            $pickupRiders = $order->pickupRequest?->origin_sorting_center_id
-                                ? $riders->where('sorting_center_id', $order->pickupRequest->origin_sorting_center_id)
-                                : $riders;
+                            $originId = $order->pickupRequest?->origin_sorting_center_id;
+                            $pickupRiders = $originId
+                                ? $serviceAreas->matchingRiders($riders, $originId,
+                                    $order->seller?->province_name, $order->seller?->municipality_name,
+                                    $order->seller?->barangay_name, 'pickup')
+                                : $riders->groupBy(fn ($rider) => (int) $rider->sorting_center_id)
+                                    ->flatMap(fn ($group, $centerId) => $serviceAreas->matchingRiders(
+                                        $group, (int) $centerId, $order->seller?->province_name,
+                                        $order->seller?->municipality_name, $order->seller?->barangay_name, 'pickup'));
+                            $strictPickup = $serviceAreas->configured((int) ($originId ?: 0));
                         @endphp
+                        @if (! $strictPickup && $originId)
+                            <p class="mt-2 text-[11px] text-amber-700">Legacy branch coverage: barangay rider eligibility has not been configured for this branch.</p>
+                        @endif
                         @if ($pickupRiders->isNotEmpty())
                             <form method="POST" action="{{ route('logistics.deliveries.assign', $order) }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" data-confirm-title="Assign pickup rider?" data-confirm-message="The chosen rider will receive this pickup assignment. Please verify the rider and origin hub." data-confirm-button="Assign pickup">
                                 @csrf
                                 <label class="sh-field"><span class="sh-label">Pickup rider</span>
                                     <select name="rider_id" required class="sh-select"><option value="">Choose pickup rider</option>
                                         @foreach ($pickupRiders as $rider)
-                                            <option value="{{ $rider->id }}">{{ $rider->name }} · {{ $rider->sortingCenter?->name ?? 'No center' }} · {{ $rider->vehicle_type }}</option>
+                                            <option value="{{ $rider->id }}" @selected($loop->first)>{{ $rider->name }} · {{ $rider->sortingCenter?->name ?? 'No center' }} · {{ $rider->vehicle_type }}{{ $loop->first ? ' · Recommended' : '' }}</option>
                                         @endforeach
                                     </select>
                                 </label>
                                 <button class="sh-btn">Assign pickup</button>
                             </form>
                         @else
-                            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">No active rider is assigned to the requested origin sorting center. <a class="font-bold underline" href="{{ route('logistics.riders.index') }}">Manage Riders</a></div>
+                            @php
+                                $pickupCenter = $order->pickupRequest?->originSortingCenter;
+                                $sellerLocation = $order->seller;
+                                $locationReady = $pickupCenter && $pickupCenter->type === 'station_hub'
+                                    && $pickupCenter->status === 'active' && ! $pickupCenter->archived_at
+                                    && filled($sellerLocation?->municipality_name) && filled($sellerLocation?->barangay_name)
+                                    && \App\Services\RiderServiceAreaService::normalize($pickupCenter->province) === \App\Services\RiderServiceAreaService::normalize($sellerLocation?->province_name)
+                                    && (\App\Services\RiderServiceAreaService::normalizeCity($pickupCenter->municipality) === \App\Services\RiderServiceAreaService::normalizeCity($sellerLocation?->municipality_name)
+                                        || $pickupCenter->coverageAreas()->exists());
+                                $branchCandidates = $originId ? $riders->filter(fn ($rider) =>
+                                    (int) $rider->sorting_center_id === (int) $originId
+                                    && $rider->availability_status === 'available') : collect();
+                            @endphp
+                            <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+                                <div class="flex items-start gap-2"><x-lucide-info class="mt-0.5 h-4 w-4 shrink-0" /><div>
+                                    <p class="font-bold">Pickup needs rider coverage — not another order</p>
+                                    <p class="mt-1">The Seller is at <strong>{{ $sellerLocation?->barangay_name ?: 'Unknown barangay' }}, {{ $sellerLocation?->municipality_name ?: 'Unknown city' }}</strong>. Riders must belong to <strong>{{ $pickupCenter?->name ?: 'the origin branch' }}</strong>, be active/available, and have <strong>Pickup</strong> coverage here. The Buyer's barangay is for delivery, not pickup.</p>
+                                </div></div>
+                            </div>
+                            @if ($locationReady && $branchCandidates->isNotEmpty())
+                                <details class="mt-3 rounded-xl border border-teal/30 bg-teal-light/25 p-3" id="pickup-coverage-{{ $order->id }}">
+                                    <summary class="cursor-pointer text-xs font-bold text-teal-dark">Enable pickup coverage for an existing rider</summary>
+                                    <div class="mt-3 space-y-3 text-xs text-navy/75">
+                                        <p><strong>Step 1.</strong> Select a rider who can really collect parcels in {{ $sellerLocation->barangay_name }}. This creates/links only this barangay's <strong>Pickup</strong> coverage. It will not make the rider citywide.</p>
+                                        <form method="POST" action="{{ route('logistics.deliveries.pickup-coverage.enable', $order) }}" class="space-y-3" data-confirm-title="Approve this exact pickup area?" data-confirm-message="You are authorizing the selected rider to pick up parcels in the Seller's barangay at this origin branch. This does not assign the order or change custody/payment." data-confirm-button="Save pickup coverage">
+                                            @csrf
+                                            <label class="sh-field"><span class="sh-label">Available branch riders to configure ({{ $branchCandidates->count() }})</span>
+                                                <select class="sh-select" name="rider_id" required>
+                                                    <option value="">Choose the rider who covers {{ $sellerLocation->barangay_name }}</option>
+                                                    @foreach ($branchCandidates as $candidate)
+                                                        <option value="{{ $candidate->id }}">{{ $candidate->name }} · {{ $candidate->vehicle_type }} · {{ $candidate->operationalServiceAreas->count() }} existing areas</option>
+                                                    @endforeach
+                                                </select>
+                                            </label>
+                                            <label class="flex items-start gap-2 rounded-lg border border-teal/20 bg-white/70 p-3 text-xs text-navy">
+                                                <input class="mt-0.5 h-4 w-4 accent-teal-600" name="confirm_coverage" type="checkbox" value="1" required>
+                                                <span>I confirm this rider can physically serve <strong>{{ $sellerLocation->barangay_name }}, {{ $sellerLocation->municipality_name }}</strong> for Seller pickups.</span>
+                                            </label>
+                                            <div class="flex flex-wrap items-center justify-between gap-2"><p class="text-[11px] text-navy/60"><strong>Step 2.</strong> Save, then assign pickup after the page refreshes.</p><button type="submit" class="sh-btn">Save pickup coverage</button></div>
+                                        </form>
+                                    </div>
+                                </details>
+                            @elseif ($branchCandidates->isEmpty())
+                                <div class="mt-3 rounded-xl border border-gray-border bg-white p-3 text-xs text-navy/70">No active, available rider with login at this origin branch. <a class="font-bold text-teal-dark underline" href="{{ route('logistics.riders.index', ['center' => $originId]) }}">Review branch riders and their accounts</a> before trying again.</div>
+                            @else
+                                <div class="mt-3 rounded-xl border border-gray-border bg-white p-3 text-xs text-navy/70">Seller location or origin branch needs review before granting pickup coverage. <a class="font-bold text-teal-dark underline" href="{{ route('logistics.sorting-centers.index') }}">Review branch setup</a> and Seller address.</div>
+                            @endif
                         @endif
                     </article>
                 @empty
@@ -164,6 +221,41 @@
                             <div><p class="sh-stat-label">Destination hub</p><p class="mt-1 break-words text-xs font-medium text-navy">{{ $delivery->destinationSortingCenter?->name ?? 'Not determined' }}</p></div>
                         </div>
 
+                        @php $journey = $journeyPreviews[$delivery->id] ?? null; @endphp
+                        @if ($journey)
+                            <details class="mt-3 overflow-hidden rounded-xl border border-teal/20 bg-white" aria-label="Route preview for {{ $delivery->tracking_code }}">
+                                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 text-xs font-semibold text-navy sm:px-4">
+                                    <span class="flex min-w-0 items-center gap-2"><x-lucide-route class="h-4 w-4 shrink-0 text-teal-dark" />Route preview <span class="sh-badge sh-badge-info">{{ $journey['route_type'] }}</span></span>
+                                    <span class="text-[11px] font-normal text-navy/60">{{ $journey['next_hop'] ? 'Next: '.$journey['next_hop'] : 'View route details' }}</span>
+                                </summary>
+                                <div class="border-t border-gray-border px-3 py-3 sm:px-4">
+                                    @if (count($journey['stops']))
+                                        <ol class="flex flex-wrap items-center gap-2 text-xs text-navy/80" aria-label="Required sorting stops">
+                                            @foreach ($journey['stops'] as $stop)
+                                                <li class="inline-flex items-center gap-1 rounded-lg border border-gray-border bg-gray-bg/70 px-2.5 py-1.5"><span class="text-teal-dark">{{ $loop->iteration }}.</span><span class="font-medium">{{ $stop['name'] }}</span></li>
+                                                @unless ($loop->last)<li aria-hidden="true" class="text-teal-dark">→</li>@endunless
+                                            @endforeach
+                                        </ol>
+                                    @else
+                                        <p class="text-xs text-amber-800">Origin or destination sorting center is not assigned yet.</p>
+                                    @endif
+                                    <p class="mt-2 text-[11px] leading-relaxed text-navy/60">{{ $journey['note'] }}</p>
+                                    @php $network = $journey['network_path'] ?? null; @endphp
+                                    @if($network)
+                                      <div class="mt-3 rounded-xl border border-teal/20 bg-teal-50/60 px-3 py-3 text-xs">
+                                        <div class="flex items-center justify-between gap-2"><strong class="text-teal-800">Verified network</strong><span class="text-teal-800">{{ ucfirst($network['status'] ?? 'unavailable') }}</span></div>
+                                        @if(($network['stops'] ?? []) !== [])
+                                          <p class="mt-1 text-navy/75">{{ collect($network['stops'])->pluck('name')->implode(' → ') }}</p>
+                                          @if(($network['legs'] ?? []) !== []) <p class="mt-1 text-navy/50">Transport: {{ collect($network['legs'])->pluck('mode')->implode(' → ') }}</p>@endif
+                                        @endif
+                                        <p class="mt-1 text-navy/60">{{ $network['note'] ?? '' }}</p>
+                                      </div>
+                                    @endif
+                                    <p class="mt-2 text-[11px] font-semibold text-teal-dark">Route preview is informational. Only a verified manifest and receiving scan can change custody.</p>
+                                </div>
+                            </details>
+                        @endif
+
                         @if ($delivery->status === \App\Models\Logistics\Delivery::PICKED_UP)
                             <form method="POST" action="{{ route('logistics.deliveries.receive', $delivery) }}" class="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end" data-confirm-title="Receive this parcel?" data-confirm-message="Confirm that the tracking code matches the physical parcel received by your sorting center." data-confirm-button="Confirm receipt">
                                 @csrf
@@ -188,10 +280,21 @@
                                     && $delivery->destination_sorting_center_id
                                     && (int) $delivery->current_sorting_center_id !== (int) $delivery->destination_sorting_center_id;
                                 $transferPlan = $transferPlans[$delivery->id] ?? null;
-                                $areaRiders = $riders
-                                    ->where('coverage_area_id', $delivery->destination_area_id)
-                                    ->when($delivery->destination_sorting_center_id, fn ($items) => $items->where('sorting_center_id', $delivery->destination_sorting_center_id));
+                                $deliveryCenterId = (int) $delivery->destination_sorting_center_id;
+                                $strictDelivery = $serviceAreas->configured($deliveryCenterId);
+                                $areaRiders = $serviceAreas->matchingRiders($riders, $deliveryCenterId,
+                                    $delivery->order?->delivery_province_name,
+                                    $delivery->order?->delivery_municipality_name,
+                                    $delivery->order?->delivery_barangay_name, 'delivery');
+                                if (! $strictDelivery) {
+                                    $areaRiders = $areaRiders->filter(fn ($rider) =>
+                                        (int) $rider->coverage_area_id === (int) $delivery->destination_area_id)->values();
+                                }
                             @endphp
+                            @if (! $needsCenterTransfer && (int) $delivery->origin_sorting_center_id > 0
+                                && (int) $delivery->origin_sorting_center_id === (int) $deliveryCenterId)
+                                <p class="mt-2 text-xs font-semibold text-teal-dark">Local parcel · Origin and destination are the same branch. No Province Hub transfer needed; QR receiving and sorting remain required.</p>
+                            @endif
                             @if ($needsCenterTransfer)
                                 <div class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                                     <div class="flex items-start gap-2"><x-lucide-arrow-left-right class="mt-0.5 h-4 w-4 shrink-0 text-amber-800" /><div><p class="text-sm font-bold text-amber-900">Center transfer required</p><p class="mt-1 text-xs text-amber-800">{{ $delivery->currentSortingCenter?->name }} → {{ $activeTransfer?->toCenter?->name ?? $transferPlan['next']?->name ?? 'Routing unresolved' }} <span class="text-amber-700/70">· Final: {{ $delivery->destinationSortingCenter?->name }}</span></p></div></div>
@@ -219,13 +322,13 @@
                                     @csrf
                                     <label class="sh-field"><span class="sh-label">Delivery rider for {{ $delivery->destinationArea?->area_name }}</span><select name="rider_id" required class="sh-select"><option value="">Choose branch rider</option>
                                         @foreach ($areaRiders as $rider)
-                                            <option value="{{ $rider->id }}">{{ $rider->name }} · {{ $rider->sortingCenter?->name }} · {{ $rider->vehicle_type }}</option>
+                                            <option value="{{ $rider->id }}" @selected($loop->first)>{{ $rider->name }} · {{ $rider->sortingCenter?->name }} · {{ $rider->vehicle_type }}{{ $loop->first ? ' · Recommended' : '' }}</option>
                                         @endforeach
                                     </select></label>
                                     <button class="sh-btn">{{ $delivery->status === \App\Models\Logistics\Delivery::DELIVERY_FAILED ? 'Reschedule delivery' : 'Assign rider' }}</button>
                                 </form>
                                 @if ($areaRiders->isEmpty())
-                                    <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">No active rider serves this area from the destination sorting center. <a href="{{ route('logistics.riders.index') }}" class="font-bold underline">Manage Riders</a></div>
+                                    <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">No eligible rider covers this Buyer's barangay from the destination branch. <a href="{{ route('logistics.riders.index') }}" class="font-bold underline">Manage Riders</a></div>
                                 @endif
                             @endif
                             @if ($delivery->status === \App\Models\Logistics\Delivery::DELIVERY_FAILED)

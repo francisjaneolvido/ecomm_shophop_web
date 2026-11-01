@@ -7,6 +7,7 @@ use App\Models\Logistics\LinehaulDriver;
 use App\Models\Logistics\LinehaulTrip;
 use App\Models\Finance\LinehaulDriverEarning;
 use App\Services\LinehaulService;
+use App\Services\PhilippineIslandGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -26,6 +27,10 @@ class MobileLinehaulController extends Controller
                 'id' => $trip->id,
                 'code' => $trip->code,
                 'status' => $trip->status,
+                'transport_mode' => 'road',
+                'requires_review' => app(PhilippineIslandGroup::class)->isCrossGroup($trip->fromCenter, $trip->toCenter),
+                'route_warning' => app(PhilippineIslandGroup::class)->isCrossGroup($trip->fromCenter, $trip->toCenter)
+                    ? 'Legacy inter-island ROAD trip. Contact Logistics for manual reconciliation. Do not scan as a direct road transfer.' : null,
                 'from' => $trip->fromCenter?->name,
                 'to' => $trip->toCenter?->name,
                 'vehicle_code' => $trip->vehicle?->code,

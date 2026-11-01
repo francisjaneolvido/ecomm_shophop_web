@@ -4,6 +4,7 @@ namespace App\Models\Logistics;
 
 use App\Models\LogisticsCoverageArea;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -77,6 +78,12 @@ class Rider extends Authenticatable
     public function coverageArea(): BelongsTo
     {
         return $this->belongsTo(LogisticsCoverageArea::class, 'coverage_area_id');
+    }
+
+    public function operationalServiceAreas(): BelongsToMany
+    {
+        return $this->belongsToMany(OperationalServiceArea::class, 'operational_area_rider',
+            'rider_id', 'operational_service_area_id');
     }
 
     public function emailVerificationCode()

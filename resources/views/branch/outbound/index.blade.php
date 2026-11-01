@@ -38,7 +38,7 @@
     <section class="sh-surface sh-card-pad">
         <p class="sh-kicker">Step 1</p>
         <h2 id="branch-sort" class="sh-title-sm scroll-mt-6">Sort received parcels</h2>
-        <p class="mt-1 text-xs text-navy/50">Local parcels stay here for Delivery Rider. Parcels for another station are routed to the required Province Hub.</p>
+        <p class="mt-1 text-xs text-navy/50">Local parcels stay here for Delivery Rider. A verified direct ROAD connection can route parcels to another station; otherwise they follow the Province Hub. Local parcels stay here for last-mile dispatch.</p>
         @if($toSort->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">Nothing to sort</p></div>
         @else
@@ -64,30 +64,33 @@
     <section class="sh-surface sh-card-pad">
         <p class="sh-kicker">Step 2</p>
         <h2 id="branch-manifests" class="sh-title-sm scroll-mt-6">Create manifest</h2>
-        <p class="mt-1 text-xs text-navy/50">One manifest = one origin + one next hub + many parcels. Transport is assigned only after loading is verified.</p>
+        <p class="mt-1 text-xs text-navy/50">One manifest = one origin + one verified next stop. Direct station routes are used only when a directional ROAD connection is verified. Physical loading and driver scans remain required.</p>
         @if($ready->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">No parcels ready for a new manifest</p></div>
         @else
-        <form method="POST" action="{{ route('branch.outbound.store') }}" data-bulk class="mt-4">@csrf
-            <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[48rem] text-left text-sm">
-                <thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="w-10 px-4 py-3"><input type="checkbox" data-check-all></th><th class="px-4 py-3">Tracking</th><th class="px-4 py-3">Receiver</th><th class="px-4 py-3">Final branch</th><th class="px-4 py-3">COD</th></tr></thead>
-                <tbody>
-                @foreach($ready as $p)
-                    <tr class="border-b border-gray-border/60">
-                        <td class="px-4 py-3"><input type="checkbox" name="parcel_ids[]" value="{{ $p['id'] }}" data-row checked></td>
-                        <td class="px-4 py-3 font-semibold">{{ $p['tracking'] }}</td>
-                        <td class="px-4 py-3">{{ $p['receiver'] ?? '—' }}</td>
-                        <td class="px-4 py-3">{{ $p['final'] }}</td>
-                        <td class="px-4 py-3">{{ $p['cod'] ? '₱'.number_format($p['cod'],2) : 'Paid' }}</td>
-                    </tr>
-                @endforeach
-                </tbody>
-            </table></div>
-            <div class="mt-4 grid gap-3 lg:grid-cols-[1fr_auto] lg:items-end">
-                <label class="sh-field"><span class="sh-label">Manifest note</span><input name="note" class="sh-input" maxlength="255" placeholder="Optional batch note"></label>
-                <button class="sh-btn" data-submit>Create manifest (<span data-count>0</span>)</button>
-            </div>
-        </form>
+            @foreach($readyGroups as $nextId => $parcels)
+            <form method="POST" action="{{ route('branch.outbound.store') }}" data-bulk class="mt-4 rounded-xl border border-gray-border p-3 sm:p-4 space-y-3">@csrf
+                <input type="hidden" name="next_sorting_center_id" value="{{ $nextId }}">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div><p class="text-[10px] font-bold uppercase tracking-wider text-teal">Verified next stop</p>
+                    <h3 class="text-sm font-bold text-navy">{{ $parcels->first()['next_name'] }}</h3></div>
+                    <span class="sh-badge sh-badge-info">{{ $parcels->first()['leg'] === 'verified_direct_station_road' ? 'Direct branch ROAD' : 'Hub transfer' }}</span>
+                </div>
+                <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[42rem] text-left text-sm">
+                    <thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="w-10 px-3 py-2"><input type="checkbox" data-check-all></th><th class="px-3 py-2">Tracking</th><th class="px-3 py-2">Receiver</th><th class="px-3 py-2">Final branch</th><th class="px-3 py-2">COD</th></tr></thead>
+                    <tbody>@foreach($parcels as $p)
+                        <tr class="border-b border-gray-border/60"><td class="px-3 py-2"><input type="checkbox" name="parcel_ids[]" value="{{ $p['id'] }}" data-row checked></td><td class="px-3 py-2 font-semibold">{{ $p['tracking'] }}</td><td class="px-3 py-2">{{ $p['receiver'] ?? '—' }}</td><td class="px-3 py-2">{{ $p['final'] }}</td><td class="px-3 py-2">{{ $p['cod'] ? '₱'.number_format($p['cod'],2) : 'Paid' }}</td></tr>
+                    @endforeach</tbody>
+                </table></div>
+                <div class="flex flex-wrap items-end gap-3 justify-between">
+                    <label class="sh-field flex-1 min-w-[12rem]"><span class="sh-label">Manifest note</span><input name="note" class="sh-input" maxlength="255" placeholder="Optional batch note"></label>
+                    <button class="sh-btn" data-submit>Create manifest (<span data-count>0</span>)</button>
+                </div>
+            </form>
+            @endforeach
+            @if($ready->count() > $readyGroups->sum(fn ($group) => $group->count()))
+                <p class="mt-3 text-xs text-red-700">Some parcels have no valid next stop. Review their route status in Parcel Operations before dispatch.</p>
+            @endif
         @endif
     </section>
 

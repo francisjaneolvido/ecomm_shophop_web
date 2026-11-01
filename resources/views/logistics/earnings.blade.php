@@ -6,6 +6,16 @@
   @if(session('status'))<div class="p-3 border rounded">{{ session('status') }}</div>@endif
   @if($errors->any())<div class="p-3 text-red-600">{{ $errors->first() }}</div>@endif
 
+  <section class="sh-surface sh-card-pad" aria-label="Settlement and COD guide">
+    <div class="flex items-start gap-3"><div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-light text-teal-dark"><x-lucide-shield-check class="h-5 w-5" /></div>
+      <div><h2 class="text-sm font-bold text-navy">Where the money goes</h2><p class="mt-1 text-xs leading-relaxed text-navy/60">COD cash collected from the Buyer is NOT a Rider earning. Pickup Rider fees become payable only after the existing Admin settlement/reconciliation steps; a physical pickup handoff does not automatically transfer funds.</p></div></div>
+    <div class="mt-3 grid gap-2 sm:grid-cols-3">
+      <div class="rounded-xl border border-gray-border bg-gray-bg/60 p-3"><span class="text-[10px] font-bold uppercase tracking-wide text-teal-dark">1 · Verified custody</span><p class="mt-1 text-xs text-navy/75">Branch/Hub scans confirm who holds the parcel, with time and tracking history.</p></div>
+      <div class="rounded-xl border border-gray-border bg-gray-bg/60 p-3"><span class="text-[10px] font-bold uppercase tracking-wide text-teal-dark">2 · COD reconciliation</span><p class="mt-1 text-xs text-navy/75">Customer payment is reconciled separately from shipping fee allocations.</p></div>
+      <div class="rounded-xl border border-gray-border bg-gray-bg/60 p-3"><span class="text-[10px] font-bold uppercase tracking-wide text-teal-dark">3 · Approved payout</span><p class="mt-1 text-xs text-navy/75">Pending → Available → Paid, with a real reference required to record a payout.</p></div>
+    </div>
+  </section>
+
   <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 sh-ui-money-grid">
     <div class="sh-surface sh-card-pad"><div class="text-xs opacity-60">ShopHop → Logistics pending</div><strong>₱{{ number_format((float)$pending,2) }}</strong></div>
     <div class="sh-surface sh-card-pad"><div class="text-xs opacity-60">Logistics available</div><strong>₱{{ number_format((float)$available,2) }}</strong></div>
@@ -27,6 +37,21 @@
       <div>Linehaul pool<br><strong>₱{{ number_format($allocationTotals['linehaul_pool'],2) }}</strong></div>
       <div>Logistics margin<br><strong>₱{{ number_format($allocationTotals['margin'],2) }}</strong></div>
     </div>
+  </section>
+
+
+  <section class="sh-surface sh-card-pad" aria-label="Provisional pickup earnings">
+    <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+      <div><h2 class="font-semibold">Pickup Rider · Earned at branch handoff</h2>
+        <p class="text-xs text-slate-500 mt-1">Verified scan creates a pending-release entry, NOT a payout and NOT COD cash. Amount transfers to formal settlement after Admin reconciliation. Returns/cancellations stay on hold.</p></div>
+      <span class="rounded-lg bg-teal-50 text-teal-800 px-3 py-2 text-sm font-bold">Pending ₱{{ number_format($pickupProvisional['total_pending_release'] ?? 0,2) }}</span>
+    </div>
+    @if(($pickupProvisional['total_on_hold'] ?? 0) > 0)<p class="text-xs text-amber-700 mb-2">On hold: ₱{{ number_format($pickupProvisional['total_on_hold'],2) }}</p>@endif
+    <div class="overflow-x-auto"><table class="sh-table"><thead><tr><th>Order</th><th>Rider ID</th><th>Fee</th><th>Status</th></tr></thead><tbody>
+      @forelse(($pickupProvisional['entries'] ?? []) as $row)
+        <tr><td>#{{ $row['order_id'] }}</td><td>#{{ $row['rider_id'] }}</td><td>₱{{ number_format($row['amount'],2) }}</td><td>{{ str_replace('_',' ',ucfirst($row['status'])) }}</td></tr>
+      @empty<tr><td colspan="4" class="text-slate-500">No verified first-mile handoff accruals yet.</td></tr>@endforelse
+    </tbody></table></div>
   </section>
 
   <section class="sh-surface sh-card-pad"><h2 class="font-semibold mb-3">Admin-to-Logistics settlements</h2><div class="overflow-x-auto"><table class="sh-table"><thead><tr><th>Order</th><th>Gross Shipping</th><th>Status</th><th>Reference</th></tr></thead><tbody>@forelse($entries as $entry)<tr><td>#{{ $entry->order_id }}</td><td>₱{{ $entry->amount }}</td><td>{{ $entry->status }}</td><td>{{ $entry->payment_reference ?? $entry->distribution_reference ?? '—' }}</td></tr>@empty<tr><td colspan="4"><div class="py-3"><strong>No ShopHop settlement entries yet.</strong><div class="mt-1 text-xs text-slate-500">A COD record can already be reconciled/received while the order settlement is still unprepared. ShopHop Admin must Prepare, then Distribute the settlement before it appears as Pending/Available here.</div></div></td></tr>@endforelse</tbody></table></div>{{ $entries->links() }}</section>

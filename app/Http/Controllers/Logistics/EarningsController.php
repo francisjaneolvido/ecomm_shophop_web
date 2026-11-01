@@ -8,6 +8,7 @@ use App\Models\Finance\LogisticsOrderAllocation;
 use App\Models\Finance\SettlementEntry;
 use App\Models\Logistics\SortingCenter;
 use App\Services\ShopHopFinance;
+use App\Services\PickupRiderAccrualService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -43,6 +44,7 @@ class EarningsController extends Controller
 
         return view('logistics.earnings', [
             'branchActivity' => $branchActivity,
+            'pickupProvisional' => app(PickupRiderAccrualService::class)->unpaidPreview($partnerId),
             'pending' => (clone $query)->where('status', 'pending')->sum('amount'),
             'available' => (clone $query)->where('status', 'available')->sum('amount'),
             'paid' => (clone $query)->where('status', 'paid')->sum('amount'),

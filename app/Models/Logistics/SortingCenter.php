@@ -63,6 +63,11 @@ class SortingCenter extends Model
         return $this->hasMany(LogisticsCoverageArea::class, 'sorting_center_id');
     }
 
+    public function operationalServiceAreas(): HasMany
+    {
+        return $this->hasMany(OperationalServiceArea::class);
+    }
+
     public function riders(): HasMany
     {
         return $this->hasMany(Rider::class, 'sorting_center_id');

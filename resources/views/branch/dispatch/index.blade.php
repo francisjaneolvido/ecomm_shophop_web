@@ -14,7 +14,7 @@
         <div>
             <p class="eyebrow">{{ $center->name ?? 'Your branch' }}</p>
             <h1 class="title">Dispatch</h1>
-            <p class="description">Mag-assign ng rider para sa pickup sa seller at para sa final delivery sa buyer. Auto-select ang rider na tugma sa barangay.</p>
+            <p class="description">Riders are recommended by actual barangay coverage. Exact matches are listed first; a dispatcher must confirm. Same-branch deliveries still require QR receiving and sorting.</p>
         </div>
     </header>
 
@@ -66,18 +66,21 @@
                             @csrf
                             <label class="sh-field">
                                 <span class="sh-label">Rider</span>
-                                <select name="rider_id" required class="sh-select" @disabled($riders->isEmpty() || ! $p['ready'])>
+                                <select name="rider_id" required class="sh-select" @disabled(empty($p['riders']) || ! $p['ready'])>
                                     <option value="">Pumili ng rider</option>
-                                    @foreach ($riders as $r)
+                                    @foreach ($p['riders'] as $r)
                                         <option value="{{ $r['id'] }}" @selected($p['suggested'] === $r['id'])>
                                             {{ $r['name'] }}{{ $p['suggested'] === $r['id'] ? ' (tugma sa barangay)' : '' }}
                                         </option>
                                     @endforeach
                                 </select>
                             </label>
-                            <button class="sh-btn" @disabled($riders->isEmpty() || ! $p['ready'])>Assign pickup</button>
+                            <button class="sh-btn" @disabled(empty($p['riders']) || ! $p['ready'])>Assign pickup</button>
                         </form>
                     </div>
+                    @if (empty($p['riders']))
+                        <p class="mt-2 text-xs text-amber-700">No eligible pickup rider covers this Seller's barangay. Configure an available rider in Rider Service Areas.</p>
+                    @endif
                 </div>
             @empty
                 <div class="sh-empty">
@@ -113,6 +116,9 @@
                                 @else
                                     <span class="sh-badge sh-badge-success">Prepaid</span>
                                 @endif
+                                @if ($d['local'])
+                                    <span class="sh-badge sh-badge-success">Local · same branch</span>
+                                @endif
                                 @if ($d['failed'])
                                     <span class="sh-badge sh-badge-warning">Failed attempt ({{ $d['attempts'] }})</span>
                                 @endif
@@ -143,7 +149,7 @@
                                 <button class="sh-btn">{{ $d['failed'] ? 'Retry delivery' : 'Assign delivery' }}</button>
                             </form>
                         @else
-                            <p class="max-w-xs text-xs text-navy/50">Walang active rider na naka-assign sa delivery area ng parcel na ito.</p>
+                            <p class="max-w-xs text-xs text-navy/50">No eligible available rider covers this Buyer's barangay. Check Rider Service Areas.</p>
                         @endif
                     </div>
                 </div>

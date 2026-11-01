@@ -9,20 +9,19 @@ use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\PickupRequest;
 use App\Models\Logistics\Rider;
 use App\Models\Logistics\SortingCenter;
+use App\Services\RiderServiceAreaService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class DispatchController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, RiderServiceAreaService $serviceAreas): View
     {
         $center = $this->center($request);
-        $riders = $this->activeRiders($center)->get();
+        $riders = $this->activeRiders($center)->with('operationalServiceAreas')->get();
 
         // 1) Pickup requests ng branch na naghihintay ng pickup rider
         $pickups = PickupRequest::with('order.seller')
@@ -30,8 +29,12 @@ class DispatchController extends Controller
             ->where('status', PickupRequest::REQUESTED)
             ->oldest('requested_at')
             ->get()
-            ->map(function (PickupRequest $p) use ($riders) {
+            ->map(function (PickupRequest $p) use ($riders, $serviceAreas, $center) {
                 $order = $p->order;
+                $seller = $order?->seller;
+                $eligible = $seller ? $serviceAreas->matchingRiders($riders, (int) $center->id,
+                    $seller->province_name, $seller->municipality_name,
+                    $seller->barangay_name, 'pickup') : collect();
 
                 return [
                     'id'        => $p->id,
@@ -42,7 +45,8 @@ class DispatchController extends Controller
                     'ready'     => $order
                         && $order->status === Order::STATUS_READY_FOR_PICKUP
                         && $order->isPaymentEligible(),
-                    'suggested' => $this->suggest($riders, $p->origin_barangay_code, $p->origin_barangay_name),
+                    'suggested' => $eligible->first()?->id,
+                    'riders' => $eligible->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->all(),
                 ];
             });
 
@@ -56,12 +60,16 @@ class DispatchController extends Controller
             ->whereDoesntHave('returnCase')
             ->latest('updated_at')
             ->get()
-            ->map(function (Delivery $d) use ($riders) {
+            ->map(function (Delivery $d) use ($riders, $serviceAreas, $center) {
                 $order = $d->order;
-                // Riders lang na naka-assign sa destination area ng parcel ang pwede.
-                $eligible = $riders
-                    ->filter(fn ($r) => (int) $r->coverage_area_id === (int) $d->destination_area_id)
-                    ->values();
+                // Exact barangay rider first, citywide second. Legacy coverage-area
+                // assignment only applies when operational service areas are not configured.
+                $eligible = $serviceAreas->matchingRiders($riders, (int) $center->id,
+                    $order?->delivery_province_name, $order?->delivery_municipality_name,
+                    $order?->delivery_barangay_name, 'delivery');
+                if (! $serviceAreas->configured((int) $center->id)) {
+                    $eligible = $eligible->filter(fn ($r) => (int) $r->coverage_area_id === (int) $d->destination_area_id)->values();
+                }
 
                 return [
                     'id'        => $d->id,
@@ -73,7 +81,8 @@ class DispatchController extends Controller
                     'attempts'  => (int) $d->delivery_attempts,
                     'reason'    => $d->failure_reason,
                     'riders'    => $eligible->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->all(),
-                    'suggested' => $this->suggest($eligible, $order?->delivery_barangay_code, $order?->delivery_barangay_name),
+                    'suggested' => $eligible->first()?->id,
+                    'local' => (int) $d->origin_sorting_center_id === (int) $center->id,
                 ];
             });
 
@@ -86,7 +95,7 @@ class DispatchController extends Controller
     }
 
     /** I-assign ang rider na kukuha ng parcel sa seller papunta sa branch na ito. */
-    public function assignPickup(Request $request, int $pickup): RedirectResponse
+    public function assignPickup(Request $request, int $pickup, RiderServiceAreaService $serviceAreas): RedirectResponse
     {
         $center = $this->center($request);
         $data = $request->validate(['rider_id' => ['required', 'integer']], [
@@ -99,7 +108,7 @@ class DispatchController extends Controller
         }
 
         try {
-            return DB::transaction(function () use ($center, $rider, $pickup) {
+            return DB::transaction(function () use ($center, $rider, $pickup, $serviceAreas) {
                 $pickupRequest = PickupRequest::whereKey($pickup)->lockForUpdate()->first();
 
                 if (! $pickupRequest
@@ -117,6 +126,10 @@ class DispatchController extends Controller
                     || Delivery::where('order_id', $order->id)->exists()
                     || ! $this->activeRiders($center)->whereKey($rider->id)->exists()) {
                     return $this->stale();
+                }
+
+                if (! $serviceAreas->pickupEligible($rider, (int) $center->id, $order->seller)) {
+                    return $this->fail('This rider does not cover the Seller barangay or is not available. Check Rider Service Areas.');
                 }
 
                 Delivery::create([
@@ -147,7 +160,7 @@ class DispatchController extends Controller
     }
 
     /** I-assign ang rider na magdedeliver sa buyer (o mag-retry kapag failed). */
-    public function assignDelivery(Request $request, int $delivery): RedirectResponse
+    public function assignDelivery(Request $request, int $delivery, RiderServiceAreaService $serviceAreas): RedirectResponse
     {
         $center = $this->center($request);
         $data = $request->validate(['rider_id' => ['required', 'integer']], [
@@ -159,7 +172,7 @@ class DispatchController extends Controller
             return $this->fail('Hindi valid ang rider na napili.');
         }
 
-        return DB::transaction(function () use ($center, $rider, $delivery) {
+        return DB::transaction(function () use ($center, $rider, $delivery, $serviceAreas) {
             $owned = Delivery::with(['order', 'transfers'])
                 ->where('logistics_partner_id', $center->logistics_partner_id)
                 ->where('destination_sorting_center_id', $center->id)
@@ -178,8 +191,12 @@ class DispatchController extends Controller
                 return $this->stale();
             }
 
-            if ((int) $rider->coverage_area_id !== (int) $owned->destination_area_id) {
-                return $this->fail('Pumili ng rider na naka-assign sa delivery area ng parcel na ito.');
+            if (! $serviceAreas->configured((int) $center->id)
+                && (int) $rider->coverage_area_id !== (int) $owned->destination_area_id) {
+                return $this->fail('Choose a Rider assigned to this destination coverage area.');
+            }
+            if (! $serviceAreas->deliveryEligible($rider, (int) $center->id, $owned->order)) {
+                return $this->fail('This rider does not cover the Buyer barangay or is unavailable. Check Rider Service Areas.');
             }
 
             $owned->update([
@@ -218,23 +235,6 @@ class DispatchController extends Controller
             ->whereNotNull('email')
             ->whereNotNull('password')
             ->orderBy('name');
-    }
-
-    /** Rider na tugma sa barangay (by PSGC code, o by pangalan kung magkaiba ang code format). */
-    private function suggest(Collection $riders, ?string $code, ?string $name): ?int
-    {
-        $norm = fn (?string $v) => Str::of(Str::ascii((string) $v))
-            ->lower()
-            ->replaceMatches('/^(barangay|brgy\.?)\s+/', '')
-            ->squish()
-            ->toString();
-
-        $wanted = $norm($name);
-
-        return $riders->first(function ($r) use ($code, $wanted, $norm) {
-            return ($code && $r->barangay_code && $r->barangay_code === $code)
-                || ($wanted !== '' && $norm($r->barangay_name) === $wanted);
-        })?->id;
     }
 
     private function trackingCode(Order $order): string

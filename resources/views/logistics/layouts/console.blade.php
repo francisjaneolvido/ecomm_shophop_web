@@ -426,6 +426,20 @@
                 ],
 
                 [
+                    'label' => 'Demo Network Directory',
+                    'route' => 'logistics.demo-network.index',
+                    'pattern' => 'logistics.demo-network.*',
+                    'icon' => 'map-pinned',
+                ],
+
+                [
+                    'label' => 'Transport Routes',
+                    'route' => 'logistics.route-network.index',
+                    'pattern' => 'logistics.route-network.*',
+                    'icon' => 'route',
+                ],
+
+                [
                     'label' => 'Riders',
                     'route' => 'logistics.riders.index',
                     'pattern' => 'logistics.riders.*',

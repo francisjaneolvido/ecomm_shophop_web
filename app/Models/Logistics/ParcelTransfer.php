@@ -19,6 +19,7 @@ class ParcelTransfer extends Model
         'status',
         'transit_rider_id',
         'linehaul_trip_id',
+        'cargo_transfer_id',
         'departed_at',
         'dispatched_at',
         'received_at',
@@ -35,6 +36,11 @@ class ParcelTransfer extends Model
         return $this->belongsTo(Rider::class, 'transit_rider_id');
     }
 
+
+    public function cargoTransfer(): BelongsTo
+    {
+        return $this->belongsTo(InterislandCargoTransfer::class, 'cargo_transfer_id');
+    }
 
     public function linehaulTrip(): BelongsTo
     {
