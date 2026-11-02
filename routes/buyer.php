@@ -10,6 +10,7 @@ use App\Http\Controllers\Buyer\CheckoutController as BuyerCheckoutController;
 use App\Http\Controllers\Buyer\OrderController as BuyerOrderController;
 use App\Http\Controllers\Buyer\BuyerProfileController;
 use App\Http\Controllers\Buyer\FavoriteController as BuyerFavoriteController;
+use App\Http\Controllers\ShopChatController;
 
 
 /*
@@ -211,4 +212,34 @@ Route::prefix('buyer')
             BuyerProfileController::class,
             'update',
         ])->name('settings.profile.update');
+    });
+
+
+/*
+|--------------------------------------------------------------------------
+| Buyer/Seller Live Chat
+|--------------------------------------------------------------------------
+|
+| Intentionally OUTSIDE the buyer-only group above: both Buyers and Sellers
+| use this chat, so it only requires a logged-in user, not approved.role:buyer.
+| Conversations are protected by hasParticipant() in ShopChatController.
+|
+*/
+
+Route::middleware('auth')
+    ->prefix('chat')
+    ->name('chat.')
+    ->group(function () {
+
+        Route::get('/messages-inbox', [ShopChatController::class, 'page'])->name('page');
+
+        Route::post('/open', [ShopChatController::class, 'open'])->name('open');
+
+        Route::get('/conversations', [ShopChatController::class, 'conversations'])->name('conversations');
+
+        Route::get('/{chat}/messages', [ShopChatController::class, 'messages'])
+            ->whereNumber('chat')->name('messages');
+
+        Route::post('/{chat}/send', [ShopChatController::class, 'send'])
+            ->whereNumber('chat')->middleware('throttle:30,1')->name('send');
     });

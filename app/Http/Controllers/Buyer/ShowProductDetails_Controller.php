@@ -152,6 +152,9 @@ class ShowProductDetails_Controller extends Controller
             'seller_rating' => $sellerRating,
             'seller_products' => $sellerProductsCount,
             'seller_joined' => $sellerJoined,
+            // users.id of the seller's account; used by the live chat widget.
+            // (Kept separate from seller_id/shop_id, which the cart payload reads.)
+            'seller_user_id' => $seller?->user_id,
         ];
 
         // Recommendations use the same approval, archive, and stock gates as direct discovery.

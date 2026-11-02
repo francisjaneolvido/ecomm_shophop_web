@@ -341,7 +341,7 @@
                         <p role="heading" aria-level="2" class="text-[15px] sm:text-[17px] font-bold text-navy truncate">{{ $product['seller_name'] }}</p>
                         <p class="text-[9.5px] text-navy/35 mt-0.5">Joined {{ $product['seller_joined'] }}</p>
                         <div class="flex gap-1.5 mt-2">
-                            <button class="px-2.5 py-1.5 rounded-lg bg-teal text-white text-[9.5px] font-semibold hover:bg-teal-dark transition">
+                            <button type="button" data-open-shop-chat class="px-2.5 py-1.5 rounded-lg bg-teal text-white text-[9.5px] font-semibold hover:bg-teal-dark transition">
                                 Chat Now
                             </button>
                             <button class="px-2.5 py-1.5 rounded-lg border border-gray-border text-navy/65 text-[9.5px] font-semibold hover:border-teal/40 hover:text-teal-dark transition">
@@ -619,6 +619,12 @@
         .product-reveal, .product-stagger > * { opacity: 1 !important; transform: none !important; transition: none !important; }
     }
 </style>
+
+{{-- LIVE CHAT WIDGET (Chat Now + lower-right window) --}}
+@include('partials.shop-chat-widget', [
+    'sellerId'   => $product['seller_user_id'] ?? null,
+    'sellerName' => $product['seller_name'] ?? 'Seller',
+])
 
 @include('partials.footer')
 
