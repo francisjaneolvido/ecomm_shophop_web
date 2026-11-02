@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\ChatController as AdminChatController;
 use App\Http\Controllers\Admin\DisputeController;
 // Live business reports and CSV exports.
 use App\Http\Controllers\Admin\ReportController as AdminReportController;
+// Platform settings (general info + maintenance mode).
+use App\Http\Controllers\Admin\PlatformSettingsController;
 // use App\Http\Controllers\Admin\CommissionController;
 
 
@@ -97,7 +99,7 @@ Route::prefix('admin')
         Route::post('/commission/payouts/{entry}/paid', [MarketplaceFinanceController::class, 'paid'])->name('finance.paid');
 
         // Route::get('/commissions/export-pdf', [CommissionController::class, 'exportPdf'])
-//     ->name('commissions.export-pdf');
+        //     ->name('commissions.export-pdf');
 
         // Reports: live figures + CSV export per section.
         Route::get('/reports', [AdminReportController::class, 'index'])->name('reports');
@@ -113,9 +115,9 @@ Route::prefix('admin')
         Route::get('/chat/conversations/{conversation}/messages', [AdminChatController::class, 'messages'])->name('chat.messages');
         Route::post('/chat/conversations/{conversation}/messages', [AdminChatController::class, 'send'])->name('chat.send');
 
-        Route::get('/settings', function () {
-            return view('admin.platform-settings');
-        })->name('settings');
+        // Platform Settings
+        Route::get('/settings', [PlatformSettingsController::class, 'show'])->name('settings');
+        Route::post('/settings', [PlatformSettingsController::class, 'update'])->name('settings.update');
 
         Route::get('/accounts', [AccountManagementController::class, 'index'])
             ->name('accounts');
@@ -129,4 +131,4 @@ Route::prefix('admin')
         Route::patch('/accounts/{admin}/enable', [AccountManagementController::class, 'enable'])
             ->name('accounts.enable');
 
-});
+    });

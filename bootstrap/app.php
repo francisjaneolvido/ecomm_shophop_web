@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureApprovedRole;
 use App\Http\Middleware\EnsureActiveRider;
+use App\Http\Middleware\CheckMaintenanceMode;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -55,6 +56,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Active eligibility is checked on every Rider request, not only at login.
             'active.rider' => EnsureActiveRider::class,
         ]);
+
+        // Maintenance mode (controlled from Admin > Platform Settings).
+        $middleware->appendToGroup('web', CheckMaintenanceMode::class);
 
     })
     ->withExceptions(function (Exceptions $exceptions): void {
