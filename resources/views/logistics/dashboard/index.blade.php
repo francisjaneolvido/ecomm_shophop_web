@@ -45,6 +45,7 @@
         <div class="flex flex-wrap items-center gap-2">
             <span class="sh-dashboard-date"><x-lucide-calendar-days class="h-4 w-4 text-teal-dark" /> {{ now()->format('M d, Y') }}</span>
             <a href="{{ route('logistics.deliveries.board') }}" class="sh-btn"><x-lucide-package-check class="h-4 w-4" /> Open delivery board</a>
+            <a href="{{ route('logistics.partner-profile.edit') }}" class="sh-btn"><x-lucide-image class="h-4 w-4" /> Partner Logo & Profile</a>
         </div>
     </header>
 

@@ -55,10 +55,18 @@
 
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    {{-- Unified Buyer Web marketplace surfaces; guest landing stays unchanged. --}}
+    @if (request()->is('buyer/*') && ! request()->routeIs('buyer.dashboard'))
+        <link rel="stylesheet" href="{{ asset('css/shophop-buyer-marketplace-v3.css') }}?v=20261103-buyer-v3">
+    @endif
+    {{-- Shared guest/Buyer chrome: one header and one compact footer. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-shopper-chrome-v4.css') }}?v=20261103-shopper-chrome-v4">
+    {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
 </head>
 
 
-<body class="min-h-screen bg-white text-navy font-poppins antialiased selection:bg-teal/20 selection:text-navy">
+<body class="min-h-screen bg-white text-navy font-poppins antialiased selection:bg-teal/20 selection:text-navy {{ request()->is('buyer/*') && ! request()->routeIs('buyer.dashboard') ? 'sh-buyer-v3' : '' }}">
 
     {{-- TEST/DEMO aids are local previews only and never replace normal Laravel authentication. --}}
     @includeWhen(app()->environment('local'), 'dev.account-switcher')

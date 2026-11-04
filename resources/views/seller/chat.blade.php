@@ -9,7 +9,7 @@
         <p class="mt-1 text-sm text-navy/55">Conversations with your buyers. New messages appear automatically.</p>
     </div>
 
-    <div class="grid h-[calc(100vh-14rem)] min-h-[28rem] overflow-hidden rounded-2xl border border-gray-border bg-white md:grid-cols-[280px_1fr]">
+    <div class="sh-management-chat grid overflow-hidden rounded-lg border border-gray-border bg-white md:grid-cols-[280px_1fr]">
 
         {{-- Conversation list --}}
         <aside id="sellerConvPane" class="min-h-0 overflow-y-auto border-gray-border md:border-r">

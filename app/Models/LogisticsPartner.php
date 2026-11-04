@@ -18,6 +18,9 @@ class LogisticsPartner extends Model
         'agreement_date',
         'agreement_signature_path',
         'company_name',
+        'logo_path',
+        'public_description',
+        'accepting_riders',
         'business_registration_no',
         'line_of_business',
         'rep_last_name',
@@ -40,6 +43,7 @@ class LogisticsPartner extends Model
 
     protected $casts = [
         'agreement_date' => 'date',
+        'accepting_riders' => 'boolean',
         'rep_birthday' => 'date',
     ];
 

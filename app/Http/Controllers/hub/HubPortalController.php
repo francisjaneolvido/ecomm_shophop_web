@@ -179,7 +179,7 @@ class HubPortalController extends Controller
                     ->where('pse.event_type', 'hub_sorted');
             })
             ->latest('updated_at')
-            ->get()
+            ->limit(150)->get()
             ->map(function (Delivery $delivery) use ($routing) {
                 $plan = $routing->transferPlan($delivery);
                 $next = $plan['next'] ?? null;
@@ -204,7 +204,7 @@ class HubPortalController extends Controller
         $readyRows = $this->readyQuery($center)
             ->with(['order', 'destinationSortingCenter.parent'])
             ->latest('sorted_at')
-            ->get()
+            ->limit(150)->get()
             ->map(function (Delivery $delivery) use ($routing) {
                 $plan = $routing->transferPlan($delivery);
                 $next = $plan['next'] ?? null;
@@ -644,14 +644,14 @@ class HubPortalController extends Controller
 
         $stationHubs = $center->stationHubs()
             ->whereNull('archived_at')
-            ->with('user')
+            ->with('user')->withCount(['riders as active_riders_count' => fn ($q) => $q->where('status', 'active')])
             ->when($search !== '', fn ($q) => $q->where(function ($w) use ($search) {
                 $w->where('name', 'like', "%{$search}%")
                   ->orWhere('code', 'like', "%{$search}%")
                   ->orWhere('municipality', 'like', "%{$search}%");
             }))
-            ->latest()
-            ->get();
+            ->orderBy('name')
+            ->paginate(25)->withQueryString();
 
         return view('hub.branch.station-hubs', compact('center', 'stationHubs', 'search'));
     }
@@ -730,6 +730,23 @@ class HubPortalController extends Controller
         return redirect()->route('logistics.hub.station-hubs')
             ->with('status', 'Station hub created.')
             ->with('new_staff_credentials', ['email' => $email, 'password' => $data['manager_password']]);
+    }
+
+    /** Update contact/address details, without changing municipality, province, parent or routing coverage. */
+    public function updateStationHub(Request $request, int $stationHub): RedirectResponse
+    {
+        $center = $this->center(mutating: true);
+        $station = $this->ownStation($center, $stationHub);
+
+        $data = $request->validate([
+            'name' => ['required', 'string', 'min:2', 'max:180'],
+            'contact_no' => ['nullable', 'string', 'max:30'],
+            'barangay' => ['required', 'string', 'max:180'],
+            'street_no' => ['required', 'string', 'max:180'],
+            'unit_no' => ['nullable', 'string', 'max:180'],
+        ]);
+        $station->update($data);
+        return redirect()->route('logistics.hub.station-hubs')->with('status', "Branch {$station->name} updated.");
     }
 
     /* ---------------------------------------------------------------

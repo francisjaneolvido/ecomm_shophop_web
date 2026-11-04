@@ -41,7 +41,7 @@
 {{-- =========================================================
     MY ORDERS
 ========================================================= --}}
-<section class="bg-gray-bg/75 min-h-[72vh] py-5 sm:py-6">
+<section class="shb-orders-page bg-gray-bg/75 min-h-[72vh] py-5 sm:py-6">
 
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 

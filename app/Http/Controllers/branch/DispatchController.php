@@ -28,8 +28,8 @@ class DispatchController extends Controller
             ->where('origin_sorting_center_id', $center->id)
             ->where('status', PickupRequest::REQUESTED)
             ->oldest('requested_at')
-            ->get()
-            ->map(function (PickupRequest $p) use ($riders, $serviceAreas, $center) {
+            ->paginate(25, ['*'], 'pickup_page')->withQueryString()
+            ->through(function (PickupRequest $p) use ($riders, $serviceAreas, $center) {
                 $order = $p->order;
                 $seller = $order?->seller;
                 $eligible = $seller ? $serviceAreas->matchingRiders($riders, (int) $center->id,
@@ -59,8 +59,8 @@ class DispatchController extends Controller
             ->whereDoesntHave('transfers', fn ($q) => $q->where('status', ParcelTransfer::IN_TRANSIT))
             ->whereDoesntHave('returnCase')
             ->latest('updated_at')
-            ->get()
-            ->map(function (Delivery $d) use ($riders, $serviceAreas, $center) {
+            ->paginate(25, ['*'], 'delivery_page')->withQueryString()
+            ->through(function (Delivery $d) use ($riders, $serviceAreas, $center) {
                 $order = $d->order;
                 // Exact barangay rider first, citywide second. Legacy coverage-area
                 // assignment only applies when operational service areas are not configured.

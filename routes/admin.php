@@ -85,7 +85,6 @@ Route::prefix('admin')
         Route::get('/returns-refunds', [ReturnRefundController::class, 'index'])->name('returns.index');
         Route::post('/returns-refunds/{case}/paid', [ReturnRefundController::class, 'paid'])->name('returns.refund-paid');
         Route::get('/commission', [MarketplaceFinanceController::class, 'index'])->name('commission');
-        Route::post('/commission/qr', [MarketplaceFinanceController::class, 'paymentSetting'])->name('finance.qr');
         Route::post('/commission/rates', [MarketplaceFinanceController::class, 'updateRates'])->name('finance.rates');
         Route::post('/commission/vouchers', [MarketplaceFinanceController::class, 'createVoucher'])->name('finance.vouchers.create');
         Route::post('/commission/vouchers/{voucher}/toggle', [MarketplaceFinanceController::class, 'toggleVoucher'])->name('finance.vouchers.toggle');

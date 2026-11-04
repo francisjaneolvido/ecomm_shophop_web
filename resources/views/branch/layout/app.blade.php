@@ -160,6 +160,11 @@
     @stack('styles')
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261104-bh">
+    {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
 </head>
 
 @php
@@ -196,45 +201,16 @@
      *  - 'hold'    : true = patayin muna kahit may route (sira o sample pa ang page).
      */
     $branchNavigation = [
-        [
-            'label' => 'Overview',
-            'items' => [
-                ['label' => 'Dashboard',       'route' => 'branch.dashboard',      'pattern' => 'branch.dashboard', 'icon' => 'layout-dashboard'],
-                // HOLD: sira pa ang ParcelController (maling columns). Alisin ang 'hold' kapag na-fix na.
-                ['label' => 'Parcel Tracking', 'route' => 'branch.parcels.index',  'pattern' => 'branch.parcels*',  'icon' => 'package', 'hold' => true],
-            ],
-        ],
-        [
-            'label' => 'First Mile',
-            'items' => [
-                ['label' => 'Pickup',                  'route' => 'branch.dispatch.index',  'pattern' => 'branch.dispatch*',  'icon' => 'map-pin', 'hash' => 'pickups'],
-                ['label' => 'Inbound',                 'route' => 'branch.transfers.index', 'pattern' => 'branch.transfers*', 'icon' => 'truck'],
-                ['label' => 'QR Scanner', 'route' => 'branch.scanner', 'pattern' => 'branch.scanner*', 'icon' => 'scan-barcode'],
-                ['label' => 'Outbound to Province Hub', 'route' => 'branch.outbound.index',  'pattern' => 'branch.outbound*',  'icon' => 'send'],
-            ],
-        ],
-        [
-            'label' => 'Last Mile',
-            'items' => [
-                ['label' => 'Delivery Assignment', 'route' => 'branch.dispatch.index',   'pattern' => null,                  'icon' => 'clipboard-list', 'hash' => 'deliveries'],
-                ['label' => 'Delivery Monitoring', 'route' => 'branch.monitoring.index', 'pattern' => 'branch.monitoring*',  'icon' => 'activity'],
-                ['label' => 'Failed & Returns',    'route' => 'branch.failed.index',     'pattern' => 'branch.failed*',      'icon' => 'rotate-ccw'],
-            ],
-        ],
-        [
-            'label' => 'Fleet & Cash',
-            'items' => [
-                ['label' => 'Rider Management', 'route' => 'branch.riders.index', 'pattern' => 'branch.riders*', 'icon' => 'bike'],
-                ['label' => 'COD & Remittance', 'route' => 'branch.cod.index',    'pattern' => 'branch.cod*',    'icon' => 'wallet'],
-            ],
-        ],
-        [
-            'label' => 'Insights',
-            'items' => [
-                ['label' => 'Reports & Activity Log', 'route' => 'branch.reports.index',  'pattern' => 'branch.reports*',  'icon' => 'file-text'],
-                ['label' => 'Branch Settings',        'route' => 'branch.settings.index', 'pattern' => 'branch.settings*', 'icon' => 'settings'],
-            ],
-        ],
+        ['label' => 'Overview', 'items' => [
+            ['label'=>'Dashboard','route'=>'branch.dashboard','pattern'=>'branch.dashboard','icon'=>'layout-dashboard'],
+            ['label'=>'Parcel Tracking','route'=>'branch.parcels.index','pattern'=>'branch.parcels*','icon'=>'package-search'],
+        ]],
+        ['label' => 'Operations', 'items' => [
+            ['label'=>'Rider Dispatch','route'=>'branch.dispatch.index','pattern'=>'branch.dispatch*','icon'=>'bike'],
+            ['label'=>'Incoming Transfers','route'=>'branch.transfers.index','pattern'=>'branch.transfers*','icon'=>'package-check'],
+            ['label'=>'Outbound & Manifests','route'=>'branch.outbound.index','pattern'=>'branch.outbound*','icon'=>'truck'],
+            ['label'=>'QR Scanner','route'=>'branch.scanner','pattern'=>'branch.scanner*','icon'=>'scan-barcode'],
+        ]],
     ];
 
     // Alamin kung live ang bawat item (may route at hindi naka-hold) at buuin ang URL.
@@ -253,7 +229,7 @@
     })->all();
 @endphp
 
-<body class="branch-console bg-gray-bg text-navy antialiased">
+<body class="sh-management-ui branch-console bg-gray-bg text-navy antialiased sh-ops">
 
 <div id="branchShell" data-mobile-open="false" class="flex h-screen overflow-hidden">
 
@@ -441,7 +417,7 @@
             </div>
         </header>
 
-        <main class="content-scrollbar flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 lg:px-5 lg:py-5">
+        <main class="sh-management-main content-scrollbar flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 lg:px-5 lg:py-5">
             <div class="max-w-[1600px] mx-auto">
 
                 @if (session('success') || session('status'))
@@ -648,6 +624,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const form = event.target.closest('form[data-confirm-title]');
         if (!form || form.dataset.confirmed === '1') { if (form) form.dataset.confirmed = '0'; return; }
         event.preventDefault();
+        // Native detail modals sit in the top layer; close them before showing the global confirmation dialog.
+        form.closest('dialog')?.close();
         openConfirm({
             title: form.dataset.confirmTitle,
             message: form.dataset.confirmMessage || 'Please confirm to continue.',
@@ -667,5 +645,6 @@ document.addEventListener('DOMContentLoaded', function () {
 @stack('scripts')
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+    <script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261104-bh"></script>
 </body>
 </html>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Support\SellerProductCategories;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductImage;
+use App\Models\Seller\Manage_inventory\ProductVariant;
 use App\Models\Seller\Manage_inventory\Voucher;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,30 +21,94 @@ class InventoryController extends Controller
 {
     protected int $defaultLowStockThreshold = 10;
 
-    public function index(): View
+    /**
+     * Keep Seller Inventory scalable: search, sort and paging run in SQL.
+     * Dashboard metrics count ALL products, never just the visible page.
+     */
+    public function index(Request $request): View
     {
-        $products = Product::query()
-            ->where('seller_id', Auth::id())
-            ->with(['images', 'variants'])
-            ->latest()
-            ->get();
+        $sellerId = Auth::id();
+        $base = Product::query()->where('seller_id', $sellerId);
+        $status = in_array($request->query('status'), ['all', 'active', 'low', 'out', 'archived'], true)
+            ? $request->query('status') : 'all';
+        $stock = in_array($request->query('stock'), ['in', 'low', 'out'], true)
+            ? $request->query('stock') : '';
+        $compliance = in_array($request->query('compliance'), ['pending_review', 'approved', 'rejected'], true)
+            ? $request->query('compliance') : '';
+        $sort = in_array($request->query('sort'), ['newest', 'oldest', 'name-asc', 'name-desc', 'price-asc', 'price-desc', 'stock-asc', 'stock-desc'], true)
+            ? $request->query('sort') : 'newest';
+        $perPage = in_array((int) $request->query('per_page'), [25, 50], true)
+            ? (int) $request->query('per_page') : 25;
+        $search = $request->query('q', '');
+        $search = is_string($search) ? mb_substr(trim($search), 0, 100) : '';
+        $category = $request->query('category', '');
+        $category = is_string($category) ? mb_substr(trim($category), 0, 255) : '';
+        $thresholdExpression = 'COALESCE(low_stock_threshold, ?)';
 
-        $vouchers = Voucher::query()
-            ->where('seller_id', Auth::id())
-            ->with('products')
-            ->latest()
-            ->get();
+        $counts = [
+            'all' => (clone $base)->count(),
+            'active' => (clone $base)->where('status', 'active')->count(),
+            'low' => (clone $base)->where('status', 'active')->where('stock', '>', 0)
+                ->whereRaw('stock <= '.$thresholdExpression, [$this->defaultLowStockThreshold])->count(),
+            'out' => (clone $base)->where('status', 'active')->where('stock', 0)->count(),
+            'archived' => (clone $base)->where('status', 'archived')->count(),
+            'totalUnits' => (int) (clone $base)->where('status', 'active')->sum('stock'),
+        ];
+        $filterCategories = (clone $base)->whereNotNull('subcategory')
+            ->where('subcategory', '!=', '')->distinct()->orderBy('subcategory')->pluck('subcategory')->all();
 
+        $query = (clone $base)->with(['images', 'variants']);
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('sku', 'like', '%'.$search.'%');
+            });
+        }
+        if ($category !== '') $query->where('subcategory', $category);
+        if ($compliance !== '') $query->where('compliance_status', $compliance);
+
+        if (in_array($status, ['active', 'archived'], true)) {
+            $query->where('status', $status);
+        } elseif ($status === 'low' || $status === 'out') {
+            $query->where('status', 'active');
+        }
+        if ($status === 'low' || $stock === 'low') {
+            $query->where('stock', '>', 0)
+                ->whereRaw('stock <= '.$thresholdExpression, [$this->defaultLowStockThreshold]);
+        } elseif ($status === 'out' || $stock === 'out') {
+            $query->where('stock', 0);
+        } elseif ($stock === 'in') {
+            $query->where('stock', '>', 0)
+                ->whereRaw('stock > '.$thresholdExpression, [$this->defaultLowStockThreshold]);
+        }
+        match ($sort) {
+            'oldest' => $query->orderBy('created_at')->orderBy('id'),
+            'name-asc' => $query->orderBy('name')->orderBy('id'),
+            'name-desc' => $query->orderByDesc('name')->orderByDesc('id'),
+            'price-asc' => $query->orderBy('price')->orderBy('id'),
+            'price-desc' => $query->orderByDesc('price')->orderByDesc('id'),
+            'stock-asc' => $query->orderBy('stock')->orderBy('id'),
+            'stock-desc' => $query->orderByDesc('stock')->orderByDesc('id'),
+            default => $query->orderByDesc('created_at')->orderByDesc('id'),
+        };
+        $products = $query->paginate($perPage)->withQueryString();
+
+        // Voucher forms require independently scoped products, not the current paginated product page.
+        $voucherEligibleProducts = (clone $base)->where('status', 'active')
+            ->orderBy('name')->get(['id', 'name']);
+        $vouchers = Voucher::query()->where('seller_id', $sellerId)
+            ->with('products')->latest()->get();
         $allowed = SellerProductCategories::forBusiness(Auth::user()?->seller?->business_category);
-        $filterCategories = $products->pluck('subcategory')->filter()->unique()->sort()->values()->all();
-
         return view('seller.inventory', [
             'products' => $products,
             'vouchers' => $vouchers,
+            'voucherEligibleProducts' => $voucherEligibleProducts,
             'categories' => $allowed,
             'filterCategories' => $filterCategories,
             'registeredCategory' => Auth::user()?->seller?->business_category,
             'defaultLowStockThreshold' => $this->defaultLowStockThreshold,
+            'inventoryCounts' => $counts,
+            'inventoryFilters' => compact('status', 'stock', 'compliance', 'sort', 'search', 'category', 'perPage'),
         ]);
     }
 
@@ -191,6 +256,41 @@ class InventoryController extends Controller
         return redirect()
             ->route('seller.inventory')
             ->with('status', 'Stock updated.');
+    }
+
+    /** Bulk archive/restore only products owned by this Seller. No compliance reset. */
+    public function bulkStatus(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', Rule::in(['archive', 'restore'])],
+            'ids' => ['required', 'array', 'min:1', 'max:50'],
+            'ids.*' => ['required', 'integer', 'distinct'],
+        ]);
+        $ids = array_map('intval', $validated['ids']);
+        $owned = Product::query()->where('seller_id', Auth::id())->whereIn('id', $ids)->count();
+        abort_if($owned !== count($ids), 403);
+        $newStatus = $validated['action'] === 'archive' ? 'archived' : 'active';
+        Product::query()->where('seller_id', Auth::id())->whereIn('id', $ids)
+            ->update(['status' => $newStatus]);
+        return redirect()->route('seller.inventory')
+            ->with('status', count($ids).' product(s) '.($newStatus === 'archived' ? 'archived.' : 'restored.'));
+    }
+
+    /** Safe variant-only quantity edit; parent's stock is the active-variant sum. */
+    public function updateVariantStock(Request $request, ProductVariant $variant): RedirectResponse
+    {
+        $product = $variant->product;
+        abort_if(! $product || $product->seller_id !== Auth::id(), 403);
+        abort_unless($product->has_variants, 422);
+        $validated = $request->validate(['stock' => ['required', 'integer', 'min:0']]);
+        DB::transaction(function () use ($variant, $product, $validated) {
+            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            $variant = $product->variants()->whereKey($variant->id)->firstOrFail();
+            $variant->update(['stock' => (int) $validated['stock']]);
+            $product->update(['stock' => (int) $product->variants()
+                ->where('status', 'active')->sum('stock')]);
+        });
+        return redirect()->route('seller.inventory')->with('status', 'Variant stock updated.');
     }
 
     protected function syncImages(Product $product, Request $request): array
@@ -353,6 +453,13 @@ class InventoryController extends Controller
             ],
         ]);
 
+        // Both client and server guard against impossible percentage discounts.
+        if ($validated['type'] === 'percent' && (float) $validated['value'] > 100) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'value' => 'Percentage vouchers cannot exceed 100%.',
+            ]);
+        }
+
         $payload = [
             'seller_id' => Auth::id(),
             'name' => $validated['name'],
@@ -377,13 +484,13 @@ class InventoryController extends Controller
         $voucher->products()->sync($validated['product_ids'] ?? []);
 
         return redirect()
-            ->route('seller.inventory')
+            ->route($request->input('return_to') === 'promotions' ? 'seller.promotions' : 'seller.inventory')
             ->with('status', $voucher->wasRecentlyCreated
                 ? 'Voucher created successfully.'
                 : 'Voucher updated successfully.');
     }
 
-    public function toggleVoucher(Voucher $voucher): RedirectResponse
+    public function toggleVoucher(Request $request, Voucher $voucher): RedirectResponse
     {
         abort_if($voucher->seller_id !== Auth::id(), 403);
 
@@ -392,18 +499,18 @@ class InventoryController extends Controller
         ]);
 
         return redirect()
-            ->route('seller.inventory')
+            ->route($request->input('return_to') === 'promotions' ? 'seller.promotions' : 'seller.inventory')
             ->with('status', 'Voucher ' . ($voucher->status === 'active' ? 'enabled.' : 'disabled.'));
     }
 
-    public function destroyVoucher(Voucher $voucher): RedirectResponse
+    public function destroyVoucher(Request $request, Voucher $voucher): RedirectResponse
     {
         abort_if($voucher->seller_id !== Auth::id(), 403);
 
         $voucher->delete();
 
         return redirect()
-            ->route('seller.inventory')
+            ->route($request->input('return_to') === 'promotions' ? 'seller.promotions' : 'seller.inventory')
             ->with('status', 'Voucher deleted.');
     }
 }

@@ -6,7 +6,7 @@
 @section('content')
 @include('buyer.partials.navbar-buyer')
 
-<section class="min-h-[70vh] bg-gray-bg/80 py-5 sm:py-7">
+<section class="shb-likes-page min-h-[70vh] bg-gray-bg/80 py-5 sm:py-7">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
             <div>
@@ -52,7 +52,7 @@
                     data-like-search="{{ strtolower($product['name'] . ' ' . $product['category'] . ' ' . $product['seller_name']) }}"
                     data-like-available="{{ $product['is_available'] ? '1' : '0' }}"
                     data-like-discount="{{ $product['discount_percent'] > 0 ? '1' : '0' }}"
-                    class="group overflow-hidden rounded-2xl border border-gray-border bg-white hover:border-teal/35 hover:shadow-md transition-all"
+                    class="shb-product-card group overflow-hidden rounded-2xl border border-gray-border bg-white hover:border-teal/35 hover:shadow-md transition-all"
                 >
                     <div class="relative aspect-square overflow-hidden bg-gray-bg">
                         @if ($product['is_available'])
@@ -87,7 +87,7 @@
                         @endunless
                     </div>
 
-                    <div class="p-3">
+                    <div class="shb-card-body p-3">
                         <p class="text-[8.5px] text-navy/35 truncate">{{ $product['category'] }}</p>
                         @if ($product['is_available'])
                             <a href="{{ route('buyer.product.show', $product['id']) }}" class="mt-0.5 block min-h-8 text-[10.5px] sm:text-[11px] font-semibold leading-snug text-navy line-clamp-2 hover:text-teal-dark transition">
@@ -102,7 +102,7 @@
                                 @if ($product['original_price'])
                                     <p class="text-[8px] text-navy/30 line-through">₱{{ number_format($product['original_price'], 2) }}</p>
                                 @endif
-                                <p class="text-[13px] font-bold text-teal-dark">₱{{ number_format($product['price'], 2) }}</p>
+                                <p class="shb-price text-[13px] font-bold text-teal-dark">₱{{ number_format($product['price'], 2) }}</p>
                             </div>
                             @if ($product['rating'] > 0)
                                 <span class="shrink-0 text-[8.5px] text-navy/40 flex items-center gap-0.5">

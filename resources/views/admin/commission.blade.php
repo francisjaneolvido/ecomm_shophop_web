@@ -3,12 +3,12 @@
 @section('content')
 @php
   // Reusable class strings (para consistent ang itsura ng lahat ng form)
-  $card   = 'rounded-2xl border border-slate-200 bg-white shadow-sm';
-  $input  = 'mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30';
+  $card   = 'rounded-lg border border-slate-200 bg-white shadow-sm';
+  $input  = 'mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30';
   $label  = 'block text-xs font-medium text-slate-600';
-  $btn    = 'inline-flex items-center justify-center rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/40';
-  $btnSm  = 'inline-flex items-center justify-center rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40';
-  $btnOut = 'inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500/30';
+  $btn    = 'inline-flex items-center justify-center rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/40';
+  $btnSm  = 'inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40';
+  $btnOut = 'inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500/30';
   $th     = 'px-4 py-2.5 text-xs font-semibold text-slate-500';
   $td     = 'px-4 py-3 align-top';
   $badge  = fn($s) => match(strtolower((string)$s)) {
@@ -19,12 +19,12 @@
   };
 @endphp
 
-<div class="mx-auto max-w-7xl space-y-8">
+<div class="mx-auto max-w-7xl space-y-5">
 
   {{-- ============ PAGE HEADER ============ --}}
   <header class="flex flex-wrap items-end justify-between gap-4">
     <div class="max-w-2xl">
-      <h1 class="text-2xl font-bold text-navy">ShopHop finances <span class="text-base font-medium text-slate-400">(demo)</span></h1>
+      <h1 class="text-2xl font-bold text-navy">ShopHop finances</h1>
       <p class="mt-1 text-sm text-slate-500">
         10% commission is computed on merchandise after the Seller voucher. Platform discounts are funded by ShopHop.
         A recorded payout is <strong class="font-semibold text-slate-700">not</strong> an automatic money transfer.
@@ -116,40 +116,31 @@
       It does not mean an external bank or e-wallet transfer happened.
     </p>
 
-    <div class="mt-4 space-y-3">
-      @forelse($distributionOrders as $o)
-        @php
-          $sellerEntry    = $o->settlements->firstWhere('kind','seller');
-          $logisticsEntry = $o->settlements->firstWhere('kind','logistics');
-          $riderTotal     = (float)$o->settlements->whereIn('kind',['pickup_rider','delivery_rider'])->sum('amount');
-          $financial      = $o->financial;
-        @endphp
-        <article class="rounded-xl border border-slate-200 p-4">
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <h3 class="font-semibold text-navy">Order #{{ $o->id }}</h3>
-                <span class="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-200">Ready for distribution</span>
-              </div>
-              <dl class="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 text-xs sm:grid-cols-3">
-                <div><dt class="text-slate-500">Seller</dt><dd class="font-semibold text-slate-800">₱{{ number_format((float)($sellerEntry?->amount ?? 0),2) }}</dd></div>
-                <div><dt class="text-slate-500">Logistics</dt><dd class="font-semibold text-slate-800">₱{{ number_format((float)($logisticsEntry?->amount ?? 0),2) }}</dd></div>
-                <div><dt class="text-slate-500">Rider sub-allocations</dt><dd class="font-semibold text-slate-800">₱{{ number_format($riderTotal,2) }}</dd></div>
-                @if($financial)
-                  <div><dt class="text-slate-500">ShopHop commission</dt><dd class="font-semibold text-slate-800">₱{{ number_format((float)$financial->commission,2) }}</dd></div>
-                  <div class="sm:col-span-2"><dt class="text-slate-500">ShopHop net after platform promos</dt><dd class="font-semibold text-slate-800">₱{{ number_format((float)$financial->platform_net,2) }}</dd></div>
-                @endif
-              </dl>
-            </div>
-            <form method="POST" action="{{ route('admin.finance.distribute',$o->id) }}"
-                  onsubmit="return confirm('Distribute this prepared settlement to beneficiary ledgers? This changes Pending to Available but does not move external money.')">@csrf
-              <button class="{{ $btnSm }}">Distribute settlement</button>
-            </form>
-          </div>
-        </article>
-      @empty
-        <p class="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">No prepared orders are waiting for distribution.</p>
-      @endforelse
+    <div class="admin-table-scroll mt-4 rounded-lg border border-slate-200">
+      <table class="min-w-[760px]">
+        <thead><tr><th>Order</th><th class="text-right">Seller</th><th class="text-right">Logistics</th><th class="text-right">Rider allocations</th><th>Platform net</th><th class="text-right">Action</th></tr></thead>
+        <tbody>
+          @forelse($distributionOrders as $o)
+            @php
+              $sellerEntry = $o->settlements->firstWhere('kind', 'seller');
+              $logisticsEntry = $o->settlements->firstWhere('kind', 'logistics');
+              $riderTotal = (float) $o->settlements->whereIn('kind', ['pickup_rider', 'delivery_rider'])->sum('amount');
+            @endphp
+            <tr>
+              <td><strong>Order #{{ $o->id }}</strong><div class="mt-1"><span class="admin-status admin-status-ok">Prepared</span></div></td>
+              <td class="text-right tabular-nums">₱{{ number_format((float) ($sellerEntry?->amount ?? 0), 2) }}</td>
+              <td class="text-right tabular-nums">₱{{ number_format((float) ($logisticsEntry?->amount ?? 0), 2) }}</td>
+              <td class="text-right tabular-nums">₱{{ number_format($riderTotal, 2) }}</td>
+              <td class="tabular-nums">{{ $o->financial ? '₱'.number_format((float) $o->financial->platform_net, 2) : '—' }}</td>
+              <td>
+                <form method="POST" action="{{ route('admin.finance.distribute', $o->id) }}" class="admin-row-actions" onsubmit="return confirm('Distribute this prepared settlement? This updates ledgers but does not move external money.')">
+                  @csrf<button class="admin-btn admin-btn-teal">Distribute</button>
+                </form>
+              </td>
+            </tr>
+          @empty<tr><td colspan="6" class="admin-empty">No prepared orders are waiting for distribution.</td></tr>@endforelse
+        </tbody>
+      </table>
     </div>
   </section>
 
@@ -174,10 +165,14 @@
                 <div class="text-[11px] text-slate-400">{{ $entry->distribution_reference }}</div>
               </td>
               <td class="{{ $td }}">
-                <form method="POST" action="{{ route('admin.finance.paid',$entry->id) }}" class="flex items-center gap-2">@csrf
-                  <input name="reference" required maxlength="120" placeholder="Payout reference" aria-label="Payout reference" class="w-44 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30">
-                  <button class="{{ $btnSm }}">Mark paid</button>
-                </form>
+                <button type="button" class="admin-btn admin-btn-teal" data-admin-dialog-open="payout-{{ $entry->id }}">Record payout</button>
+                <dialog id="payout-{{ $entry->id }}" class="admin-dialog" aria-labelledby="payout-title-{{ $entry->id }}">
+                  <form method="POST" action="{{ route('admin.finance.paid', $entry->id) }}" class="admin-dialog-frame" onsubmit="return confirm('Confirm only after verifying the actual payout. Mark paid?')">@csrf
+                    <div class="admin-dialog-header"><div><h3 id="payout-title-{{ $entry->id }}" class="font-bold">Record payout · Order #{{ $entry->order_id }}</h3><p class="mt-1 text-xs text-slate-500">{{ ucfirst($entry->kind) }} #{{ $entry->payee_id }} · ₱{{ number_format((float)$entry->amount,2) }}</p></div><button type="button" class="admin-btn" data-admin-dialog-close aria-label="Close">✕</button></div>
+                    <div class="admin-dialog-body"><label class="block"><span class="admin-label">Verified payout reference *</span><input name="reference" required maxlength="120" class="admin-input" placeholder="Bank or manual payout reference"></label><p class="mt-3 text-xs text-amber-700">This records a verified payment; it does not send money automatically.</p></div>
+                    <div class="admin-dialog-footer"><button type="button" class="admin-btn" data-admin-dialog-close>Cancel</button><button type="submit" class="admin-btn admin-btn-teal">Mark paid</button></div>
+                  </form>
+                </dialog>
               </td>
             </tr>
           @empty
@@ -188,43 +183,8 @@
     </div>
   </section>
 
-  {{-- ============ 4. SETTINGS (QR + RATES) ============ --}}
-  <div id="settings" class="scroll-mt-6 space-y-8">
-
-    {{-- QR --}}
-    <section class="{{ $card }} p-5">
-      <h2 class="text-base font-bold text-slate-800">ShopHop demo payment QR</h2>
-      <p class="mt-1 text-xs text-slate-500">Managed by Admin.</p>
-
-      <div class="mt-4 grid gap-6 lg:grid-cols-[1fr_auto]">
-        <form method="POST" action="{{ route('admin.finance.qr') }}" enctype="multipart/form-data" class="grid gap-4 md:grid-cols-2">@csrf
-          <label class="{{ $label }}">Recipient name (displayed)
-            <input required name="recipient_name" maxlength="160" value="{{ old('recipient_name', $setting?->recipient_name ?? 'ShopHop Demo') }}" class="{{ $input }}">
-          </label>
-          <label class="{{ $label }}">Demo account or reference label
-            <input name="recipient_identifier" maxlength="100" value="{{ old('recipient_identifier', $setting?->recipient_identifier) }}" class="{{ $input }}">
-          </label>
-          <label class="{{ $label }}">QR image <span class="text-slate-400">(PNG, JPEG or WebP, max 2 MB)</span>
-            <input type="file" accept="image/png,image/jpeg,image/webp" name="qr_image" class="{{ $input }} file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1 file:text-xs file:font-semibold file:text-slate-700">
-          </label>
-          <label class="{{ $label }}">Instructions
-            <textarea name="instructions" rows="3" maxlength="1000" class="{{ $input }}">{{ old('instructions', $setting?->instructions ?? 'DEMO ONLY: No actual electronic payment will occur.') }}</textarea>
-          </label>
-          <div class="md:col-span-2"><button class="{{ $btn }}">Save demo QR</button></div>
-        </form>
-
-        @if($setting?->qrUrl())
-          <figure class="shrink-0">
-            <img src="{{ $setting->qrUrl() }}" alt="Admin-uploaded demo payment QR" class="h-40 w-40 rounded-xl border border-slate-200 bg-white object-contain p-1">
-            <figcaption class="mt-1 text-center text-[11px] text-slate-400">Current QR</figcaption>
-          </figure>
-        @endif
-      </div>
-
-      <p class="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-        Huwag maglagay ng totoong wallet QR sa public school demo maliban kung gusto mo talagang tumanggap ng actual transfers.
-      </p>
-    </section>
+  {{-- ============ 4. MARKETPLACE RATES ============ --}}
+  <div id="settings" class="scroll-mt-5 space-y-4">
 
     {{-- RATES --}}
     <section class="{{ $card }} p-5">
@@ -238,7 +198,12 @@
         <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">ShopHop 10%</span>
       </div>
 
-      <form method="POST" action="{{ route('admin.finance.rates') }}" class="mt-5 space-y-6">@csrf
+      <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-teal-100 bg-teal-50/60 px-3 py-2.5">
+        <p class="text-xs leading-relaxed text-teal-900"><strong>Live settings:</strong> Changes affect future checkout quotes only. Previously saved orders keep their original amounts.</p>
+        <span class="text-xs font-semibold text-teal-800">Commission fixed at 10%</span>
+      </div>
+
+      <form id="shMarketplaceRateForm" method="POST" action="{{ route('admin.finance.rates') }}" class="mt-4 space-y-5">@csrf
 
         <fieldset>
           <legend class="text-sm font-semibold text-slate-700">Customer shipping</legend>
@@ -247,22 +212,22 @@
               <input name="commission_percent" value="10" readonly class="{{ $input }} bg-slate-50 text-slate-500">
             </label>
             <label class="{{ $label }}">Base shipping
-              <input name="base_shipping_fee" type="number" step="0.01" min="0" value="{{ old('base_shipping_fee',$rates->base_shipping_fee) }}" class="{{ $input }}">
+              <input name="base_shipping_fee" data-saved-rate="{{ $rates->base_shipping_fee }}" type="number" step="0.01" min="0" value="{{ old('base_shipping_fee',$rates->base_shipping_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Local distance band
-              <input name="local_distance_fee" type="number" step="0.01" min="0" value="{{ old('local_distance_fee',$rates->local_distance_fee) }}" class="{{ $input }}">
+              <input name="local_distance_fee" data-saved-rate="{{ $rates->local_distance_fee }}" type="number" step="0.01" min="0" value="{{ old('local_distance_fee',$rates->local_distance_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Same-province distance band
-              <input name="same_province_distance_fee" type="number" step="0.01" min="0" value="{{ old('same_province_distance_fee',$rates->same_province_distance_fee) }}" class="{{ $input }}">
+              <input name="same_province_distance_fee" data-saved-rate="{{ $rates->same_province_distance_fee }}" type="number" step="0.01" min="0" value="{{ old('same_province_distance_fee',$rates->same_province_distance_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Inter-province distance band
-              <input name="interprovince_distance_fee" type="number" step="0.01" min="0" value="{{ old('interprovince_distance_fee',$rates->interprovince_distance_fee) }}" class="{{ $input }}">
+              <input name="interprovince_distance_fee" data-saved-rate="{{ $rates->interprovince_distance_fee }}" type="number" step="0.01" min="0" value="{{ old('interprovince_distance_fee',$rates->interprovince_distance_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Same-province linehaul
-              <input name="same_province_linehaul_fee" type="number" step="0.01" min="0" value="{{ old('same_province_linehaul_fee',$rates->same_province_linehaul_fee) }}" class="{{ $input }}">
+              <input name="same_province_linehaul_fee" data-saved-rate="{{ $rates->same_province_linehaul_fee }}" type="number" step="0.01" min="0" value="{{ old('same_province_linehaul_fee',$rates->same_province_linehaul_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Inter-province linehaul
-              <input name="interprovince_linehaul_fee" type="number" step="0.01" min="0" value="{{ old('interprovince_linehaul_fee',$rates->interprovince_linehaul_fee) }}" class="{{ $input }}">
+              <input name="interprovince_linehaul_fee" data-saved-rate="{{ $rates->interprovince_linehaul_fee }}" type="number" step="0.01" min="0" value="{{ old('interprovince_linehaul_fee',$rates->interprovince_linehaul_fee) }}" class="{{ $input }}">
             </label>
           </div>
         </fieldset>
@@ -271,13 +236,13 @@
           <legend class="text-sm font-semibold text-slate-700">Weight and express</legend>
           <div class="mt-3 grid gap-4 sm:grid-cols-3">
             <label class="{{ $label }}">Included weight (kg)
-              <input name="included_weight_kg" type="number" step="0.001" min="0.05" value="{{ old('included_weight_kg',$rates->included_weight_kg) }}" class="{{ $input }}">
+              <input name="included_weight_kg" data-saved-rate="{{ $rates->included_weight_kg }}" type="number" step="0.001" min="0.05" value="{{ old('included_weight_kg',$rates->included_weight_kg) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Extra weight fee per kg
-              <input name="extra_weight_fee_per_kg" type="number" step="0.01" min="0" value="{{ old('extra_weight_fee_per_kg',$rates->extra_weight_fee_per_kg) }}" class="{{ $input }}">
+              <input name="extra_weight_fee_per_kg" data-saved-rate="{{ $rates->extra_weight_fee_per_kg }}" type="number" step="0.01" min="0" value="{{ old('extra_weight_fee_per_kg',$rates->extra_weight_fee_per_kg) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Express surcharge %
-              <input name="express_surcharge_percent" type="number" step="0.01" min="0" value="{{ old('express_surcharge_percent',$rates->express_surcharge_percent) }}" class="{{ $input }}">
+              <input name="express_surcharge_percent" data-saved-rate="{{ $rates->express_surcharge_percent }}" type="number" step="0.01" min="0" value="{{ old('express_surcharge_percent',$rates->express_surcharge_percent) }}" class="{{ $input }}">
             </label>
           </div>
         </fieldset>
@@ -286,19 +251,19 @@
           <legend class="text-sm font-semibold text-slate-700">Logistics allocations</legend>
           <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label class="{{ $label }}">Pickup rider earning
-              <input name="pickup_rider_fee" type="number" step="0.01" min="0" value="{{ old('pickup_rider_fee',$rates->pickup_rider_fee) }}" class="{{ $input }}">
+              <input name="pickup_rider_fee" data-saved-rate="{{ $rates->pickup_rider_fee }}" type="number" step="0.01" min="0" value="{{ old('pickup_rider_fee',$rates->pickup_rider_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Delivery rider earning
-              <input name="delivery_rider_fee" type="number" step="0.01" min="0" value="{{ old('delivery_rider_fee',$rates->delivery_rider_fee) }}" class="{{ $input }}">
+              <input name="delivery_rider_fee" data-saved-rate="{{ $rates->delivery_rider_fee }}" type="number" step="0.01" min="0" value="{{ old('delivery_rider_fee',$rates->delivery_rider_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Province hub per parcel
-              <input name="province_hub_fee" type="number" step="0.01" min="0" value="{{ old('province_hub_fee',$rates->province_hub_fee) }}" class="{{ $input }}">
+              <input name="province_hub_fee" data-saved-rate="{{ $rates->province_hub_fee }}" type="number" step="0.01" min="0" value="{{ old('province_hub_fee',$rates->province_hub_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Origin branch allocation
-              <input name="origin_branch_fee" type="number" step="0.01" min="0" value="{{ old('origin_branch_fee',$rates->origin_branch_fee) }}" class="{{ $input }}">
+              <input name="origin_branch_fee" data-saved-rate="{{ $rates->origin_branch_fee }}" type="number" step="0.01" min="0" value="{{ old('origin_branch_fee',$rates->origin_branch_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Destination branch allocation
-              <input name="destination_branch_fee" type="number" step="0.01" min="0" value="{{ old('destination_branch_fee',$rates->destination_branch_fee) }}" class="{{ $input }}">
+              <input name="destination_branch_fee" data-saved-rate="{{ $rates->destination_branch_fee }}" type="number" step="0.01" min="0" value="{{ old('destination_branch_fee',$rates->destination_branch_fee) }}" class="{{ $input }}">
             </label>
           </div>
         </fieldset>
@@ -307,15 +272,21 @@
           <legend class="text-sm font-semibold text-slate-700">Linehaul driver fees (per trip)</legend>
           <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <label class="{{ $label }}">Branch ↔ Hub
-              <input name="linehaul_branch_hub_driver_fee" type="number" step="0.01" min="0" value="{{ old('linehaul_branch_hub_driver_fee',$rates->linehaul_branch_hub_driver_fee) }}" class="{{ $input }}">
+              <input name="linehaul_branch_hub_driver_fee" data-saved-rate="{{ $rates->linehaul_branch_hub_driver_fee }}" type="number" step="0.01" min="0" value="{{ old('linehaul_branch_hub_driver_fee',$rates->linehaul_branch_hub_driver_fee) }}" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Hub ↔ Hub
-              <input name="linehaul_hub_hub_driver_fee" type="number" step="0.01" min="0" value="{{ old('linehaul_hub_hub_driver_fee',$rates->linehaul_hub_hub_driver_fee) }}" class="{{ $input }}">
+              <input name="linehaul_hub_hub_driver_fee" data-saved-rate="{{ $rates->linehaul_hub_hub_driver_fee }}" type="number" step="0.01" min="0" value="{{ old('linehaul_hub_hub_driver_fee',$rates->linehaul_hub_hub_driver_fee) }}" class="{{ $input }}">
             </label>
           </div>
         </fieldset>
 
-        <div class="border-t border-slate-100 pt-5"><button class="{{ $btn }}">Save rates</button></div>
+        <div class="sh-rate-actions sticky bottom-0 z-10 -mx-5 -mb-5 mt-2 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-5 py-3 backdrop-blur-sm">
+          <p class="text-xs text-slate-500">Reset discards unsaved edits; Save validates and updates the database.</p>
+          <div class="flex flex-wrap items-center gap-2">
+            <button type="reset" class="{{ $btnOut }}" id="shResetRates">Reset changes</button>
+            <button type="submit" class="{{ $btn }}" id="shSaveRates">Save marketplace rates</button>
+          </div>
+        </div>
       </form>
     </section>
   </div>
@@ -391,7 +362,7 @@
   </section>
 
   {{-- ============ 6. HISTORY ============ --}}
-  <div id="history" class="scroll-mt-6 space-y-8">
+  <div id="history" class="scroll-mt-5 space-y-4">
 
     {{-- Snapshots --}}
     <section class="{{ $card }} p-5">
@@ -479,4 +450,21 @@
   </div>
 
 </div>
+
+@push('scripts')
+<script>
+// Reset to the last persisted rate values, not to potentially invalid old() input.
+document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('shMarketplaceRateForm');
+    if (!form) return;
+    form.addEventListener('reset', (event) => {
+        event.preventDefault();
+        form.querySelectorAll('[data-saved-rate]').forEach((field) => {
+            field.value = field.dataset.savedRate ?? '';
+        });
+    });
+});
+</script>
+@endpush
+
 @endsection

@@ -42,12 +42,50 @@
         .lp-form-control {width:100%;min-height:41px;border:1px solid #E2E6EA;border-radius:12px;padding:10px 13px;font:inherit;font-size:12px;background:#fff;color:#0F1B3D;outline:none;transition:border-color .15s,box-shadow .15s;}
         .lp-form-control:focus {border-color:#21C3A6;box-shadow:0 0 0 3px #21C3A621;}
         .lp-form-label {display:block;font-size:11px;font-weight:600;color:var(--lp-ink);margin:0 0 7px;}
+
+        /* V2 public chrome: shared across landing, application and sign-in pages. */
+        .lp-header-utility {background:linear-gradient(100deg,#0f6c69,#16aa94);color:#fff;}
+        .lp-header-utility-inner {display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:30px;font-size:9.5px;letter-spacing:.015em;font-weight:600;}
+        .lp-header-utility-inner a {color:white;text-decoration:none;font-weight:700;}
+        .lp-utility-links {display:flex;gap:16px;}
+        .lp-header .lp-wrap,.lp-footer .lp-wrap {width:min(calc(100% - 48px),1320px);}
+        .lp-header-inner {min-height:66px;}
+        .lp-header-links {gap:8px 22px;}
+        .lp-header-links a:not(.lp-button) {font-size:11px;}
+        .lp-header-apply {border-radius:7px;background:#13b3a0;min-height:37px;padding:10px 15px;font-size:11px!important;}
+        .lp-header-apply:hover {background:#0c9184;}
+        .lp-brand img {width:40px;height:40px;}
+        .lp-brand small {font-size:7px;}
+        .lp-footer {padding:30px 0 17px;border-top:1px solid #e1e8eb;background:#f6f8f8;color:#0f1b3d;}
+        .lp-footer .lp-brand {display:inline-flex;}
+        .lp-footer-grid {display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:36px;padding-bottom:27px;}
+        .lp-footer-brand p {max-width:315px;color:#607487;font-size:11px;line-height:1.75;margin:13px 0 0;}
+        .lp-footer-grid nav {display:flex;flex-direction:column;align-items:flex-start;gap:10px;}
+        .lp-footer-grid nav strong {font-size:11.5px;font-weight:800;margin-bottom:5px;}
+        .lp-footer-grid nav a {font-size:10.5px;color:#5d7080;line-height:1.55;text-decoration:none;}
+        .lp-footer-grid nav a:hover {color:#098e81;}
+        .lp-footer-bottom {display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding-top:15px;border-top:1px solid #dde6e9;color:#8796a4;font-size:10px;}
+        @media (max-width:900px) {.lp-header-links{gap:12px;}.lp-footer-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.lp-header-links .lp-optional{display:none;}}
+        @media (max-width:600px) {
+            .lp-header .lp-wrap,.lp-footer .lp-wrap{width:calc(100% - 30px);}
+            .lp-header-utility-inner{min-height:28px;font-size:8px;}
+            .lp-utility-links {display:none;}
+            .lp-header-inner{min-height:60px;gap:10px;}
+            .lp-header-links{gap:8px;}
+            .lp-header-links .lp-marketplace,.lp-header-links .lp-rider-link,.lp-header-links .lp-signin{display:none;}
+            .lp-header-links .lp-button{padding:8px 10px;min-height:35px;font-size:10px!important;}
+            .lp-brand{font-size:14px;}.lp-brand img{width:33px;height:33px;}
+            .lp-footer-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 16px;}
+            .lp-footer-brand{grid-column:1/-1;}
+        }
         @media (max-width:760px) { .lp-header-inner{min-height:60px;}.lp-header-links{gap:10px;}.lp-header-links .lp-optional{display:none;}.lp-header-links .lp-button{min-height:36px;padding:9px 13px;font-size:11px;}.lp-brand{font-size:14px;}.lp-brand img{width:32px;height:32px;} }
         @media (max-width:390px) {.lp-header-links .lp-marketplace{display:none;}.lp-header-links{gap:7px;}}
     </style>
     @stack('styles')
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
 </head>
 <body class="lp-site" style="min-height:100vh;display:flex;flex-direction:column">
     @include('logistics.partials.public-header')

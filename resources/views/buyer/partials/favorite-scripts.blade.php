@@ -48,6 +48,7 @@ window.ShopHopFavoriteBaseUrl = @json(url('/buyer/likes'));
         function updateCount(count) {
             document.querySelectorAll('[data-favorite-count]').forEach(function (node) {
                 node.textContent = String(count);
+                if (node.classList.contains('shb-count') || node.classList.contains('sh-shop-counter')) node.hidden = !(count > 0);
             });
         }
 

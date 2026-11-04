@@ -19,6 +19,7 @@ use App\Http\Controllers\Logistics\BranchStaffWorkspaceController;
 use App\Http\Controllers\Logistics\FleetController;
 use App\Http\Controllers\Logistics\RouteNetworkController;
 use App\Http\Controllers\Logistics\DemoNetworkDirectoryController;
+use App\Http\Controllers\Logistics\PartnerBrandingController;
 
 /*
 | All Logistics public pages and private console live under LOGISTICS_DOMAIN.
@@ -57,14 +58,20 @@ Route::domain(config('app.logistics_domain'))
 
         Route::middleware(['auth', 'approved.role:logistics'])->group(function () {
             Route::get('/dashboard', [LogisticsDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/partner-profile', [PartnerBrandingController::class, 'edit'])->name('partner-profile.edit');
+            Route::post('/partner-profile', [PartnerBrandingController::class, 'update'])->middleware('throttle:8,1')->name('partner-profile.update');
 
             Route::get('/sorting-centers', [SortingCenterController::class, 'index'])->name('sorting-centers.index');
+            // Company-wide directory of city/municipal branch stations.
+            Route::get('/branches', [SortingCenterController::class, 'branches'])->name('branches.index');
+            Route::post('/branches/{center}/profile', [SortingCenterController::class, 'updateBranchProfile'])->name('branches.profile');
             Route::get('/sorting-centers/archived', [SortingCenterController::class, 'archived'])->name('sorting-centers.archived');
             Route::get('/sorting-centers/create', [SortingCenterController::class, 'create'])->name('sorting-centers.create');
             Route::get('/sorting-centers/{center}', [SortingCenterController::class, 'show'])->name('sorting-centers.show');
             Route::get('/sorting-centers/{center}/edit', [SortingCenterController::class, 'edit'])->name('sorting-centers.edit');
             Route::post('/sorting-centers', [SortingCenterController::class, 'store'])->name('sorting-centers.store');
             Route::post('/sorting-centers/{center}/update', [SortingCenterController::class, 'update'])->name('sorting-centers.update');
+            Route::post('/sorting-centers/{center}/profile', [SortingCenterController::class, 'updateHubProfile'])->name('sorting-centers.profile');
             Route::post('/sorting-centers/{center}/toggle', [SortingCenterController::class, 'toggle'])->name('sorting-centers.toggle');
             Route::post('/sorting-centers/{center}/archive', [SortingCenterController::class, 'archive'])->name('sorting-centers.archive');
             Route::post('/sorting-centers/{center}/restore', [SortingCenterController::class, 'restore'])->name('sorting-centers.restore');
@@ -82,12 +89,15 @@ Route::domain(config('app.logistics_domain'))
             Route::get('/fleet', [FleetController::class, 'index'])->name('fleet.index');
             Route::post('/fleet/vehicles', [FleetController::class, 'storeVehicle'])->name('fleet.vehicles.store');
             Route::post('/fleet/vehicles/{vehicle}/status', [FleetController::class, 'updateVehicleStatus'])->name('fleet.vehicles.status');
+            Route::post('/fleet/vehicles/{vehicle}/update', [FleetController::class, 'updateVehicle'])->name('fleet.vehicles.update');
             Route::post('/fleet/drivers', [FleetController::class, 'storeDriver'])->name('fleet.drivers.store');
             Route::post('/fleet/drivers/{driver}/toggle', [FleetController::class, 'toggleDriver'])->name('fleet.drivers.toggle');
+            Route::post('/fleet/drivers/{driver}/update', [FleetController::class, 'updateDriver'])->name('fleet.drivers.update');
 
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
             Route::get('/demo-network', [DemoNetworkDirectoryController::class, 'index'])->name('demo-network.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
+            Route::post('/riders/{rider}/profile', [RiderController::class, 'updateProfile'])->name('riders.profile');
             Route::post('/riders/{rider}/approve', [RiderController::class, 'approve'])->name('riders.approve');
             Route::post('/riders/{rider}/reject', [RiderController::class, 'reject'])->name('riders.reject');
             Route::get('/riders/{rider}/documents/{slot}', [RiderController::class, 'document'])->name('riders.documents.show');
@@ -121,6 +131,7 @@ Route::domain(config('app.logistics_domain'))
 
             Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
             Route::get('/reports/export/pdf', [ReportController::class, 'exportPdf'])->name('reports.export.pdf');
+            Route::get('/reports/export/csv', [ReportController::class, 'exportCsv'])->name('reports.export.csv');
             Route::get('/reports/riders/{rider}/export/pdf', [ReportController::class, 'exportRiderPdf'])->name('reports.riders.export.pdf');
         });
     });

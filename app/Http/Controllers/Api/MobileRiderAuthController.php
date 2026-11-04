@@ -24,11 +24,15 @@ class MobileRiderAuthController extends Controller
         $centers = LogisticsPartner::query()
             ->with('user:id,status')
             ->whereHas('user', fn ($query) => $query->where('status', 'approved'))
+            ->where('accepting_riders', true)
             ->orderBy('company_name')
             ->get()
             ->map(fn (LogisticsPartner $partner) => [
                 'id' => $partner->id,
                 'company_name' => $partner->company_name,
+                'description' => $partner->public_description,
+                'logo_url' => $partner->logo_path ? url(\Illuminate\Support\Facades\Storage::disk('public')->url($partner->logo_path)) : null,
+                'accepting_riders' => true,
                 'municipality' => $partner->municipality,
                 'province' => $partner->province,
                 'label' => collect([
@@ -90,13 +94,14 @@ class MobileRiderAuthController extends Controller
         $partner = LogisticsPartner::query()
             ->whereKey($validated['logistics_partner_id'])
             ->whereHas('user', fn ($query) => $query->where('status', 'approved'))
+            ->where('accepting_riders', true)
             ->first();
 
         if (! $partner) {
             return response()->json([
                 'success' => false,
                 'status' => 'validation_error',
-                'message' => 'Please choose an approved Logistics / Sorting Center.',
+                'message' => 'Please choose an approved Logistics Partner that is accepting rider applications.',
                 'errors' => [
                     'logistics_partner_id' => ['The selected Logistics / Sorting Center is unavailable.'],
                 ],

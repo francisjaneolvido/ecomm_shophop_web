@@ -8,7 +8,7 @@
 @include('buyer.partials.navbar-buyer')
 
 {{-- No public Seller lookup exists; fixture identity, metrics and local Follow/Claim success cannot stand in for one. --}}
-<section id="buyerStore" aria-labelledby="buyerStoreTitle" class="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+<section id="buyerStore" aria-labelledby="buyerStoreTitle" class="shb-store-page mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
     <h1 id="buyerStoreTitle" class="text-2xl font-bold text-navy">Store availability</h1>
     <div class="mt-5 rounded-xl border border-gray-border bg-white p-5 sm:p-6">
         <span class="inline-flex rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal-dark">Unavailable</span>
@@ -22,4 +22,5 @@
         </a>
     </div>
 </section>
+@include('partials.footer')
 @endsection

@@ -102,7 +102,7 @@
 {{-- =========================================================
     CATEGORY BROWSE — SIDEBAR + FILTERS + PRODUCT GRID
 ========================================================= --}}
-<section class="bg-gray-bg">
+<section class="shb-category-page bg-gray-bg">
     <div class="max-w-310 mx-auto px-3 sm:px-4 lg:px-5 py-3.5 sm:py-4">
 
         <div class="grid lg:grid-cols-[205px_minmax(0,1fr)] gap-4 items-start">
@@ -251,7 +251,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[2000px]:grid-cols-8 gap-2 buyer-stagger">
 
                     @forelse ($products as $product)
-                        <article class="group buyer-card bg-white rounded-lg overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                        <article class="shb-product-card group buyer-card bg-white rounded-lg overflow-hidden border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
 
                             <div class="relative aspect-square bg-gray-bg overflow-hidden">
                                 <a href="{{ route('buyer.product.show', $product['id']) }}" class="block w-full h-full">
@@ -276,11 +276,13 @@
 
                                 <button
                                     type="button"
-                                    data-wishlist-unavailable
-                                    disabled
-                                    title="Wishlist is unavailable: saved items are not available yet"
-                                    aria-label="Wishlist unavailable: saved items are not available yet"
-                                    class="absolute top-1.5 left-1.5 w-6 h-6 rounded-md bg-white/95 shadow-sm border border-black/5 flex items-center justify-center text-navy/45 cursor-not-allowed opacity-50"
+                                    @if (auth()->check() && auth()->user()->account_type === 'buyer')
+                                        data-wishlist-unavailable disabled
+                                        title="Manage My Likes" aria-label="Save to My Likes"
+                                    @else
+                                        data-login-required title="Sign in to save this product" aria-label="Sign in to save this product"
+                                    @endif
+                                    class="absolute top-1.5 left-1.5 w-6 h-6 rounded-md bg-white/95 shadow-sm border border-black/5 flex items-center justify-center text-navy/45 {{ auth()->check() && auth()->user()->account_type === 'buyer' ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:text-teal-dark' }}"
                                 >
                                     <x-lucide-heart class="w-3 h-3" />
                                 </button>

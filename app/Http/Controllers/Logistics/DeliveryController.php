@@ -29,29 +29,73 @@ class DeliveryController extends Controller
     public function board(Request $request, LogisticsRoutingService $routing, LogisticsJourneyService $journeys, RiderServiceAreaService $serviceAreas): View
     {
         $partner = $this->partner($request);
-        $ready = self::readyFor($partner);
-        $deliveries = Delivery::with([
-            'order.seller', 'order.items.product', 'rider', 'pickupRider', 'deliveryRider',
-            'deliveredRider', 'destinationArea.sortingCenter',
-            'originSortingCenter', 'currentSortingCenter', 'destinationSortingCenter',
-            'transfers.fromCenter', 'transfers.toCenter', 'failureReports.rider',
-        ])->where('logistics_partner_id', $partner->id)->latest()->get();
+        $filters = $request->validate([
+            'pickup_q' => ['nullable', 'string', 'max:100'],
+            'parcel_q' => ['nullable', 'string', 'max:100'],
+            'parcel_status' => ['nullable', 'string', 'max:40'],
+        ]);
+        $pickupSearch = trim($filters['pickup_q'] ?? '');
+        $parcelSearch = trim($filters['parcel_q'] ?? '');
+        $selectedStatus = $filters['parcel_status'] ?? '';
+        $statuses = [Delivery::PICKUP_ASSIGNED, Delivery::PICKUP_ACCEPTED, Delivery::PICKED_UP,
+            Delivery::AT_SORTING_CENTER, Delivery::SORTED, Delivery::DELIVERY_ASSIGNED,
+            Delivery::OUT_FOR_DELIVERY, Delivery::DELIVERY_FAILED, Delivery::DELIVERED,
+            Delivery::RETURN_REQUESTED, Delivery::RETURN_AT_BRANCH, Delivery::RETURN_ASSIGNED,
+            Delivery::RETURN_IN_TRANSIT, Delivery::RETURN_AWAITING_SELLER, Delivery::RETURNED];
+        if ($selectedStatus !== '' && ! in_array($selectedStatus, $statuses, true)) {
+            $selectedStatus = '';
+        }
 
-        $riders = Rider::with(['coverageArea.sortingCenter', 'sortingCenter'])
-            ->where('logistics_partner_id', $partner->id)
-            ->where('status', 'active')
-            ->whereNotNull('email')->whereNotNull('password')
-            ->with('operationalServiceAreas')
-            ->orderBy('name')->get();
+        // Do not load every order, delivery and relationship into RAM for this operations console.
+        $readyBase = Order::where('status', Order::STATUS_READY_FOR_PICKUP)
+            ->paymentEligible()
+            ->whereHas('pickupRequest', fn ($q) => $q->where('logistics_partner_id', $partner->id)
+                ->where('status', PickupRequest::REQUESTED))
+            ->whereNotIn('id', Delivery::select('order_id'));
+        $pickupTotal = (clone $readyBase)->count();
+        if ($pickupSearch !== '') {
+            $readyBase->where(function ($q) use ($pickupSearch) {
+                $q->where('tracking_code', 'like', '%'.$pickupSearch.'%')
+                    ->orWhereHas('seller', fn ($seller) => $seller->where('business_name', 'like', '%'.$pickupSearch.'%'));
+                if (ctype_digit($pickupSearch)) $q->orWhereKey((int) $pickupSearch);
+            });
+        }
+        $ready = $readyBase->with(['seller', 'items.product', 'pickupRequest.originSortingCenter'])
+            ->latest()->paginate(20, ['*'], 'pickup_page')->withQueryString();
+
+        $deliveryBase = Delivery::where('logistics_partner_id', $partner->id);
+        $receiveCount = (clone $deliveryBase)->where('status', Delivery::PICKED_UP)->count();
+        $sortCount = (clone $deliveryBase)->where('status', Delivery::AT_SORTING_CENTER)->count();
+        $dispatchCount = (clone $deliveryBase)->whereIn('status', [Delivery::SORTED, Delivery::DELIVERY_FAILED])->count();
+        $parcelTotal = (clone $deliveryBase)->count();
+        if ($selectedStatus !== '') $deliveryBase->where('status', $selectedStatus);
+        if ($parcelSearch !== '') {
+            $deliveryBase->where(function ($q) use ($parcelSearch) {
+                $q->where('tracking_code', 'like', '%'.$parcelSearch.'%')
+                    ->orWhereHas('order.seller', fn ($seller) => $seller->where('business_name', 'like', '%'.$parcelSearch.'%'));
+                if (ctype_digit($parcelSearch)) $q->orWhere('order_id', (int) $parcelSearch);
+            });
+        }
+        $deliveries = $deliveryBase->with([
+            'order.seller', 'rider', 'pickupRider', 'deliveryRider', 'deliveredRider',
+            'destinationArea.sortingCenter', 'originSortingCenter', 'currentSortingCenter',
+            'destinationSortingCenter', 'transfers.fromCenter', 'transfers.toCenter', 'failureReports.rider',
+        ])->latest()->paginate(20, ['*'], 'parcel_page')->withQueryString();
+
+        $riders = Rider::with(['coverageArea.sortingCenter', 'sortingCenter', 'operationalServiceAreas'])
+            ->where('logistics_partner_id', $partner->id)->where('status', 'active')
+            ->whereNotNull('email')->whereNotNull('password')->orderBy('name')->get();
         $coverageAreas = $partner->coverageAreas()->with('sortingCenter')->orderBy('area_name')->get();
-        $transferPlans = $deliveries->mapWithKeys(fn (Delivery $delivery) => [
+        $transferPlans = $deliveries->getCollection()->mapWithKeys(fn (Delivery $delivery) => [
             $delivery->id => $routing->transferPlan($delivery),
         ]);
-        $journeyPreviews = $deliveries->mapWithKeys(fn (Delivery $delivery) => [
+        $journeyPreviews = $deliveries->getCollection()->mapWithKeys(fn (Delivery $delivery) => [
             $delivery->id => $journeys->preview($delivery),
         ]);
-
-        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders', 'coverageAreas', 'transferPlans', 'journeyPreviews', 'serviceAreas'));
+        return view('logistics.deliveries.board', compact('ready', 'deliveries', 'riders',
+            'coverageAreas', 'transferPlans', 'journeyPreviews', 'serviceAreas', 'pickupTotal',
+            'parcelTotal', 'receiveCount', 'sortCount', 'dispatchCount', 'selectedStatus',
+            'pickupSearch', 'parcelSearch', 'statuses'));
     }
 
     /** Assign the rider who will collect the parcel from the Seller and bring it to the sorting center. */

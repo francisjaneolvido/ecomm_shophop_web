@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
 use App\Models\Finance\OrderFinancial;
-use App\Models\Finance\PaymentSetting;
 use App\Models\Finance\PlatformVoucher;
 use App\Models\Finance\MarketplaceRateSetting;
 use App\Models\Finance\SettlementEntry;
@@ -12,7 +11,6 @@ use App\Services\ShopHopFinance;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -22,7 +20,6 @@ class MarketplaceFinanceController extends Controller
     public function index(): View
     {
         return view('admin.commission', [
-            'setting' => PaymentSetting::current(),
             'rates' => MarketplaceRateSetting::current(),
             'vouchers' => PlatformVoucher::orderByDesc('id')->limit(60)->get(),
             'finances' => OrderFinancial::orderByDesc('id')->paginate(20, ['*'], 'finance_page'),
@@ -79,41 +76,6 @@ class MarketplaceFinanceController extends Controller
         MarketplaceRateSetting::current()->update($data);
 
         return back()->with('status', 'Shipping, handling and payout rates updated. ShopHop commission remains 10%.');
-    }
-
-    public function paymentSetting(Request $request): RedirectResponse
-    {
-        $data = $request->validate([
-            'recipient_name' => ['required', 'string', 'max:160'],
-            'recipient_identifier' => ['nullable', 'string', 'max:100'],
-            'instructions' => ['nullable', 'string', 'max:1000'],
-            'qr_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
-        ]);
-        $newPath = $request->hasFile('qr_image')
-            ? $request->file('qr_image')->store('demo-payment-qr', 'public') : null;
-        try {
-            $previous = null;
-            DB::transaction(function () use ($data, $newPath, &$previous) {
-                $setting = PaymentSetting::query()->lockForUpdate()->first();
-                if (! $setting) {
-                    $setting = new PaymentSetting();
-                    $setting->setAttribute('id', 1);
-                }
-                $previous = $setting->qr_path;
-                $setting->fill([
-                    'mode' => 'demo', 'recipient_name' => $data['recipient_name'],
-                    'recipient_identifier' => $data['recipient_identifier'] ?? null,
-                    'instructions' => $data['instructions'] ?? null,
-                    'qr_path' => $newPath ?: $previous,
-                ]);
-                $setting->save();
-            });
-            if ($newPath && $previous && $previous !== $newPath) Storage::disk('public')->delete($previous);
-        } catch (\Throwable $e) {
-            if ($newPath) Storage::disk('public')->delete($newPath);
-            throw $e;
-        }
-        return back()->with('status', 'Demo payment QR configuration saved.');
     }
 
     public function createVoucher(Request $request): RedirectResponse

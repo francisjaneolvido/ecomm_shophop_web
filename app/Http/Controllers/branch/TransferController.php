@@ -22,6 +22,7 @@ class TransferController extends Controller
     {
         $center = $this->center($request);
         $status = (string) $request->query('status', 'awaiting');
+        $search = trim(substr((string) $request->query('q', ''), 0, 100));
 
         if (! in_array($status, ['awaiting', 'preparing', 'received', 'all'], true)) {
             $status = 'awaiting';
@@ -89,6 +90,13 @@ class TransferController extends Controller
             $transfers->where('status', ParcelTransfer::RECEIVED);
         }
 
+        if ($search !== '') {
+            $transfers->where(function ($q) use ($search) {
+                $q->whereHas('delivery', fn ($delivery) => $delivery->where('tracking_code', 'like', '%'.$search.'%'))
+                    ->orWhereHas('manifest', fn ($manifest) => $manifest->where('code', 'like', '%'.$search.'%'));
+            });
+        }
+
         $transfers = $transfers
             ->latest('id')
             ->paginate(15)
@@ -98,7 +106,8 @@ class TransferController extends Controller
             'center',
             'status',
             'counts',
-            'transfers'
+            'transfers',
+            'search'
         ));
     }
 

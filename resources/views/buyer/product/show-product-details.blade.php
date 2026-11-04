@@ -62,7 +62,7 @@
 <div class="bg-white border-b border-gray-border/70">
     <div class="max-w-310 mx-auto px-3 sm:px-4 lg:px-5 py-2">
         <nav class="flex items-center gap-1.5 text-[10px] sm:text-[10.5px] text-navy/40 overflow-x-auto whitespace-nowrap">
-            <a href="{{ route('buyer.dashboard') }}" class="hover:text-teal-dark transition">Home</a>
+            <a href="{{ auth()->check() && auth()->user()->account_type === 'buyer' ? route('buyer.dashboard') : route('home') }}" class="hover:text-teal-dark transition">Home</a>
             <x-lucide-chevron-right class="w-3 h-3 shrink-0 text-navy/20" />
             <a href="{{ $categoryUrl }}" class="hover:text-teal-dark transition">{{ $product['category'] }}</a>
             <x-lucide-chevron-right class="w-3 h-3 shrink-0 text-navy/20" />
@@ -72,10 +72,10 @@
 </div>
 
 {{-- PRODUCT DETAIL --}}
-<section class="bg-gray-bg/80 py-4 sm:py-5 pb-20 lg:pb-6">
+<section class="shb-product-page bg-gray-bg/80 py-4 sm:py-5 pb-20 lg:pb-6">
     <div class="max-w-310 mx-auto px-3 sm:px-4 lg:px-5">
 
-        <div class="bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm product-reveal">
+        <div class="shb-product-main bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm product-reveal">
             <div class="grid lg:grid-cols-[0.9fr_1.1fr]">
 
                 {{-- GALLERY --}}
@@ -128,7 +128,7 @@
                             Share product
                         </button>
 
-                        <button type="button" data-wishlist-unavailable data-product-id="{{ $product['id'] }}" disabled title="Wishlist is unavailable: saved items are not available yet" aria-label="Wishlist unavailable: saved items are not available yet" class="wishlist-toggle inline-flex items-center gap-1.5 text-navy/45 cursor-not-allowed opacity-55">
+                        <button type="button" data-product-id="{{ $product['id'] }}" @if (auth()->check() && auth()->user()->account_type === 'buyer') data-wishlist-unavailable disabled title="Manage My Likes" aria-label="Save to My Likes" @else data-login-required title="Sign in to save this product" aria-label="Sign in to save this product" @endif class="wishlist-toggle inline-flex items-center gap-1.5 text-navy/45 {{ auth()->check() && auth()->user()->account_type === 'buyer' ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:text-teal-dark' }}">
                             <x-lucide-heart class="w-3.5 h-3.5" />
                             <span data-favorite-label>Add to My Likes</span>
                         </button>
@@ -138,7 +138,7 @@
                 {{-- PRODUCT INFO --}}
                 <div class="p-4 sm:p-5 lg:p-6 lg:sticky lg:top-3 self-start">
                     <div class="flex flex-wrap items-center gap-1.5 mb-2.5">
-                        <span class="bg-teal text-white text-[9px] font-bold px-2 py-1 rounded-md">Mall Pick</span>
+                        <span class="bg-teal text-white text-[9px] font-bold px-2 py-1 rounded-md">ShopHop Item</span>
                         <a href="{{ $categoryUrl }}" class="bg-teal-light text-teal-dark text-[9px] font-semibold px-2 py-1 rounded-md hover:bg-teal/15 transition">
                             {{ $product['category'] }}
                         </a>
@@ -155,14 +155,18 @@
                     </p>
 
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 mt-3 pb-3 border-b border-gray-border/80">
-                        <a href="#ratings" class="flex items-center gap-1.5 hover:opacity-80 transition">
-                            <span class="text-[11px] font-bold text-teal-dark underline underline-offset-4">{{ $product['rating'] }}</span>
-                            <div class="flex">
-                                @for ($i = 0; $i < 5; $i++)
-                                    <x-lucide-star class="w-3 h-3 fill-amber-400 text-amber-400" />
-                                @endfor
-                            </div>
-                        </a>
+                        @if (($product['reviews'] ?? 0) > 0 && ($product['rating'] ?? 0) > 0)
+                            <a href="#ratings" class="flex items-center gap-1.5 hover:opacity-80 transition">
+                                <span class="text-[11px] font-bold text-teal-dark underline underline-offset-4">{{ $product['rating'] }}</span>
+                                <div class="flex">
+                                    @for ($i = 0; $i < 5; $i++)
+                                        <x-lucide-star class="w-3 h-3 {{ $i < round($product['rating']) ? 'fill-amber-400 text-amber-400' : 'text-gray-300' }}" />
+                                    @endfor
+                                </div>
+                            </a>
+                        @else
+                            <span class="text-[10.5px] font-medium text-navy/45">Not yet rated</span>
+                        @endif
                         <span class="w-px h-4 bg-gray-border"></span>
                         <a href="#ratings" class="text-[10.5px] text-navy/50 hover:text-teal-dark transition">
                             <strong class="text-navy">{{ number_format($product['reviews']) }}</strong> Ratings
@@ -184,7 +188,7 @@
                                 <span class="text-[9px] font-bold bg-teal text-white px-1.5 py-1 rounded-md">{{ $product['discount'] }}% OFF</span>
                             @endif
                         </div>
-                        <p class="text-[9.5px] text-navy/40 mt-1">Limited-time ShopHop deal · VAT inclusive</p>
+                        <p class="text-[9.5px] text-navy/40 mt-1">Current ShopHop price · Shipping calculated at checkout</p>
                     </div>
 
                     {{-- SHOP VOUCHERS --}}
@@ -216,7 +220,7 @@
                                     <x-lucide-truck class="w-3.5 h-3.5 text-teal-dark shrink-0 mt-0.5" />
                                     <div>
                                         <p class="font-semibold">Ships from {{ $product['ships_from'] }}</p>
-                                        <p class="text-navy/40 mt-0.5">Standard or Express · Fee calculated at checkout</p>
+                                        <p class="text-navy/40 mt-0.5">Standard delivery · Fee calculated at checkout</p>
                                         <p class="inline-flex items-center gap-1 mt-1.5 text-[9px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md">
                                             <x-lucide-wallet class="w-3 h-3" />
                                             Cash on Delivery available
@@ -291,7 +295,7 @@
                     <div class="hidden lg:grid grid-cols-2 gap-2 mt-5">
                         <button
                             type="button"
-                            data-add-to-cart="{{ $product['id'] }}"
+                            data-add-to-cart="{{ $product['id'] }}" @unless (auth()->check() && auth()->user()->account_type === 'buyer') data-login-required @endunless
                             data-selected-variant="{{ $firstVariant['id'] ?? '' }}"
                             class="h-10 rounded-lg border border-teal bg-teal-light/55 text-teal-dark font-semibold text-[11px] flex items-center justify-center gap-1.5 hover:bg-teal-light active:scale-[0.99] transition disabled:opacity-60 disabled:cursor-not-allowed"
                         >
@@ -304,7 +308,7 @@
                             <input type="hidden" name="product_id" value="{{ $product['id'] }}">
                             <input type="hidden" name="variant_id" value="{{ $firstVariant['id'] ?? '' }}" data-buy-variant>
                             <input type="hidden" name="qty" value="1" data-buy-quantity>
-                            <button type="submit" class="h-10 w-full rounded-lg bg-teal hover:bg-teal-dark text-white font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99] transition">
+                            <button type="submit" @unless (auth()->check() && auth()->user()->account_type === 'buyer') data-login-required @endunless class="h-10 w-full rounded-lg bg-teal hover:bg-teal-dark text-white font-semibold text-[11px] flex items-center justify-center gap-1.5 shadow-sm active:scale-[0.99] transition">
                                 Buy Now <x-lucide-arrow-right class="w-3.5 h-3.5" />
                             </button>
                         </form>
@@ -558,7 +562,7 @@
 
                                 <button
                                     type="button"
-                                    data-add-related-to-cart
+                                    data-add-related-to-cart @unless (auth()->check() && auth()->user()->account_type === 'buyer') data-login-required @endunless
                                     data-related-id="{{ $related['id'] }}"
                                     data-related-name="{{ $related['name'] }}"
                                     data-related-image="{{ $productImageUrl($related['image']) }}"
@@ -581,10 +585,10 @@
 {{-- MOBILE PURCHASE BAR --}}
 <div class="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t border-gray-border px-3 py-2 shadow-[0_-8px_24px_rgba(15,27,61,.08)]">
     <div class="max-w-310 mx-auto grid grid-cols-[auto_1fr_1fr] gap-2">
-        <button type="button" data-wishlist-unavailable data-product-id="{{ $product['id'] }}" disabled title="Wishlist is unavailable: saved items are not available yet" class="wishlist-toggle w-10 h-10 rounded-lg border border-gray-border flex items-center justify-center text-navy/45 cursor-not-allowed opacity-55" aria-label="Wishlist unavailable: saved items are not available yet">
+        <button type="button" data-product-id="{{ $product['id'] }}" @if (auth()->check() && auth()->user()->account_type === 'buyer') data-wishlist-unavailable disabled title="Manage My Likes" @else data-login-required title="Sign in to save this product" @endif class="wishlist-toggle w-10 h-10 rounded-lg border border-gray-border flex items-center justify-center text-navy/45 {{ auth()->check() && auth()->user()->account_type === 'buyer' ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:text-teal-dark' }}" aria-label="Save to My Likes or sign in">
             <x-lucide-heart class="w-4 h-4" />
         </button>
-        <button type="button" data-add-to-cart="{{ $product['id'] }}" data-selected-variant="{{ $firstVariant['id'] ?? '' }}" class="h-10 rounded-lg border border-teal bg-teal-light text-teal-dark text-[10px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed">
+        <button type="button" data-add-to-cart="{{ $product['id'] }}" @unless (auth()->check() && auth()->user()->account_type === 'buyer') data-login-required @endunless data-selected-variant="{{ $firstVariant['id'] ?? '' }}" class="h-10 rounded-lg border border-teal bg-teal-light text-teal-dark text-[10px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed">
             <x-lucide-shopping-cart class="w-3.5 h-3.5" /> Add to Cart
         </button>
         <form method="POST" action="{{ route('buyer.cart.buyNow') }}" data-buy-now-form>
@@ -592,7 +596,7 @@
             <input type="hidden" name="product_id" value="{{ $product['id'] }}">
             <input type="hidden" name="variant_id" value="{{ $firstVariant['id'] ?? '' }}" data-buy-variant>
             <input type="hidden" name="qty" value="1" data-buy-quantity>
-            <button type="submit" class="h-10 w-full rounded-lg bg-teal text-white text-[10px] font-semibold flex items-center justify-center">Buy Now</button>
+            <button type="submit" @unless (auth()->check() && auth()->user()->account_type === 'buyer') data-login-required @endunless class="h-10 w-full rounded-lg bg-teal text-white text-[10px] font-semibold flex items-center justify-center">Buy Now</button>
         </form>
     </div>
 </div>
@@ -804,6 +808,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function refreshCartCountBadge(count) {
         document.querySelectorAll('[data-cart-count]').forEach(function (badge) {
             badge.textContent = count;
+            if (badge.classList.contains('shb-count')) badge.hidden = !(Number(count) > 0);
         });
     }
 

@@ -1,232 +1,62 @@
 @extends('branch.layout.app')
-
-@section('title', 'Incoming Transfers')
-
+@section('title','Incoming Transfers')
 @section('content')
 @php
-    $counts = array_merge([
-        'awaiting' => 0,
-        'preparing' => 0,
-        'received_today' => 0,
-        'all' => 0,
-    ], $counts ?? []);
-
-    $activeStatus = $status ?? request('status', 'awaiting');
-
-    $tabs = [
-        'awaiting' => 'Awaiting receipt',
-        'preparing' => 'In linehaul',
-        'received' => 'Received',
-        'all' => 'All',
-    ];
+    $filters=['awaiting'=>'Awaiting receipt','preparing'=>'In transit','received'=>'Received','all'=>'All transfers'];
 @endphp
-
-<div class="space-y-6">
-    <header class="sh-page-header">
-        <div>
-            <p class="eyebrow">{{ $center->name ?? 'Your branch' }}</p>
-            <h1 class="title">Incoming Transfers</h1>
-            <p class="description">Actual parcels na ipinadala papunta sa branch na ito. Normal Linehaul receipt uses the Manifest QR in the Logistics mobile scanner; individual Parcel QR is reserved for exceptions/reconciliation.</p>
-        </div>
-    </header>
-
-    @if (session('status'))
-        <div role="status" class="sh-alert-success">{{ session('status') }}</div>
-    @endif
-
-    @if ($errors->any())
-        <div role="alert" class="sh-alert-error">{{ $errors->first() }}</div>
-    @endif
-
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="sh-stat">
-            <p class="sh-stat-label">Awaiting receipt</p>
-            <p class="sh-stat-value">{{ number_format($counts['awaiting']) }}</p>
-            <p class="sh-stat-note">Pwede nang i-scan pagdating</p>
-        </div>
-
-        <div class="sh-stat">
-            <p class="sh-stat-label">In linehaul</p>
-            <p class="sh-stat-value">{{ number_format($counts['preparing']) }}</p>
-            <p class="sh-stat-note">Scheduled o bumibiyahe pa ang truck/van</p>
-        </div>
-
-        <div class="sh-stat">
-            <p class="sh-stat-label">Received today</p>
-            <p class="sh-stat-value">{{ number_format($counts['received_today']) }}</p>
-            <p class="sh-stat-note">Na-scan at na-confirm ngayong araw</p>
-        </div>
-
-        <div class="sh-stat">
-            <p class="sh-stat-label">All incoming records</p>
-            <p class="sh-stat-value">{{ number_format($counts['all']) }}</p>
-            <p class="sh-stat-note">Lahat ng ParcelTransfer papunta rito</p>
-        </div>
-    </section>
-
-    <section class="sh-surface sh-card-pad">
-        <div class="sh-toolbar">
-            <div>
-                <h2 class="text-base font-bold text-navy">Exception parcel receive by QR / tracking code</h2>
-                <p class="mt-1 text-xs text-navy/45">Gamitin ito kapag may count mismatch, damaged/wrong parcel, o kailangan ng individual reconciliation. Normal intact batches are received from the Manifest QR in Logistics mobile.</p>
-            </div>
-        </div>
-
-        <form method="POST" action="{{ route('branch.receive') }}" data-confirm-title="Receive exception parcel?" data-confirm-message="Verify physical custody and tracking code before recording receipt at this branch." data-confirm-button="Confirm receipt" class="mt-4 flex flex-wrap items-center gap-2">
-            @csrf
-            <input
-                name="tracking_code"
-                id="branch-exception-code"
-                value="{{ old('tracking_code') }}"
-                required
-                autofocus
-                autocomplete="off"
-                placeholder="Scan tracking code (SHP-YYYYMMDD-000000)"
-                class="sh-input min-w-0 flex-1"
-            >
-            <button class="sh-btn">Receive parcel</button>
-        </form>
-        @include('partials.logistics-qr-scanner', ['inputId' => 'branch-exception-code'])
-    </section>
-
-    <nav class="flex flex-wrap gap-2" aria-label="Incoming transfer status filter">
-        @foreach ($tabs as $key => $label)
-            <a
-                href="{{ request()->fullUrlWithQuery(['status' => $key, 'page' => null]) }}"
-                class="{{ $activeStatus === $key ? 'sh-btn' : 'sh-btn-ghost' }}"
-                @if ($activeStatus === $key) aria-current="page" @endif
-            >{{ $label }}</a>
+<div class="space-y-5">
+    <header class="sh-page-header"><div><p class="eyebrow">{{ $center->name }}</p><h1 class="title">Incoming Transfers</h1><p class="description">Manifest and parcel receiving queue. A shipment may only be received after validated physical arrival.</p></div>
+        <div class="flex gap-2"><button type="button" class="sh-btn-soft" data-ops-open="exceptionReceiveModal">Exception receive</button><a class="sh-btn" href="{{ route('branch.scanner') }}">Scan Manifest QR</a></div></header>
+    @if(session('status'))<div class="sh-alert-success">{{ session('status') }}</div>@endif
+    @if($errors->any())<div class="sh-alert-error">{{ $errors->first() }}</div>@endif
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        @foreach([['Awaiting receipt',$counts['awaiting'],'Eligible for receiving'],['In transit',$counts['preparing'],'Awaiting physical arrival'],['Received today',$counts['received_today'],'Completed scans today'],['All incoming',$counts['all'],'All recorded transfers']] as [$label,$value,$note])
+            <div class="sh-stat"><div class="sh-stat-label">{{ $label }}</div><div class="sh-stat-value">{{ number_format($value) }}</div><div class="sh-stat-note">{{ $note }}</div></div>
         @endforeach
-    </nav>
-
-    <div class="grid gap-4">
-        @forelse ($transfers as $transfer)
+    </section>
+    <section class="ops-panel"><div class="ops-panel-head"><div><h2>Inbound transfer directory</h2><p class="ops-panel-note">View the manifest and current transport status, then scan after arrival.</p></div>
+        <form method="GET" class="ops-toolbar"><input class="sh-input" name="q" type="search" value="{{ $search }}" maxlength="100" placeholder="Tracking or manifest" aria-label="Search inbound transfers">
+            <select class="sh-select" name="status" aria-label="Transfer status" style="width:auto">@foreach($filters as $key=>$label)<option value="{{ $key }}" @selected($status===$key)>{{ $label }}</option>@endforeach</select>
+            <button class="sh-btn" type="submit">Filter</button><a class="sh-btn-ghost" href="{{ route('branch.transfers.index') }}">Clear</a></form></div>
+        <div class="ops-table-scroll"><table class="ops-table"><thead><tr><th>Tracking / Buyer</th><th>Origin</th><th>Manifest</th><th>Transport</th><th>Status</th><th>Updated</th><th>Action</th></tr></thead><tbody>
+        @forelse($transfers as $transfer)
             @php
-                $delivery = $transfer->delivery;
-                $order = $delivery?->order;
-
-                $linehaulStatus = $transfer->linehaulTrip?->status;
-                $canReceive = $transfer->status === \App\Models\Logistics\ParcelTransfer::IN_TRANSIT
-                    && ($transfer->linehaul_trip_id
-                        ? in_array($linehaulStatus, ['arrived', 'completed'], true)
-                        : (empty($transfer->transit_rider_id) || ! empty($transfer->departed_at)));
-
-                $isPreparing = $transfer->status === \App\Models\Logistics\ParcelTransfer::IN_TRANSIT
-                    && ($transfer->linehaul_trip_id
-                        ? in_array($linehaulStatus, ['scheduled', 'in_transit'], true)
-                        : (! empty($transfer->transit_rider_id) && empty($transfer->departed_at)));
-
-                if ($transfer->status === \App\Models\Logistics\ParcelTransfer::RECEIVED) {
-                    $badgeClass = 'sh-badge-success';
-                    $badgeLabel = 'Received';
-                } elseif ($transfer->status === \App\Models\Logistics\ParcelTransfer::CANCELLED) {
-                    $badgeClass = 'sh-badge-neutral';
-                    $badgeLabel = 'Cancelled';
-                } elseif ($isPreparing) {
-                    $badgeClass = 'sh-badge-warning';
-                    $badgeLabel = $transfer->linehaul_trip_id ? 'Linehaul '.ucwords(str_replace('_', ' ', (string) $linehaulStatus)) : 'Not departed';
-                } else {
-                    $badgeClass = 'sh-badge-info';
-                    $badgeLabel = 'Awaiting receipt';
-                }
-
-                $tracking = $delivery?->tracking_code ?? '—';
-                $manifestCode = $transfer->manifest?->code;
-                $from = $transfer->fromCenter?->name ?? 'Sending hub';
-                $to = $transfer->toCenter?->name ?? ($center->name ?? 'This branch');
-                $recipient = $order?->delivery_name;
-                $barangay = $order?->delivery_barangay_name ?: $order?->delivery_address;
-                $isCod = $order?->payment_method === 'cod';
+                $trip=$transfer->linehaulTrip;
+                $cargo=$transfer->cargoTransfer;
+                $arrived=($cargo && in_array($cargo->status,['arrived','completed'],true)) || ($trip && in_array($trip->status,['arrived','completed'],true)) || (! $trip && ! $cargo && (! $transfer->transit_rider_id || $transfer->departed_at));
+                $statusLabel=$transfer->status===\App\Models\Logistics\ParcelTransfer::RECEIVED?'Received':($arrived?'Awaiting receipt':'In transit');
+                $badge=$transfer->status===\App\Models\Logistics\ParcelTransfer::RECEIVED?'sh-badge-success':($arrived?'sh-badge-info':'sh-badge-warning');
             @endphp
-
-            <article class="sh-surface sh-card-pad">
-                <div class="sh-toolbar">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h2 class="text-base font-bold text-navy">{{ $tracking }}</h2>
-                            <span class="sh-badge {{ $badgeClass }}">{{ $badgeLabel }}</span>
-                            @if ($manifestCode)
-                                <span class="sh-badge sh-badge-neutral">{{ $manifestCode }}</span>
-                            @endif
-                        </div>
-
-                        <p class="mt-1 text-xs text-navy/50">
-                            {{ $from }} → {{ $to }}
-                            @if ($transfer->dispatched_at)
-                                · Dispatched {{ $transfer->dispatched_at->diffForHumans() }}
-                            @endif
-                        </p>
-                    </div>
-
-                    <div class="text-right text-xs text-navy/50">
-                        <p class="font-semibold text-navy">Transfer #{{ $transfer->id }}</p>
-                        @if ($transfer->received_at)
-                            <p class="mt-0.5">Received {{ $transfer->received_at->format('M d, Y h:i A') }}</p>
-                        @elseif ($transfer->departed_at)
-                            <p class="mt-0.5">Departed {{ $transfer->departed_at->format('M d, Y h:i A') }}</p>
-                        @endif
-                    </div>
-                </div>
-
-                <div class="mt-4 grid gap-3 rounded-2xl border border-gray-border bg-gray-bg/45 px-4 py-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <div>
-                        <p class="sh-label">Recipient</p>
-                        <p class="mt-1 text-sm font-semibold text-navy">{{ $recipient ?: '—' }}</p>
-                        <p class="mt-0.5 text-xs text-navy/50">{{ $barangay ?: 'No destination detail' }}</p>
-                    </div>
-
-                    <div>
-                        <p class="sh-label">Linehaul transport</p>
-                        @if ($transfer->linehaulTrip)
-                            <p class="mt-1 text-sm font-semibold text-navy">{{ $transfer->linehaulTrip->vehicle?->code ?? 'Vehicle' }} · {{ $transfer->linehaulTrip->vehicle?->plate_number ?? '—' }}</p>
-                            <p class="mt-0.5 text-xs text-navy/50">{{ $transfer->linehaulTrip->driver?->name ?? 'Driver' }} · {{ strtoupper((string) $transfer->linehaulTrip->status) }}</p>
-                        @else
-                            <p class="mt-1 text-sm font-semibold text-navy">Legacy transfer</p>
-                            <p class="mt-0.5 text-xs text-navy/50">{{ $transfer->transitRider?->name ?? 'Company transport' }}</p>
-                        @endif
-                    </div>
-
-                    <div>
-                        <p class="sh-label">Manifest</p>
-                        <p class="mt-1 text-sm font-semibold text-navy">{{ $manifestCode ?: 'Individual transfer' }}</p>
-                        <p class="mt-0.5 text-xs text-navy/50">{{ $transfer->manifest?->parcel_count ? number_format($transfer->manifest->parcel_count).' parcel(s) in batch' : 'No manifest batch linked' }}</p>
-                    </div>
-
-                    <div>
-                        <p class="sh-label">Payment</p>
-                        @if ($isCod)
-                            <p class="mt-1 text-sm font-semibold text-navy">COD ₱{{ number_format((float) $order->total_amount, 2) }}</p>
-                        @else
-                            <p class="mt-1 text-sm font-semibold text-navy">{{ strtoupper((string) ($order?->payment_method ?: 'Non-COD')) }}</p>
-                        @endif
-                    </div>
-                </div>
-
-                @if ($canReceive)
-                    <div class="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-gray-border bg-white px-4 py-3">
-                        <div>
-                            <p class="text-sm font-semibold text-navy">Manifest receipt / exception reconciliation</p>
-                            <p class="mt-0.5 text-xs text-navy/45">For a normal intact batch, destination staff scans the Manifest QR in Logistics mobile. Use the parcel box above only for individual exceptions.</p>
-                        </div>
-                        <span class="sh-badge sh-badge-info shrink-0">Ready to scan</span>
-                    </div>
-                @elseif ($isPreparing)
-                    <div class="mt-4 rounded-2xl border border-gray-border bg-white px-4 py-3">
-                        <p class="text-sm font-semibold text-navy">Hindi pa puwedeng i-receive</p>
-                        <p class="mt-0.5 text-xs text-navy/45">Hindi pa puwedeng i-receive habang scheduled/in transit ang Linehaul Trip. Destination Branch staff must scan the Manifest QR to acknowledge arrival; the Driver cannot mark arrival.</p>
-                    </div>
-                @endif
-            </article>
-        @empty
-            <div class="sh-empty">
-                <p class="text-sm font-semibold text-navy">Walang transfer sa filter na ito</p>
-                <p class="mt-1 text-xs text-navy/45">Kapag may real ParcelTransfer na papunta sa branch/hub na ito, lalabas dito.</p>
-            </div>
-        @endforelse
-    </div>
-
-    @if ($transfers->hasPages())
-        <div>{{ $transfers->links() }}</div>
-    @endif
+            <tr><td><strong>{{ $transfer->delivery?->tracking_code ?? '—' }}</strong><p class="ops-row-sub">{{ $transfer->delivery?->order?->delivery_name ?? '—' }}</p></td>
+                <td>{{ $transfer->fromCenter?->name ?? 'Unknown center' }}</td>
+                <td>{{ $transfer->manifest?->code ?? 'Individual transfer' }}</td>
+                <td>{{ $cargo ? strtoupper((string) $cargo->mode).' Cargo' : ($trip ? 'Road · '.($trip->vehicle?->plate_number ?? 'Trip') : 'Legacy transport') }}<div class="ops-row-sub">{{ $trip?->driver?->name ?? '' }}</div></td>
+                <td><span class="sh-badge {{ $badge }}">{{ $statusLabel }}</span></td>
+                <td>{{ $transfer->received_at?->format('M d, g:i A') ?? $transfer->dispatched_at?->format('M d, g:i A') ?? '—' }}</td>
+                <td class="ops-row-actions"><button class="ops-action" type="button" data-ops-template="transferInfo{{ $transfer->id }}">Details</button></td></tr>
+            <template id="transferInfo{{ $transfer->id }}"><div class="ops-dialog-head"><div><h2 class="ops-dialog-title">{{ $transfer->delivery?->tracking_code }}</h2><p class="ops-panel-note">Transfer #{{ $transfer->id }} · {{ $transfer->manifest?->code ?? 'No manifest' }}</p></div><button type="button" class="ops-action" data-ops-close>✕</button></div>
+                <div class="ops-dialog-body space-y-4"><div class="ops-form-grid"><div><div class="sh-label">Origin</div>{{ $transfer->fromCenter?->name ?? '—' }}</div><div><div class="sh-label">Destination</div>{{ $center->name }}</div><div><div class="sh-label">Receiver</div>{{ $transfer->delivery?->order?->delivery_name ?? '—' }}</div><div><div class="sh-label">Transport</div>{{ $cargo ? 'Cargo: '.$cargo->status : ($trip ? 'Linehaul: '.$trip->status : 'Legacy') }}</div></div>
+                    <div class="ops-inline-alert">Normal batches: receive using the Manifest QR in the scanner. Individual parcel receipt is for exceptions and is revalidated server-side.</div></div>
+                <div class="ops-dialog-foot"><button type="button" class="sh-btn-ghost" data-ops-close>Close</button>@if($arrived && $transfer->status===\App\Models\Logistics\ParcelTransfer::IN_TRANSIT)<button type="button" class="sh-btn" data-ops-open="exceptionReceiveModal">Exception receive</button>@endif</div></template>
+        @empty<tr><td colspan="7" class="ops-empty">No transfers match this filter.</td></tr>@endforelse
+        </tbody></table></div>
+        <div class="ops-count">Showing {{ $transfers->firstItem() ?? 0 }}–{{ $transfers->lastItem() ?? 0 }} of {{ $transfers->total() }} transfers</div>
+        @if($transfers->hasPages())<div class="p-4 border-t">{{ $transfers->links() }}</div>@endif
+    </section>
 </div>
+<dialog id="exceptionReceiveModal" class="ops-dialog"><div class="ops-dialog-head"><div><h2 class="ops-dialog-title">Exception parcel receiving</h2><p class="ops-panel-note">Use only for physically present exceptions or reconciliation</p></div><button type="button" data-ops-close class="ops-action">✕</button></div>
+    <div class="ops-dialog-body"><form method="POST" action="{{ route('branch.receive') }}" data-confirm-title="Confirm physical receipt?" data-confirm-message="Confirm the parcel is physically present and the tracking code matches." data-confirm-button="Receive parcel" class="space-y-3">@csrf
+        <label class="sh-field"><span class="sh-label">Parcel tracking code *</span><input class="sh-input" name="tracking_code" id="branch-exception-code" value="{{ old('tracking_code') }}" autocomplete="off" maxlength="60" required></label>
+        @include('partials.logistics-qr-scanner',['inputId'=>'branch-exception-code'])
+        <div class="flex justify-end gap-2"><button type="button" class="sh-btn-ghost" data-ops-close>Cancel</button><button type="submit" class="sh-btn">Confirm receipt</button></div>
+    </form></div></dialog>
+<dialog id="opsRecordDialog" class="ops-dialog"><div data-ops-record-content></div></dialog>
 @endsection
+@push('scripts')
+<script>
+// Close the detail modal when launching the separate exception-receive modal.
+document.querySelectorAll('[data-ops-template^="transferInfo"]').forEach(btn=>btn.addEventListener('click',()=>{}));
+document.getElementById('opsRecordDialog')?.addEventListener('click',event=>{if(event.target.closest('[data-ops-open="exceptionReceiveModal"]'))document.getElementById('opsRecordDialog').close()});
+@if($errors->any())document.getElementById('exceptionReceiveModal')?.showModal();@endif
+</script>
+@endpush

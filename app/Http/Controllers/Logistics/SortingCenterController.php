@@ -39,10 +39,75 @@ class SortingCenterController extends Controller
         return view('logistics.sorting-centers.index', compact('partner', 'centers'));
     }
 
-    public function create(Request $request): View
+    /** Partner-wide branch directory; branch operational setup stays in the Province Hub portal. */
+    public function branches(Request $request): View
     {
         $partner = $this->partner($request);
-        return view('logistics.sorting-centers.form', ['partner' => $partner, 'center' => null]);
+        $branches = $partner->sortingCenters()->whereNull('archived_at')
+            ->where('type', 'station_hub')
+            ->with(['parent', 'user'])->withCount('riders')
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $term = trim((string) $request->query('q'));
+                $query->where(function ($q) use ($term) {
+                    $q->where('name','like',"%{$term}%")
+                        ->orWhere('code','like',"%{$term}%")
+                        ->orWhere('municipality','like',"%{$term}%")
+                        ->orWhere('province','like',"%{$term}%");
+                });
+            })->when($request->filled('province'), fn ($q) => $q->where('province', $request->query('province')))
+            ->when(in_array($request->query('status'), ['active','inactive'], true),
+                fn ($q) => $q->where('status',$request->query('status')))
+            ->orderBy('province')->orderBy('municipality')->paginate(25)->withQueryString();
+        $provinces = $partner->sortingCenters()->whereNull('archived_at')->where('type','station_hub')
+            ->whereNotNull('province')->distinct()->orderBy('province')->pluck('province');
+        return view('logistics.sorting-centers.branches', compact('partner','branches','provinces'));
+    }
+
+    /** Edit branch contact details without changing physical service coverage or parent hub. */
+    public function updateBranchProfile(Request $request, int $center): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $branch = $partner->sortingCenters()->where('type','station_hub')
+            ->whereNull('archived_at')->findOrFail($center);
+        $data = $request->validate([
+            'name'=>['required','string','max:180'],
+            'contact_no'=>['nullable','string','max:30'],
+            'street_no'=>['required','string','max:180'],
+            'unit_no'=>['nullable','string','max:180'],
+        ]);
+        $branch->update($data);
+        return back()->with('status','Branch contact/location description updated. Municipality, parent hub and coverage were not changed.');
+    }
+
+    /** Lightweight profile update for hubs: intentionally never touches coverage/parcel routing. */
+    public function updateHubProfile(Request $request, int $center): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $hub = $partner->sortingCenters()->where('type','province_hub')
+            ->whereNull('archived_at')->findOrFail($center);
+        $data = $request->validate([
+            'name'=>['required','string','max:180'],
+            'contact_no'=>['nullable','string','max:30'],
+            'region'=>['required','string','max:150'],
+            'province'=>['required','string','max:150'],
+            'municipality'=>['required','string','max:150'],
+            'barangay'=>['required','string','max:150'],
+            'street_no'=>['required','string','max:180'],
+            'unit_no'=>['nullable','string','max:180'],
+        ]);
+        // Do not allow a province hub to silently move provinces while it owns stations.
+        if (mb_strtolower(trim($data['province'])) !== mb_strtolower(trim((string)$hub->province))
+            || mb_strtolower(trim($data['region'])) !== mb_strtolower(trim((string)$hub->region))) {
+            throw ValidationException::withMessages(['province'=>'Province/region cannot be changed here. Transfer network responsibility through the approved operational process.']);
+        }
+        $hub->update($this->centerPayload($data));
+        return back()->with('status','Province hub details updated. No routing or coverage was changed.');
+    }
+
+    public function create(Request $request): RedirectResponse
+    {
+        $this->partner($request);
+        return redirect()->route('logistics.sorting-centers.index', ['create' => 1]);
     }
 
     public function show(Request $request, int $center): View
@@ -64,11 +129,11 @@ class SortingCenterController extends Controller
         return view('logistics.sorting-centers.show', compact('partner', 'center', 'openParcels', 'inTransit'));
     }
 
-    public function edit(Request $request, int $center): View
+    public function edit(Request $request, int $center): RedirectResponse
     {
         $partner = $this->partner($request);
-        $center = $partner->sortingCenters()->with('coverageAreas')->whereNull('archived_at')->findOrFail($center);
-        return view('logistics.sorting-centers.form', compact('partner', 'center'));
+        $center = $partner->sortingCenters()->whereNull('archived_at')->findOrFail($center);
+        return redirect()->route('logistics.sorting-centers.show', ['center' => $center->id, 'edit' => 1]);
     }
 
     public function store(Request $request): RedirectResponse

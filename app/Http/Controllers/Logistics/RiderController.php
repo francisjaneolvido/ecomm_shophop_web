@@ -43,6 +43,9 @@ class RiderController extends Controller
                     ->orWhereHas('sortingCenter', fn ($q) => $q->where('name', 'like', '%'.$term.'%'));
             });
         }
+        if (in_array($request->query('status'), ['active','pending','suspended','rejected'], true)) {
+            $riderQuery->where('status', $request->query('status'));
+        }
         if ($request->filled('center')) {
             $center = $partner->sortingCenters()->find((int) $request->query('center'));
             $riderQuery->where('sorting_center_id', $center?->id ?? -1);
@@ -57,7 +60,18 @@ class RiderController extends Controller
             ->whereIn('sorting_center_id', $pageBranchIds)
             ->orderBy('municipality')->orderBy('barangay')->get();
 
-        return view('logistics.riders.index', compact('riders', 'coverageAreas', 'sortingCenters', 'operationalAreas', 'totals'));
+        $serviceAreasDirectory = OperationalServiceArea::with('sortingCenter')
+            ->where('logistics_partner_id', $partner->id)
+            ->when($request->filled('area_q'), function($query) use ($request) {
+                $term = trim((string)$request->query('area_q'));
+                $query->where(function($q) use ($term) {
+                    $q->where('municipality','like',"%{$term}%")
+                      ->orWhere('barangay','like',"%{$term}%")
+                      ->orWhereHas('sortingCenter',fn($b) => $b->where('name','like',"%{$term}%"));
+                });
+            })->orderBy('municipality')->orderBy('barangay')
+            ->paginate(20,['*'],'areas_page')->withQueryString();
+        return view('logistics.riders.index', compact('riders', 'coverageAreas', 'sortingCenters', 'operationalAreas', 'serviceAreasDirectory', 'totals'));
     }
 
     /** Operator-created Rider records remain available for controlled/manual onboarding. */
@@ -98,6 +112,20 @@ class RiderController extends Controller
         ]);
 
         return redirect()->route('logistics.riders.index')->with('status', 'Rider added.');
+    }
+
+    public function updateProfile(Request $request, int $rider): RedirectResponse
+    {
+        $partner = $this->partner($request);
+        $ownedRider = Rider::where('logistics_partner_id',$partner->id)->findOrFail($rider);
+        $data = $request->validate([
+            'name'=>['required','string','max:150'],
+            'contact_no'=>['nullable','string','max:40'],
+            'vehicle_type'=>['required','string','max:80'],
+            'plate_number'=>['nullable','string','max:40'],
+        ]);
+        $ownedRider->update($data);
+        return back()->with('status','Rider profile updated. Login, branch and geographic permissions were not changed.');
     }
 
     public function provision(Request $request, int $rider): RedirectResponse

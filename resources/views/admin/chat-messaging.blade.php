@@ -3,7 +3,7 @@
 @section('title', 'Chat / Messaging')
 
 @section('content')
-    <section id="adminChat" aria-labelledby="chatTitle" class="flex flex-col gap-4 h-[calc(100vh-130px)] min-h-[480px]">
+    <section id="adminChat" aria-labelledby="chatTitle" class="flex flex-col gap-4 min-h-0">
         <div class="shrink-0">
             <h1 id="chatTitle" class="text-2xl font-bold text-navy">Chat / Messaging</h1>
             <p class="text-sm text-slate-500 mt-1">Support inbox for buyers, sellers and logistics partners.</p>

@@ -1,105 +1,57 @@
 @extends('hub.layouts.console')
-@section('title', 'Station Hubs — Province Hub')
+@section('title','Branches — Province Hub')
 @section('content')
-<div class="mx-auto max-w-7xl space-y-6">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <p class="eyebrow">{{ strtoupper($center->province) }} PROVINCE HUB</p>
-            <h1 class="title">Station Hubs</h1>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-navy/60">A <strong>station hub</strong> handles last-mile delivery for a city or municipality in {{ $center->province }}. Ikaw ang gumagawa ng account ng bawat station hub.</p>
-        </div>
-        <button type="button" id="openStationModal" class="sh-btn inline-flex items-center gap-2"><x-lucide-plus class="h-4 w-4" /> New station hub</button>
-    </div>
-
-    @if(session('status'))<div class="sh-alert-success" role="status">{{ session('status') }}</div>@endif
-
-    @if($errors->hasBag('setPassword'))
-        <div role="alert" class="sh-alert-error"><strong>Hindi na-save ang password.</strong>
-            <ul class="mt-2 list-disc space-y-1 pl-5 text-xs">@foreach($errors->getBag('setPassword')->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
-        </div>
-    @endif
-
+<div class="space-y-5">
+    <header class="sh-page-header"><div><p class="eyebrow">{{ strtoupper($center->province) }} PROVINCE HUB</p><h1 class="title">Branches / Station Hubs</h1>
+        <p class="description">One local Branch per city or municipality under this Province Hub. Manage branch contact details and login access here.</p></div>
+        <button id="openStationModal" type="button" class="sh-btn">+ Add Branch</button></header>
+    @if(session('status'))<div class="sh-alert-success">{{ session('status') }}</div>@endif
+    @if($errors->hasBag('setPassword'))<div class="sh-alert-error">{{ $errors->getBag('setPassword')->first() }}</div>@endif
     @if(session('new_staff_credentials'))
-        <div class="rounded-2xl border-2 border-teal bg-teal-light p-5" role="status">
-            <h2 class="font-bold text-navy">Station hub login — shown once</h2>
-            <p class="mt-2 text-xs text-navy/60">Ibigay nang pribado sa station hub.</p>
-            <p class="mt-3 text-sm"><strong>Email:</strong> {{ session('new_staff_credentials')['email'] }}</p>
-            <p class="mt-1 text-sm"><strong>Password:</strong>
-                <code class="rounded bg-white px-2 py-1 font-bold">{{ session('new_staff_credentials')['password'] }}</code>
-                <button type="button" class="sh-btn-soft ml-2 text-xs"
-                        onclick="navigator.clipboard.writeText(@js(session('new_staff_credentials')['password'])); this.textContent='Copied!'">Copy</button>
-            </p>
+        <div class="sh-alert-success" role="status"><strong>New/updated branch login — shown once.</strong> Share privately.
+            <p class="mt-2">Email: {{ session('new_staff_credentials')['email'] }}</p>
+            <p class="mt-1">Password: <code class="font-bold">{{ session('new_staff_credentials')['password'] }}</code></p>
         </div>
     @endif
-
-    <section class="sh-surface overflow-hidden" aria-labelledby="stationsTitle">
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-border p-4 sm:p-5">
-            <h2 id="stationsTitle" class="text-base font-bold">Station hub directory</h2>
-            <form method="GET" class="flex w-full flex-wrap gap-2 sm:w-auto" role="search">
-                <label class="sr-only" for="stationSearch">Search station hubs</label>
-                <input id="stationSearch" name="search" value="{{ $search }}" placeholder="Name, city or code" class="sh-input min-w-[160px] flex-1">
-                <button class="sh-btn-soft" type="submit">Search</button>
-                @if($search !== '')<a href="{{ route('logistics.hub.station-hubs') }}" class="sh-btn-ghost">Clear</a>@endif
-            </form>
-        </div>
-
-        <div class="divide-y divide-gray-border">
-            @forelse($stationHubs as $hub)
-                @php $active = $hub->status === 'active'; @endphp
-                <div class="sh-ui-directory-row grid gap-3 p-4 transition hover:bg-gray-bg/40 sm:p-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1.3fr)] lg:items-center">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h3 class="text-sm font-bold">{{ $hub->name }}</h3>
-                            <span class="sh-badge {{ $active ? 'sh-badge-success' : 'sh-badge-neutral' }}">{{ $active ? 'Active' : 'Inactive' }}</span>
-                        </div>
-                        <p class="mt-1 text-xs text-navy/50">{{ $hub->code }}</p>
-                        <p class="mt-1 truncate text-xs text-navy/65">{{ $hub->addressLabel() }}</p>
-                    </div>
-
-                    <div class="text-xs">
-                        <p class="text-navy/45">Login email</p>
-                        @if($hub->user)
-                            <div class="mt-1 flex flex-wrap items-center gap-2">
-                                <code class="min-w-0 max-w-full truncate rounded bg-gray-bg px-2 py-1 font-semibold text-navy">{{ $hub->user->email }}</code>
-                                <button type="button" class="sh-btn-ghost text-xs" data-copy="{{ $hub->user->email }}">Copy</button>
-                                <button type="button" class="sh-btn-soft text-xs" data-set-password
-                                        data-hub="{{ $hub->name }}"
-                                        data-email="{{ $hub->user->email }}"
-                                        data-url="{{ route('logistics.hub.station-hubs.set-password', $hub->id) }}">Set password</button>
-                                <form method="POST" action="{{ route('logistics.hub.station-hubs.toggle', $hub->id) }}"
-                                      data-confirm-title="{{ $active ? 'Deactivate station hub?' : 'Activate station hub?' }}"
-                                      data-confirm-message="{{ $active ? 'Hindi na makakapag-login ang station hub na ito hangga\'t hindi mo ito ina-activate ulit.' : 'Makakapag-login na ulit ang station hub na ito.' }}"
-                                      data-confirm-button="{{ $active ? 'Deactivate' : 'Activate' }}"
-                                      @if($active) data-confirm-danger="1" @endif>
-                                    @csrf
-                                    <button type="submit" class="sh-btn-ghost text-xs">{{ $active ? 'Deactivate' : 'Activate' }}</button>
-                                </form>
-                            </div>
-                        @else
-                            <p class="mt-1 font-semibold">Walang login account</p>
-                        @endif
-                    </div>
-                </div>
-            @empty
-                <div class="px-6 py-12 text-center">
-                    <x-lucide-warehouse class="mx-auto h-10 w-10 text-navy/25" />
-                    <h3 class="mt-3 font-bold text-navy">{{ $search !== '' ? 'Walang nahanap' : 'Wala pang station hub' }}</h3>
-                    <p class="mt-1 text-sm text-navy/55">
-                        {{ $search !== '' ? 'Subukan ang ibang keyword.' : 'Gumawa ng unang station hub para sa isang city o municipality sa ' . $center->province . '.' }}
-                    </p>
-                </div>
-            @endforelse
-        </div>
+    <section class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        <div class="sh-stat"><p class="sh-stat-label">Branches (filtered)</p><p class="sh-stat-value">{{ number_format($stationHubs->total()) }}</p><p class="sh-stat-note">{{ $center->province }}</p></div>
+        <div class="sh-stat"><p class="sh-stat-label">On current page</p><p class="sh-stat-value">{{ $stationHubs->count() }}</p><p class="sh-stat-note">25 per page</p></div>
+        <div class="sh-stat"><p class="sh-stat-label">Province hub</p><p class="mt-2 text-sm font-bold text-navy">{{ $center->code }}</p><p class="sh-stat-note">Parent of all listed branches</p></div>
+    </section>
+    <section class="ops-panel"><div class="ops-panel-head"><div><h2>Branch directory</h2><p class="ops-panel-note">Click Actions to edit details, manage credentials or change availability.</p></div>
+        <form method="GET" class="ops-toolbar"><input type="search" name="search" value="{{ $search }}" maxlength="100" class="sh-input" placeholder="Branch, code or municipality" aria-label="Search branches"><button class="sh-btn" type="submit">Search</button><a href="{{ route('logistics.hub.station-hubs') }}" class="sh-btn-ghost">Clear</a></form></div>
+        <div class="ops-table-scroll"><table class="ops-table"><thead><tr><th>Branch / Code</th><th>Municipality</th><th>Branch Login</th><th>Active Riders</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+        @forelse($stationHubs as $hub)
+            @php $active=$hub->status==='active'; @endphp
+            <tr><td><strong>{{ $hub->name }}</strong><div class="ops-row-sub">{{ $hub->code }} · {{ $hub->addressLabel() }}</div></td>
+                <td>{{ $hub->municipality }}<div class="ops-row-sub">{{ $hub->province }}</div></td>
+                <td>{{ $hub->user?->email ?? 'Not linked' }}</td><td>{{ number_format($hub->active_riders_count) }}</td>
+                <td><span class="sh-badge {{ $active ? 'sh-badge-success':'sh-badge-neutral' }}">{{ ucfirst($hub->status) }}</span></td>
+                <td class="ops-row-actions"><details><summary>Actions ▾</summary><div>
+                    <button type="button" data-edit-station
+                        data-url="{{ route('logistics.hub.station-hubs.update',$hub->id) }}" data-id="{{ $hub->id }}"
+                        data-name="{{ $hub->name }}" data-code="{{ $hub->code }}"
+                        data-contact="{{ $hub->contact_no }}" data-city="{{ $hub->municipality }}"
+                        data-barangay="{{ $hub->barangay }}" data-street="{{ $hub->street_no }}" data-unit="{{ $hub->unit_no }}">Edit branch</button>
+                    @if($hub->user)<button type="button" data-set-password data-hub="{{ $hub->name }}" data-email="{{ $hub->user->email }}" data-url="{{ route('logistics.hub.station-hubs.set-password',$hub->id) }}">Change password</button>@endif
+                    <form method="POST" action="{{ route('logistics.hub.station-hubs.toggle',$hub->id) }}" data-confirm-title="{{ $active ? 'Deactivate this branch?' : 'Activate this branch?' }}" data-confirm-message="This affects whether the branch can operate. Verify existing parcel and rider assignments first." data-confirm-button="{{ $active ? 'Deactivate':'Activate' }}" @if($active) data-confirm-danger="1" @endif>
+                        @csrf<button type="submit" class="text-left">{{ $active ? 'Deactivate':'Activate' }}</button></form>
+                    </div></details></td>
+            </tr>
+        @empty<tr><td colspan="6" class="ops-empty">No branches match this search.</td></tr>@endforelse
+        </tbody></table></div>
+        <div class="ops-count">{{ $stationHubs->firstItem() ?? 0 }}–{{ $stationHubs->lastItem() ?? 0 }} of {{ $stationHubs->total() }} branches</div>
+        @if($stationHubs->hasPages())<div class="border-t p-4">{{ $stationHubs->links() }}</div>@endif
     </section>
 </div>
 
-{{-- Create station hub --}}
-<dialog id="stationModal" class="w-full max-w-3xl rounded-2xl p-0 backdrop:bg-navy/50">
+{{-- Add branch --}}
+<dialog id="stationModal" class="w-full max-w-3xl rounded-lg p-0 backdrop:bg-navy/50">
     <form method="POST" action="{{ route('logistics.hub.station-hubs.store') }}" class="flex max-h-[90vh] flex-col">
         @csrf
         <div class="flex items-start justify-between gap-3 border-b border-gray-border p-5">
             <div>
-                <h2 class="text-lg font-bold">Create station hub</h2>
+                <h2 class="text-lg font-bold">Add branch</h2>
                 <p class="mt-1 text-xs text-navy/55">Sakop ito ng {{ $center->name }}. Ang province at region ay awtomatiko.</p>
             </div>
             <button type="button" data-close class="sh-btn-ghost text-xs" aria-label="Close">✕</button>
@@ -115,7 +67,7 @@
             <section class="sh-ui-form-section space-y-4">
                 <h3 class="text-sm font-bold">1. Station details</h3>
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <label class="sh-field"><span class="sh-label">Station hub name *</span><input class="sh-input" name="name" value="{{ old('name') }}" required maxlength="180"></label>
+                    <label class="sh-field"><span class="sh-label">Branch name *</span><input class="sh-input" name="name" value="{{ old('name') }}" required maxlength="180"></label>
                     <label class="sh-field"><span class="sh-label">Contact number</span><input class="sh-input" name="contact_no" value="{{ old('contact_no') }}" maxlength="30" placeholder="09XX XXX XXXX"></label>
                 </div>
             </section>
@@ -134,7 +86,7 @@
             </section>
 
             <section class="sh-ui-form-section space-y-4">
-                <h3 class="text-sm font-bold">3. Station hub login</h3>
+                <h3 class="text-sm font-bold">3. Branch login</h3>
                 <label class="sh-field"><span class="sh-label">Email (login) *</span><input class="sh-input" type="email" name="manager_email" value="{{ old('manager_email') }}" required maxlength="190" placeholder="station@example.com"></label>
                 <label class="sh-field"><span class="sh-label">Password *</span>
                     <div class="flex gap-2">
@@ -149,13 +101,13 @@
 
         <div class="flex items-center justify-end gap-2 border-t border-gray-border p-4">
             <button type="button" data-close class="sh-btn-ghost">Cancel</button>
-            <button type="submit" class="sh-btn">Create station hub</button>
+            <button type="submit" class="sh-btn">Add branch</button>
         </div>
     </form>
 </dialog>
 
 {{-- Set station hub password --}}
-<dialog id="passwordModal" class="w-full max-w-md rounded-2xl p-0 backdrop:bg-navy/50">
+<dialog id="passwordModal" class="w-full max-w-md rounded-lg p-0 backdrop:bg-navy/50">
     <form method="POST" id="passwordForm" class="space-y-4 p-5">
         @csrf
         <div class="flex items-start justify-between gap-3">
@@ -179,6 +131,20 @@
             <button type="submit" class="sh-btn">Save password</button>
         </div>
     </form>
+</dialog>
+<dialog id="editStationModal" class="ops-dialog">
+  <form method="POST" id="editStationForm">@csrf @method('PATCH')<input type="hidden" name="_operation" value="update"><input type="hidden" name="_station_id" value="">
+    <div class="ops-dialog-head"><div><h2 class="ops-dialog-title">Edit branch</h2><p class="ops-panel-note" id="editStationSub"></p></div><button type="button" class="ops-action" data-ops-close>✕</button></div>
+    <div class="ops-dialog-body space-y-4">@if($errors->any() && old('_operation') === 'update')<div role="alert" class="sh-alert-error">{{ $errors->first() }}</div>@endif
+    <p class="ops-inline-alert">Municipality and parent Province Hub are locked to protect active routes, rider service areas and parcel assignments.</p>
+      <div class="ops-form-grid"><label class="sh-field"><span class="sh-label">Branch name *</span><input name="name" class="sh-input" required maxlength="180"></label>
+        <label class="sh-field"><span class="sh-label">Contact number</span><input name="contact_no" class="sh-input" maxlength="30"></label>
+        <label class="sh-field"><span class="sh-label">Municipality (locked)</span><input id="editStationCity" class="sh-input" disabled></label>
+        <label class="sh-field"><span class="sh-label">Barangay *</span><input name="barangay" class="sh-input" maxlength="180" required></label>
+        <label class="sh-field"><span class="sh-label">Street / house number *</span><input name="street_no" class="sh-input" maxlength="180" required></label>
+        <label class="sh-field"><span class="sh-label">Unit / details</span><input name="unit_no" class="sh-input" maxlength="180"></label></div>
+    </div><div class="ops-dialog-foot"><button type="button" class="sh-btn-ghost" data-ops-close>Cancel</button><button type="submit" class="sh-btn">Save changes</button></div>
+  </form>
 </dialog>
 @endsection
 
@@ -277,7 +243,7 @@
         }
     })();
 
-    @if($errors->any())
+    @if($errors->any() && old('_operation') !== 'update' && ! $errors->hasBag('setPassword'))
         modal.showModal();
     @endif
 
@@ -294,6 +260,32 @@
     }));
     pm.querySelectorAll('[data-close-password]').forEach(b => b.addEventListener('click', () => pm.close()));
     pm.addEventListener('click', e => { if (e.target === pm) pm.close(); });
+})();
+</script>
+@endpush
+@push('scripts')
+<script>
+(() => {
+ const modal=document.getElementById('editStationModal'), form=document.getElementById('editStationForm');
+ document.querySelectorAll('[data-edit-station]').forEach(btn=>btn.addEventListener('click',()=>{
+   form.action=btn.dataset.url;
+   form.elements.namedItem('_station_id').value=btn.dataset.id;
+   for(const key of ['name','contact_no','barangay','street_no','unit_no']){
+     const field=form.elements.namedItem(key);if(field)field.value=btn.dataset[key==='contact_no'?'contact':key==='street_no'?'street':key==='unit_no'?'unit':key]||'';
+   }
+   document.getElementById('editStationCity').value=btn.dataset.city||'';
+   document.getElementById('editStationSub').textContent=btn.dataset.code+' · '+btn.dataset.city;
+   modal.showModal();
+ }));
+ @if($errors->any() && old('_operation') === 'update')
+ const pendingId=@js(old('_station_id'));
+ const editButton=Array.from(document.querySelectorAll('[data-edit-station]')).find(b=>b.dataset.id===String(pendingId));
+ if(editButton) {
+   editButton.click();
+   const previous=@js(collect(old())->only(['name','contact_no','barangay','street_no','unit_no'])->all());
+   Object.entries(previous).forEach(([key,value])=>{const field=form.elements.namedItem(key);if(field)field.value=value||''});
+ }
+ @endif
 })();
 </script>
 @endpush

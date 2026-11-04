@@ -80,8 +80,10 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         */
 
+        // Buyer lands on the same marketplace as guests, with authenticated
+        // wishlist/cart/account actions. Other private Buyer pages stay intact.
         Route::get('/dashboard', [
-            BuyerDashboardController::class,
+            \App\Http\Controllers\HomeController::class,
             'index',
         ])->name('dashboard');
 

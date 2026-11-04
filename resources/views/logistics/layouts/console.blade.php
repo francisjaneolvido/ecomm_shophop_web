@@ -338,10 +338,16 @@
     <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase12.css') }}?v=20261026">
     {{-- Phase 3–5: shared compact logistics workspaces (Partner / Hub / Branch). --}}
     <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase345.css') }}?v=20261027">
+    {{-- Shared Table-first logistics directory assets: Province Hubs, Branches, Riders, Fleet, Routes, Demo Network. --}}
+    <link rel="stylesheet" href="{{ asset('css/logistics-directory-v1.css') }}?v=20261104-ui-repair-2">
     @stack('styles')
 
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
 </head>
 
 
@@ -417,6 +423,13 @@
             'label' => 'Network & People',
 
             'items' => [
+
+                [
+                    'label' => 'Partner Profile & Logo',
+                    'route' => 'logistics.partner-profile.edit',
+                    'pattern' => 'logistics.partner-profile.*',
+                    'icon' => 'image',
+                ],
 
                 [
                     'label' => 'Branches & Hubs',
@@ -514,7 +527,7 @@
 @endphp
 
 
-<body class="logistics-console bg-gray-bg text-navy antialiased">
+<body class="sh-management-ui logistics-console bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 @includeWhen(app()->environment('local'), 'dev.account-switcher')
@@ -1183,7 +1196,7 @@
             CONTENT
         ===================================================== --}}
         <main
-            class="content-scrollbar
+            class="sh-management-main content-scrollbar
                    flex-1
                    overflow-y-auto
                    px-3 py-4
@@ -1852,6 +1865,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         event.preventDefault();
+        // Native dialog is in the top layer; close it so the confirmation overlay remains clickable.
+        form.closest('dialog')?.close();
         openConfirmModal({
             title: form.dataset.confirmTitle,
             message: form.dataset.confirmMessage || 'Please confirm to continue.',
@@ -1937,6 +1952,8 @@ document.addEventListener('DOMContentLoaded', function () {
 <script src="{{ asset('js/shophop-ph-address.js') }}"></script>
     <script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261027"></script>
 @stack('scripts')
+    {{-- Required for searchable directories, Actions dropdowns, and Add/Edit modals. --}}
+    <script defer src="{{ asset('js/logistics-directory-v1.js') }}?v=20261104-ui-repair-2"></script>
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
 </body>

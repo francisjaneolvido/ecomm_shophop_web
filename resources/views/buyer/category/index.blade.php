@@ -75,7 +75,7 @@
 {{-- =========================================================
     ALL CATEGORIES
 ========================================================= --}}
-<section class="bg-gray-bg min-h-[70vh]">
+<section class="shb-categories-page bg-gray-bg min-h-[70vh]">
     <div class="max-w-310 mx-auto px-3 sm:px-4 lg:px-5 py-4 sm:py-5">
 
         {{-- Page header --}}
@@ -160,7 +160,7 @@
             {{-- Category grid --}}
             <div
                 id="category-grid"
-                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-3 buyer-stagger"
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 buyer-stagger"
             >
                 @foreach ($categoryTree as $category)
                     @php
@@ -176,12 +176,12 @@
                     @endphp
 
                     <article
-                        class="category-card group buyer-card bg-white rounded-xl border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
+                        class="shb-category-tile category-card group buyer-card bg-white rounded-xl border border-gray-border hover:border-teal/30 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 overflow-hidden"
                         data-category-name="{{ \Illuminate\Support\Str::lower($name . ' ' . implode(' ', $subcategories)) }}"
                     >
                         {{-- Visual header --}}
                         <a href="{{ $categoryUrl }}" class="block">
-                            <div class="relative h-26 sm:h-28 overflow-hidden bg-linear-to-br {{ $accent[0] }} {{ $accent[1] }}">
+                            <div class="relative min-h-32 sm:min-h-34 overflow-hidden bg-linear-to-br {{ $accent[0] }} {{ $accent[1] }}">
                                 <div class="absolute -right-5 -top-7 w-24 h-24 rounded-full bg-white/35"></div>
                                 <div class="absolute right-8 -bottom-10 w-20 h-20 rounded-full bg-white/25"></div>
 
@@ -194,7 +194,7 @@
                                             />
                                         </span>
 
-                                        <h2 class="text-[13px] sm:text-[13.5px] leading-tight font-extrabold text-navy truncate">
+                                        <h2 class="text-[13px] sm:text-[13.5px] leading-tight font-extrabold text-navy whitespace-normal wrap-break-word">
                                             {{ $name }}
                                         </h2>
 

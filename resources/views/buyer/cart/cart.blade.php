@@ -36,7 +36,7 @@
 {{-- =========================================================
     CART
 ========================================================= --}}
-<section class="bg-gray-bg/75 min-h-[70vh] py-5 sm:py-6">
+<section class="shb-cart-page bg-gray-bg/75 min-h-[70vh] py-5 sm:py-6">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Page heading --}}
@@ -115,7 +115,7 @@
 
 
                 @foreach ($cartGroups as $groupIndex => $group)
-                    <section class="cart-shop-group bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm"
+                    <section class="cart-shop-group shb-cart-shop bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm"
                              data-shop="{{ $groupIndex }}">
 
                         {{-- Shop header --}}
@@ -148,10 +148,7 @@
                                 </div>
                             </div>
 
-                            <a href="#"
-                               class="text-[9.5px] font-semibold text-teal-dark hover:text-navy transition shrink-0">
-                                View shop
-                            </a>
+                            <span class="text-[9.5px] font-semibold text-teal-dark shrink-0" aria-label="Items grouped by shop">Shop items</span>
                         </div>
 
 
@@ -188,7 +185,7 @@
                                                @disabled($item['stock'] <= 0)
                                                {{ $isPreselected ? 'checked' : '' }}>
 
-                                        <a href="#"
+                                        <a href="{{ route('buyer.product.show', $item['product_id']) }}"
                                            class="w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden
                                                   bg-gray-bg border border-gray-border/80 shrink-0">
                                             <img src="{{ asset($item['image']) }}"
@@ -197,7 +194,7 @@
                                         </a>
 
                                         <div class="min-w-0">
-                                            <a href="#"
+                                            <a href="{{ route('buyer.product.show', $item['product_id']) }}"
                                                class="block text-[11px] sm:text-[12px] leading-[1.4] font-semibold text-navy
                                                       hover:text-teal-dark transition line-clamp-2">
                                                 {{ $item['name'] }}
@@ -315,7 +312,7 @@
                 (voucher list stays hardcoded, comes from
                 CartController@vouchers())
             ================================================== --}}
-            <aside class="space-y-3 lg:sticky lg:top-4">
+            <aside class="shb-cart-aside space-y-3 lg:sticky lg:top-4">
 
                 {{-- Vouchers --}}
                 <section class="bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm">
@@ -584,6 +581,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateCartCountBadges(count) {
         document.querySelectorAll('[data-cart-count]').forEach(function (badge) {
             badge.textContent = count;
+            if (badge.classList.contains('shb-count')) badge.hidden = !(Number(count) > 0);
         });
     }
 

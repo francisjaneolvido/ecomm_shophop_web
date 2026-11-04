@@ -41,7 +41,7 @@
 </div>
 
 <section id="buyerMessages" aria-labelledby="buyerMessagesTitle"
-         class="buyer-messages min-h-[calc(100vh-90px)] py-4 sm:py-5">
+         class="shb-messages-page buyer-messages min-h-[calc(100vh-90px)] py-4 sm:py-5">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
         <div class="mb-4">
             <div class="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-widest text-teal-dark mb-1.5">

@@ -2,14 +2,17 @@
 @section('title', 'Province Hubs — ShopHop Logistics')
 @section('content')
 <div class="mx-auto max-w-7xl space-y-6" id="hubDirectory">
-    <div class="flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <p class="eyebrow">YOUR LOGISTICS NETWORK</p>
-            <h1 class="title">Province Hubs</h1>
-            <p class="mt-2 max-w-2xl text-sm leading-6 text-navy/60">A <strong>province hub</strong> is where trucks drop off and collect parcels for a whole province. Each province hub manages its own station hubs.</p>
+    <header class="ops-page-header">
+        <div class="min-w-0">
+            <p class="sh-kicker">Network &amp; People</p>
+            <h1 class="ops-title mt-1">Province Hubs</h1>
+            <p class="ops-subtitle max-w-2xl">Province hubs consolidate and transfer parcels across cities and municipalities. Each hub manages its local Branches.</p>
         </div>
-        <button type="button" id="openHubModal" class="sh-btn inline-flex items-center gap-2"><x-lucide-plus class="h-4 w-4"/> New province hub</button>
-    </div>
+        <div class="ops-page-actions">
+            <a href="{{ route('logistics.branches.index') }}" class="ops-button">View Branches</a>
+            <button type="button" id="openHubModal" class="ops-button ops-button-primary inline-flex items-center gap-2"><x-lucide-plus class="h-4 w-4"/> New Province Hub</button>
+        </div>
+    </header>
 
     @if(session('status'))<div class="sh-alert-success" role="status">{{ session('status') }}</div>@endif
 
@@ -45,8 +48,8 @@
                 @if(request('search'))<a href="{{ route('logistics.sorting-centers.index') }}" class="sh-btn-ghost">Clear</a>@endif
             </form>
         </div>
-        <div class="sh-hub-table-wrap">
-            <table class="sh-hub-table">
+        <div class="ops-table-wrap">
+            <table class="ops-table">
                 <thead><tr>
                     <th scope="col">Province hub</th>
                     <th scope="col">Manager / login</th>
@@ -76,15 +79,22 @@
                             <td data-label="Status"><span class="sh-badge {{ $center->status === 'active' ? 'sh-badge-success' : 'sh-badge-neutral' }}">{{ $center->status === 'active' ? 'Active' : 'Inactive' }}</span></td>
                             <td data-label="Actions">
                                 <div class="sh-hub-actions">
-                                    <a href="{{ route('logistics.sorting-centers.show', $center) }}" class="sh-btn-soft text-xs">View details</a>
+                                    <details class="ops-actions"><summary class="ops-button">Actions ▾</summary><div class="ops-actions-menu">
+                                    <a href="{{ route('logistics.sorting-centers.show', $center) }}">View hub / branches</a>
+                                    <button type="button" data-ops-open="hubProfileModal" data-ops-record-edit="hubProfileModal"
+                                      data-url="{{ route('logistics.sorting-centers.profile', $center) }}"
+                                      data-title="Edit province hub"
+                                      data-subject="{{ $center->name }}"
+                                      data-fields="{{ json_encode(['name'=>$center->name,'contact_no'=>$center->contact_no,'region'=>$center->region,'province'=>$center->province,'municipality'=>$center->municipality,'barangay'=>$center->barangay,'street_no'=>$center->street_no,'unit_no'=>$center->unit_no], JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_HEX_TAG) }}">Edit hub details</button>
                                     @if($manager)
                                         <button type="button" class="sh-btn-ghost text-xs"
                                                 data-set-password
                                                 data-hub="{{ $center->name }}"
                                                 data-name="{{ $manager->name }}"
                                                 data-email="{{ $manager->email }}"
-                                                data-url="{{ route('logistics.staff.set-password', $manager) }}">Set password</button>
+                                                data-url="{{ route('logistics.staff.set-password', $manager) }}">Set manager password</button>
                                     @endif
+                                    </div></details>
                                 </div>
                             </td>
                         </tr>
@@ -99,6 +109,18 @@
         </div>
     </section>
 </div>
+
+<dialog data-ops-modal id="hubProfileModal" class="ops-modal" aria-labelledby="hubProfileModalTitle">
+  <div class="ops-modal-head"><div><h2 id="hubProfileModalTitle" data-ops-title>Edit province hub</h2><p data-ops-subject></p></div><button class="ops-button" type="button" data-ops-close aria-label="Close">✕</button></div>
+  <form method="POST" action="" data-confirm-title="Update province hub details?" data-confirm-message="This changes the hub profile and address only, not routing or coverage." data-confirm-button="Save changes">
+    @csrf
+    <div class="ops-modal-body"><p class="ops-note mb-3">Branch assignments, service coverage and active parcels remain unchanged.</p><div class="ops-fields">
+      @foreach([['name','Hub name'],['contact_no','Contact number'],['region','Region'],['province','Province'],['municipality','City / Municipality'],['barangay','Barangay'],['street_no','Street / Building'],['unit_no','Unit / Landmark']] as [$field,$label])
+        <label class="sh-field"><span class="sh-label">{{ $label }}</span><input name="{{ $field }}" class="sh-input" maxlength="180" @if(!in_array($field,['contact_no','unit_no'])) required @endif @if(in_array($field,['province','region'])) readonly title="Province/region changes require a network transfer" @endif></label>
+      @endforeach
+    </div></div><div class="ops-modal-footer"><button type="button" class="ops-button" data-ops-close>Cancel</button><button class="ops-button ops-button-primary">Save changes</button></div>
+  </form>
+</dialog>
 
 {{-- Create province hub --}}
 <dialog id="hubModal" aria-labelledby="hubModalTitle" class="sh-dialog w-full max-w-3xl rounded-2xl p-0 backdrop:bg-navy/50">
@@ -517,7 +539,7 @@
         }
     })();
 
-    @if($errors->any() && ! $errors->hasBag('setPassword'))
+    @if(($errors->any() && ! $errors->hasBag('setPassword')) || request('create'))
         modal.showModal();
     @endif
 })();

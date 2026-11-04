@@ -3,113 +3,89 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Buyer\Order\Order;
 use App\Models\Seller\Manage_inventory\Product;
 
 class HomeController extends Controller
 {
     /**
-     * Show the ShopHop public landing page.
+     * Public marketplace homepage. Every product section draws exclusively from
+     * the same approved, active, in-stock catalogue as public Search.
      */
     public function index()
     {
-        /*
-        |--------------------------------------------------------------------------
-        | ALL SHOP CATEGORIES
-        |--------------------------------------------------------------------------
-        */
-
-        $allCategories = [
-            [
-                'name' => 'Pet Supplies',
-                'icon' => 'paw-print',
-            ],
-            [
-                'name' => 'Electronics and Gadgets',
-                'icon' => 'smartphone',
-            ],
-            [
-                'name' => "Women's Apparel",
-                'icon' => 'shirt',
-            ],
-            [
-                'name' => "Men's Apparel",
-                'icon' => 'shirt',
-            ],
-            [
-                'name' => 'Kids and Baby',
-                'icon' => 'baby',
-            ],
-            [
-                'name' => 'Home and Garden',
-                'icon' => 'house',
-            ],
-            [
-                'name' => 'Sports and Outdoors',
-                'icon' => 'dumbbell',
-            ],
-            [
-                'name' => 'Health and Beauty',
-                'icon' => 'heart-pulse',
-            ],
-            [
-                'name' => 'Books and Media',
-                'icon' => 'book-open',
-            ],
-            [
-                'name' => 'Food and Gourmet',
-                'icon' => 'utensils',
-            ],
-            [
-                'name' => 'Automotive & Motorcycle',
-                'icon' => 'car-front',
-            ],
-            [
-                'name' => 'Furniture and Office Equipment',
-                'icon' => 'armchair',
-            ],
-            [
-                'name' => 'Jewelry and Watches',
-                'icon' => 'gem',
-            ],
-            [
-                'name' => 'Office and School Supplies',
-                'icon' => 'notebook-pen',
-            ],
-        ];
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | CATEGORY DISPLAY
-        |--------------------------------------------------------------------------
-        |
-        | Guest = first 7 categories
-        | Logged in = all categories
-        |
-        */
-
-        $categories = auth()->check()
-            ? $allCategories
-            : array_slice($allCategories, 0, 7);
-
-
-        // Guest cards and Search must draw from the same available persisted catalogue.
-        $trendingProducts = Product::query()
+        $publicCatalogue = fn () => Product::query()
             ->publiclyDiscoverable()
-            ->latest()
-            ->take(6)
+            ->with('images');
+
+        // Seller-configured discounts, NOT a fabricated timed sale.
+        $flashDealProducts = $publicCatalogue()
+            ->where('discount', '>', 0)
+            ->orderByDesc('discount')
+            ->latest('products.created_at')
+            ->take(12)
             ->get();
 
+        // Ranking uses completed-order units only; a zero-sales marketplace
+        // gracefully shows current products without invented popularity figures.
+        $topProducts = $publicCatalogue()
+            ->withSum([
+                'orderItems as completed_units_sold' => function ($query) {
+                    $query->whereHas('order', function ($orderQuery) {
+                        $orderQuery->where('status', Order::STATUS_COMPLETED);
+                    });
+                },
+            ], 'quantity')
+            ->orderByDesc('completed_units_sold')
+            ->latest('products.created_at')
+            ->take(12)
+            ->get();
 
-        /*
-        |--------------------------------------------------------------------------
-        | RETURN VIEW
-        |--------------------------------------------------------------------------
-        */
+        $hasCompletedSales = $topProducts->contains(
+            fn (Product $product) => (int) ($product->completed_units_sold ?? 0) > 0
+        );
+
+        $discoverProducts = $publicCatalogue()
+            ->latest('products.created_at')
+            ->take(24)
+            ->get();
+
+        // The existing category browser has real public routes. Use its
+        // configured slugs instead of guessing category URLs.
+        $landingCategories = collect(config('shophop_categories', []))
+            ->values();
+
+        // Legacy home-view variables are retained for compatibility with
+        // any custom view extension that reads them.
+        $categories = $landingCategories->all();
+        $trendingProducts = $discoverProducts->take(6);
+
+        // The guest and logged-in Buyer share the same marketplace view.
+        // Favorite state is read only for the authenticated Buyer.
+        $isShopBuyer = auth()->check() && auth()->user()->account_type === 'buyer';
+        $favoriteProductIds = $isShopBuyer && auth()->user()->buyer?->id && \Illuminate\Support\Facades\Schema::hasTable('favorites')
+            ? \App\Models\Buyer\Favorite\Favorite::query()
+                ->where('buyer_id', auth()->user()->buyer->id)
+                ->pluck('product_id')
+                ->map(fn ($id) => (int) $id)
+                ->all()
+            : [];
+
+        $cartItemCount = $isShopBuyer && auth()->user()->buyer?->id && \Illuminate\Support\Facades\Schema::hasTable('cart_items')
+            ? \App\Models\Buyer\Cart\CartItem::query()->where('buyer_id', auth()->user()->buyer->id)->count()
+            : 0;
 
         return view('home', compact(
+            'flashDealProducts',
+            'topProducts',
+            'discoverProducts',
+            'landingCategories',
+            'hasCompletedSales',
             'categories',
-            'trendingProducts'
+            'trendingProducts',
+            'isShopBuyer',
+            'favoriteProductIds',
+            'cartItemCount'
         ));
     }
 }

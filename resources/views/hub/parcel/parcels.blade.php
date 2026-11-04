@@ -27,8 +27,9 @@
         <div class="sh-stat"><p class="sh-stat-label">Ready for manifest</p><p class="sh-stat-value">{{ $stats['ready'] }}</p><p class="sh-stat-note">Sorted by next hop</p></div>
     </section>
 
-    <nav class="sh-ui-jump" aria-label="Hub parcel process stages"><a href="#hub-receive">1. Receive</a><a href="#hub-sort">2. Sort</a><a href="#hub-manifest">3. Manifest</a><a href="#hub-linehaul">4. Transport</a></nav>
-    <section id="hub-receive" class="sh-surface sh-card-pad space-y-4 scroll-mt-6">
+    <div class="ops-panel" data-ops-tabs>
+    <nav class="ops-tabs" role="tablist" aria-label="Parcel workflow stages"><button type="button" class="ops-tab" role="tab" aria-selected="true" data-ops-tab="receive">1. Inbound receiving</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="sort">2. Sort parcels</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="manifest">3. Create manifest</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="transport">4. Transport & manifests</button></nav>
+    <section data-ops-panel="receive" role="tabpanel" id="hub-receive" class="sh-surface sh-card-pad space-y-4 scroll-mt-6">
         <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound Road / Sea / Air</h2><p class="mt-1 text-xs text-navy/50">Normal intact batch: use Logistics mobile → Receive inbound manifest, scan the Manifest QR, acknowledge arrival, then confirm the physical count. The parcel field below is only for individual exception/reconciliation.</p></div>
         <form method="POST" action="{{ route('logistics.hub.parcels.receive') }}" data-confirm-title="Receive exception parcel?" data-confirm-message="Verify the physical parcel and its tracking code before recording hub receipt." data-confirm-button="Confirm receipt" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
             <label class="sh-field"><span class="sh-label">Exception Parcel QR / tracking</span><input class="sh-input" id="hub-exception-code" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
@@ -44,14 +45,15 @@
         @endif
 
         @if($notDeparted->isNotEmpty())
-            <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-4">
-                <p class="font-semibold text-navy">Still in transit / not marked arrived</p>
-                <div class="mt-2 space-y-1 text-xs text-navy/60">@foreach($notDeparted as $t)<div>{{ $t->delivery?->tracking_code }} · {{ $t->fromCenter?->name }} → {{ $t->toCenter?->name }} · {{ $t->manifest?->code }}</div>@endforeach</div>
+            <div class="ops-panel mt-3"><div class="ops-panel-head"><div><h2>Still in transit</h2><p class="ops-panel-note">Cannot receive until the destination acknowledges physical arrival.</p></div></div>
+                <div class="ops-table-scroll"><table class="ops-table"><thead><tr><th>Tracking</th><th>From Center</th><th>Destination</th><th>Manifest</th><th>Status</th></tr></thead><tbody>
+                    @foreach($notDeparted as $t)<tr><td><strong>{{ $t->delivery?->tracking_code }}</strong></td><td>{{ $t->fromCenter?->name }}</td><td>{{ $t->toCenter?->name }}</td><td>{{ $t->manifest?->code ?? 'Individual' }}</td><td><span class="sh-badge sh-badge-warning">In transit</span></td></tr>@endforeach
+                </tbody></table></div>
             </div>
         @endif
     </section>
 
-    <section id="hub-sort" class="sh-surface sh-card-pad scroll-mt-6">
+    <section data-ops-panel="sort" role="tabpanel" hidden id="hub-sort" class="sh-surface sh-card-pad scroll-mt-6">
         <p class="sh-kicker">Step 2</p><h2 class="sh-title-sm">Sort & validate next hop</h2>
         @if($toSort->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">Nothing to sort</p></div>
@@ -66,7 +68,7 @@
         @endif
     </section>
 
-    <section id="hub-manifest" class="space-y-4 scroll-mt-6">
+    <section data-ops-panel="manifest" role="tabpanel" hidden id="hub-manifest" class="space-y-4 scroll-mt-6">
         <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 3</p><h2 class="sh-title-sm">Create outbound manifest by next hop</h2><p class="mt-1 text-xs text-navy/50">Each group below has one enforced next hub/station.</p></div>
         @forelse($ready as $group)
         <form method="POST" action="{{ route('logistics.hub.parcels.manifests.store') }}" data-bulk class="sh-surface sh-card-pad space-y-4">@csrf
@@ -82,10 +84,20 @@
         @endforelse
     </section>
 
-    <section id="hub-linehaul" class="space-y-4 scroll-mt-6">
+    <section data-ops-panel="transport" role="tabpanel" hidden id="hub-linehaul" class="space-y-4 scroll-mt-6">
         <div class="sh-surface sh-card-pad"><p class="sh-kicker">Step 4</p><h2 class="sh-title-sm">Load & assign transport</h2><p class="mt-1 text-xs text-navy/50">Staff confirms the physical batch count once. Only verified transport is allowed. Road uses a driver and vehicle; Sea/Air uses a carrier booking and hub handoff.</p></div>
-        @forelse($manifests as $m)
-        <article class="sh-surface sh-card-pad space-y-4">
+        <div class="ops-panel mt-4"><div class="ops-panel-head"><div><h2>Outbound manifest register</h2><p class="ops-panel-note">Select Manage to load, assign transport, print or reconcile a manifest.</p></div><input class="sh-input" style="max-width:240px" type="search" data-ops-search="hubManifestRows" placeholder="Search this page" aria-label="Search manifests"></div>
+<div class="ops-table-scroll"><table class="ops-table" id="hubManifestRows"><thead><tr><th>Manifest</th><th>Next center</th><th>Counts</th><th>Status</th><th>Transport</th><th>Action</th></tr></thead><tbody>
+@forelse($manifests as $m)
+        <tr data-ops-row><td><strong>{{ $m['code'] }}</strong><div class="ops-row-sub">{{ $m['created'] ?? '' }}</div></td>
+ <td>{{ $m['to'] ?? '—' }}</td>
+ <td>{{ $m['count'] }} parcels<div class="ops-row-sub">Loaded {{ $m['loaded'] }}/{{ $m['count'] }} · Received {{ $m['received'] }}/{{ $m['count'] }}</div></td>
+ <td><span class="sh-badge {{ in_array($m['status'],['ready','received'],true) ? 'sh-badge-success' : ($m['status']==='dispatched'?'sh-badge-info':'sh-badge-warning') }}">{{ ucfirst(str_replace('_',' ',$m['status'])) }}</span></td>
+ <td>{{ $m['cargo_mode'] ?? $m['trip_code'] ?? 'Unassigned' }}</td>
+ <td class="ops-row-actions"><button type="button" class="ops-action" data-ops-template="opsManifest{{ $m['id'] }}">Manage</button></td></tr>
+ <template id="opsManifest{{ $m['id'] }}">
+ <div class="ops-dialog-head"><div><h2 class="ops-dialog-title">Manifest {{ $m['code'] }}</h2><p class="ops-panel-note">{{ $m['to'] }} · {{ $m['count'] }} parcels</p></div><button type="button" class="ops-action" data-ops-close>✕</button></div>
+ <div class="ops-dialog-body"><div class="space-y-4">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div><div class="flex flex-wrap items-center gap-2"><h3 class="font-bold text-navy">{{ $m['code'] }}</h3><span class="sh-badge {{ $m['status']==='received' ? 'sh-badge-success' : ($m['status']==='dispatched' ? 'sh-badge-info' : ($m['status']==='ready' ? 'sh-badge-success' : 'sh-badge-warning')) }}">{{ ucfirst(str_replace('_',' ',$m['status'])) }}</span></div>
                 <p class="mt-1 text-xs text-navy/55">{{ $m['count'] }} → {{ $m['to'] }} · Loaded {{ $m['loaded'] }}/{{ $m['count'] }} · Received {{ $m['received'] }}/{{ $m['count'] }}</p>
@@ -151,11 +163,13 @@
             @elseif($m['trip_status']==='in_transit')<div class="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-navy">Truck is in transit to {{ $m['to'] }}.</div>
             @elseif($m['trip_status']==='arrived')<div class="rounded-xl border border-yellow-200 bg-yellow-50 p-3 text-sm text-navy">Destination acknowledged the Manifest QR. Receiving is controlled by the destination center.</div>
             @endif
-        </article>
+        </div></div><div class="ops-dialog-foot"><button type="button" class="sh-btn-ghost" data-ops-close>Close</button></div></template>
         @empty
-            <div class="sh-surface sh-card-pad sh-empty"><p class="text-sm font-semibold text-navy">No outbound manifests yet</p></div>
+            <tr><td colspan="6" class="ops-empty">No outbound manifests yet.</td></tr>
         @endforelse
+<tr data-ops-search-empty hidden><td colspan="6" class="ops-empty">No matching manifests on this page.</td></tr></tbody></table></div></div><dialog class="ops-dialog" id="opsRecordDialog"><div data-ops-record-content></div></dialog>
     </section>
+</div>
 </div>
 @endsection
 

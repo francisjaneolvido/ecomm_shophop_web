@@ -26,6 +26,20 @@ class AccountController extends Controller
         ]);
     }
 
+    public function shopProfile(Request $request): View
+    {
+        $seller = $request->user()->seller;
+        abort_unless($seller, 404);
+        $products = \App\Models\Seller\Manage_inventory\Product::query()
+            ->where('seller_id', $request->user()->id);
+        $summary = [
+            'products' => (clone $products)->count(),
+            'active' => (clone $products)->where('status', 'active')->count(),
+            'review' => (clone $products)->where('compliance_status', 'pending_review')->count(),
+        ];
+        return view('seller.shop-profile', compact('seller', 'summary'));
+    }
+
     public function update(Request $request): RedirectResponse
     {
         // Ignore submitted identity/role/document/business fields: only the session's core profile is editable.

@@ -117,10 +117,11 @@
             <span class="text-xs text-slate-400">{{ $products->total() }} total</span>
         </div>
 
-        <div class="divide-y divide-slate-100">
-
+        <div class="admin-table-scroll">
+          <table class="min-w-[780px]">
+            <thead><tr><th>Product</th><th>Seller / Category</th><th>Stock</th><th>Review status</th><th class="text-right">Actions</th></tr></thead>
+            <tbody>
             @forelse ($products as $product)
-
                 @php
                     $statusStyles = [
                         'pending_review' => ['badge' => 'text-yellow-700 bg-yellow/20', 'label' => 'Pending Review'],
@@ -158,67 +159,35 @@
                         'media' => $product->ordered_media,
                     ];
                 @endphp
-
-                <div class="flex items-center justify-between gap-4 px-5 py-4">
-                    <div class="flex items-center gap-3 min-w-0">
-                        <div class="w-14 h-14 rounded-xl bg-gray-bg overflow-hidden shrink-0 border border-slate-200">
-                            @if ($product->is_video_first && $product->video_url)
-                                <video src="{{ $product->video_url }}" muted playsinline preload="metadata"
-                                    class="w-full h-full object-cover"></video>
-                            @else
-                            <img
-                                src="{{ $thumbnail ? asset('storage/' . $thumbnail->image_path) : asset('images/products/placeholder.png') }}"
-                                alt="{{ $product->name }}"
-                                class="w-full h-full object-cover"
-                            >
-                            @endif
-                        </div>
-                        <div class="min-w-0">
-                            <p class="text-sm font-semibold text-navy truncate">{{ $product->name }}</p>
-                            <p class="text-xs text-slate-500 truncate">
-                                {{ $product->seller->business_name ?? 'Unknown Seller' }} · {{ $product->category }}
-                            </p>
-                            <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                                <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full {{ $style['badge'] }}">
-                                    {{ $style['label'] }}
-                                </span>
-                                @if ($categoryMismatch)
-                                    <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full text-coral bg-coral/10">
-                                        Category Mismatch
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
+              <tr>
+                <td>
+                  <div class="flex min-w-[230px] items-center gap-3">
+                    <div class="h-11 w-11 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
+                      @if ($product->is_video_first && $product->video_url)
+                        <video src="{{ $product->video_url }}" muted playsinline preload="metadata" class="h-full w-full object-cover"></video>
+                      @else
+                        <img src="{{ $thumbnail ? asset('storage/' . $thumbnail->image_path) : asset('images/products/placeholder.png') }}" alt="{{ $product->name }}" class="h-full w-full object-cover">
+                      @endif
                     </div>
-                    <div class="flex items-center gap-2 shrink-0">
-                        <button type="button" class="product-view-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 border border-slate-200 hover:bg-slate-50" data-product-id="{{ $product->id }}">
-                            View Details
-                        </button>
-                        @if ($product->compliance_status !== 'approved')
-                            <button type="button" class="product-approve-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-mint-dark hover:opacity-90" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}">
-                                Approve
-                            </button>
-                        @endif
-                        @if ($product->compliance_status !== 'rejected')
-                            <button type="button" class="product-reject-btn px-3 py-1.5 rounded-lg text-xs font-semibold text-coral border border-coral/30 hover:bg-coral/5" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}">
-                                Reject
-                            </button>
-                        @endif
-                    </div>
-                </div>
-
+                    <div class="min-w-0"><strong class="block max-w-[190px] truncate">{{ $product->name }}</strong><p class="mt-1 text-[11px] text-slate-500">{{ $product->sku ?: 'No SKU' }}</p></div>
+                  </div>
+                </td>
+                <td><strong class="text-xs">{{ $product->seller->business_name ?? 'Unknown Seller' }}</strong><div class="mt-1 text-[11px] text-slate-500">{{ $product->category }}</div></td>
+                <td class="tabular-nums">{{ number_format((int) $product->stock) }}</td>
+                <td><span class="admin-status {{ $product->compliance_status === 'approved' ? 'admin-status-ok' : ($product->compliance_status === 'rejected' ? 'admin-status-danger' : 'admin-status-warn') }}">{{ $style['label'] }}</span>
+                  @if($categoryMismatch)<div class="mt-1 text-[11px] font-semibold text-red-600">Category mismatch</div>@endif
+                </td>
+                <td><div class="admin-row-actions">
+                  <button type="button" class="product-view-btn admin-btn" data-product-id="{{ $product->id }}">View details</button>
+                  @if($product->compliance_status !== 'approved')<button type="button" class="product-approve-btn admin-btn admin-btn-teal" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}">Approve</button>@endif
+                  @if($product->compliance_status !== 'rejected')<button type="button" class="product-reject-btn admin-btn" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}">Reject</button>@endif
+                </div></td>
+              </tr>
             @empty
-
-                <div class="px-5 py-14 text-center">
-                    <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
-                        <x-lucide-package-search class="w-5 h-5" />
-                    </div>
-                    <p class="text-sm font-semibold text-navy mt-3">No products found</p>
-                    <p class="text-xs text-slate-400 mt-1">Try a different filter tab.</p>
-                </div>
-
+              <tr><td colspan="5" class="admin-empty">No products match the selected review queue.</td></tr>
             @endforelse
-
+            </tbody>
+          </table>
         </div>
 
         @if ($products->hasPages())

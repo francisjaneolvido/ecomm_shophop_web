@@ -1,12 +1,15 @@
 @extends('seller.partials.layout')
 
 @section('title', 'Order Details')
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/shophop-seller-order-directory.css') }}?v=20261104a">
+@endpush
 
 @section('content')
 {{-- This page displays only the Order selected through the authenticated Seller's sellers.id scope. --}}
-<section class="mx-auto max-w-4xl space-y-5">
-    <a href="{{ route('seller.orders.notifications') }}" class="text-sm font-semibold text-teal-dark hover:underline">Back to Orders</a>
-    <div class="rounded-xl border border-gray-border bg-white p-6">
+<section class="so-order-show mx-auto max-w-4xl space-y-5">
+    <a href="{{ $backUrl ?? route('seller.orders.notifications') }}" class="text-sm font-semibold text-teal-dark hover:underline">Back to Orders</a>
+    <div class="so-order-main rounded-xl border border-gray-border bg-white p-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-bold text-navy">Order SHP-{{ str_pad((string) $order->id, 6, '0', STR_PAD_LEFT) }}</h1>

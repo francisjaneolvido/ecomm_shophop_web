@@ -21,11 +21,11 @@ class EarningsController extends Controller
         abort_unless($partnerId, 403);
 
         $query = SettlementEntry::where('kind', 'logistics')->where('payee_id', $partnerId);
-        $orderIds = (clone $query)->pluck('order_id');
+        $orderIds = (clone $query)->select('order_id');
         $branches = SortingCenter::where('logistics_partner_id', $partnerId)
-            ->orderByDesc('is_main')->orderBy('name')->get();
+            ->orderByDesc('is_main')->orderBy('name')->paginate(25, ['*'], 'center_page')->withQueryString();
 
-        $branchActivity = $branches->map(function ($branch) use ($partnerId) {
+        $branchActivity = $branches->through(function ($branch) use ($partnerId) {
             $ledger = CenterRevenueLedgerEntry::where('logistics_partner_id', $partnerId)
                 ->where('sorting_center_id', $branch->id);
             return [
@@ -48,10 +48,10 @@ class EarningsController extends Controller
             'pending' => (clone $query)->where('status', 'pending')->sum('amount'),
             'available' => (clone $query)->where('status', 'available')->sum('amount'),
             'paid' => (clone $query)->where('status', 'paid')->sum('amount'),
-            'entries' => $query->orderByDesc('id')->paginate(25),
+            'entries' => $query->orderByDesc('id')->paginate(25)->withQueryString(),
             'riderEntries' => SettlementEntry::whereIn('order_id', $orderIds)
                 ->whereIn('kind', ['pickup_rider', 'delivery_rider'])
-                ->orderByDesc('id')->paginate(25, ['*'], 'rider_page'),
+                ->orderByDesc('id')->paginate(25, ['*'], 'rider_page')->withQueryString(),
             'allocationTotals' => [
                 'gross_shipping' => (float) (clone $allocations)->sum('gross_shipping'),
                 'pickup_riders' => (float) (clone $allocations)->sum('pickup_rider_fee'),
@@ -64,7 +64,7 @@ class EarningsController extends Controller
             'linehaulPending' => (float) (clone $linehaulQuery)->where('status', 'pending')->sum('amount'),
             'linehaulAvailable' => (float) (clone $linehaulQuery)->where('status', 'available')->sum('amount'),
             'linehaulPaid' => (float) (clone $linehaulQuery)->where('status', 'paid')->sum('amount'),
-            'linehaulEntries' => $linehaulQuery->orderByDesc('id')->paginate(25, ['*'], 'linehaul_page'),
+            'linehaulEntries' => $linehaulQuery->orderByDesc('id')->paginate(25, ['*'], 'linehaul_page')->withQueryString(),
         ]);
     }
 

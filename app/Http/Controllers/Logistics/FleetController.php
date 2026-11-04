@@ -31,13 +31,25 @@ class FleetController extends Controller
 
         $vehicles = FleetVehicle::with('homeHub')
             ->where('logistics_partner_id', $partner->id)
-            ->orderByDesc('is_primary')
-            ->orderBy('code')
-            ->get();
+            ->when($request->filled('vehicles_q'), fn ($q) => $q->where(function ($sub) use ($request) {
+                $term = trim((string)$request->query('vehicles_q'));
+                $sub->where('code','like',"%{$term}%")->orWhere('plate_number','like',"%{$term}%")
+                    ->orWhereHas('homeHub', fn ($hq) => $hq->where('name','like',"%{$term}%"));
+            }))
+            ->when(in_array($request->query('vehicles_status'), ['available','in_transit','maintenance','inactive'], true),
+                fn ($q) => $q->where('status', $request->query('vehicles_status')))
+            ->orderByDesc('is_primary')->orderBy('code')
+            ->paginate(20, ['*'], 'vehicles_page')->withQueryString();
 
         $drivers = LinehaulDriver::where('logistics_partner_id', $partner->id)
-            ->orderBy('name')
-            ->get();
+            ->when($request->filled('drivers_q'), fn ($q) => $q->where(function ($sub) use ($request) {
+                $term = trim((string)$request->query('drivers_q'));
+                $sub->where('name','like',"%{$term}%")->orWhere('email','like',"%{$term}%")
+                    ->orWhere('license_no','like',"%{$term}%");
+            }))
+            ->when(in_array($request->query('drivers_status'), ['active','inactive'], true),
+                fn ($q) => $q->where('status', $request->query('drivers_status')))
+            ->orderBy('name')->paginate(20, ['*'], 'drivers_page')->withQueryString();
 
         $trips = LinehaulTrip::with(['fromCenter', 'toCenter', 'vehicle', 'driver', 'manifests'])
             ->where('logistics_partner_id', $partner->id)
@@ -85,6 +97,69 @@ class FleetController extends Controller
         ]);
 
         return back()->with('status', 'Vehicle registered successfully.');
+    }
+
+    public function updateVehicle(Request $request, FleetVehicle $vehicle): RedirectResponse
+    {
+        $partner = $request->user()->logisticsPartner()->firstOrFail();
+        abort_unless((int)$vehicle->logistics_partner_id === (int)$partner->id,404);
+        $data = $request->validate([
+            'code'=>['required','string','max:40',Rule::unique('fleet_vehicles','code')->ignore($vehicle->id)],
+            'plate_number'=>['required','string','max:40',Rule::unique('fleet_vehicles','plate_number')->ignore($vehicle->id)],
+            'vehicle_type'=>['required',Rule::in(['van','light_truck','6_wheeler','10_wheeler','other'])],
+            'home_hub_id'=>['required','integer'],
+            'capacity_kg'=>['nullable','numeric','min:1','max:99999999'],
+            'volume_capacity_m3'=>['nullable','numeric','min:0.01','max:999999'],
+            'owner_type'=>['required',Rule::in(['company','contracted'])],
+            'is_primary'=>['nullable','boolean'],
+        ]);
+        $hub = SortingCenter::where('logistics_partner_id',$partner->id)
+            ->where('type','province_hub')->whereNull('archived_at')->findOrFail($data['home_hub_id']);
+        if (LinehaulTrip::where('vehicle_id',$vehicle->id)
+            ->whereIn('status',[LinehaulTrip::SCHEDULED,LinehaulTrip::IN_TRANSIT,LinehaulTrip::ARRIVED])->exists()) {
+            return back()->withErrors(['fleet'=>'Vehicle has an active Linehaul Trip. Complete it before editing vehicle details.']);
+        }
+        \Illuminate\Support\Facades\DB::transaction(function() use ($partner,$hub,$data,$vehicle) {
+            if (!empty($data['is_primary'])) {
+                FleetVehicle::where('logistics_partner_id',$partner->id)
+                    ->where('home_hub_id',$hub->id)->where('id','!=',$vehicle->id)->update(['is_primary'=>false]);
+            }
+            $vehicle->update([
+                ...$data, 'home_hub_id'=>$hub->id, 'is_primary'=>!empty($data['is_primary']),
+                'code'=>strtoupper(trim($data['code'])),
+                'plate_number'=>strtoupper(trim($data['plate_number'])),
+            ]);
+        });
+        return back()->with('status','Vehicle details updated.');
+    }
+
+    public function updateDriver(Request $request, LinehaulDriver $driver): RedirectResponse
+    {
+        $partner = $request->user()->logisticsPartner()->firstOrFail();
+        abort_unless((int)$driver->logistics_partner_id === (int)$partner->id,404);
+        $data = $request->validate([
+            'name'=>['required','string','max:150'],
+            'contact_no'=>['nullable','string','max:40'],
+            'license_no'=>['nullable','string','max:80'],
+            'license_expiry'=>['nullable','date'],
+            'email'=>['required','email','max:190',Rule::unique('linehaul_drivers','email')->ignore($driver->id)],
+            'password'=>['nullable','confirmed',Password::min(8)],
+        ]);
+        $email = strtolower(trim($data['email']));
+        if ($email !== strtolower((string)$driver->email) && (User::where('email',$email)->exists()
+            || Rider::where('email',$email)->exists() || BranchStaff::where('email',$email)->exists())) {
+            return back()->withErrors(['email'=>'Email is already used by another ShopHop account.']);
+        }
+        if (LinehaulTrip::where('driver_id',$driver->id)
+            ->whereIn('status',[LinehaulTrip::SCHEDULED,LinehaulTrip::IN_TRANSIT,LinehaulTrip::ARRIVED])->exists()) {
+            return back()->withErrors(['fleet'=>'Driver has an active Linehaul Trip. Complete it before editing credentials or details.']);
+        }
+        unset($data['password_confirmation']);
+        if (empty($data['password'])) unset($data['password']);
+        $credentialsChanged = isset($data['password']) || $email !== strtolower((string)$driver->email);
+        $driver->update([...$data,'name'=>trim($data['name']),'email'=>$email]);
+        if ($credentialsChanged) $driver->tokens()->delete();
+        return back()->with('status','Linehaul Driver updated.');
     }
 
     public function updateVehicleStatus(Request $request, FleetVehicle $vehicle): RedirectResponse

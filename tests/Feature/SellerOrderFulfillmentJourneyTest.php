@@ -191,7 +191,10 @@ class SellerOrderFulfillmentJourneyTest extends TestCase
         $foreign = $this->order($buyer, $otherSeller, 'Foreign Group Product', $own->checkout_group_id);
 
         // Both Order IDs share a checkout group, but each mutation still resolves through sellers.id.
+        // The Prepare queue is limited to confirmed/preparing orders; unaccepted purchases stay in New Orders.
         $this->actingAs($seller->user)->get(route('seller.orders.prepare'))
+            ->assertOk()->assertDontSee('Own Group Product')->assertDontSee('Foreign Group Product');
+        $this->get(route('seller.orders.notifications'))
             ->assertOk()->assertSee('Own Group Product')->assertDontSee('Foreign Group Product');
         $this->patch(route('seller.orders.start-preparation', $foreign), [
             'seller_id' => $seller->id, 'checkout_group_id' => $own->checkout_group_id,

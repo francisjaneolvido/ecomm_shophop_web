@@ -16,25 +16,14 @@
 
     $archiveActionTemplate = route('seller.inventory.products.archive', ['product' => '__ID__']);
 
-    $activeProducts = $products->where('status', 'active');
-    $archivedProducts = $products->where('status', 'archived');
-
-    $activeCount = $activeProducts->count();
-
-    $lowStockCount = $activeProducts
-        ->filter(fn ($product) =>
-            (int) $product->stock > 0 &&
-            (int) $product->stock <=
-                (int) ($product->low_stock_threshold ?? $defaultLowStockThreshold)
-        )
-        ->count();
-
-    $outOfStockCount = $activeProducts
-        ->filter(fn ($product) => (int) $product->stock === 0)
-        ->count();
-
-    $archivedCount = $archivedProducts->count();
-    $totalUnits = $activeProducts->sum(fn ($product) => (int) $product->stock);
+    $activeCount = $inventoryCounts['active'];
+    $lowStockCount = $inventoryCounts['low'];
+    $outOfStockCount = $inventoryCounts['out'];
+    $archivedCount = $inventoryCounts['archived'];
+    $totalUnits = $inventoryCounts['totalUnits'];
+    $currentStatus = $inventoryFilters['status'];
+    $filters = $inventoryFilters;
+    $filterLink = fn (string $key) => route('seller.inventory', array_filter(array_merge(request()->except(['page', 'status', 'stock']), ['status' => $key]), fn ($v) => $v !== null && $v !== ''));
 
     $stockMeta = function ($product) use ($defaultLowStockThreshold) {
         if ($product->status === 'archived') {
@@ -83,6 +72,9 @@
 @endphp
 
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/shophop-seller-inventory-v2.css') }}">
+@endpush
 <style>
     /* Click-to-copy affordance for SKU / voucher code */
     #sellerInventory [data-copy-text] {
@@ -228,7 +220,7 @@
                 class="inventory-section-tab inventory-section-tab-active h-9 px-3.5 rounded-lg border border-transparent text-xs font-bold transition"
             >
                 Products
-                <span class="ml-1 opacity-50">{{ $products->count() }}</span>
+                <span class="ml-1 opacity-50">{{ number_format($inventoryCounts['all']) }}</span>
             </button>
 
             <button
@@ -252,9 +244,7 @@
         {{-- Summary cards --}}
         <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
 
-            <button
-                type="button"
-                data-stat-filter="active"
+            <a href="{{ $filterLink('active') }}"
                 class="inventory-card text-left bg-white border border-gray-border rounded-xl p-4 hover:shadow-soft hover:border-teal/25"
             >
                 <div class="flex items-start justify-between gap-3">
@@ -272,12 +262,10 @@
                 <p class="text-xs text-navy/45">
                     Active Products
                 </p>
-            </button>
+            </a>
 
 
-            <button
-                type="button"
-                data-stat-filter="low"
+            <a href="{{ $filterLink('low') }}"
                 class="inventory-card text-left bg-white border border-gray-border rounded-xl p-4 hover:shadow-soft hover:border-yellow/30"
             >
                 <div class="flex items-start justify-between gap-3">
@@ -295,12 +283,10 @@
                 <p class="text-xs text-navy/45">
                     Low Stock
                 </p>
-            </button>
+            </a>
 
 
-            <button
-                type="button"
-                data-stat-filter="out"
+            <a href="{{ $filterLink('out') }}"
                 class="inventory-card text-left bg-white border border-gray-border rounded-xl p-4 hover:shadow-soft hover:border-red-200"
             >
                 <div class="flex items-start justify-between gap-3">
@@ -318,12 +304,10 @@
                 <p class="text-xs text-navy/45">
                     Out of Stock
                 </p>
-            </button>
+            </a>
 
 
-            <button
-                type="button"
-                data-stat-filter="archived"
+            <a href="{{ $filterLink('archived') }}"
                 class="inventory-card text-left bg-white border border-gray-border rounded-xl p-4 hover:shadow-soft hover:border-navy/15"
             >
                 <div class="flex items-start justify-between gap-3">
@@ -341,132 +325,107 @@
                 <p class="text-xs text-navy/45">
                     Archived
                 </p>
-            </button>
+            </a>
 
         </section>
 
 
-        {{-- Status tabs --}}
-        <section class="bg-white border border-gray-border rounded-xl p-2 overflow-x-auto">
-            <div class="flex items-center gap-1 min-w-max">
+        {{-- Server-side status tabs and filters. Tabs are genuine URLs so they keep working with pagination. --}}
+        <nav aria-label="Product status" class="inventory-status-tabs flex items-center gap-1 overflow-x-auto border border-gray-border bg-white rounded-lg p-2">
+            @foreach ([
+                ['key' => 'all', 'label' => 'All', 'count' => $inventoryCounts['all']],
+                ['key' => 'active', 'label' => 'Active', 'count' => $activeCount],
+                ['key' => 'low', 'label' => 'Low Stock', 'count' => $lowStockCount],
+                ['key' => 'out', 'label' => 'Out of Stock', 'count' => $outOfStockCount],
+                ['key' => 'archived', 'label' => 'Archived', 'count' => $archivedCount],
+            ] as $tab)
+                <a href="{{ $filterLink($tab['key']) }}" class="inventory-status-tab whitespace-nowrap {{ $currentStatus === $tab['key'] ? 'is-active' : '' }}" @if($currentStatus === $tab['key']) aria-current="page" @endif>
+                    {{ $tab['label'] }} <span class="opacity-60">{{ number_format($tab['count']) }}</span>
+                </a>
+            @endforeach
+        </nav>
 
-                @foreach ([
-                    ['key' => 'all', 'label' => 'All', 'count' => $products->count()],
-                    ['key' => 'active', 'label' => 'Active', 'count' => $activeCount],
-                    ['key' => 'low', 'label' => 'Low Stock', 'count' => $lowStockCount],
-                    ['key' => 'out', 'label' => 'Out of Stock', 'count' => $outOfStockCount],
-                    ['key' => 'archived', 'label' => 'Archived', 'count' => $archivedCount],
-                ] as $tab)
-                    <button
-                        type="button"
-                        data-inventory-tab="{{ $tab['key'] }}"
-                        class="inventory-tab h-9 px-3 rounded-lg border border-transparent text-xs font-semibold transition
-                            {{ $tab['key'] === 'all'
-                                ? 'inventory-tab-active'
-                                : 'text-navy/50 hover:bg-gray-bg'
-                            }}"
-                    >
-                        {{ $tab['label'] }}
-                        <span class="ml-1 opacity-60">
-                            {{ $tab['count'] }}
-                        </span>
-                    </button>
-                @endforeach
-
-            </div>
-        </section>
-
-
-        {{-- Filters --}}
-        <section class="bg-white border border-gray-border rounded-xl p-3">
-
-            <div class="flex flex-col xl:flex-row xl:items-center gap-2">
-
-                <div class="relative flex-1 min-w-0">
-                    <x-lucide-search class="w-3.5 h-3.5 text-navy/30 absolute left-3 top-1/2 -translate-y-1/2" />
-
-                    <input
-                        type="text"
-                        id="inventorySearch"
-                        placeholder="Search product name or SKU..."
-                        class="w-full h-9 pl-9 pr-3 rounded-lg border border-gray-border text-xs text-navy placeholder:text-navy/30 focus:outline-none focus:border-teal/50"
-                    >
+        <section class="bg-white border border-gray-border rounded-lg p-4">
+            <form method="GET" action="{{ route('seller.inventory') }}" class="inventory-filter-grid" aria-label="Filter inventory">
+                <input type="hidden" name="status" value="{{ $currentStatus }}">
+                <label class="inventory-filter-search">
+                    <span>Product / SKU</span>
+                    <input type="search" name="q" maxlength="100" value="{{ $filters['search'] }}" placeholder="Search name or SKU..." class="inventory-filter-input">
+                </label>
+                <label>
+                    <span>Category</span>
+                    <select name="category" class="inventory-filter-input">
+                        <option value="">All categories</option>
+                        @foreach ($filterCategories as $category)
+                            <option value="{{ $category }}" @selected($filters['category'] === $category)>{{ $category }}</option>
+                        @endforeach
+                    </select>
+                </label>
+                <label>
+                    <span>Stock Level</span>
+                    <select name="stock" class="inventory-filter-input">
+                        <option value="">All stock levels</option>
+                        <option value="in" @selected($filters['stock'] === 'in')>In Stock</option>
+                        <option value="low" @selected($filters['stock'] === 'low')>Low Stock</option>
+                        <option value="out" @selected($filters['stock'] === 'out')>Out of Stock</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Review Status</span>
+                    <select name="compliance" class="inventory-filter-input">
+                        <option value="">All reviews</option>
+                        <option value="pending_review" @selected($filters['compliance'] === 'pending_review')>Pending Review</option>
+                        <option value="approved" @selected($filters['compliance'] === 'approved')>Approved</option>
+                        <option value="rejected" @selected($filters['compliance'] === 'rejected')>Needs Correction</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Sort By</span>
+                    <select name="sort" class="inventory-filter-input">
+                        <option value="newest" @selected($filters['sort'] === 'newest')>Newest First</option>
+                        <option value="oldest" @selected($filters['sort'] === 'oldest')>Oldest First</option>
+                        <option value="name-asc" @selected($filters['sort'] === 'name-asc')>Name A–Z</option>
+                        <option value="name-desc" @selected($filters['sort'] === 'name-desc')>Name Z–A</option>
+                        <option value="price-asc" @selected($filters['sort'] === 'price-asc')>Price Low–High</option>
+                        <option value="price-desc" @selected($filters['sort'] === 'price-desc')>Price High–Low</option>
+                        <option value="stock-asc" @selected($filters['sort'] === 'stock-asc')>Stock Low–High</option>
+                        <option value="stock-desc" @selected($filters['sort'] === 'stock-desc')>Stock High–Low</option>
+                    </select>
+                </label>
+                <label>
+                    <span>Page Size</span>
+                    <select name="per_page" class="inventory-filter-input">
+                        <option value="25" @selected($filters['perPage'] === 25)>25</option>
+                        <option value="50" @selected($filters['perPage'] === 50)>50</option>
+                    </select>
+                </label>
+                <div class="inventory-filter-actions">
+                    <button class="inventory-btn inventory-btn-primary" type="submit">Apply Filters</button>
+                    <a class="inventory-btn inventory-btn-muted" href="{{ route('seller.inventory') }}">Clear</a>
                 </div>
-
-
-                <select
-                    id="inventoryCategoryFilter"
-                    class="h-9 px-3 rounded-lg border border-gray-border text-xs text-navy bg-white focus:outline-none focus:border-teal/50"
-                >
-                    <option value="">All Categories</option>
-
-                    @foreach ($filterCategories as $category)
-                        <option value="{{ $category }}">{{ $category }}</option>
-                    @endforeach
-                </select>
-
-
-                <select
-                    id="inventoryStockFilter"
-                    class="h-9 px-3 rounded-lg border border-gray-border text-xs text-navy bg-white focus:outline-none focus:border-teal/50"
-                >
-                    <option value="">All Stock Levels</option>
-                    <option value="in">In Stock</option>
-                    <option value="low">Low Stock</option>
-                    <option value="out">Out of Stock</option>
-                </select>
-
-
-                <select
-                    id="inventorySort"
-                    class="h-9 px-3 rounded-lg border border-gray-border text-xs text-navy bg-white focus:outline-none focus:border-teal/50"
-                >
-                    <option value="newest">Newest</option>
-                    <option value="name-asc">Name A-Z</option>
-                    <option value="name-desc">Name Z-A</option>
-                    <option value="price-asc">Price Low-High</option>
-                    <option value="price-desc">Price High-Low</option>
-                    <option value="stock-asc">Stock Low-High</option>
-                    <option value="stock-desc">Stock High-Low</option>
-                </select>
-
-
-                <button
-                    type="button"
-                    id="inventoryClearFilters"
-                    class="h-9 px-3 rounded-lg border border-gray-border text-xs font-semibold text-navy/45 hover:bg-gray-bg hover:text-navy transition"
-                >
-                    Clear
-                </button>
-
+            </form>
+            <div class="inventory-results-note">
+                <span>Showing <strong>{{ $products->firstItem() ?? 0 }}–{{ $products->lastItem() ?? 0 }}</strong> of <strong>{{ number_format($products->total()) }}</strong> matching products</span>
+                <span>{{ number_format($totalUnits) }} total active units across your store</span>
             </div>
-
-
-            <div class="mt-3 flex flex-wrap items-center justify-between gap-2">
-
-                <p class="text-xs text-navy/35">
-                    Showing
-                    <strong id="inventoryVisibleCount" class="text-navy/60">
-                        {{ $products->count() }}
-                    </strong>
-                    of
-                    <strong class="text-navy/60">
-                        {{ $products->count() }}
-                    </strong>
-                    products
-                </p>
-
-                <p class="text-xs text-navy/30">
-                    {{ number_format($totalUnits) }} total active units in stock
-                </p>
-
-            </div>
-
         </section>
-
 
         {{-- Products table --}}
         <section class="bg-white border border-gray-border rounded-xl overflow-hidden">
+            <div id="inventoryBulkToolbar" class="inventory-bulk-toolbar" hidden>
+                <div><strong id="inventorySelectedCount">0 selected</strong><span class="ml-2 text-xs text-navy/60">Current page only</span></div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" class="inventory-btn inventory-btn-muted" data-bulk-action="restore">Restore Selected</button>
+                    <button type="button" class="inventory-btn inventory-btn-primary" data-bulk-action="archive">Archive Selected</button>
+                    <button type="button" class="inventory-btn inventory-btn-muted" id="inventoryClearSelection">Clear</button>
+                </div>
+            </div>
+            <form id="inventoryBulkForm" method="POST" action="{{ route('seller.inventory.products.bulk-status') }}" hidden>
+                @csrf
+                @method('PATCH')
+                <input type="hidden" name="action" id="inventoryBulkAction">
+                <div id="inventoryBulkIds"></div>
+            </form>
 
             @if ($products->isEmpty())
 
@@ -476,11 +435,11 @@
                     </div>
 
                     <p class="mt-3 text-xs font-semibold text-navy/55">
-                        No products yet
+                        {{ $inventoryCounts['all'] > 0 ? 'No matching products' : 'No products yet' }}
                     </p>
 
                     <p class="mt-1 text-xs text-navy/35">
-                        Add your first product to start selling on ShopHop.
+                        {{ $inventoryCounts['all'] > 0 ? 'Try changing your search or filters.' : 'Add your first product to start selling on ShopHop.' }}
                     </p>
 
                     <button
@@ -500,6 +459,7 @@
 
                         <thead>
                             <tr class="border-b border-gray-border bg-gray-bg/40">
+                                <th class="px-4 py-3 text-left w-10"><input id="inventorySelectAll" type="checkbox" class="inventory-selection-checkbox" aria-label="Select all products on this page"></th>
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Product</th>
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">SKU</th>
                                 <th class="px-4 py-3 text-left text-[10px] uppercase tracking-[0.12em] font-bold text-navy/30">Category</th>
@@ -539,6 +499,8 @@
                                         'weight_kg' => $product->weight_kg,
                                         'discount' => $product->discount,
                                         'stock' => $product->stock,
+                                        'status' => $product->status,
+                                        'compliance_status' => $product->compliance_status,
                                         'low_stock_threshold' =>
                                             $product->low_stock_threshold
                                                 ?? $defaultLowStockThreshold,
@@ -584,6 +546,7 @@
                                     data-price="{{ (float) $product->price }}"
                                     data-created="{{ optional($product->created_at)->timestamp ?? 0 }}"
                                 >
+                                    <td class="px-4 py-3 w-10"><input type="checkbox" class="inventory-selection-checkbox inventory-row-checkbox" value="{{ $product->id }}" aria-label="Select {{ $product->name }}"></td>
 
                                     {{-- Product --}}
                                     <td class="px-4 py-3">
@@ -778,6 +741,8 @@
 
                                         <div class="flex items-center justify-end gap-1.5">
 
+                                            <button type="button" data-open-product-overview data-product="{{ json_encode($productJson) }}" class="inventory-btn inventory-btn-muted h-8" aria-label="View {{ $product->name }} details">View</button>
+
                                             <button
                                                 type="button"
                                                 data-open-product-modal
@@ -816,7 +781,10 @@
 
                     </table>
                 </div>
-
+                <div class="inventory-pagination border-t border-gray-border px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+                    <p class="text-xs text-navy/55">Page {{ $products->currentPage() }} of {{ $products->lastPage() }} · {{ number_format($products->total()) }} results</p>
+                    {{ $products->onEachSide(1)->links() }}
+                </div>
 
                 <div
                     id="inventoryEmptyFilter"
@@ -1067,6 +1035,30 @@
 
 </div>
 
+
+{{-- Read-only product overview — the existing Edit form owns all writes. --}}
+<div id="productOverviewModal" class="inventory-overview-overlay" hidden>
+    <button type="button" class="inventory-overview-backdrop" data-close-product-overview aria-label="Close product overview"></button>
+    <section class="inventory-overview-dialog" role="dialog" aria-modal="true" aria-labelledby="productOverviewTitle">
+        <header class="inventory-overview-header">
+            <div class="inventory-overview-hero">
+                <div class="inventory-overview-image"><img id="overviewImage" alt="Product thumbnail" hidden><x-lucide-package id="overviewFallback" class="w-6 h-6" /></div>
+                <div class="min-w-0"><p class="inventory-eyebrow">PRODUCT DETAILS</p><h2 id="productOverviewTitle" class="font-bold text-navy text-lg break-words">Product overview</h2><p id="overviewSku" class="text-xs text-navy/50"></p></div>
+            </div>
+            <button type="button" class="inventory-modal-close" data-close-product-overview aria-label="Close"><x-lucide-x class="w-4 h-4" /></button>
+        </header>
+        <div class="inventory-overview-body">
+            <div class="inventory-overview-grid">
+                <div class="inventory-detail-section"><h3>PRODUCT INFORMATION</h3><dl><div><dt>Category</dt><dd id="overviewCategory"></dd></div><div><dt>Price</dt><dd id="overviewPrice"></dd></div><div><dt>Discount</dt><dd id="overviewDiscount"></dd></div><div><dt>Review</dt><dd id="overviewReview"></dd></div></dl></div>
+                <div class="inventory-detail-section"><h3>INVENTORY</h3><dl><div><dt>Stock</dt><dd id="overviewStock"></dd></div><div><dt>Variants</dt><dd id="overviewVariants"></dd></div><div><dt>Gallery</dt><dd id="overviewMedia"></dd></div><div><dt>Weight</dt><dd id="overviewWeight"></dd></div></dl></div>
+            </div>
+            <div class="inventory-detail-section"><h3>DESCRIPTION</h3><p id="overviewDescription" class="whitespace-pre-line break-words text-sm text-navy/70"></p></div>
+            <div id="overviewVideoSection" class="inventory-detail-section" hidden><h3>PRODUCT VIDEO</h3><video id="overviewVideo" controls playsinline preload="metadata" class="w-full max-w-md aspect-video bg-navy rounded-lg" aria-label="Product video preview"></video></div>
+            <p class="text-xs text-navy/50">Full product edits require compliance review. Quick stock changes do not change the product's review status.</p>
+        </div>
+        <footer class="inventory-overview-footer"><button type="button" class="inventory-btn inventory-btn-muted" data-close-product-overview>Close</button><button type="button" id="overviewEditButton" class="inventory-btn inventory-btn-primary">Edit Product</button></footer>
+    </section>
+</div>
 
 {{-- =========================================================
     PRODUCT MODAL
@@ -1899,7 +1891,7 @@
 
                     <div class="max-h-52 overflow-y-auto p-3 space-y-1 content-scrollbar">
 
-                        @foreach ($products->where('status', 'active') as $product)
+                        @foreach ($voucherEligibleProducts as $product)
 
                             <label class="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-bg cursor-pointer">
                                 <input
@@ -3153,316 +3145,115 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
 
-    /* =========================================================
-       PRODUCT FILTERS
-    ========================================================= */
-    const searchInput =
-        document.getElementById('inventorySearch');
-
-    const categoryFilter =
-        document.getElementById('inventoryCategoryFilter');
-
-    const stockFilter =
-        document.getElementById('inventoryStockFilter');
-
-    const sortSelect =
-        document.getElementById('inventorySort');
-
-    const clearButton =
-        document.getElementById('inventoryClearFilters');
-
-    const emptyClearButton =
-        document.getElementById('inventoryEmptyClear');
-
-    const emptyMessage =
-        document.getElementById('inventoryEmptyFilter');
-
-    const visibleCount =
-        document.getElementById('inventoryVisibleCount');
-
-    const tableBody =
-        document.getElementById('inventoryTableBody');
-
-    const tabs =
-        Array.from(
-            document.querySelectorAll('[data-inventory-tab]')
-        );
-
-    const statButtons =
-        Array.from(
-            document.querySelectorAll('[data-stat-filter]')
-        );
-
-    let activeTab =
-        'all';
-
-
-    function getRows() {
-        return Array.from(
-            document.querySelectorAll(
-                '#inventoryTable [data-row]'
-            )
-        );
-    }
-
-
-    function setInventoryTab(tab) {
-        activeTab =
-            tab || 'all';
-
-        tabs.forEach(function (button) {
-            const active =
-                button.dataset.inventoryTab === activeTab;
-
-            button.classList.toggle(
-                'inventory-tab-active',
-                active
-            );
-
-            button.classList.toggle(
-                'text-navy/50',
-                !active
-            );
-        });
-
-        applyView();
-    }
-
-
-    function matchesTab(row) {
-        if (activeTab === 'all') {
-            return true;
-        }
-
-        if (activeTab === 'active') {
-            return row.dataset.status === 'active';
-        }
-
-        if (activeTab === 'archived') {
-            return row.dataset.status === 'archived';
-        }
-
-        if (activeTab === 'low') {
-            return (
-                row.dataset.status === 'active' &&
-                row.dataset.stockState === 'low'
-            );
-        }
-
-        if (activeTab === 'out') {
-            return (
-                row.dataset.status === 'active' &&
-                row.dataset.stockState === 'out'
-            );
-        }
-
-        return true;
-    }
-
-
-    function compareRows(a, b, sort) {
-        const nameA =
-            a.dataset.nameOriginal || '';
-
-        const nameB =
-            b.dataset.nameOriginal || '';
-
-        const priceA =
-            parseFloat(a.dataset.price || '0') || 0;
-
-        const priceB =
-            parseFloat(b.dataset.price || '0') || 0;
-
-        const stockA =
-            parseInt(a.dataset.stock || '0', 10) || 0;
-
-        const stockB =
-            parseInt(b.dataset.stock || '0', 10) || 0;
-
-        const createdA =
-            parseInt(a.dataset.created || '0', 10) || 0;
-
-        const createdB =
-            parseInt(b.dataset.created || '0', 10) || 0;
-
-
-        switch (sort) {
-            case 'name-asc':
-                return nameA.localeCompare(nameB);
-
-            case 'name-desc':
-                return nameB.localeCompare(nameA);
-
-            case 'price-asc':
-                return priceA - priceB;
-
-            case 'price-desc':
-                return priceB - priceA;
-
-            case 'stock-asc':
-                return stockA - stockB;
-
-            case 'stock-desc':
-                return stockB - stockA;
-
-            default:
-                return createdB - createdA;
+    /* Bulk actions apply only to products explicitly checked on this page. */
+    const rowChecks = Array.from(document.querySelectorAll('.inventory-row-checkbox'));
+    const selectAll = document.getElementById('inventorySelectAll');
+    const bulkToolbar = document.getElementById('inventoryBulkToolbar');
+    const bulkCount = document.getElementById('inventorySelectedCount');
+    const bulkForm = document.getElementById('inventoryBulkForm');
+    const bulkAction = document.getElementById('inventoryBulkAction');
+    const bulkIds = document.getElementById('inventoryBulkIds');
+    function checkedRows() { return rowChecks.filter(input => input.checked); }
+    function refreshBulkSelection() {
+        const n = checkedRows().length;
+        if (bulkToolbar) bulkToolbar.hidden = n === 0;
+        if (bulkCount) bulkCount.textContent = n + ' selected';
+        if (selectAll) {
+            selectAll.checked = n > 0 && n === rowChecks.length;
+            selectAll.indeterminate = n > 0 && n < rowChecks.length;
         }
     }
-
-
-    function applyView() {
-        const query =
-            (searchInput?.value || '')
-                .trim()
-                .toLowerCase();
-
-        const category =
-            categoryFilter?.value || '';
-
-        const stockState =
-            stockFilter?.value || '';
-
-        const sort =
-            sortSelect?.value || 'newest';
-
-        const rows =
-            getRows();
-
-        let count = 0;
-
-
-        rows.forEach(function (row) {
-            const matchesSearch =
-                query === '' ||
-                (row.dataset.name || '').includes(query);
-
-            const matchesCategory =
-                category === '' ||
-                row.dataset.category === category;
-
-            const matchesStock =
-                stockState === '' ||
-                (
-                    row.dataset.status === 'active' &&
-                    row.dataset.stockState === stockState
-                );
-
-            const visible =
-                matchesSearch &&
-                matchesCategory &&
-                matchesStock &&
-                matchesTab(row);
-
-            row.hidden =
-                !visible;
-
-            if (visible) {
-                count++;
-            }
-        });
-
-
-        rows
-            .sort(function (a, b) {
-                return compareRows(
-                    a,
-                    b,
-                    sort
-                );
-            })
-            .forEach(function (row) {
-                tableBody?.appendChild(row);
-            });
-
-
-        if (visibleCount) {
-            visibleCount.textContent =
-                count;
-        }
-
-        if (emptyMessage) {
-            emptyMessage.hidden =
-                count > 0;
-        }
-    }
-
-
-    function clearFilters() {
-        if (searchInput) {
-            searchInput.value = '';
-        }
-
-        if (categoryFilter) {
-            categoryFilter.value = '';
-        }
-
-        if (stockFilter) {
-            stockFilter.value = '';
-        }
-
-        if (sortSelect) {
-            sortSelect.value = 'newest';
-        }
-
-        setInventoryTab('all');
-    }
-
-
-    tabs.forEach(function (button) {
-        button.addEventListener(
-            'click',
-            function () {
-                setInventoryTab(
-                    button.dataset.inventoryTab
-                );
-            }
-        );
+    selectAll?.addEventListener('change', () => {
+        rowChecks.forEach(input => { input.checked = selectAll.checked; });
+        refreshBulkSelection();
     });
-
-
-    statButtons.forEach(function (button) {
-        button.addEventListener(
-            'click',
-            function () {
-                setInventoryTab(
-                    button.dataset.statFilter
-                );
-            }
-        );
+    rowChecks.forEach(input => input.addEventListener('change', refreshBulkSelection));
+    document.getElementById('inventoryClearSelection')?.addEventListener('click', () => {
+        rowChecks.forEach(input => { input.checked = false; });
+        refreshBulkSelection();
     });
+    document.querySelectorAll('[data-bulk-action]').forEach(button => button.addEventListener('click', () => {
+        const selected = checkedRows();
+        const action = button.dataset.bulkAction;
+        if (!selected.length || !['archive', 'restore'].includes(action) || !bulkForm) return;
+        if (!window.confirm((action === 'archive' ? 'Archive' : 'Restore') + ' ' + selected.length + ' selected product(s)?')) return;
+        bulkAction.value = action;
+        bulkIds.replaceChildren();
+        selected.forEach(input => {
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden'; hidden.name = 'ids[]'; hidden.value = input.value;
+            bulkIds.appendChild(hidden);
+        });
+        bulkForm.submit();
+    }));
 
+    /* Product filters run server-side; do not filter only the current page. */
 
-    searchInput?.addEventListener(
-        'input',
-        applyView
-    );
-
-    categoryFilter?.addEventListener(
-        'change',
-        applyView
-    );
-
-    stockFilter?.addEventListener(
-        'change',
-        applyView
-    );
-
-    sortSelect?.addEventListener(
-        'change',
-        applyView
-    );
-
-    clearButton?.addEventListener(
-        'click',
-        clearFilters
-    );
-
-    emptyClearButton?.addEventListener(
-        'click',
-        clearFilters
-    );
-
+    /* Unified read-only Product Details modal (Admin-inspired). */
+    const overviewModal = document.getElementById('productOverviewModal');
+    const overviewEdit = document.getElementById('overviewEditButton');
+    let overviewProduct = null;
+    let overviewTrigger = null;
+    const detailText = (id, value) => {
+        const element = document.getElementById(id);
+        if (element) element.textContent = value == null || value === '' ? '—' : String(value);
+    };
+    function closeOverview() {
+        if (!overviewModal || overviewModal.hidden) return;
+        overviewModal.hidden = true;
+        const video = document.getElementById('overviewVideo');
+        if (video) { video.pause(); video.removeAttribute('src'); video.load(); }
+        overviewProduct = null;
+        document.body.style.overflow = '';
+        overviewTrigger?.focus();
+    }
+    document.querySelectorAll('[data-open-product-overview]').forEach(button => button.addEventListener('click', () => {
+        const product = parseJson(button.dataset.product);
+        if (!product || !overviewModal) return;
+        overviewProduct = product;
+        overviewTrigger = button;
+        detailText('productOverviewTitle', product.name);
+        detailText('overviewSku', product.sku ? 'SKU: ' + product.sku : 'No SKU assigned');
+        detailText('overviewCategory', product.subcategory || product.category);
+        detailText('overviewPrice', currencyFormatter.format(Number(product.price || 0)));
+        detailText('overviewDiscount', String(product.discount || 0) + '%');
+        detailText('overviewReview', product.compliance_status === 'approved' ? 'Approved' : product.compliance_status === 'rejected' ? 'Needs correction' : 'Pending review');
+        detailText('overviewStock', Number(product.stock || 0).toLocaleString());
+        detailText('overviewVariants', product.has_variants ? String((product.variants || []).length) + ' variants' : 'Simple product');
+        detailText('overviewMedia', String((product.images || []).length) + ' photo(s)' + (product.video_url ? ' · Video' : ''));
+        detailText('overviewWeight', product.weight_kg ? product.weight_kg + ' kg' : '—');
+        detailText('overviewDescription', product.description || 'No description supplied.');
+        const videoSection = document.getElementById('overviewVideoSection');
+        const video = document.getElementById('overviewVideo');
+        if (videoSection && video) {
+            videoSection.hidden = !product.video_url;
+            video.pause();
+            video.removeAttribute('src');
+            if (product.video_url) { video.src = product.video_url; video.load(); }
+        }
+        const thumbnail = document.getElementById('overviewImage');
+        const fallback = document.getElementById('overviewFallback');
+        const imageUrl = (product.images || []).find(item => item.is_primary)?.url || product.images?.[0]?.url || product.legacy_image_url;
+        thumbnail.hidden = !imageUrl;
+        if (imageUrl) thumbnail.src = imageUrl;
+        else thumbnail.removeAttribute('src');
+        if (fallback) fallback.hidden = !!imageUrl;
+        overviewModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        overviewModal.querySelector('.inventory-modal-close')?.focus();
+    }));
+    document.querySelectorAll('[data-close-product-overview]').forEach(button => button.addEventListener('click', closeOverview));
+    overviewEdit?.addEventListener('click', () => {
+        const product = overviewProduct;
+        closeOverview();
+        if (product) openProductModal(product);
+    });
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && overviewModal && !overviewModal.hidden) {
+            event.stopImmediatePropagation();
+            closeOverview();
+        }
+    }, true);
 
     /* =========================================================
        VOUCHER MODAL
@@ -3660,7 +3451,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     updateSellingPrice();
-    applyView();
     refreshVariantEmpty();
 
 });

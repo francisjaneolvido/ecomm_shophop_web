@@ -173,6 +173,11 @@
     @stack('styles')
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261104-bh">
+    {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
 </head>
 
 @php
@@ -201,48 +206,19 @@
     | Ang mga page na wala pang route ay lalabas na "Soon" (hindi mag-eerror).
     */
     $hubNavigation = [
-        [
-            'label' => 'Overview',
-            'items' => [
-                ['label' => 'Dashboard', 'route' => 'logistics.hub.dashboard', 'pattern' => 'logistics.hub.dashboard', 'icon' => 'layout-dashboard', 'keywords' => 'home overview summary backlog'],
-            ],
-        ],
-        [
-            'label' => 'Network',
-            'items' => [
-                ['label' => 'Station Hubs', 'route' => 'logistics.hub.station-hubs', 'pattern' => 'logistics.hub.station-hubs*', 'icon' => 'warehouse', 'keywords' => 'station branch create coverage barangay credentials'],
-            ],
-        ],
-        [
-            'label' => 'Operations',
-            'items' => [
-                ['label' => 'Inbound', 'route' => 'logistics.hub.inbound', 'pattern' => 'logistics.hub.inbound*', 'icon' => 'package-check', 'keywords' => 'receiving receive arrived scan incoming'],
-                ['label' => 'Sorting', 'route' => 'logistics.hub.sorting', 'pattern' => 'logistics.hub.sorting*', 'icon' => 'scan-barcode', 'keywords' => 'sort destination route assign'],
-                ['label' => 'Outbound', 'route' => 'logistics.hub.outbound', 'pattern' => 'logistics.hub.outbound*', 'icon' => 'truck', 'keywords' => 'dispatch manifest batch send'],
-                ['label' => 'Parcel Tracking', 'route' => 'logistics.hub.parcels', 'pattern' => 'logistics.hub.parcels*', 'icon' => 'package-search', 'keywords' => 'parcels tracking number timeline status'],
-                ['label' => 'QR Scanner', 'route' => 'logistics.hub.scanner', 'pattern' => 'logistics.hub.scanner*', 'icon' => 'scan-barcode', 'keywords' => 'scan manifest parcel receive loading camera'],
-                ['label' => 'Returns & Failed', 'route' => 'logistics.hub.returns', 'pattern' => 'logistics.hub.returns*', 'icon' => 'rotate-ccw', 'keywords' => 'return failed delivery retry reassign damaged missing'],
-            ],
-        ],
-        [
-            'label' => 'Finance',
-            'items' => [
-                ['label' => 'COD & Remittance', 'route' => 'logistics.hub.cod', 'pattern' => 'logistics.hub.cod*', 'icon' => 'banknote', 'keywords' => 'cod cash collected remit verify money'],
-            ],
-        ],
-        [
-            'label' => 'Insights',
-            'items' => [
-                ['label' => 'Reports', 'route' => 'logistics.hub.reports', 'pattern' => 'logistics.hub.reports*', 'icon' => 'activity', 'keywords' => 'performance success rate delivery time export'],
-                ['label' => 'Activity Log', 'route' => 'logistics.hub.activity', 'pattern' => 'logistics.hub.activity*', 'icon' => 'history', 'keywords' => 'audit log history who changed'],
-            ],
-        ],
-        [
-            'label' => 'Account',
-            'items' => [
-                ['label' => 'Account & Password', 'route' => 'logistics.staff.workspace', 'pattern' => 'logistics.staff.*', 'icon' => 'user', 'keywords' => 'profile password security'],
-            ],
-        ],
+        ['label'=>'Overview','items'=>[
+            ['label'=>'Dashboard','route'=>'logistics.hub.dashboard','pattern'=>'logistics.hub.dashboard','icon'=>'layout-dashboard','keywords'=>'overview hub workload'],
+        ]],
+        ['label'=>'Network','items'=>[
+            ['label'=>'Branches / Station Hubs','route'=>'logistics.hub.station-hubs','pattern'=>'logistics.hub.station-hubs*','icon'=>'warehouse','keywords'=>'city municipal branch rider login'],
+        ]],
+        ['label'=>'Operations','items'=>[
+            ['label'=>'Parcel Operations','route'=>'logistics.hub.parcels','pattern'=>'logistics.hub.parcels*','icon'=>'package-check','keywords'=>'receive sort manifest road sea air'],
+            ['label'=>'QR Scanner','route'=>'logistics.hub.scanner','pattern'=>'logistics.hub.scanner*','icon'=>'scan-barcode','keywords'=>'scan parcel QR manifest'],
+        ]],
+        ['label'=>'Account','items'=>[
+            ['label'=>'Account & Password','route'=>'logistics.staff.workspace','pattern'=>'logistics.staff.*','icon'=>'user','keywords'=>'profile security password'],
+        ]],
     ];
 
     foreach ($hubNavigation as $sectionKey => $section) {
@@ -253,7 +229,7 @@
     }
 @endphp
 
-<body class="logistics-console bg-gray-bg text-navy antialiased">
+<body class="sh-management-ui logistics-console bg-gray-bg text-navy antialiased sh-ops">
 
 <div id="logisticsShell" data-mobile-open="false" class="flex h-screen overflow-hidden">
 
@@ -484,7 +460,7 @@
         @endif
 
         {{-- Content --}}
-        <main class="content-scrollbar flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 lg:px-5 lg:py-5">
+        <main class="sh-management-main content-scrollbar flex-1 overflow-y-auto px-3 py-4 sm:px-4 sm:py-5 lg:px-5 lg:py-5">
             <div class="max-w-[1600px] mx-auto">
                 @yield('content')
             </div>
@@ -702,6 +678,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const form = event.target.closest('form[data-confirm-title]');
         if (!form || form.dataset.confirmed === '1') { if (form) form.dataset.confirmed = '0'; return; }
         event.preventDefault();
+        // Native detail modals sit in the top layer; close them before showing the global confirmation dialog.
+        form.closest('dialog')?.close();
         openConfirmModal({
             title: form.dataset.confirmTitle,
             message: form.dataset.confirmMessage || 'Please confirm to continue.',
@@ -728,5 +706,6 @@ document.addEventListener('DOMContentLoaded', function () {
 <script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261027"></script>
 @stack('scripts')
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+    <script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261104-bh"></script>
 </body>
 </html>

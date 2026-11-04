@@ -36,7 +36,7 @@ class OutboundController extends Controller
             ->where('status', Delivery::AT_SORTING_CENTER)
             ->whereHas('order', fn ($q) => $q->where('status', Order::STATUS_TO_RECEIVE))
             ->latest('at_sorting_center_at')
-            ->get()
+            ->limit(150)->get()
             ->map(function (Delivery $d) use ($routing, $partner, $center, $names) {
                 $dest = $this->resolveDestination($routing, $partner, $d->order);
                 return [
@@ -50,7 +50,7 @@ class OutboundController extends Controller
                 ];
             });
 
-        $ready = $this->readyQuery($center)->with('order')->latest('sorted_at')->get()
+        $ready = $this->readyQuery($center)->with('order')->latest('sorted_at')->limit(150)->get()
             ->map(function (Delivery $d) use ($routing, $names) {
                 $plan = $routing->transferPlan($d);
                 return [

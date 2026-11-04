@@ -27,7 +27,8 @@
         <div class="sh-alert-error">Walang active Province Hub na naka-link sa branch na ito.</div>
     @endunless
 
-    <nav class="sh-ui-jump" aria-label="Outbound processing steps"><a href="#branch-sort">1. Sort</a><a href="#branch-manifests">2. Create manifest</a><a href="#branch-linehaul">3. Load & assign</a></nav>
+    <div class="ops-panel" data-ops-tabs>
+    <nav class="ops-tabs" role="tablist" aria-label="Parcel workflow stages"><button type="button" class="ops-tab" role="tab" aria-selected="true" data-ops-tab="sort">1. Sort parcels</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="manifest">2. Create manifest</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="transport">3. Transport & manifests</button></nav>
     <section class="grid gap-3 grid-cols-2 xl:grid-cols-4">
         <div class="sh-stat"><p class="sh-stat-label">To sort</p><p class="sh-stat-value">{{ number_format($stats['to_sort']) }}</p><p class="sh-stat-note">Received at branch</p></div>
         <div class="sh-stat"><p class="sh-stat-label">Ready for manifest</p><p class="sh-stat-value">{{ number_format($stats['ready']) }}</p><p class="sh-stat-note">Not reserved yet</p></div>
@@ -35,7 +36,7 @@
         <div class="sh-stat"><p class="sh-stat-label">In transit</p><p class="sh-stat-value">{{ number_format($stats['in_transit']) }}</p><p class="sh-stat-note">Driver/truck departed</p></div>
     </section>
 
-    <section class="sh-surface sh-card-pad">
+    <section class="sh-surface sh-card-pad m-3" data-ops-panel="sort" role="tabpanel">
         <p class="sh-kicker">Step 1</p>
         <h2 id="branch-sort" class="sh-title-sm scroll-mt-6">Sort received parcels</h2>
         <p class="mt-1 text-xs text-navy/50">Local parcels stay here for Delivery Rider. A verified direct ROAD connection can route parcels to another station; otherwise they follow the Province Hub. Local parcels stay here for last-mile dispatch.</p>
@@ -61,7 +62,7 @@
         @endif
     </section>
 
-    <section class="sh-surface sh-card-pad">
+    <section class="sh-surface sh-card-pad m-3" data-ops-panel="manifest" role="tabpanel" hidden>
         <p class="sh-kicker">Step 2</p>
         <h2 id="branch-manifests" class="sh-title-sm scroll-mt-6">Create manifest</h2>
         <p class="mt-1 text-xs text-navy/50">One manifest = one origin + one verified next stop. Direct station routes are used only when a directional ROAD connection is verified. Physical loading and driver scans remain required.</p>
@@ -94,15 +95,25 @@
         @endif
     </section>
 
-    <section class="space-y-4">
+    <section id="branch-linehaul" data-ops-panel="transport" role="tabpanel" class="space-y-4 p-4" hidden>
         <div class="sh-surface sh-card-pad">
             <p class="sh-kicker">Step 3</p>
             <h2 id="branch-linehaul" class="sh-title-sm scroll-mt-6">Load parcels & assign Linehaul</h2>
             <p class="mt-1 text-xs text-navy/50">Branch staff scans every parcel while it is physically loaded. The Driver scans only the Manifest QR when taking custody of the complete load.</p>
         </div>
 
-        @forelse($manifests as $m)
-            <article class="sh-surface sh-card-pad space-y-4">
+        <div class="ops-panel mt-4"><div class="ops-panel-head"><div><h2>Outbound manifest register</h2><p class="ops-panel-note">Select Manage to load, assign transport, print or reconcile a manifest.</p></div><input class="sh-input" style="max-width:240px" type="search" data-ops-search="branchManifestRows" placeholder="Search this page" aria-label="Search manifests"></div>
+<div class="ops-table-scroll"><table class="ops-table" id="branchManifestRows"><thead><tr><th>Manifest</th><th>Next center</th><th>Counts</th><th>Status</th><th>Transport</th><th>Action</th></tr></thead><tbody>
+@forelse($manifests as $m)
+            <tr data-ops-row><td><strong>{{ $m['code'] }}</strong><div class="ops-row-sub">{{ $m['created'] ?? '' }}</div></td>
+ <td>{{ $m['to'] ?? '—' }}</td>
+ <td>{{ $m['count'] }} parcels<div class="ops-row-sub">Loaded {{ $m['loaded'] }}/{{ $m['count'] }} · Received {{ $m['received'] }}/{{ $m['count'] }}</div></td>
+ <td><span class="sh-badge {{ in_array($m['status'],['ready','received'],true) ? 'sh-badge-success' : ($m['status']==='dispatched'?'sh-badge-info':'sh-badge-warning') }}">{{ ucfirst(str_replace('_',' ',$m['status'])) }}</span></td>
+ <td>{{ $m['cargo_mode'] ?? $m['trip_code'] ?? 'Unassigned' }}</td>
+ <td class="ops-row-actions"><button type="button" class="ops-action" data-ops-template="opsManifest{{ $m['id'] }}">Manage</button></td></tr>
+ <template id="opsManifest{{ $m['id'] }}">
+ <div class="ops-dialog-head"><div><h2 class="ops-dialog-title">Manifest {{ $m['code'] }}</h2><p class="ops-panel-note">{{ $m['to'] }} · {{ $m['count'] }} parcels</p></div><button type="button" class="ops-action" data-ops-close>✕</button></div>
+ <div class="ops-dialog-body"><div class="space-y-4">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -150,11 +161,13 @@
                 @elseif($m['trip_status']==='arrived')
                     <div class="rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-navy">Destination confirmed the Manifest QR arrival. Receiving is now controlled by the destination Branch/Hub.</div>
                 @endif
-            </article>
+            </div></div><div class="ops-dialog-foot"><button type="button" class="sh-btn-ghost" data-ops-close>Close</button></div></template>
         @empty
-            <div class="sh-surface sh-card-pad sh-empty"><p class="text-sm font-semibold text-navy">No manifests yet</p></div>
+            <tr><td colspan="6" class="ops-empty">No outbound manifests yet.</td></tr>
         @endforelse
+<tr data-ops-search-empty hidden><td colspan="6" class="ops-empty">No matching manifests on this page.</td></tr></tbody></table></div></div><dialog class="ops-dialog" id="opsRecordDialog"><div data-ops-record-content></div></dialog>
     </section>
+</div>
 </div>
 @endsection
 

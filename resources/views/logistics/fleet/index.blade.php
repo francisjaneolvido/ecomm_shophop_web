@@ -1,141 +1,81 @@
 @extends('logistics.layouts.console')
-
-@section('title', 'Fleet & Linehaul')
-
+@section('title', 'Fleet & Linehaul — ShopHop Logistics')
 @section('content')
-<div class="space-y-6">
-    <header class="sh-page-header">
-        <div>
-            <p class="text-xs font-bold uppercase tracking-[.16em] text-teal">Fleet Management</p>
-            <h1 class="mt-1 text-2xl font-extrabold text-navy">Vehicles & Linehaul Drivers</h1>
-            <p class="mt-2 max-w-3xl text-sm text-navy/55">
-                Riders handle Seller pickup and Buyer delivery. Branch/Hub-to-Branch/Hub transport is handled by registered Linehaul vehicles and drivers through manifests and trips.
-            </p>
-        </div>
-    </header>
-
-    @if ($errors->any())
-        <div class="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{{ $errors->first() }}</div>
-    @endif
-
-    <section class="grid gap-5 xl:grid-cols-2">
-        <details class="sh-surface sh-collapsible-form" @if($errors->any()) open @endif>
-            <summary class="sh-collapsible-summary"><span><span class="sh-kicker">Vehicle registration</span><strong>Register a linehaul vehicle</strong><small>Plate, type, capacity and home hub</small></span><x-lucide-chevron-down class="h-5 w-5" /></summary>
-            <form method="POST" action="{{ route('logistics.fleet.vehicles.store') }}" class="sh-collapse-content mt-0 grid gap-3 p-4 md:grid-cols-2 sm:p-5" data-confirm-title="Register vehicle?" data-confirm-message="Create this vehicle with the selected home hub and capacity?" data-confirm-button="Register vehicle">
-                @csrf
-                <label class="sh-field"><span class="sh-label">Vehicle code</span><input class="sh-input" name="code" required placeholder="VH-LAG-001"></label>
-                <label class="sh-field"><span class="sh-label">Plate number</span><input class="sh-input" name="plate_number" required placeholder="ABC 1234"></label>
-                <label class="sh-field"><span class="sh-label">Vehicle type</span>
-                    <select class="sh-input" name="vehicle_type" required>
-                        <option value="van">Van</option><option value="light_truck">Light Truck</option>
-                        <option value="6_wheeler">6-Wheeler</option><option value="10_wheeler">10-Wheeler</option><option value="other">Other</option>
-                    </select>
-                </label>
-                <label class="sh-field"><span class="sh-label">Home Province Hub</span>
-                    <select class="sh-input" name="home_hub_id" required>
-                        <option value="">Select Province Hub</option>
-                        @foreach($provinceHubs as $hub)<option value="{{ $hub->id }}">{{ $hub->name }}</option>@endforeach
-                    </select>
-                </label>
-                <label class="sh-field"><span class="sh-label">Capacity (kg)</span><input class="sh-input" type="number" step="0.01" min="1" name="capacity_kg" placeholder="4000"></label>
-                <label class="sh-field"><span class="sh-label">Volume (m³, optional)</span><input class="sh-input" type="number" step="0.01" min="0.01" name="volume_capacity_m3"></label>
-                <label class="sh-field"><span class="sh-label">Ownership</span>
-                    <select class="sh-input" name="owner_type"><option value="company">Company owned</option><option value="contracted">Contracted / 3PL</option></select>
-                </label>
-                <label class="flex items-center gap-2 self-end rounded-xl border border-gray-border px-3 py-2 text-sm"><input type="checkbox" name="is_primary" value="1"><span>Primary vehicle for this Province Hub</span></label>
-                <div class="md:col-span-2"><button class="sh-btn">Register vehicle</button></div>
-            </form>
-        </details>
-
-        <details class="sh-surface sh-collapsible-form" @if($errors->any()) open @endif>
-            <summary class="sh-collapsible-summary"><span><span class="sh-kicker">Driver registration</span><strong>Register a linehaul driver</strong><small>License details and secure mobile login</small></span><x-lucide-chevron-down class="h-5 w-5" /></summary>
-            <p class="px-4 pt-4 text-xs text-navy/55 sm:px-5">Linehaul drivers and delivery riders have different responsibilities. These credentials are for the ShopHop mobile app.</p>
-            <form method="POST" action="{{ route('logistics.fleet.drivers.store') }}" class="sh-collapse-content mt-0 grid gap-3 p-4 md:grid-cols-2 sm:p-5" data-confirm-title="Register driver account?" data-confirm-message="Create a new linehaul driver and their mobile login credentials?" data-confirm-button="Register driver">
-                @csrf
-                <label class="sh-field"><span class="sh-label">Driver name</span><input class="sh-input" name="name" required></label>
-                <label class="sh-field"><span class="sh-label">Contact</span><input class="sh-input" name="contact_no"></label>
-                <label class="sh-field"><span class="sh-label">License no.</span><input class="sh-input" name="license_no"></label>
-                <label class="sh-field"><span class="sh-label">License expiry</span><input class="sh-input" type="date" name="license_expiry"></label>
-                <label class="sh-field"><span class="sh-label">Mobile login email</span><input class="sh-input" type="email" name="email" required></label>
-                <div></div>
-                <label class="sh-field"><span class="sh-label">Temporary password</span><input class="sh-input" type="password" name="password" required></label>
-                <label class="sh-field"><span class="sh-label">Confirm password</span><input class="sh-input" type="password" name="password_confirmation" required></label>
-                <div class="md:col-span-2"><button class="sh-btn">Register driver</button></div>
-            </form>
-        </details>
-    </section>
-
-    <section class="grid gap-5 xl:grid-cols-2">
-        <div class="rounded-2xl border border-gray-border bg-white p-5 shadow-soft">
-            <div class="sh-ui-list-heading"><h2 class="text-lg font-bold text-navy">Vehicles</h2><label><span class="sr-only">Filter vehicles</span><input type="search" class="sh-input" data-ui-list-search="fleetVehicles" placeholder="Search plate, code or hub"></label></div>
-            <div id="fleetVehicles" class="mt-4 space-y-3 sh-ui-record-stack" data-ui-collection>
-                @forelse($vehicles as $vehicle)
-                    <div class="rounded-xl border border-gray-border p-4 sh-ui-record" data-ui-record>
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <div class="flex items-center gap-2"><span class="font-bold text-navy">{{ $vehicle->code }}</span>@if($vehicle->is_primary)<span class="rounded-full bg-teal-light px-2 py-0.5 text-[10px] font-bold text-teal-dark">PRIMARY</span>@endif</div>
-                                <p class="mt-1 text-sm text-navy/65">{{ $vehicle->plate_number }} · {{ ucwords(str_replace('_',' ', $vehicle->vehicle_type)) }}</p>
-                                <p class="text-xs text-navy/45">{{ $vehicle->homeHub?->name ?? 'No home hub' }} · {{ $vehicle->capacity_kg ? number_format((float)$vehicle->capacity_kg).' kg' : 'Capacity not set' }}</p>
-                            </div>
-                            <span class="rounded-full bg-gray-bg px-2.5 py-1 text-xs font-semibold text-navy">{{ ucfirst(str_replace('_',' ', $vehicle->status)) }}</span>
-                        </div>
-                        @if(!in_array($vehicle->status, ['in_transit']))
-                        <form method="POST" action="{{ route('logistics.fleet.vehicles.status', $vehicle) }}" class="mt-3 flex gap-2" data-confirm-title="Update vehicle status?" data-confirm-message="The new availability status will affect fleet planning." data-confirm-subject="{{ $vehicle->code }} · {{ $vehicle->plate_number }}" data-confirm-button="Update status">
-                            @csrf
-                            <select name="status" class="rounded-lg border border-gray-border px-2 py-1.5 text-xs">
-                                <option value="available" @selected($vehicle->status==='available')>Available</option>
-                                <option value="maintenance" @selected($vehicle->status==='maintenance')>Maintenance</option>
-                                <option value="inactive" @selected($vehicle->status==='inactive')>Inactive</option>
-                            </select>
-                            <button class="rounded-lg border border-gray-border px-3 py-1.5 text-xs font-semibold">Update</button>
-                        </form>
-                        @endif
-                    </div>
-                @empty
-                    <p class="text-sm text-navy/50">No registered Linehaul vehicles yet.</p>
-                @endforelse
-            </div>
-        </div>
-
-        <div class="rounded-2xl border border-gray-border bg-white p-5 shadow-soft">
-            <div class="sh-ui-list-heading"><h2 class="text-lg font-bold text-navy">Linehaul Drivers</h2><label><span class="sr-only">Filter drivers</span><input type="search" class="sh-input" data-ui-list-search="fleetDrivers" placeholder="Search driver, email or license"></label></div>
-            <div id="fleetDrivers" class="mt-4 space-y-3 sh-ui-record-stack" data-ui-collection>
-                @forelse($drivers as $driver)
-                    <div class="rounded-xl border border-gray-border p-4 sh-ui-record" data-ui-record>
-                        <div class="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                                <p class="font-bold text-navy">{{ $driver->name }}</p>
-                                <p class="mt-1 text-sm text-navy/65">{{ $driver->email }}</p>
-                                <p class="text-xs text-navy/45">{{ $driver->license_no ?: 'No license no.' }} @if($driver->license_expiry)· expires {{ $driver->license_expiry->format('M d, Y') }}@endif</p>
-                            </div>
-                            <span class="rounded-full bg-gray-bg px-2.5 py-1 text-xs font-semibold text-navy">{{ ucfirst($driver->status) }}</span>
-                        </div>
-                        <form method="POST" action="{{ route('logistics.fleet.drivers.toggle', $driver) }}" class="mt-3" data-confirm-title="{{ $driver->status === 'active' ? 'Deactivate driver?' : 'Activate driver?' }}" data-confirm-message="This changes the driver's access to linehaul assignments." data-confirm-subject="{{ $driver->name }}" data-confirm-button="{{ $driver->status === 'active' ? 'Deactivate' : 'Activate' }}" data-confirm-danger="{{ $driver->status === 'active' ? '1' : '0' }}">
-                            @csrf
-                            <button class="rounded-lg border border-gray-border px-3 py-1.5 text-xs font-semibold">{{ $driver->status === 'active' ? 'Deactivate' : 'Activate' }}</button>
-                        </form>
-                    </div>
-                @empty
-                    <p class="text-sm text-navy/50">No registered Linehaul Drivers yet.</p>
-                @endforelse
-            </div>
-        </div>
-    </section>
-
-    <section class="rounded-2xl border border-gray-border bg-white p-5 shadow-soft">
-        <div class="flex items-center justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-[.12em] text-teal">Operations</p><h2 class="mt-1 text-lg font-bold text-navy">Recent Linehaul Trips</h2></div></div>
-        <div class="mt-4 overflow-x-auto">
-            <table class="w-full min-w-[58rem] text-left text-sm">
-                <thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="px-3 py-3">Trip</th><th class="px-3 py-3">Route</th><th class="px-3 py-3">Vehicle</th><th class="px-3 py-3">Driver</th><th class="px-3 py-3">Manifest</th><th class="px-3 py-3">Status</th></tr></thead>
-                <tbody>
-                @forelse($trips as $trip)
-                    <tr class="border-b border-gray-border/70"><td class="px-3 py-3 font-semibold">{{ $trip->code }}</td><td class="px-3 py-3">{{ $trip->fromCenter?->name }} → {{ $trip->toCenter?->name }}</td><td class="px-3 py-3">{{ $trip->vehicle?->code }} · {{ $trip->vehicle?->plate_number }}</td><td class="px-3 py-3">{{ $trip->driver?->name }}</td><td class="px-3 py-3">{{ $trip->manifests->pluck('code')->implode(', ') ?: '—' }}</td><td class="px-3 py-3">{{ ucfirst(str_replace('_',' ', $trip->status)) }}</td></tr>
-                @empty
-                    <tr><td colspan="6" class="px-3 py-8 text-center text-navy/45">No Linehaul Trips yet. Trips are created by Branch/Hub staff after a manifest is fully loaded.</td></tr>
-                @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
+<div class="ops-page space-y-4">
+ <header class="flex flex-wrap justify-between items-end gap-3"><div><p class="eyebrow">NETWORK & PEOPLE</p><h1 class="ops-title">Fleet & Linehaul Management</h1><p class="ops-subtitle">Vehicles and linehaul drivers transport manifested parcel batches. Pickup and delivery riders are managed separately.</p></div></header>
+ @if(session('status'))<div class="sh-alert-success ops-status" role="status">{{ session('status') }}</div>@endif
+ @if($errors->any())<div class="sh-alert-error ops-status" role="alert">{{ $errors->first() }}</div>@endif
+ <section class="ops-panel">
+  <div class="ops-tabs" data-ops-tabs role="tablist" aria-label="Fleet directories">
+    <button type="button" data-ops-tab="vehicles" id="tabVehicles" aria-controls="panelVehicles" role="tab">Vehicles <span class="ops-muted">({{ number_format($vehicles->total()) }})</span></button>
+    <button type="button" data-ops-tab="drivers" id="tabDrivers" aria-controls="panelDrivers" role="tab">Linehaul Drivers <span class="ops-muted">({{ number_format($drivers->total()) }})</span></button>
+    <button type="button" data-ops-tab="trips" id="tabTrips" aria-controls="panelTrips" role="tab">Recent Trips</button>
+  </div>
+  <div class="ops-tab-panel" id="panelVehicles" role="tabpanel" aria-labelledby="tabVehicles">
+   <div class="ops-header"><div><h2 class="font-bold text-navy">Registered Vehicles</h2><p class="ops-subtitle">Search, inspect and maintain fleet capacity</p></div><button class="ops-button ops-button-primary" type="button" data-ops-open="createVehicle">+ Add vehicle</button></div>
+   <form class="ops-filters" method="GET"><input type="hidden" name="tab" value="vehicles"><label class="sh-field"><span class="sh-label">Plate / Code / Home Hub</span><input class="sh-input" name="vehicles_q" value="{{ request('vehicles_q') }}" placeholder="Search vehicles"></label>
+    <label class="sh-field"><span class="sh-label">Status</span><select class="sh-select" name="vehicles_status"><option value="">All statuses</option>@foreach(['available','in_transit','maintenance','inactive'] as $status)<option value="{{ $status }}" @selected(request('vehicles_status')===$status)>{{ ucwords(str_replace('_',' ',$status)) }}</option>@endforeach</select></label><button class="ops-button ops-button-primary">Filter</button><a class="ops-button" href="{{ route('logistics.fleet.index', ['tab'=>'vehicles']) }}">Clear</a>
+   </form>
+   <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Vehicle</th><th>Type</th><th>Home Province Hub</th><th>Capacity</th><th>Ownership</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    @forelse($vehicles as $vehicle)
+    <tr><td><div class="ops-primary">{{ $vehicle->code }} @if($vehicle->is_primary)<span class="ops-badge" data-status="verified">Primary</span>@endif</div><div class="ops-secondary">{{ $vehicle->plate_number }}</div></td><td>{{ ucwords(str_replace('_',' ', $vehicle->vehicle_type)) }}</td><td>{{ $vehicle->homeHub?->name ?: 'Unassigned' }}</td><td class="ops-compact">{{ $vehicle->capacity_kg ? number_format((float)$vehicle->capacity_kg).' kg' : '—' }}<div class="ops-secondary">{{ $vehicle->volume_capacity_m3 ? $vehicle->volume_capacity_m3.' m³' : '' }}</div></td><td>{{ $vehicle->owner_type==='company' ? 'Company' : 'Contracted' }}</td><td><span class="ops-badge" data-status="{{ $vehicle->status }}">{{ ucwords(str_replace('_',' ',$vehicle->status)) }}</span></td>
+    <td><details class="ops-actions"><summary class="ops-button">Actions ▾</summary><div class="ops-actions-menu">
+      <button type="button" data-ops-open="editVehicle" data-ops-record-edit="editVehicle" data-subject="{{ $vehicle->code }} · {{ $vehicle->plate_number }}" data-url="{{ route('logistics.fleet.vehicles.update',$vehicle) }}" data-fields="{{ json_encode(['code'=>$vehicle->code,'plate_number'=>$vehicle->plate_number,'vehicle_type'=>$vehicle->vehicle_type,'home_hub_id'=>$vehicle->home_hub_id,'capacity_kg'=>$vehicle->capacity_kg,'volume_capacity_m3'=>$vehicle->volume_capacity_m3,'owner_type'=>$vehicle->owner_type,'is_primary'=>(bool)$vehicle->is_primary],JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_HEX_TAG) }}">Edit details</button>
+      @if($vehicle->status !== 'in_transit')<button type="button" data-ops-open="statusVehicle" data-ops-record-edit="statusVehicle" data-subject="{{ $vehicle->code }}" data-url="{{ route('logistics.fleet.vehicles.status',$vehicle) }}" data-fields="{{ json_encode(['status'=>$vehicle->status],JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_HEX_TAG) }}">Change status</button>@endif
+    </div></details></td></tr>
+    @empty<tr><td colspan="7" class="ops-empty">No vehicles match your filters.</td></tr>@endforelse
+   </tbody></table></div><div class="ops-footer"><span>{{ $vehicles->firstItem() ?? 0 }}–{{ $vehicles->lastItem() ?? 0 }} of {{ number_format($vehicles->total()) }} vehicles</span>{{ $vehicles->links() }}</div>
+  </div>
+  <div class="ops-tab-panel" id="panelDrivers" role="tabpanel" aria-labelledby="tabDrivers" hidden>
+   <div class="ops-header"><div><h2 class="font-bold text-navy">Linehaul Drivers</h2><p class="ops-subtitle">Separate from pickup/delivery rider accounts</p></div><button class="ops-button ops-button-primary" data-ops-open="createDriver">+ Add driver</button></div>
+   <form class="ops-filters" method="GET"><input type="hidden" name="tab" value="drivers"><label class="sh-field"><span class="sh-label">Name / Email / License</span><input name="drivers_q" class="sh-input" value="{{ request('drivers_q') }}" placeholder="Search drivers"></label><label class="sh-field"><span class="sh-label">Status</span><select class="sh-select" name="drivers_status"><option value="">All</option><option value="active" @selected(request('drivers_status')==='active')>Active</option><option value="inactive" @selected(request('drivers_status')==='inactive')>Inactive</option></select></label><button class="ops-button ops-button-primary">Filter</button><a class="ops-button" href="{{ route('logistics.fleet.index', ['tab'=>'drivers']) }}">Clear</a></form>
+   <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Driver</th><th>Contact</th><th>License</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    @forelse($drivers as $driver)<tr><td><div class="ops-primary">{{ $driver->name }}</div><div class="ops-secondary">{{ $driver->email }}</div></td><td>{{ $driver->contact_no ?: '—' }}</td><td>{{ $driver->license_no ?: '—' }}</td><td class="ops-compact">{{ $driver->license_expiry?->format('M d, Y') ?: '—' }}</td><td><span class="ops-badge" data-status="{{ $driver->status }}">{{ ucfirst($driver->status) }}</span></td>
+    <td><details class="ops-actions"><summary class="ops-button">Actions ▾</summary><div class="ops-actions-menu"><button type="button" data-ops-open="editDriver" data-ops-record-edit="editDriver" data-url="{{ route('logistics.fleet.drivers.update',$driver) }}" data-subject="{{ $driver->name }}" data-fields="{{ json_encode(['name'=>$driver->name,'email'=>$driver->email,'contact_no'=>$driver->contact_no,'license_no'=>$driver->license_no,'license_expiry'=>$driver->license_expiry?->format('Y-m-d')],JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP|JSON_HEX_TAG) }}">Edit details</button><form method="POST" action="{{ route('logistics.fleet.drivers.toggle',$driver) }}" data-confirm-title="{{ $driver->status==='active' ? 'Deactivate driver?' : 'Activate driver?' }}" data-confirm-message="This changes linehaul access. Active trips must be completed first." data-confirm-button="Confirm">@csrf<button class="{{ $driver->status==='active'?'ops-danger':'' }}">{{ $driver->status==='active'?'Deactivate':'Activate' }}</button></form></div></details></td></tr>
+    @empty<tr><td colspan="6" class="ops-empty">No linehaul drivers match your filters.</td></tr>@endforelse
+   </tbody></table></div><div class="ops-footer"><span>{{ $drivers->firstItem() ?? 0 }}–{{ $drivers->lastItem() ?? 0 }} of {{ number_format($drivers->total()) }} drivers</span>{{ $drivers->links() }}</div>
+  </div>
+  <div class="ops-tab-panel" id="panelTrips" role="tabpanel" aria-labelledby="tabTrips" hidden>
+   <div class="ops-header"><h2 class="font-bold text-navy">Latest Linehaul Trips</h2><span class="ops-muted text-xs">Most recent 40 records</span></div>
+   <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Trip</th><th>Route</th><th>Vehicle</th><th>Driver</th><th>Manifest</th><th>Status</th></tr></thead><tbody>
+   @forelse($trips as $trip)<tr><td class="ops-primary">{{ $trip->code }}</td><td>{{ $trip->fromCenter?->name }} → {{ $trip->toCenter?->name }}</td><td>{{ $trip->vehicle?->code }}<div class="ops-secondary">{{ $trip->vehicle?->plate_number }}</div></td><td>{{ $trip->driver?->name }}</td><td>{{ $trip->manifests->pluck('code')->implode(', ') ?: '—' }}</td><td><span class="ops-badge" data-status="{{ $trip->status }}">{{ ucwords(str_replace('_',' ',$trip->status)) }}</span></td></tr>@empty<tr><td colspan="6" class="ops-empty">No trips recorded yet.</td></tr>@endforelse
+   </tbody></table></div>
+  </div>
+ </section>
 </div>
+
+@foreach([['createVehicle','Register vehicle','logistics.fleet.vehicles.store'],['editVehicle','Edit vehicle','logistics.fleet.vehicles.store']] as [$id,$title,$unused])
+<dialog id="{{ $id }}" data-ops-modal class="ops-modal" aria-labelledby="{{ $id }}Title">
+ <div class="ops-modal-head"><div><h2 id="{{ $id }}Title">{{ $title }}</h2><p data-ops-subject>{{ $id==='createVehicle' ? 'Assign vehicle capacity and home Province Hub.' : 'Changes are blocked while an active trip exists.' }}</p></div><button type="button" class="ops-button" data-ops-close>✕</button></div>
+ <form method="POST" action="{{ route('logistics.fleet.vehicles.store') }}" data-confirm-title="{{ $title }}?" data-confirm-button="Save vehicle" data-confirm-message="Review vehicle details and the home hub before saving.">@csrf
+  <div class="ops-modal-body"><div class="ops-fields">
+   <label class="sh-field"><span class="sh-label">Vehicle code *</span><input name="code" class="sh-input" required maxlength="40" placeholder="VH-LAG-001"></label>
+   <label class="sh-field"><span class="sh-label">Plate number *</span><input name="plate_number" class="sh-input" required maxlength="40" placeholder="ABC 1234"></label>
+   <label class="sh-field"><span class="sh-label">Vehicle type *</span><select name="vehicle_type" class="sh-select" required><option value="van">Van</option><option value="light_truck">Light truck</option><option value="6_wheeler">6-wheeler</option><option value="10_wheeler">10-wheeler</option><option value="other">Other</option></select></label>
+   <label class="sh-field"><span class="sh-label">Home Province Hub *</span><select name="home_hub_id" class="sh-select" required><option value="">Select hub</option>@foreach($provinceHubs as $hub)<option value="{{ $hub->id }}">{{ $hub->name }}</option>@endforeach</select></label>
+   <label class="sh-field"><span class="sh-label">Capacity (kg)</span><input type="number" min="1" step="0.01" name="capacity_kg" class="sh-input"></label>
+   <label class="sh-field"><span class="sh-label">Volume (m³)</span><input type="number" min="0.01" step="0.01" name="volume_capacity_m3" class="sh-input"></label>
+   <label class="sh-field"><span class="sh-label">Ownership</span><select name="owner_type" class="sh-select"><option value="company">Company owned</option><option value="contracted">Contracted / 3PL</option></select></label>
+   <label class="sh-field flex items-center gap-2"><input type="checkbox" name="is_primary" value="1"><span class="sh-label">Primary vehicle for hub</span></label>
+  </div></div><div class="ops-modal-footer"><button type="button" class="ops-button" data-ops-close>Cancel</button><button class="ops-button ops-button-primary">{{ $id==='createVehicle' ? 'Register vehicle' : 'Save changes' }}</button></div>
+ </form>
+</dialog>
+@endforeach
+@foreach([['createDriver','Register linehaul driver'],['editDriver','Edit linehaul driver']] as [$id,$title])
+<dialog id="{{ $id }}" data-ops-modal class="ops-modal" aria-labelledby="{{ $id }}Title">
+ <div class="ops-modal-head"><div><h2 id="{{ $id }}Title">{{ $title }}</h2><p data-ops-subject>Driver credentials are for ShopHop Mobile linehaul access.</p></div><button type="button" class="ops-button" data-ops-close>✕</button></div>
+ <form method="POST" action="{{ route('logistics.fleet.drivers.store') }}" data-confirm-title="Save linehaul driver?" data-confirm-button="Save driver" data-confirm-message="Confirm the driver's email and license information.">@csrf
+  <div class="ops-modal-body"><div class="ops-fields">
+   <label class="sh-field"><span class="sh-label">Driver name *</span><input class="sh-input" name="name" maxlength="150" required></label>
+   <label class="sh-field"><span class="sh-label">Email *</span><input class="sh-input" name="email" type="email" maxlength="190" required></label>
+   <label class="sh-field"><span class="sh-label">Contact</span><input class="sh-input" name="contact_no" maxlength="40"></label>
+   <label class="sh-field"><span class="sh-label">License number</span><input class="sh-input" name="license_no" maxlength="80"></label>
+   <label class="sh-field"><span class="sh-label">License expiry</span><input class="sh-input" name="license_expiry" type="date"></label><div></div>
+   <label class="sh-field"><span class="sh-label">{{ $id==='editDriver' ? 'New password (optional)' : 'Temporary password *' }}</span><input class="sh-input" name="password" type="password" minlength="8" autocomplete="new-password" @if($id==='createDriver') required @endif></label>
+   <label class="sh-field"><span class="sh-label">Confirm password</span><input class="sh-input" name="password_confirmation" type="password" minlength="8" autocomplete="new-password" @if($id==='createDriver') required @endif></label>
+  </div></div><div class="ops-modal-footer"><button type="button" class="ops-button" data-ops-close>Cancel</button><button class="ops-button ops-button-primary">{{ $id==='createDriver' ? 'Register driver' : 'Save changes' }}</button></div>
+ </form>
+</dialog>
+@endforeach
+<dialog id="statusVehicle" data-ops-modal class="ops-modal" aria-labelledby="statusVehicleTitle" style="max-width:480px"><div class="ops-modal-head"><div><h2 id="statusVehicleTitle">Change vehicle status</h2><p data-ops-subject></p></div><button class="ops-button" type="button" data-ops-close>✕</button></div><form method="POST" action="" data-confirm-title="Change vehicle status?" data-confirm-button="Update" data-confirm-message="Vehicle status determines availability for future trips.">@csrf<div class="ops-modal-body"><label class="sh-field"><span class="sh-label">New status</span><select name="status" class="sh-select"><option value="available">Available</option><option value="maintenance">Maintenance</option><option value="inactive">Inactive</option></select></label></div><div class="ops-modal-footer"><button class="ops-button" type="button" data-ops-close>Cancel</button><button class="ops-button ops-button-primary">Update status</button></div></form></dialog>
 @endsection

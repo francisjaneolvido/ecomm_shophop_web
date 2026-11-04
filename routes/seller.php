@@ -10,6 +10,7 @@ use App\Http\Controllers\Seller\ReportController;
 use App\Http\Controllers\Seller\EarningsController;
 // Account reads and writes reuse the authenticated Seller profile within the existing approved-role group.
 use App\Http\Controllers\Seller\AccountController;
+use App\Http\Controllers\Seller\PromotionsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +96,11 @@ Route::prefix('seller')
                 'store',
             ])->name('inventory.products.store');
 
+            Route::patch('/inventory/bulk-status', [
+                InventoryController::class,
+                'bulkStatus',
+            ])->name('inventory.products.bulk-status');
+
             Route::patch(
                 '/inventory/{product}/stock',
                 [InventoryController::class, 'updateStock']
@@ -132,6 +138,10 @@ Route::prefix('seller')
                 [InventoryController::class, 'destroyVoucher']
             )->name('inventory.vouchers.destroy');
 
+
+            // Dedicated, seller-scoped Voucher & Promotions management workspace.
+            Route::get('/promotions', [PromotionsController::class, 'index'])->name('promotions');
+            Route::get('/promotions/products', [PromotionsController::class, 'products'])->name('promotions.products');
 
             /*
             |--------------------------------------------------------------------------
@@ -202,6 +212,7 @@ Route::prefix('seller')
 
             // Core profile changes persist through CSRF-protected HTTP; no client-supplied Seller ID is accepted.
             Route::get('/account', [AccountController::class, 'show'])->name('account');
+            Route::get('/shop-profile', [AccountController::class, 'shopProfile'])->name('shop-profile');
             Route::patch('/account', [AccountController::class, 'update'])->name('account.update');
 
 

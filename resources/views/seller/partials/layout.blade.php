@@ -221,6 +221,10 @@
     @stack('styles')
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
 </head>
 
 
@@ -285,6 +289,12 @@
                     'route' => 'seller.inventory',
                     'pattern' => 'seller.inventory*',
                     'icon' => 'package',
+                ],
+                [
+                    'label' => 'Vouchers & Promotions',
+                    'route' => 'seller.promotions',
+                    'pattern' => 'seller.promotions*',
+                    'icon' => 'ticket-percent',
                 ],
             ],
         ],
@@ -353,6 +363,12 @@
                     'icon' => 'messages-square',
                 ],
                 [
+                    'label' => 'Shop Profile',
+                    'route' => 'seller.shop-profile',
+                    'pattern' => 'seller.shop-profile*',
+                    'icon' => 'store',
+                ],
+                [
                     'label' => 'Account Management',
                     'route' => 'seller.account',
                     'pattern' => 'seller.account*',
@@ -364,7 +380,7 @@
 @endphp
 
 
-<body class="bg-gray-bg text-navy antialiased">
+<body class="sh-management-ui bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 @includeWhen(app()->environment('local'), 'dev.account-switcher')
@@ -1100,7 +1116,7 @@
             PAGE CONTENT
         ===================================================== --}}
         <main
-            class="content-scrollbar
+            class="sh-management-main content-scrollbar
                    flex-1 overflow-y-auto
                    px-3 py-4
                    sm:px-4 sm:py-5

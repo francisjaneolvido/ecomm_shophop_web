@@ -21,23 +21,23 @@
             theme: {
                 extend: {
                     colors: {
-                        navy: '#0F2C3F',
-                        'navy-light': '#173B52',
+                        navy: '#0F1B3D',
+                        'navy-light': '#1C3150',
                         'navy-soft': '#244B61',
 
-                        teal: '#2ECFA6',
-                        'teal-dark': '#22B593',
-                        'teal-light': '#E9F8F4',
+                        teal: '#21C3A6',
+                        'teal-dark': '#18A98E',
+                        'teal-light': '#D4F5EE',
 
-                        mint: '#2ECFA6',
-                        'mint-dark': '#22B593',
+                        mint: '#21C3A6',
+                        'mint-dark': '#18A98E',
 
                         sky: '#4AA8E0',
                         yellow: '#F7C948',
                         coral: '#FF7A59',
 
-                        'gray-bg': '#F4F7F8',
-                        'gray-border': '#E4EAEE',
+                        'gray-bg': '#F3F5F7',
+                        'gray-border': '#E2E6EA',
                     },
 
                     fontFamily: {
@@ -211,6 +211,10 @@
     @stack('styles')
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    {{-- Explicit asset link: never depend on a stack for shared admin UI. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-admin-operations-v1.css') }}?v=20261104a">
+    {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
+    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
 </head>
 
 
@@ -338,7 +342,7 @@
 @endphp
 
 
-<body class="bg-gray-bg text-navy antialiased">
+<body class="sh-management-ui bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 @includeWhen(app()->environment('local'), 'dev.account-switcher')
@@ -347,7 +351,7 @@
     id="adminShell"
     data-sidebar-collapsed="false"
     data-mobile-sidebar-open="false"
-    class="flex h-screen overflow-hidden"
+    class="flex h-screen min-h-0 overflow-hidden"
 >
 
     {{-- =========================================================
@@ -1069,13 +1073,14 @@
             PAGE CONTENT
         ===================================================== --}}
         <main
-            class="content-scrollbar
-                   flex-1 overflow-y-auto
+            id="adminMain"
+            class="sh-management-main content-scrollbar
+                   flex-1 min-h-0 overflow-y-auto
                    px-3 py-4
                    sm:px-4 sm:py-5
                    lg:px-5 lg:py-5"
         >
-            <div class="w-full min-w-0">
+            <div id="adminMainContent" class="admin-workspace w-full min-w-0">
                 @yield('content')
             </div>
         </main>
@@ -1786,6 +1791,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script defer src="{{ asset('js/shophop-admin-operations-v1.js') }}?v=20261104a"></script>
 @stack('scripts')
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>

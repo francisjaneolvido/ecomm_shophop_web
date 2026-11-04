@@ -19,7 +19,7 @@
             <p class="text-sm text-slate-500 mt-1 max-w-2xl">Track, review, and resolve complaints between buyers, sellers, riders, and logistics partners.</p>
         </div>
         <button type="button" id="newCaseToggle"
-            class="h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-navy hover:opacity-90 transition">
+            class="admin-btn admin-btn-primary">
             + New Case
         </button>
     </div>
@@ -102,7 +102,7 @@
                     class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-navy">{{ old('description') }}</textarea>
             </div>
             <div class="md:col-span-2 flex justify-end">
-                <button type="submit" class="h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-mint-dark hover:opacity-90 transition">Create Case</button>
+                <button type="submit" class="admin-btn admin-btn-teal">Create Case</button>
             </div>
         </form>
     </div>
@@ -138,39 +138,22 @@
             <span class="text-xs text-slate-400">{{ $disputes->total() }} total</span>
         </div>
 
-        <div class="divide-y divide-slate-100">
-            @forelse ($disputes as $d)
-                <a href="{{ route('admin.disputes.show', $d) }}" class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 px-5 py-4 hover:bg-slate-50/60 transition">
-                    <div class="min-w-0">
-                        <div class="flex items-center gap-2 flex-wrap">
-                            <span class="text-[11px] font-bold text-slate-400">{{ $d->case_no }}</span>
-                            <p class="text-sm font-semibold text-navy truncate">{{ $d->subject }}</p>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold {{ $d->status_badge }}">{{ $d->status_label }}</span>
-                            @if ($d->priority === 'high')
-                                <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-coral/10 text-coral">High priority</span>
-                            @endif
-                        </div>
-                        <p class="text-xs text-slate-500 mt-1 truncate">
-                            {{ $d->type_label }}
-                            @if ($d->order_id) · Order #{{ $d->order_id }} @endif
-                            · {{ $d->complainant?->display_name ?? 'No complainant' }}
-                            → {{ $d->respondent?->display_name ?? 'No respondent' }}
-                        </p>
-                    </div>
-                    <div class="text-[11px] text-slate-400 shrink-0 lg:text-right">
-                        <p>Filed {{ $d->created_at->diffForHumans() }}</p>
-                        <p>{{ $d->is_closed ? 'Closed in' : 'Open for' }} {{ $d->age_days }} day(s)</p>
-                    </div>
-                </a>
-            @empty
-                <div class="px-5 py-14 text-center">
-                    <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center">
-                        <x-lucide-user-search class="w-5 h-5" />
-                    </div>
-                    <p class="text-sm font-semibold text-navy mt-3">No cases found</p>
-                    <p class="text-xs text-slate-400 mt-1">{{ $counts['all'] === 0 ? 'No complaints have been logged yet.' : 'Try changing the filters.' }}</p>
-                </div>
-            @endforelse
+        <div class="admin-table-scroll">
+          <table class="min-w-[760px]">
+            <thead><tr><th>Case / Subject</th><th>Type / Order</th><th>Participants</th><th>Status</th><th>Filed / Age</th><th class="text-right">Action</th></tr></thead>
+            <tbody>
+              @forelse ($disputes as $d)
+              <tr>
+                <td><strong class="text-navy">{{ $d->case_no }}</strong><div class="mt-1 max-w-[250px] text-xs text-slate-600">{{ $d->subject }}</div></td>
+                <td>{{ $d->type_label }}<div class="mt-1 text-[11px] text-slate-500">{{ $d->order_id ? 'Order #'.$d->order_id : '—' }}</div></td>
+                <td><div class="max-w-[220px] text-xs">{{ $d->complainant?->display_name ?? 'No complainant' }}</div><div class="text-[11px] text-slate-500">→ {{ $d->respondent?->display_name ?? 'No respondent' }}</div></td>
+                <td><span class="admin-status {{ $d->is_closed ? 'admin-status-ok' : ($d->priority === 'high' ? 'admin-status-danger' : 'admin-status-warn') }}">{{ $d->status_label }}</span>@if($d->priority === 'high')<div class="mt-1 text-[10px] font-semibold text-red-600">High priority</div>@endif</td>
+                <td class="text-xs">{{ $d->created_at->format('M j, Y') }}<div class="mt-1 text-slate-500">{{ $d->age_days }} day(s)</div></td>
+                <td><div class="admin-row-actions"><a href="{{ route('admin.disputes.show', $d) }}" class="admin-btn">View case</a></div></td>
+              </tr>
+              @empty<tr><td colspan="6" class="admin-empty">{{ $counts['all'] === 0 ? 'No complaints have been logged yet.' : 'No cases match the selected filters.' }}</td></tr>@endforelse
+            </tbody>
+          </table>
         </div>
 
         @if ($disputes->hasPages())

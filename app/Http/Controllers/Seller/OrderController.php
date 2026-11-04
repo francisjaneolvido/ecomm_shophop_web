@@ -24,11 +24,7 @@ class OrderController extends Controller
 
     public function index(Request $request): View
     {
-        $orders = $this->ordersFor($this->seller($request))
-            ->with(['buyer', 'items.product', 'items.variant', 'pickupRequest.partner', 'delivery'])
-            ->latest()->get();
-
-        return view('seller.orders.notifications', compact('orders'));
+        return $this->orderDirectory($request, 'notifications');
     }
 
     public function show(Request $request, int $order): View
@@ -48,37 +44,185 @@ class OrderController extends Controller
             $logisticsPartners = $this->routing->eligiblePartners($ownedOrder);
         }
 
+        // Preserve the seller's directory filters without accepting an arbitrary redirect URL.
+        $from = (string) $request->query('from', 'notifications');
+        if (! in_array($from, ['notifications', 'prepare', 'courier', 'confirm'], true)) {
+            $from = 'notifications';
+        }
+        $returnParams = [];
+        foreach (['q', 'status', 'sort', 'per_page', 'page'] as $key) {
+            $value = $request->query($key);
+            if (is_scalar($value) && trim((string) $value) !== '') {
+                $returnParams[$key] = substr((string) $value, 0, 100);
+            }
+        }
+        $backUrl = route('seller.orders.' . $from, $returnParams);
+
         return view('seller.orders.show', [
             'order' => $ownedOrder,
             'logisticsPartners' => $logisticsPartners,
+            'backUrl' => $backUrl,
         ]);
     }
 
     public function prepare(Request $request): View
     {
-        $orders = $this->ordersFor($this->seller($request))
-            ->paymentEligible()
-            ->whereIn('status', [Order::STATUS_TO_SHIP, Order::STATUS_CONFIRMED, Order::STATUS_PREPARING])
-            ->with(['buyer', 'items.product', 'items.variant', 'pickupRequest'])
-            ->latest()->get();
-
-        return view('seller.orders.prepare', compact('orders'));
+        return $this->orderDirectory($request, 'prepare');
     }
 
     public function courier(Request $request): View
     {
-        $orders = $this->ordersFor($this->seller($request))
-            ->paymentEligible()->where('status', Order::STATUS_READY_FOR_PICKUP)
-            ->with(['buyer', 'items.product', 'items.variant', 'pickupRequest.partner', 'pickupRequest.originSortingCenter', 'delivery'])
-            ->latest()->get();
-
-        return view('seller.orders.courier', compact('orders'));
+        return $this->orderDirectory($request, 'courier');
     }
 
     public function confirm(Request $request): View
     {
-        $this->seller($request);
-        return view('seller.orders.confirm');
+        return $this->orderDirectory($request, 'confirm');
+    }
+
+    /**
+     * Seller-owned, server-filtered queues. Never fetch every Order into the browser.
+     * All scopes are applied before counts, ordering, and pagination.
+     */
+    private function orderDirectory(Request $request, string $section): View
+    {
+        $seller = $this->seller($request);
+        $validated = $request->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', 'string', 'max:32'],
+            'sort' => ['nullable', 'string', 'in:newest,oldest,amount_high,amount_low,oldest_pending'],
+            'per_page' => ['nullable', 'integer', 'in:25,50'],
+        ]);
+        $search = trim((string) ($validated['q'] ?? ''));
+        $sort = (string) ($validated['sort'] ?? ($section === 'notifications' ? 'oldest_pending' : 'newest'));
+        $perPage = (int) ($validated['per_page'] ?? 25);
+        $status = (string) ($validated['status'] ?? 'all');
+
+        $base = $this->ordersFor($seller);
+        $statusCounts = (clone $base)->paymentEligible()
+            ->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
+        $stats = [
+            'new' => (int) ($statusCounts[Order::STATUS_TO_SHIP] ?? 0),
+            'preparing' => (int) ($statusCounts[Order::STATUS_CONFIRMED] ?? 0)
+                + (int) ($statusCounts[Order::STATUS_PREPARING] ?? 0),
+            'pickup' => (int) ($statusCounts[Order::STATUS_READY_FOR_PICKUP] ?? 0),
+            'shipping' => (int) ($statusCounts[Order::STATUS_TO_RECEIVE] ?? 0),
+            'completed' => (int) ($statusCounts[Order::STATUS_COMPLETED] ?? 0),
+        ];
+
+        $tabs = match ($section) {
+            'prepare' => [
+                'all' => 'All to prepare', 'confirmed' => 'Confirmed', 'preparing' => 'Preparing',
+            ],
+            'courier' => [
+                'all' => 'All handovers', 'awaiting' => 'Awaiting pickup', 'picked_up' => 'Picked up / in transit',
+            ],
+            'confirm' => [
+                'all' => 'All deliveries', 'in_transit' => 'In transit',
+                'delivered' => 'Delivered - awaiting buyer', 'completed' => 'Buyer confirmed',
+                'exceptions' => 'Exceptions / returns',
+            ],
+            default => [
+                'all' => 'All orders', 'new' => 'New', 'confirmed' => 'Confirmed',
+                'preparing' => 'Preparing', 'ready' => 'Ready for pickup',
+                'shipping' => 'Shipping', 'completed' => 'Completed',
+                'cancelled' => 'Cancelled', 'returned' => 'Returned',
+            ],
+        };
+        if (! array_key_exists($status, $tabs)) {
+            $status = 'all';
+        }
+
+        $orders = (clone $base)->with([
+            'buyer', 'items.product', 'items.variant', 'pickupRequest.partner',
+            'delivery.deliveredRider', 'logisticsPartner', 'returnCase',
+        ])->withCount('items');
+
+        if ($section === 'prepare') {
+            $orders->paymentEligible()->whereIn('status', [Order::STATUS_CONFIRMED, Order::STATUS_PREPARING]);
+        } elseif ($section === 'courier') {
+            $orders->paymentEligible()->whereIn('status', [Order::STATUS_READY_FOR_PICKUP, Order::STATUS_TO_RECEIVE]);
+        } elseif ($section === 'confirm') {
+            $orders->whereIn('status', [Order::STATUS_TO_RECEIVE, Order::STATUS_COMPLETED, Order::STATUS_RETURNED])
+                ->whereHas('delivery');
+        }
+
+        if ($search !== '') {
+            $orders->where(function ($query) use ($search) {
+                $query->where('tracking_code', 'like', "%{$search}%")
+                    ->orWhereHas('buyer', function ($buyer) use ($search) {
+                        $buyer->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+                if (preg_match('/^(?:SHP[- ]?)?0*(\d+)$/i', $search, $match)) {
+                    $query->orWhere('id', (int) $match[1]);
+                }
+            });
+        }
+
+        if ($section === 'confirm') {
+            match ($status) {
+                'in_transit' => $orders->where('status', Order::STATUS_TO_RECEIVE)
+                    ->whereHas('delivery', fn ($q) => $q->whereNotIn('status', [
+                        \App\Models\Logistics\Delivery::DELIVERED,
+                        \App\Models\Logistics\Delivery::DELIVERY_FAILED,
+                        \App\Models\Logistics\Delivery::RETURNED,
+                        \App\Models\Logistics\Delivery::RETURN_REQUESTED,
+                        \App\Models\Logistics\Delivery::RETURN_AT_BRANCH,
+                        \App\Models\Logistics\Delivery::RETURN_ASSIGNED,
+                        \App\Models\Logistics\Delivery::RETURN_IN_TRANSIT,
+                        \App\Models\Logistics\Delivery::RETURN_AWAITING_SELLER,
+                    ])),
+                'delivered' => $orders->where('status', Order::STATUS_TO_RECEIVE)
+                    ->whereHas('delivery', fn ($q) => $q->where('status', \App\Models\Logistics\Delivery::DELIVERED)),
+                'completed' => $orders->where('status', Order::STATUS_COMPLETED),
+                'exceptions' => $orders->where(fn ($q) => $q->where('status', Order::STATUS_RETURNED)
+                    ->orWhereHas('delivery', fn ($d) => $d->whereIn('status', [
+                        \App\Models\Logistics\Delivery::DELIVERY_FAILED,
+                        \App\Models\Logistics\Delivery::RETURN_REQUESTED,
+                        \App\Models\Logistics\Delivery::RETURN_AT_BRANCH,
+                        \App\Models\Logistics\Delivery::RETURN_ASSIGNED,
+                        \App\Models\Logistics\Delivery::RETURN_IN_TRANSIT,
+                        \App\Models\Logistics\Delivery::RETURN_AWAITING_SELLER,
+                    ]))),
+                default => null,
+            };
+        } elseif ($status !== 'all') {
+            $statusMap = match ($section) {
+                'prepare' => ['confirmed' => Order::STATUS_CONFIRMED, 'preparing' => Order::STATUS_PREPARING],
+                'courier' => ['awaiting' => Order::STATUS_READY_FOR_PICKUP, 'picked_up' => Order::STATUS_TO_RECEIVE],
+                default => [
+                    'new' => Order::STATUS_TO_SHIP, 'confirmed' => Order::STATUS_CONFIRMED,
+                    'preparing' => Order::STATUS_PREPARING, 'ready' => Order::STATUS_READY_FOR_PICKUP,
+                    'shipping' => Order::STATUS_TO_RECEIVE, 'completed' => Order::STATUS_COMPLETED,
+                    'cancelled' => Order::STATUS_CANCELLED, 'returned' => Order::STATUS_RETURNED,
+                ],
+            };
+            if (isset($statusMap[$status])) {
+                $orders->where('status', $statusMap[$status]);
+            }
+        }
+
+        match ($sort) {
+            'oldest' => $orders->orderBy('created_at')->orderBy('id'),
+            'amount_high' => $orders->orderByDesc('total_amount')->orderByDesc('id'),
+            'amount_low' => $orders->orderBy('total_amount')->orderBy('id'),
+            'oldest_pending' => $orders->orderByRaw('CASE WHEN status = ? THEN 0 ELSE 1 END', [Order::STATUS_TO_SHIP])
+                ->orderBy('created_at')->orderBy('id'),
+            default => $orders->orderByDesc('created_at')->orderByDesc('id'),
+        };
+
+        $orders = $orders->paginate($perPage)->withQueryString();
+        $config = match ($section) {
+            'prepare' => ['title' => 'Prepare Orders', 'description' => 'Pack confirmed orders and request pickup only when ready.'],
+            'courier' => ['title' => 'Courier Handover', 'description' => 'Monitor ready parcels, assigned pickups and actual courier handoffs.'],
+            'confirm' => ['title' => 'Delivery Tracking & Confirmations', 'description' => 'Monitor Rider delivery evidence and Buyer receipt confirmation. Sellers cannot mark parcels delivered.'],
+            default => ['title' => 'Order Notifications', 'description' => 'Review new purchases, track orders and prioritize pending confirmations.'],
+        };
+
+        return view('seller.orders.' . $section, compact(
+            'orders', 'tabs', 'status', 'search', 'sort', 'perPage', 'stats', 'config', 'section'
+        ));
     }
 
     public function dashboard(Request $request): View

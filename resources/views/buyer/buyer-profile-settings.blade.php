@@ -142,7 +142,7 @@
 
 @include('buyer.partials.navbar-buyer')
 
-<section id="settings-main" class="settings-shell bg-gray-bg min-h-screen py-4 sm:py-5 lg:py-6 scroll-mt-20">
+<section id="settings-main" class="shb-profile-page settings-shell bg-gray-bg min-h-screen py-4 sm:py-5 lg:py-6 scroll-mt-20">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         {{-- Page heading / account overview --}}

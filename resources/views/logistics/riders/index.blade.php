@@ -10,7 +10,7 @@
     $inactiveCount = (int) ($totals->inactive_count ?? 0);
 @endphp
 
-<div class="space-y-6">
+<div class="ops-page space-y-4">
     <header class="sh-page-header">
         <div>
             <p class="eyebrow">Network · Fleet management</p>
@@ -18,8 +18,8 @@
             <p class="description">Rider eligibility requires an active account, availability, the correct home branch, and a linked Pickup/Delivery barangay area. A legacy Delivery Area alone does not grant pickup permission.</p>
         </div>
         <div class="flex flex-wrap gap-3">
-            <a href="#rider-directory" class="sh-btn-ghost">View riders <x-lucide-arrow-down class="h-4 w-4" /></a>
-            <a href="{{ route('logistics.sorting-centers.index') }}" class="sh-btn-soft">Manage branches <x-lucide-arrow-up-right class="h-4 w-4" /></a>
+            <button type="button" class="ops-button ops-button-primary" data-ops-open="createRider">+ Add rider</button>
+            <a href="{{ route('logistics.branches.index') }}" class="ops-button">Branches</a>
         </div>
     </header>
 
@@ -33,29 +33,35 @@
         <div class="sh-stat"><p class="sh-stat-label">Suspended / Rejected</p><p class="sh-stat-value">{{ $inactiveCount }}</p><p class="sh-stat-note">Inactive or denied</p></div>
     </div>
 
-    <section class="sh-surface sh-card-pad border-teal/20" aria-label="How rider eligibility works">
-        <div class="sh-toolbar items-start"><div><p class="sh-kicker">Dispatch readiness</p><h2 class="text-base font-bold text-navy">How to make a rider eligible</h2><p class="mt-1 text-xs text-navy/60">Pickup uses the Seller's barangay; delivery uses the Buyer's barangay.</p></div><a class="sh-btn-soft" href="{{ route('logistics.deliveries.board') }}#pickup-queue">Open pickup queue</a></div>
-        <div class="mt-3 grid gap-2 sm:grid-cols-3 text-xs">
-            <div class="sh-surface-soft p-3"><strong>1 · Active & available</strong><p class="mt-1 text-navy/60">Rider account has login and belongs to the pickup branch.</p></div>
-            <div class="sh-surface-soft p-3"><strong>2 · Cover the barangay</strong><p class="mt-1 text-navy/60">Enable <strong>Pickup</strong> coverage from the waiting order, or edit the rider's service areas below.</p></div>
-            <div class="sh-surface-soft p-3"><strong>3 · Assign the order</strong><p class="mt-1 text-navy/60">Return to Parcel Operations and confirm Assign Pickup. Coverage alone never dispatches an order.</p></div>
-        </div>
-    </section>
 
-    <section class="sh-surface sh-card-pad">
-        <details>
-            <summary class="sh-summary sh-toolbar">
-                <div class="flex items-center gap-3">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-light text-teal-dark"><x-lucide-user-plus class="h-5 w-5" /></div>
-                    <div>
-                        <h2 class="text-base font-bold text-navy">Add Rider manually</h2>
-                        <p class="mt-1 text-xs text-navy/50">Create a rider account directly under this partner for immediate setup.</p>
-                    </div>
-                </div>
-                <span class="sh-btn-soft">Open rider form</span>
-            </summary>
-
-            <form method="POST" action="{{ route('logistics.riders.store') }}" class="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3" data-confirm-title="Create rider account?" data-confirm-message="This adds a new rider under your logistics partner. Double-check the rider's email and assigned branch." data-confirm-button="Create rider">
+<section class="ops-panel" id="rider-directory">
+ <div class="ops-header"><div><h2 class="font-bold text-navy">Rider directory</h2><p class="ops-subtitle">Review applications and manage assignments without expanding cards.</p></div><button type="button" data-ops-open="createArea" class="ops-button">+ Add service area</button></div>
+ <form class="ops-filters" method="GET" action="{{ route('logistics.riders.index') }}" role="search">
+  <label class="sh-field"><span class="sh-label">Name / email / branch</span><input name="q" value="{{ request('q') }}" class="sh-input" placeholder="Search riders" maxlength="100"></label>
+  <label class="sh-field"><span class="sh-label">Home branch</span><select class="sh-select" name="center"><option value="">All branches</option>@foreach($sortingCenters->where('type','station_hub') as $center)<option value="{{ $center->id }}" @selected((string)request('center')===(string)$center->id)>{{ $center->name }}</option>@endforeach</select></label>
+  <label class="sh-field"><span class="sh-label">Status</span><select name="status" class="sh-select"><option value="">All</option>@foreach(['pending','active','suspended','rejected'] as $option)<option value="{{ $option }}" @selected(request('status')===$option)>{{ ucfirst($option) }}</option>@endforeach</select></label>
+  <button class="ops-button ops-button-primary">Filter</button><a href="{{ route('logistics.riders.index') }}" class="ops-button">Clear</a>
+ </form>
+ <div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Rider</th><th>Home Branch</th><th>Operational Areas</th><th>Vehicle</th><th>Email</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+ @forelse($riders as $rider)
+ <tr><td><div class="ops-primary">{{ $rider->name }}</div><div class="ops-secondary">{{ $rider->contact_no ?: 'No contact on record' }}</div></td>
+ <td>{{ $rider->sortingCenter?->name ?: 'Unassigned' }}</td>
+ <td><strong>{{ $rider->operationalServiceAreas->count() }}</strong> <span class="ops-muted text-xs">configured</span><div class="ops-secondary">{{ $rider->coverageArea?->area_name ?: '—' }} (legacy)</div></td>
+ <td>{{ $rider->vehicle_type }}</td><td class="text-xs break-all">{{ $rider->email ?: 'Not provisioned' }}</td>
+ <td><span class="ops-badge" data-status="{{ $rider->status }}">{{ ucfirst($rider->status) }}</span><div class="ops-secondary">{{ $rider->email_verified_at ? 'Email verified' : 'Unverified email' }}</div></td>
+ <td><button type="button" class="ops-button" data-ops-open="riderDetails-{{ $rider->id }}">View / Edit</button></td></tr>
+ @empty<tr><td colspan="7" class="ops-empty">No riders match your filters.</td></tr>@endforelse
+ </tbody></table></div><div class="ops-footer"><span>{{ $riders->firstItem() ?? 0 }}–{{ $riders->lastItem() ?? 0 }} of {{ number_format($riders->total()) }} riders</span>{{ $riders->links() }}</div>
+</section>
+<section class="ops-panel" id="barangay-coverage"><div class="ops-header"><div><h2 class="font-bold text-navy">Branch Service Areas</h2><p class="ops-subtitle">Pickup and delivery barangay permissions; changes affect future assignments</p></div><button type="button" class="ops-button" data-ops-open="createArea">+ Configure area</button></div>
+<form class="ops-filters" method="GET" action="{{ route('logistics.riders.index') }}" style="padding-top:10px"><label class="sh-field"><span class="sh-label">Search all service areas</span><input class="sh-input" name="area_q" value="{{ request('area_q') }}" placeholder="Barangay, municipality, branch"></label><button class="ops-button ops-button-primary">Search</button><a href="{{ route('logistics.riders.index') }}#barangay-coverage" class="ops-button">Clear</a></form>
+<div class="ops-table-wrap"><table class="ops-table"><thead><tr><th>Service area</th><th>Branch</th><th>Work allowed</th><th>Actions</th></tr></thead><tbody>
+ @forelse($serviceAreasDirectory as $area)<tr><td class="ops-primary">{{ $area->label() }}</td><td>{{ $area->sortingCenter?->name ?: '—' }}</td><td>{{ ucfirst($area->service_type) }}</td><td><form method="POST" action="{{ route('logistics.riders.operational-areas.delete',$area) }}" data-confirm-title="Remove service area?" data-confirm-message="Rider assignments must be removed first." data-confirm-button="Remove" data-confirm-danger="1">@csrf<button class="ops-button ops-button-danger">Remove</button></form></td></tr>
+ @empty<tr><td colspan="4" class="ops-empty">No service areas configured yet. Add areas before assigning barangay permissions.</td></tr>@endforelse
+</tbody></table></div><footer class="ops-footer"><span>{{ $serviceAreasDirectory->firstItem() ?? 0 }}–{{ $serviceAreasDirectory->lastItem() ?? 0 }} of {{ number_format($serviceAreasDirectory->total()) }} service areas</span>{{ $serviceAreasDirectory->links() }}</footer></section>
+</div>
+<dialog id="createRider" data-ops-modal class="ops-modal"><div class="ops-modal-head"><div><h2>Add rider manually</h2><p>Rider account and initial home branch</p></div><button class="ops-button" type="button" data-ops-close>✕</button></div><div class="ops-modal-body">
+            <form method="POST" action="{{ route('logistics.riders.store') }}" class="ops-fields" data-confirm-title="Create rider account?" data-confirm-message="This adds a new rider under your logistics partner. Double-check the rider's email and assigned branch." data-confirm-button="Create rider">
                 @csrf
                 <label class="sh-field"><span class="sh-label">Rider name</span><input id="rider-name" name="name" required maxlength="150" value="{{ old('name') }}" class="sh-input"></label>
                 <label class="sh-field"><span class="sh-label">Vehicle type</span><input id="rider-vehicle" name="vehicle_type" required maxlength="80" value="{{ old('vehicle_type') }}" class="sh-input"></label>
@@ -66,21 +72,9 @@
                 <label class="sh-field"><span class="sh-label">Confirm password</span><input id="rider-password-confirmation" name="password_confirmation" type="password" minlength="12" required class="sh-input"></label>
                 <div class="md:col-span-2 xl:col-span-3 flex justify-end"><button class="sh-btn">Add rider</button></div>
             </form>
-        </details>
-    </section>
-
-    <section class="sh-surface sh-card-pad" id="barangay-coverage">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-            <div>
-                <p class="sh-kicker">Branch operations · Area eligibility</p>
-                <h2 class="text-base font-bold text-navy">Barangay Service Areas</h2>
-                <p class="mt-1 text-xs text-navy/55">Add areas actually served by each branch. Riders must be explicitly assigned below; a nationwide label alone does not qualify them.</p>
-            </div>
-            <span class="sh-badge sh-badge-neutral">{{ $operationalAreas->count() }} for current page</span>
-        </div>
-        <details class="mt-3 rounded-xl border border-gray-border p-3">
-            <summary class="cursor-pointer text-sm font-semibold text-teal-dark">+ Configure branch service area</summary>
-            <form method="POST" action="{{ route('logistics.riders.operational-areas.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-5" data-confirm-title="Activate geographic rider checks for this branch?" data-confirm-message="After the first area is saved, ONLY riders explicitly assigned to matching barangays will qualify for new pickups/deliveries from this branch. Add the riders' coverage before testing orders." data-confirm-button="Save service area">
+</div><div class="ops-modal-footer"><button type="button" class="ops-button" data-ops-close>Close</button></div></dialog>
+<dialog id="createArea" data-ops-modal class="ops-modal"><div class="ops-modal-head"><div><h2>Configure branch service area</h2><p>Barangay-level permissions for pickup / delivery</p></div><button class="ops-button" type="button" data-ops-close>✕</button></div><div class="ops-modal-body"><p class="ops-note mb-3">Once service areas are enabled, assign matching areas to riders or they cannot receive new pickups.</p>
+            <form method="POST" action="{{ route('logistics.riders.operational-areas.store') }}" class="ops-fields" data-confirm-title="Activate geographic rider checks for this branch?" data-confirm-message="After the first area is saved, ONLY riders explicitly assigned to matching barangays will qualify for new pickups/deliveries from this branch. Add the riders' coverage before testing orders." data-confirm-button="Save service area">
                 @csrf
                 <label class="sh-field xl:col-span-2"><span class="sh-label">Active Station / Branch *</span><select name="sorting_center_id" class="sh-select" required><option value="">Select station</option>@foreach($sortingCenters->where('type', 'station_hub')->where('status', 'active') as $center)<option value="{{ $center->id }}" data-province="{{ $center->province }}">{{ $center->name }} · {{ $center->province ?: 'NCR' }}</option>@endforeach</select></label>
                 <label class="sh-field"><span class="sh-label">Province (blank for NCR)</span><input class="sh-input" name="province" maxlength="150" value="{{ old('province') }}" placeholder="Laguna"></label>
@@ -89,70 +83,20 @@
                 <label class="sh-field xl:col-span-2"><span class="sh-label">Work allowed *</span><select name="service_type" class="sh-select"><option value="both">Pickup and delivery</option><option value="pickup">Pickup only</option><option value="delivery">Delivery only</option></select></label>
                 <div class="xl:col-span-3 flex items-end justify-end"><button class="sh-btn">Save service area</button></div>
             </form>
-        </details>
-        @if($operationalAreas->isEmpty())
-            <div class="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">Legacy routing is still active: no branches have barangay-level service areas configured yet. Add areas, then assign riders before testing new parcels.</div>
-        @else
-            <div class="mt-3 grid max-h-72 gap-2 overflow-y-auto pr-1 md:grid-cols-2 xl:grid-cols-3">
-                @foreach($operationalAreas as $area)
-                    <div class="flex items-start justify-between gap-2 rounded-xl border border-gray-border bg-gray-bg/40 px-3 py-2">
-                        <div class="min-w-0"><p class="truncate text-xs font-bold text-navy">{{ $area->label() }}</p><p class="mt-0.5 text-[10px] text-navy/55">{{ $area->sortingCenter?->name }} · {{ ucfirst($area->service_type) }}</p></div>
-                        <form method="POST" action="{{ route('logistics.riders.operational-areas.delete', $area) }}" data-confirm-title="Remove service area?" data-confirm-message="You must unassign all riders before removal." data-confirm-button="Remove" data-confirm-danger="1">@csrf<button type="submit" class="sh-btn-ghost !px-2 !py-1 text-xs" aria-label="Remove area">Remove</button></form>
-                    </div>
-                @endforeach
-            </div>
-        @endif
-    </section>
+</div><div class="ops-modal-footer"><button type="button" class="ops-button" data-ops-close>Close</button></div></dialog>
+@foreach($riders as $rider)
+<dialog id="riderDetails-{{ $rider->id }}" data-ops-modal class="ops-modal" aria-label="Manage rider {{ $rider->name }}">
+ <div class="ops-modal-head"><div><h2>{{ $rider->name }}</h2><p>{{ $rider->email ?: 'No mobile login yet' }} · {{ $rider->sortingCenter?->name ?: 'Unassigned branch' }}</p></div><button class="ops-button" type="button" data-ops-close>✕</button></div>
+ <div class="ops-modal-body"><p class="ops-note">Profile, branch assignment and barangay permissions have separate Save actions. Account approval and credentials retain their existing verification rules.</p>
+ <details class="mt-3 border border-gray-border rounded-md p-3" open><summary class="font-semibold text-sm text-navy cursor-pointer">Edit basic rider details</summary>
+ <form method="POST" action="{{ route('logistics.riders.profile',$rider) }}" class="ops-fields mt-3" data-confirm-title="Save rider profile?" data-confirm-message="Name and vehicle details only. Rider account status, login and branch permissions remain unchanged." data-confirm-button="Save profile">@csrf
+ <label class="sh-field"><span class="sh-label">Rider name</span><input name="name" value="{{ $rider->name }}" class="sh-input" maxlength="150" required></label>
+ <label class="sh-field"><span class="sh-label">Contact</span><input name="contact_no" value="{{ $rider->contact_no }}" class="sh-input" maxlength="40"></label>
+ <label class="sh-field"><span class="sh-label">Vehicle type</span><input name="vehicle_type" value="{{ $rider->vehicle_type }}" class="sh-input" maxlength="80" required></label>
+ <label class="sh-field"><span class="sh-label">Plate number</span><input name="plate_number" value="{{ $rider->plate_number }}" class="sh-input" maxlength="40"></label>
+ <div class="ops-span flex justify-end"><button class="ops-button ops-button-primary">Save profile</button></div>
+ </form></details>
 
-    <form method="GET" action="{{ route('logistics.riders.index') }}" class="sh-surface sh-card-pad mb-3 flex flex-wrap items-end gap-2" role="search">
-      <label class="sh-field min-w-[180px] flex-1"><span class="sh-label">Search all riders</span><input name="q" value="{{ request('q') }}" class="sh-input" placeholder="Rider, email, or branch" maxlength="100"></label>
-      <label class="sh-field min-w-[180px] flex-1"><span class="sh-label">Branch</span><select name="center" class="sh-select"><option value="">All branches</option>@foreach($sortingCenters->where('type','station_hub') as $center)<option value="{{ $center->id }}" @selected((string)request('center') === (string)$center->id)>{{ $center->name }} · {{ $center->province ?: 'NCR' }}</option>@endforeach</select></label>
-      <button class="sh-btn" type="submit">Apply filters</button><a href="{{ route('logistics.riders.index') }}" class="sh-btn-ghost">Clear</a>
-      <div class="w-full text-xs text-navy/55">Showing {{ $riders->firstItem() ?? 0 }}–{{ $riders->lastItem() ?? 0 }} of {{ number_format($riders->total()) }} matching riders. All-network totals appear above.</div>
-    </form>
-    <section class="sh-ui-filter" aria-label="Filter rider directory">
-        <div class="sh-ui-filter-title"><strong>Rider directory</strong><span>Search and review applications without leaving the page.</span></div>
-        <label class="sh-ui-search"><span class="sr-only">Search visible riders</span><input class="sh-input" type="search" placeholder="Search rider, email, branch…" data-ui-list-search="rider-directory" autocomplete="off"></label>
-        <label><span class="sr-only">Filter rider status</span><select class="sh-select" data-ui-status-select="rider-directory"><option value="all">All statuses</option><option value="pending">Pending</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="rejected">Rejected</option></select></label>
-        <span class="sh-ui-count" data-ui-count="rider-directory" aria-live="polite"></span>
-    </section>
-    <div id="rider-directory" class="sh-ui-directory grid grid-cols-1 gap-3 xl:grid-cols-2" data-ui-collection>
-        @forelse ($riders as $rider)
-            @php
-                $statusClasses = match ($rider->status) {
-                    'active' => 'sh-badge-success',
-                    'pending' => 'sh-badge-warning',
-                    'rejected' => 'sh-badge-danger',
-                    'suspended' => 'sh-badge-neutral',
-                    default => 'sh-badge-neutral',
-                };
-            @endphp
-
-            <article class="sh-surface sh-rider-card sh-ui-record" data-ui-record data-ui-status="{{ $rider->status }}">
-                <div class="sh-toolbar items-start">
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h2 class="truncate text-base font-bold text-navy">{{ $rider->name }}</h2>
-                            <span class="sh-badge {{ $statusClasses }}">{{ ucfirst($rider->status) }}</span>
-                            @if ($rider->status === 'active')
-                                <span class="sh-badge {{ $rider->availability_status === 'available' ? 'sh-badge-success' : 'sh-badge-warning' }}">{{ $rider->availability_status === 'available' ? 'Available for dispatch' : 'Unavailable for dispatch' }}</span>
-                            @endif
-                            @if ($rider->email_verified_at)
-                                <span class="sh-badge sh-badge-info">Email verified</span>
-                            @elseif ($rider->status === 'pending')
-                                <span class="sh-badge sh-badge-warning">Waiting for email verification</span>
-                            @endif
-                        </div>
-                        <p class="mt-1 text-sm text-navy/60">{{ $rider->vehicle_type }}{{ $rider->plate_number ? ' · '.$rider->plate_number : '' }}</p>
-                        <p class="mt-1 text-sm text-navy/50">{{ $rider->email ?: 'Credentials not provisioned yet' }}</p>
-                    </div>
-                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-teal-light text-teal-dark">
-                        <x-lucide-bike class="h-5 w-5" />
-                    </div>
-                </div>
-
-                <details class="sh-record-details" @if($rider->status === 'pending') open @endif>
-                    <summary class="sh-record-summary"><span>View rider details & actions</span><x-lucide-chevron-down class="h-4 w-4" /></summary>
                     <div class="sh-rider-expanded">
                 @if ($rider->applied_at)
                     <div class="mt-4 sh-surface-soft p-4 text-xs text-navy/65">
@@ -256,20 +200,12 @@
                     </form>
                 @endif
                     </div>
-                </details>
-            </article>
-        @empty
-            <div class="sh-empty 2xl:col-span-2">
-                <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-light text-teal-dark"><x-lucide-bike class="h-5 w-5" /></div>
-                <p class="mt-3 text-sm font-semibold text-navy">No riders yet</p>
-                <p class="mt-1 text-xs text-navy/45">Mobile rider applications will appear here after registration, or you may add one manually above.</p>
-            </div>
-        @endforelse
-    </div>
-    <div class="mt-4">{{ $riders->links() }}</div>
-</div>
+                
+            
+ </div><div class="ops-modal-footer"><button type="button" class="ops-button" data-ops-close>Close</button></div>
+</dialog>
+@endforeach
 @endsection
-
 @push('scripts')
 <script>
 (() => {
