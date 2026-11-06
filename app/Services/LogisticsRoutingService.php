@@ -21,12 +21,13 @@ class LogisticsRoutingService
     {
         return LogisticsPartner::query()
             ->whereHas('user', fn ($query) => $query->where('status', 'approved'))
-            ->with(['user', 'coverageAreas.sortingCenter', 'sortingCenters'])
+            // Do not eagerly load all nationwide branch rows into every checkout.
+            // The route eligibility check retrieves only the centers it needs.
+            ->with(['user', 'coverageAreas.sortingCenter'])
             ->orderBy('company_name')
             ->get()
-            ->filter(fn (LogisticsPartner $partner) => $this->destinationArea($partner, $order) !== null
-                && $order->seller
-                && $this->originCenter($partner, $order->seller) !== null)
+            ->filter(fn (LogisticsPartner $partner) => $order->seller
+                && $this->checkoutRouteAvailable($partner, $order->seller, $order))
             ->values();
     }
 
@@ -44,6 +45,125 @@ class LogisticsRoutingService
         $draft->setRelation('seller', $seller);
 
         return $this->eligiblePartners($draft);
+    }
+
+    /**
+     * Checkout authorization for one Seller and one destination address.
+     *
+     * Coverage alone does not mean that parcels can move between branches.
+     * This mirrors the safe physical route hierarchy used at dispatch:
+     *   - same active station: local delivery, no manifest/linehaul required;
+     *   - verified direct same-island station ROAD link; or
+     *   - station -> parent hub -> VERIFIED directional hub route -> destination
+     *     parent hub -> station. The two local branch/hub handoffs are part of
+     *     normal manifest custody, not inferred road connections across islands.
+     *
+     * This is an availability check only. Driver/rider assignments, manifest
+     * scans, real cargo bookings and final delivery remain separate safeguards.
+     */
+    public function checkoutRouteAvailable(LogisticsPartner $partner, Seller $seller, Order $destinationOrder): bool
+    {
+        $partnerId = (int) $partner->id;
+        $area = $this->destinationArea($partner, $destinationOrder);
+        if (! $area) {
+            return false;
+        }
+
+        $origin = $this->originCenter($partner, $seller);
+        // Legacy coverage without a station may resolve to the main facility;
+        // never treat a province hub as a final-mile destination station.
+        $destination = $area->sorting_center_id
+            ? ($area->sortingCenter ?: SortingCenter::find($area->sorting_center_id))
+            : $partner->mainSortingCenter()->first();
+        if (! $this->isActiveNetworkCenter($origin, $partnerId)
+            || ! $this->isActiveNetworkCenter($destination, $partnerId)
+            || $destination->type !== 'station_hub') {
+            return false;
+        }
+
+        // Actual local pickup and last-mile delivery still require a rider.
+        // Matching stations do not need transport routes or a parent hub.
+        if ((int) $origin->id === (int) $destination->id) {
+            return true;
+        }
+
+        $destinationHub = $this->activeParentHub($partnerId, $destination->parent_id);
+        if (! $destinationHub) {
+            return false;
+        }
+
+        if ($origin->type === 'station_hub') {
+            // A direct branch shortcut may bypass hubs only if explicitly
+            // verified, directional, ROAD and in the same known island group.
+            // This mirrors transferPlan(): a missing origin parent is relevant
+            // only to the standard hub custody route, not to a direct link.
+            if ($this->verifiedDirectStationRoadFor($partnerId, $origin, $destination)) {
+                return true;
+            }
+
+            $originHub = $this->activeParentHub($partnerId, $origin->parent_id);
+            if (! $originHub) {
+                return false;
+            }
+        } elseif ($origin->type === 'province_hub') {
+            $originHub = $origin;
+        } else {
+            return false;
+        }
+
+        if ((int) $originHub->id === (int) $destinationHub->id) {
+            return true;
+        }
+
+        $connected = $this->connections->find(
+            $partnerId,
+            (int) $originHub->id,
+            (int) $destinationHub->id,
+            true // Hub-only; inter-hub legs must be verified transport links.
+        );
+        return ($connected['status'] ?? '') === 'connected' && ! empty($connected['legs']);
+    }
+
+    private function activeParentHub(int $partnerId, ?int $parentId): ?SortingCenter
+    {
+        if (! $parentId) {
+            return null;
+        }
+        return SortingCenter::query()
+            ->whereKey($parentId)
+            ->where('logistics_partner_id', $partnerId)
+            ->where('type', 'province_hub')
+            ->where('status', 'active')
+            ->whereNull('archived_at')
+            ->first();
+    }
+
+    private function isActiveNetworkCenter(?SortingCenter $center, int $partnerId): bool
+    {
+        return $center !== null
+            && (int) $center->logistics_partner_id === $partnerId
+            && $center->status === 'active'
+            && $center->archived_at === null;
+    }
+
+    private function verifiedDirectStationRoadFor(int $partnerId, SortingCenter $from, SortingCenter $to): bool
+    {
+        if ($from->type !== 'station_hub' || $to->type !== 'station_hub') {
+            return false;
+        }
+        $islands = app(PhilippineIslandGroup::class);
+        if (! $islands->forCenter($from) || ! $islands->forCenter($to)
+            || $islands->isCrossGroup($from, $to)) {
+            return false;
+        }
+        return \App\Models\Logistics\RouteLink::query()
+            ->where('logistics_partner_id', $partnerId)
+            ->where('from_center_id', $from->id)
+            ->where('to_center_id', $to->id)
+            ->where('mode', 'road')
+            ->where('status', 'verified')
+            ->whereNotNull('verified_at')
+            ->exists();
     }
 
     /**

@@ -27,6 +27,8 @@ class MobileBuyerCheckoutController extends Controller
             'logistics_partner.*' => ['required', 'integer', 'min:1'],
             'payment_method' => ['nullable', 'in:cod'],
             'voucher_code' => ['nullable', 'string', 'max:120'],
+            'seller_vouchers' => ['nullable', 'array'],
+            'seller_vouchers.*' => ['nullable', 'string', 'max:50'],
             'merchandise_voucher_code' => ['nullable', 'string', 'max:40'],
             'shipping_voucher_code' => ['nullable', 'string', 'max:40'],
         ]);
@@ -38,6 +40,7 @@ class MobileBuyerCheckoutController extends Controller
                 ->mapWithKeys(fn (array $item, $key) => [(string) $key => (int) $item['quantity']])
                 ->all(),
             voucherCode: (string) ($data['voucher_code'] ?? ''),
+            sellerVoucherCodes: (array) ($data['seller_vouchers'] ?? []),
             shippingMethods: $data['shipping_method'] ?? [],
             paymentMethod: 'cod',
             logisticsChoices: $data['logistics_partner'] ?? [],
@@ -66,6 +69,8 @@ class MobileBuyerCheckoutController extends Controller
             'logistics_partner.*' => ['required', 'integer', 'min:1'],
             'payment_method' => ['required', 'in:cod'],
             'voucher_code' => ['nullable', 'string', 'max:120'],
+            'seller_vouchers' => ['nullable', 'array'],
+            'seller_vouchers.*' => ['nullable', 'string', 'max:50'],
             'merchandise_voucher_code' => ['nullable', 'string', 'max:40'],
             'shipping_voucher_code' => ['nullable', 'string', 'max:40'],
             'groups' => ['nullable', 'array'],

@@ -43,6 +43,7 @@ class BuyerCheckoutService
         string $platformVoucherCode = '',
         string $shippingVoucherCode = '',
         array $logisticsChoices = [],
+        array $sellerVoucherCodes = [],
     ): array {
         // Cash on Delivery is the only supported payment method.
         if ($paymentMethod !== 'cod') {
@@ -102,8 +103,12 @@ class BuyerCheckoutService
 
         $address = $this->addressForBuyer($buyer);
         $groups = $this->groupByShop($cartItems);
-        $availableVouchers = $this->vouchersForItems($cartItems);
+        $availableVouchers = $this->vouchersForItems($cartItems, (int) $buyer->id);
         $voucherCode = strtoupper(trim($voucherCode));
+        $allowedShopIds = $groups->pluck('shop.id')->map(fn ($id) => (int) $id)->all();
+        if (array_diff(array_map('intval', array_keys($sellerVoucherCodes)), $allowedShopIds)) {
+            throw ValidationException::withMessages(['seller_vouchers' => 'A selected Seller voucher does not belong to this checkout.']);
+        }
 
         $selectedVoucher = $voucherCode === ''
             ? null
@@ -127,6 +132,8 @@ class BuyerCheckoutService
             $logisticsChoices,
             $paymentMethod,
             $selectedVoucher,
+            $sellerVoucherCodes,
+            $availableVouchers,
             $strictVoucher,
             &$voucherApplied,
             &$merchandiseTotal,
@@ -169,34 +176,25 @@ class BuyerCheckoutService
             $voucherDiscount = 0.0;
             $sellerShippingDiscount = 0.0;
 
-            if ($selectedVoucher && (int) $selectedVoucher['seller_id'] === $sellerId) {
-                $eligibleProductIds = collect($selectedVoucher['product_ids'])->map(fn ($id) => (int) $id);
+            // Exactly one Seller voucher per shop; older single-code clients remain supported.
+            $code = app(SellerVoucherPricing::class)->selectedCode($sellerId, $sellerVoucherCodes,
+                ($selectedVoucher['seller_id'] ?? null) == $sellerId ? ($selectedVoucher['code'] ?? '') : '');
+            $offer = $code === '' ? null : $availableVouchers->first(fn (array $v) =>
+                $v['code'] === $code && (int) $v['seller_id'] === $sellerId);
+            if ($code !== '' && ! $offer) {
+                throw ValidationException::withMessages(['seller_vouchers' => 'Invalid Seller voucher for this shop.']);
+            }
+            if ($offer) {
+                $voucher = app(SellerVoucherPricing::class)->find($code, (int) $seller->user_id, (int) $buyer->id);
+                $eligibleIds = $voucher->products()->pluck('products.id');
                 $eligibleSubtotal = collect($group['items'])
-                    ->filter(fn (array $item) => $eligibleProductIds->contains((int) $item['product_id']))
+                    ->filter(fn (array $item) => $eligibleIds->contains((int) $item['product_id']))
                     ->sum(fn (array $item) => (float) $item['price'] * (int) $item['qty']);
-
-                if ($eligibleSubtotal <= 0 || $eligibleSubtotal < (float) $selectedVoucher['min_spend']) {
-                    if ($strictVoucher) {
-                        throw ValidationException::withMessages([
-                            'voucher_code' => 'This voucher does not qualify for the selected products.',
-                        ]);
-                    }
-                } else {
-                    if (($selectedVoucher['kind'] ?? 'merchandise') === 'shipping') {
-                        $sellerShippingDiscount = $selectedVoucher['type'] === 'percent'
-                            ? round($shippingFee * ((float) $selectedVoucher['value'] / 100), 2)
-                            : (float) $selectedVoucher['value'];
-                        $commissionRate = (float) MarketplaceRateSetting::current()->commission_percent;
-                        $maxSellerShippingSubsidy = max(0, round($merchandiseSubtotal * (1 - $commissionRate / 100), 2));
-                        $sellerShippingDiscount = min($sellerShippingDiscount, $shippingFee, $maxSellerShippingSubsidy);
-                    } else {
-                        $voucherDiscount = $selectedVoucher['type'] === 'percent'
-                            ? round($eligibleSubtotal * ((float) $selectedVoucher['value'] / 100), 2)
-                            : (float) $selectedVoucher['value'];
-                        $voucherDiscount = min($voucherDiscount, $eligibleSubtotal);
-                    }
-                    $voucherApplied = true;
-                }
+                $discount = app(SellerVoucherPricing::class)->discounts($voucher, $eligibleSubtotal,
+                    $merchandiseSubtotal, $shippingFee, (float) MarketplaceRateSetting::current()->commission_percent);
+                $voucherDiscount = $discount['merchandise'];
+                $sellerShippingDiscount = $discount['shipping'];
+                $voucherApplied = true;
             }
 
             $groupTotal = max(0, $merchandiseSubtotal + $shippingFee - $voucherDiscount - $sellerShippingDiscount);
@@ -219,6 +217,7 @@ class BuyerCheckoutService
                 'cod_fee' => 0.0,
                 'voucher_discount' => round($voucherDiscount, 2),
                 'seller_shipping_discount' => round($sellerShippingDiscount, 2),
+                'seller_voucher_code' => $offer['code'] ?? '',
                 'group_total' => round($groupTotal, 2),
             ];
         })->values();
@@ -235,7 +234,7 @@ class BuyerCheckoutService
             $groups->mapWithKeys(fn ($group) => [$group['shop']['id'] => [
                 'merchandise' => round($group['merchandise_subtotal'] - $group['voucher_discount'], 2),
                 'shipping' => max(0, round($group['shipping_fee'] - $group['seller_shipping_discount'], 2)),
-            ]])->all(), $platformVoucherCode, $shippingVoucherCode
+            ]])->all(), $platformVoucherCode, $shippingVoucherCode, false, (int) $buyer->id
         );
         $groups = $groups->map(function ($group) use ($pricing) {
             $alloc = $pricing['allocations'][$group['shop']['id']] ?? ['platform_discount' => 0, 'shipping_discount' => 0];
@@ -249,10 +248,20 @@ class BuyerCheckoutService
             'address' => $address,
             'cart_groups' => $groups,
             'available_vouchers' => $availableVouchers,
+            'seller_vouchers' => $groups->mapWithKeys(fn ($g) => [$g['shop']['id'] => $g['seller_voucher_code']])->all(),
             'available_platform_vouchers' => PlatformVoucher::available()->orderBy('kind')->get()
+                ->filter(function ($v) use ($buyer) {
+                    if ($v->per_buyer_limit === null) return true;
+                    $column = $v->kind === 'shipping' ? 'shipping_voucher_id' : 'platform_voucher_id';
+                    return Order::where('buyer_id', $buyer->id)->where($column, $v->id)
+                        ->distinct('checkout_group_id')->count('checkout_group_id') < $v->per_buyer_limit;
+                })
                 ->map(fn ($v) => ['code' => $v->code, 'name' => $v->name, 'kind' => $v->kind,
                     'type' => $v->type, 'value' => (float) $v->value,
-                    'min_spend' => (float) $v->min_spend])->values()->all(),
+                    'min_spend' => (float) $v->min_spend,
+                    'max_discount' => $v->max_discount === null ? null : (float) $v->max_discount,
+                    'remaining_budget' => $v->budget_amount === null ? null : max(0, round((float) $v->budget_amount - (float) $v->spent_amount, 2)),
+                    'per_buyer_limit' => $v->per_buyer_limit])->values()->all(),
             'platform_voucher_code' => strtoupper(trim($platformVoucherCode)),
             'shipping_voucher_code' => strtoupper(trim($shippingVoucherCode)),
             'initial_voucher_code' => $selectedVoucher['code'] ?? '',
@@ -282,6 +291,8 @@ class BuyerCheckoutService
         $this->assertCompleteAddress($buyer);
 
         return DB::transaction(function () use ($buyer, $data) {
+            // Serialize concurrent checkouts by this Buyer for per-buyer voucher limits.
+            Buyer::whereKey($buyer->id)->lockForUpdate()->firstOrFail();
             $cartItemIds = array_map('intval', array_keys($data['items']));
             $cartItems = CartItem::where('buyer_id', $buyer->id)
                 ->whereIn('id', $cartItemIds)
@@ -320,28 +331,21 @@ class BuyerCheckoutService
                 $item->quantity = $requestedQty;
             }
 
-            $groupedBySeller = $cartItems->groupBy(fn (CartItem $item) => $item->product->seller->id);
-            $voucherCode = strtoupper(trim((string) ($data['voucher_code'] ?? '')));
-            $voucher = null;
-            $eligibleProductIds = collect();
-
-            if ($voucherCode !== '') {
-                $voucher = Voucher::where('code', $voucherCode)->lockForUpdate()->first();
-                if (! $voucher
-                    || $voucher->status !== 'active'
-                    || ($voucher->starts_at && $voucher->starts_at->isFuture())
-                    || ($voucher->ends_at && $voucher->ends_at->isPast())
-                    || ($voucher->usage_limit !== null && $voucher->used_count >= $voucher->usage_limit)
-                    || (float) $voucher->value <= 0
-                    || ! in_array($voucher->type, ['percent', 'fixed'], true)
-                    || ($voucher->type === 'percent' && (float) $voucher->value > 100)) {
-                    throw ValidationException::withMessages([
-                        'voucher_code' => 'This voucher is invalid or unavailable.',
-                    ]);
-                }
-                $eligibleProductIds = $voucher->products()->pluck('products.id');
+            $groupedBySeller = $cartItems->groupBy(fn (CartItem $item) => $item->product->seller->id)->sortKeys();
+            $legacyVoucherCode = strtoupper(trim((string) ($data['voucher_code'] ?? '')));
+            $legacyVoucher = $legacyVoucherCode !== ''
+                ? Voucher::where('code', $legacyVoucherCode)->first()
+                : null;
+            if ($legacyVoucherCode !== '' && ! $legacyVoucher) {
+                throw ValidationException::withMessages(['voucher_code' => 'Invalid Seller voucher code.']);
             }
-
+            $sellerVoucherCodes = (array) ($data['seller_vouchers'] ?? []);
+            if (array_diff(array_map('intval', array_keys($sellerVoucherCodes)),
+                $groupedBySeller->keys()->map(fn ($id) => (int) $id)->all())) {
+                throw ValidationException::withMessages(['seller_vouchers' => 'A selected Seller voucher does not belong to this checkout.']);
+            }
+            $sellerPricing = [];
+            $sellerVouchers = [];
             $checkoutGroupId = (string) Str::uuid();
             $voucherApplied = false;
             $createdOrderIds = [];
@@ -358,23 +362,23 @@ class BuyerCheckoutService
                 $sellerProfile = $shopItems->first()->product->seller;
                 $shippingQuote = app(ShippingRateService::class)->quote($sellerProfile, $buyer, $shopItems, $method);
                 $grossShipping = (float) $shippingQuote['selected_fee'];
-                if ($voucher && (int) $voucher->seller_id === (int) $sellerProfile->user_id) {
-                    $eligible = $shopItems->filter(fn ($item) => $eligibleProductIds->contains($item->product_id))
+                $legacyForThisShop = $legacyVoucher && (int) $legacyVoucher->seller_id === (int) $sellerProfile->user_id
+                    ? $legacyVoucherCode : '';
+                $code = app(SellerVoucherPricing::class)->selectedCode((int) $shopId, $sellerVoucherCodes, $legacyForThisShop);
+                $offer = app(SellerVoucherPricing::class)->find($code, (int) $sellerProfile->user_id,
+                    (int) $buyer->id, true);
+                $sellerVouchers[$shopId] = $offer;
+                if ($offer) {
+                    $eligibleIds = $offer->products()->pluck('products.id');
+                    $eligible = $shopItems->filter(fn ($item) => $eligibleIds->contains($item->product_id))
                         ->sum(fn ($item) => $item->unitPrice() * $item->quantity);
-                    if ($eligible <= 0 || $eligible < (float) $voucher->min_order_amount) {
-                        throw ValidationException::withMessages(['voucher_code' => 'Seller voucher minimum spend not met.']);
-                    }
-                    if (($voucher->kind ?? 'merchandise') === 'shipping') {
-                        $sellerShippingSaving = min($grossShipping, $voucher->type === 'percent'
-                            ? round($grossShipping * (float) $voucher->value / 100, 2) : (float) $voucher->value);
-                        $commissionRate = (float) MarketplaceRateSetting::current()->commission_percent;
-                        $maxSellerShippingSubsidy = max(0, round($subtotal * (1 - $commissionRate / 100), 2));
-                        $sellerShippingSaving = min($sellerShippingSaving, $maxSellerShippingSubsidy);
-                    } else {
-                        $sellerSaving = min($eligible, $voucher->type === 'percent'
-                            ? round($eligible * (float) $voucher->value / 100, 2) : (float) $voucher->value);
-                    }
+                    $savings = app(SellerVoucherPricing::class)->discounts($offer, (float) $eligible,
+                        (float) $subtotal, $grossShipping, (float) MarketplaceRateSetting::current()->commission_percent);
+                    $sellerSaving = $savings['merchandise'];
+                    $sellerShippingSaving = $savings['shipping'];
+                    $voucherApplied = true;
                 }
+                $sellerPricing[$shopId] = ['merchandise' => $sellerSaving, 'shipping' => $sellerShippingSaving];
                 $pricingGroups[$shopId] = [
                     'merchandise' => round($subtotal - $sellerSaving, 2),
                     'shipping' => max(0, round($grossShipping - $sellerShippingSaving, 2)),
@@ -382,7 +386,7 @@ class BuyerCheckoutService
             }
             $platformPricing = app(PlatformVoucherPricing::class)->price(
                 $pricingGroups, (string) ($data['merchandise_voucher_code'] ?? ''),
-                (string) ($data['shipping_voucher_code'] ?? ''), true);
+                (string) ($data['shipping_voucher_code'] ?? ''), true, (int) $buyer->id);
 
             foreach ($groupedBySeller as $sellerId => $items) {
                 $shippingMethod = $data['shipping_method'][$sellerId] ?? null;
@@ -398,7 +402,7 @@ class BuyerCheckoutService
                 $logisticsOptions = $this->logisticsOptionsFor($buyer, (int) $sellerId);
                 if ($logisticsOptions->isEmpty()) {
                     throw ValidationException::withMessages([
-                        'logistics_partner' => 'No Logistics company currently covers both this Seller and your delivery address.',
+                        'logistics_partner' => 'No approved courier has pickup/delivery coverage and a valid delivery path for this shop. Try another address or contact support.',
                     ]);
                 }
 
@@ -407,7 +411,7 @@ class BuyerCheckoutService
                     $logisticsPartnerId = (int) $logisticsOptions->first()['id'];
                 } elseif (! $logisticsOptions->contains('id', $logisticsPartnerId)) {
                     throw ValidationException::withMessages([
-                        'logistics_partner' => 'The courier you selected does not cover your delivery address for one of the shops.',
+                        'logistics_partner' => 'The selected courier no longer has a valid delivery path for this shop. Refresh checkout and choose an available courier.',
                     ]);
                 }
 
@@ -417,37 +421,9 @@ class BuyerCheckoutService
                 $shippingFee = (float) $shippingQuote['selected_fee'];
                 $codFee = 0.0;
 
-                $voucherDiscount = 0.0;
-                $sellerShippingDiscount = 0.0;
-                $appliedVoucherId = null;
-
-                if ($voucher && (int) $voucher->seller_id === (int) $sellerProfile->user_id) {
-                    $eligibleSubtotal = $items
-                        ->filter(fn ($item) => $eligibleProductIds->contains($item->product_id))
-                        ->sum(fn ($item) => $item->unitPrice() * $item->quantity);
-
-                    if ($eligibleSubtotal <= 0 || $eligibleSubtotal < (float) $voucher->min_order_amount) {
-                        throw ValidationException::withMessages([
-                            'voucher_code' => 'This voucher does not qualify for the selected products.',
-                        ]);
-                    }
-
-                    if (($voucher->kind ?? 'merchandise') === 'shipping') {
-                        $sellerShippingDiscount = $voucher->type === 'percent'
-                            ? round($shippingFee * ((float) $voucher->value / 100), 2)
-                            : (float) $voucher->value;
-                        $commissionRate = (float) MarketplaceRateSetting::current()->commission_percent;
-                        $maxSellerShippingSubsidy = max(0, round($merchandiseSubtotal * (1 - $commissionRate / 100), 2));
-                        $sellerShippingDiscount = min($sellerShippingDiscount, $shippingFee, $maxSellerShippingSubsidy);
-                    } else {
-                        $voucherDiscount = $voucher->type === 'percent'
-                            ? round($eligibleSubtotal * ((float) $voucher->value / 100), 2)
-                            : (float) $voucher->value;
-                        $voucherDiscount = min($voucherDiscount, $eligibleSubtotal);
-                    }
-                    $appliedVoucherId = $voucher->id;
-                    $voucherApplied = true;
-                }
+                $voucherDiscount = (float) ($sellerPricing[$sellerId]['merchandise'] ?? 0);
+                $sellerShippingDiscount = (float) ($sellerPricing[$sellerId]['shipping'] ?? 0);
+                $appliedVoucherId = $sellerVouchers[$sellerId]?->id;
 
                 $alloc = $platformPricing['allocations'][$sellerId] ?? ['platform_discount' => 0, 'shipping_discount' => 0];
                 $totalAmount = $merchandiseSubtotal + $shippingFee + $codFee - $voucherDiscount - $sellerShippingDiscount
@@ -532,17 +508,18 @@ class BuyerCheckoutService
                 }
             }
 
-            if ($voucher && ! $voucherApplied) {
-                throw ValidationException::withMessages([
-                    'voucher_code' => 'This voucher does not apply to the selected products.',
-                ]);
+            if ($legacyVoucherCode !== '' && ! $voucherApplied && $sellerVoucherCodes === []) {
+                throw ValidationException::withMessages(['voucher_code' => 'This Seller voucher is not eligible for the selected shops.']);
             }
-
-            if ($voucherApplied) {
-                $voucher->increment('used_count');
-            }
-            foreach ([$platformPricing['merchandise_voucher'], $platformPricing['shipping_voucher']] as $applied) {
+            // Once for each used Seller voucher, and once per platform campaign per checkout group.
+            foreach ($sellerVouchers as $applied) {
                 if ($applied) $applied->increment('used_count');
+            }
+            foreach (['merchandise' => 'merchandise_discount', 'shipping' => 'shipping_discount'] as $kind => $key) {
+                $applied = $platformPricing[$kind.'_voucher'];
+                if (! $applied) continue;
+                $applied->increment('used_count');
+                $applied->increment('spent_amount', (float) $platformPricing[$key]);
             }
 
             CartItem::where('buyer_id', $buyer->id)
@@ -689,7 +666,7 @@ class BuyerCheckoutService
             ->values();
     }
 
-    private function vouchersForItems(Collection $cartItems): Collection
+    private function vouchersForItems(Collection $cartItems, int $buyerId): Collection
     {
         $productIds = $cartItems->pluck('product_id')->unique()->values();
 
@@ -711,6 +688,8 @@ class BuyerCheckoutService
                 $query->whereNull('usage_limit')->orWhereColumn('used_count', '<', 'usage_limit');
             })
             ->get()
+            ->filter(fn (Voucher $v) => $v->per_buyer_limit === null
+                || Order::where('buyer_id', $buyerId)->where('voucher_id', $v->id)->count() < $v->per_buyer_limit)
             ->map(fn (Voucher $voucher) => [
                 'code' => $voucher->code,
                 'title' => ($voucher->kind ?? 'merchandise') === 'shipping'
@@ -718,11 +697,15 @@ class BuyerCheckoutService
                         : ($voucher->type === 'percent' ? $voucher->value . '% Shipping Off' : '₱' . number_format($voucher->value) . ' Shipping Off'))
                     : ($voucher->type === 'percent' ? $voucher->value . '% Off' : '₱' . number_format($voucher->value) . ' Off'),
                 'description' => (($voucher->kind ?? 'merchandise') === 'shipping' ? 'Seller-funded shipping voucher · ' : '')
-                    . 'Min. merchandise ₱' . number_format($voucher->min_order_amount),
+                    . 'Min. merchandise ₱' . number_format($voucher->min_order_amount)
+                    . ($voucher->max_discount === null ? '' : ' · Max ₱' . number_format((float) $voucher->max_discount))
+                    . ($voucher->per_buyer_limit === null ? '' : ' · ' . $voucher->per_buyer_limit . ' use(s) per Buyer'),
                 'kind' => $voucher->kind ?? 'merchandise',
                 'type' => $voucher->type,
                 'value' => (float) $voucher->value,
                 'min_spend' => (float) $voucher->min_order_amount,
+                'max_discount' => $voucher->max_discount === null ? null : (float) $voucher->max_discount,
+                'per_buyer_limit' => $voucher->per_buyer_limit,
                 'seller_id' => Seller::where('user_id', $voucher->seller_id)->value('id'),
                 'product_ids' => $voucher->products()->pluck('products.id')->map(fn ($id) => (int) $id)->values()->all(),
             ])

@@ -3,6 +3,7 @@ namespace App\Services;
 
 use App\Models\Finance\PlatformVoucher;
 use Illuminate\Validation\ValidationException;
+use App\Models\Buyer\Order\Order;
 
 class PlatformVoucherPricing
 {
@@ -11,10 +12,10 @@ class PlatformVoucherPricing
      * Both codes are optional. Never trust a client-submitted discount amount.
      * All allocations are cents-based with remainder on the final group.
      */
-    public function price(array $groups, string $merchCode = '', string $shipCode = '', bool $lock = false): array
+    public function price(array $groups, string $merchCode = '', string $shipCode = '', bool $lock = false, int $buyerId = 0): array
     {
-        $merch = $this->find($merchCode, 'merchandise', $lock);
-        $ship = $this->find($shipCode, 'shipping', $lock);
+        $merch = $this->find($merchCode, 'merchandise', $lock, $buyerId);
+        $ship = $this->find($shipCode, 'shipping', $lock, $buyerId);
         $base = round(array_sum(array_column($groups, 'merchandise')), 2);
         $shipping = round(array_sum(array_column($groups, 'shipping')), 2);
         $merchDiscount = $this->discount($merch, $base, $base);
@@ -36,7 +37,7 @@ class PlatformVoucherPricing
             'shipping_discount' => $shippingDiscount];
     }
 
-    private function find(string $code, string $kind, bool $lock): ?PlatformVoucher
+    private function find(string $code, string $kind, bool $lock, int $buyerId): ?PlatformVoucher
     {
         $code = strtoupper(trim($code));
         if ($code === '') return null;
@@ -47,6 +48,14 @@ class PlatformVoucherPricing
             || ($voucher->type === 'percent' && (float) $voucher->value > 100)) {
             throw ValidationException::withMessages([$kind.'_voucher_code' => 'Invalid or unavailable ShopHop '.$kind.' voucher.']);
         }
+        if ($buyerId > 0 && $voucher->per_buyer_limit !== null) {
+            $column = $kind === 'shipping' ? 'shipping_voucher_id' : 'platform_voucher_id';
+            $alreadyUsed = Order::query()->where('buyer_id', $buyerId)->where($column, $voucher->id)
+                ->distinct('checkout_group_id')->count('checkout_group_id');
+            if ($alreadyUsed >= $voucher->per_buyer_limit) {
+                throw ValidationException::withMessages([$kind.'_voucher_code' => 'You have reached the ShopHop voucher use limit.']);
+            }
+        }
         return $voucher;
     }
 
@@ -56,7 +65,12 @@ class PlatformVoucherPricing
         if ($eligible <= 0 || $merchandise < (float) $voucher->min_spend) {
             throw ValidationException::withMessages([$voucher->kind.'_voucher_code' => 'Voucher minimum spend not met.']);
         }
-        return round(min($eligible, $voucher->type === 'percent'
+        $discount = round(min($eligible, $voucher->type === 'percent'
             ? $eligible * ((float) $voucher->value / 100) : (float) $voucher->value), 2);
+        if ($voucher->max_discount !== null) $discount = min($discount, (float) $voucher->max_discount);
+        if ($voucher->budget_amount !== null && round((float) $voucher->spent_amount + $discount, 2) > (float) $voucher->budget_amount) {
+            throw ValidationException::withMessages([$voucher->kind.'_voucher_code' => 'ShopHop voucher budget is insufficient for this checkout.']);
+        }
+        return $discount;
     }
 }

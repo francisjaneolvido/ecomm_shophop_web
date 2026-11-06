@@ -22,6 +22,10 @@ class MarketplaceFinanceController extends Controller
         return view('admin.commission', [
             'rates' => MarketplaceRateSetting::current(),
             'vouchers' => PlatformVoucher::orderByDesc('id')->limit(60)->get(),
+            'promotionOrders' => Order::with(['voucher', 'platformVoucher', 'shippingVoucher', 'financial'])
+                ->where(fn ($q) => $q->whereNotNull('voucher_id')
+                    ->orWhereNotNull('platform_voucher_id')->orWhereNotNull('shipping_voucher_id'))
+                ->latest('id')->paginate(20, ['*'], 'promo_page'),
             'finances' => OrderFinancial::orderByDesc('id')->paginate(20, ['*'], 'finance_page'),
             'settlements' => SettlementEntry::with('order')->orderByDesc('id')->paginate(30, ['*'], 'payout_page'),
             'eligibleOrders' => Order::where('status', Order::STATUS_COMPLETED)
@@ -35,6 +39,8 @@ class MarketplaceFinanceController extends Controller
                 ->whereDoesntHave('settlements')
                 ->with('financial')
                 ->latest('id')->limit(40)->get(),
+            'platformPromoSpent' => (float) PlatformVoucher::sum('spent_amount'),
+            'platformPromoBudget' => (float) PlatformVoucher::whereNotNull('budget_amount')->sum('budget_amount'),
             'commissionTotal' => (float) OrderFinancial::whereHas('order', fn ($q) => $q->where('status', Order::STATUS_COMPLETED))->sum('commission'),
             'distributionOrders' => Order::with(['financial', 'settlements', 'codSettlement'])
                 ->whereHas('settlements', fn ($q) => $q->whereIn('kind', ['seller', 'logistics'])->where('status', 'pending'))
@@ -88,13 +94,21 @@ class MarketplaceFinanceController extends Controller
             'value' => ['required', 'numeric', 'gt:0', 'max:1000000'],
             'min_spend' => ['required', 'numeric', 'min:0', 'max:1000000'],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
+            'per_buyer_limit' => ['nullable', 'integer', 'min:1'],
+            'max_discount' => ['nullable', 'numeric', 'gt:0', 'max:1000000'],
+            'budget_amount' => ['nullable', 'numeric', 'gt:0', 'max:100000000'],
+            'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after:now'],
         ]);
         if ($data['type'] === 'percent' && $data['value'] > 100) {
             throw ValidationException::withMessages(['value' => 'Percentage cannot exceed 100%.']);
         }
+        if (! empty($data['starts_at']) && ! empty($data['ends_at'])
+            && strtotime($data['ends_at']) <= strtotime($data['starts_at'])) {
+            throw ValidationException::withMessages(['ends_at' => 'End date must be after the start date.']);
+        }
         PlatformVoucher::create([
-            ...$data, 'code' => strtoupper($data['code']), 'used_count' => 0, 'active' => true,
+            ...$data, 'code' => strtoupper($data['code']), 'used_count' => 0, 'spent_amount' => 0, 'active' => true,
         ]);
         return back()->with('status', 'ShopHop-funded voucher created.');
     }

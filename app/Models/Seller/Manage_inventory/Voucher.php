@@ -19,6 +19,8 @@ class Voucher extends Model
         'min_order_amount',
         'usage_limit',
         'used_count',
+        'max_discount',
+        'per_buyer_limit',
         'starts_at',
         'ends_at',
         'status',
@@ -29,6 +31,8 @@ class Voucher extends Model
         'min_order_amount' => 'decimal:2',
         'usage_limit' => 'integer',
         'used_count' => 'integer',
+        'max_discount' => 'decimal:2',
+        'per_buyer_limit' => 'integer',
         'starts_at' => 'datetime',
         'ends_at' => 'datetime',
     ];

@@ -294,6 +294,7 @@
   {{-- ============ 5. VOUCHERS ============ --}}
   <section id="vouchers" class="{{ $card }} scroll-mt-6 p-5">
     <h2 class="text-base font-bold text-slate-800">ShopHop-funded vouchers</h2>
+    <p class="mt-2 text-sm text-teal-dark font-semibold">ShopHop promotional budget committed at checkout: ₱{{ number_format($platformPromoSpent,2) }} · Capped campaign budgets: ₱{{ number_format($platformPromoBudget,2) }}</p>
     <p class="mt-1 text-xs text-slate-500">Platform merchandise and free-shipping vouchers are separate from Seller vouchers.</p>
 
     <form method="POST" action="{{ route('admin.finance.vouchers.create') }}" class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">@csrf
@@ -324,6 +325,18 @@
       <label class="{{ $label }}">Usage limit <span class="text-slate-400">(optional)</span>
         <input name="usage_limit" type="number" min="1" class="{{ $input }}">
       </label>
+      <label class="{{ $label }}">Maximum discount (₱) <span class="text-slate-400">(optional)</span>
+        <input name="max_discount" type="number" min="0.01" step="0.01" class="{{ $input }}" placeholder="No extra cap">
+      </label>
+      <label class="{{ $label }}">Per Buyer use limit <span class="text-slate-400">(optional)</span>
+        <input name="per_buyer_limit" type="number" min="1" class="{{ $input }}" placeholder="Unlimited">
+      </label>
+      <label class="{{ $label }}">Campaign budget (₱) <span class="text-slate-400">(optional)</span>
+        <input name="budget_amount" type="number" min="0.01" step="0.01" class="{{ $input }}" placeholder="Unlimited">
+      </label>
+      <label class="{{ $label }}">Starts <span class="text-slate-400">(optional)</span>
+        <input name="starts_at" type="datetime-local" class="{{ $input }}">
+      </label>
       <label class="{{ $label }}">Expires <span class="text-slate-400">(optional)</span>
         <input name="ends_at" type="datetime-local" class="{{ $input }}">
       </label>
@@ -333,7 +346,7 @@
     <div class="mt-6 overflow-x-auto rounded-xl border border-slate-200">
       <table class="w-full min-w-[560px] text-left text-sm">
         <thead class="bg-slate-50"><tr>
-          <th class="{{ $th }}">Code</th><th class="{{ $th }}">Type</th><th class="{{ $th }}">Value</th><th class="{{ $th }}">Used</th><th class="{{ $th }}">Status</th><th class="{{ $th }}"><span class="sr-only">Action</span></th>
+          <th class="{{ $th }}">Code</th><th class="{{ $th }}">Type</th><th class="{{ $th }}">Value</th><th class="{{ $th }}">Used / Limit</th><th class="{{ $th }}">Budget committed</th><th class="{{ $th }}">Status</th><th class="{{ $th }}"><span class="sr-only">Action</span></th>
         </tr></thead>
         <tbody class="divide-y divide-slate-100">
           @forelse($vouchers as $v)
@@ -341,7 +354,8 @@
               <td class="{{ $td }} font-mono text-xs font-semibold">{{ $v->code }}</td>
               <td class="{{ $td }} capitalize">{{ $v->kind }}</td>
               <td class="{{ $td }} tabular-nums">{{ $v->type === 'fixed' ? '₱' : '' }}{{ $v->value }}{{ $v->type === 'percent' ? '%' : '' }}</td>
-              <td class="{{ $td }} tabular-nums">{{ $v->used_count }} / {{ $v->usage_limit ?? '∞' }}</td>
+              <td class="{{ $td }} tabular-nums">{{ $v->used_count }} / {{ $v->usage_limit ?? '∞' }}<div class="text-xs text-slate-500">Per Buyer: {{ $v->per_buyer_limit ?? 'Unlimited' }}</div></td>
+              <td class="{{ $td }} tabular-nums">₱{{ number_format((float)$v->spent_amount,2) }} / {{ $v->budget_amount === null ? 'Unlimited' : '₱'.number_format((float)$v->budget_amount,2) }}<div class="text-xs text-slate-500">Max off: {{ $v->max_discount === null ? 'No cap' : '₱'.number_format((float)$v->max_discount,2) }}</div></td>
               <td class="{{ $td }}">
                 <span class="rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset {{ $v->active ? 'bg-emerald-50 text-emerald-700 ring-emerald-200' : 'bg-slate-100 text-slate-500 ring-slate-200' }}">
                   {{ $v->active ? 'Active' : 'Disabled' }}
@@ -354,12 +368,35 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="6" class="px-4 py-8 text-center text-sm text-slate-500">No platform vouchers yet.</td></tr>
+            <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-slate-500">No platform vouchers yet.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
   </section>
+  <section id="promotion-ledger" class="{{ $card }} scroll-mt-6 p-5 mt-5">
+    <h2 class="text-base font-bold text-slate-800">Promotion Redemption Ledger</h2>
+    <p class="mt-1 mb-4 text-xs text-slate-500">Frozen per-order promotional amounts and their funding source (not proof of payout). ShopHop vouchers are counted once per checkout group; multi-seller orders appear as separate rows.</p>
+    <div class="overflow-x-auto rounded-xl border border-slate-200">
+      <table class="w-full min-w-[800px] text-left text-sm">
+        <thead class="bg-slate-50"><tr><th class="{{ $th }}">Order</th><th class="{{ $th }}">Buyer ID</th><th class="{{ $th }}">Seller code / Seller-funded</th><th class="{{ $th }}">ShopHop codes / Platform-funded</th><th class="{{ $th }}">Total COD</th><th class="{{ $th }}">Date</th></tr></thead>
+        <tbody class="divide-y divide-slate-100">
+          @forelse($promotionOrders as $order)
+            <tr>
+              <td class="{{ $td }} font-semibold">#{{ $order->id }}<div class="text-[10px] font-normal text-slate-500">{{ $order->status }}</div></td>
+              <td class="{{ $td }}">{{ $order->buyer_id }}</td>
+              <td class="{{ $td }}">{{ $order->voucher?->code ?? '—' }}<div class="text-xs text-emerald-700">₱{{ number_format((float)$order->voucher_discount + (float)$order->seller_shipping_discount,2) }}</div></td>
+              <td class="{{ $td }}">{{ $order->platformVoucher?->code ?? '—' }} / {{ $order->shippingVoucher?->code ?? '—' }}<div class="text-xs text-teal-dark">₱{{ number_format((float)$order->platform_discount + (float)$order->shipping_discount,2) }}</div></td>
+              <td class="{{ $td }} font-semibold">₱{{ number_format((float)$order->total_amount,2) }}</td>
+              <td class="{{ $td }}">{{ $order->created_at?->format('M j, Y') }}</td>
+            </tr>
+          @empty<tr><td colspan="6" class="px-4 py-8 text-center text-slate-500">No promotional redemptions yet.</td></tr>@endforelse
+        </tbody>
+      </table>
+    </div>
+    <div class="mt-3">{{ $promotionOrders->links() }}</div>
+  </section>
+
 
   {{-- ============ 6. HISTORY ============ --}}
   <div id="history" class="scroll-mt-5 space-y-4">

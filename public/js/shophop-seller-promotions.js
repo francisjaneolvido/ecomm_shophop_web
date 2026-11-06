@@ -31,7 +31,7 @@
     form.reset(); selected.clear();
     const data = button?.dataset?.voucher ? JSON.parse(button.dataset.voucher) : null;
     $('ssVoucherTitle').textContent = data ? 'Edit Voucher' : 'Create Voucher';
-    const fields = {ssVoucherId:'id',ssVoucherName:'name',ssVoucherCode:'code',ssVoucherKind:'kind',ssVoucherType:'type',ssVoucherValue:'value',ssVoucherMin:'min_order_amount',ssVoucherUsage:'usage_limit',ssVoucherStart:'starts_at',ssVoucherEnd:'ends_at'};
+    const fields = {ssVoucherId:'id',ssVoucherName:'name',ssVoucherCode:'code',ssVoucherKind:'kind',ssVoucherType:'type',ssVoucherValue:'value',ssVoucherMin:'min_order_amount',ssVoucherUsage:'usage_limit',ssVoucherCap:'max_discount',ssVoucherBuyerLimit:'per_buyer_limit',ssVoucherStart:'starts_at',ssVoucherEnd:'ends_at'};
     if (data) {
       for (const [element, field] of Object.entries(fields)) $(element).value = data[field] ?? '';
       (data.products || []).forEach(p => selected.set(String(p.id), p.name));

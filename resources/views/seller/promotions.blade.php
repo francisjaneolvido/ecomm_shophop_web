@@ -38,6 +38,7 @@
                         'id'=>$voucher->id,'name'=>$voucher->name,'code'=>$voucher->code,
                         'kind'=>$voucher->kind ?? 'merchandise','type'=>$voucher->type,'value'=>(float)$voucher->value,
                         'min_order_amount'=>(float)$voucher->min_order_amount,'usage_limit'=>$voucher->usage_limit,
+                        'max_discount'=>$voucher->max_discount,'per_buyer_limit'=>$voucher->per_buyer_limit,
                         'starts_at'=>$voucher->starts_at?->format('Y-m-d\TH:i'),
                         'ends_at'=>$voucher->ends_at?->format('Y-m-d\TH:i'),
                         'products'=>$voucher->products->map(fn($p)=>['id'=>$p->id,'name'=>$p->name])->values(),
@@ -64,7 +65,7 @@
 <div id="ssVoucherModal" class="ss-modal" hidden aria-hidden="true">
     <div class="ss-modal-backdrop" data-voucher-close></div>
     <section class="ss-dialog" role="dialog" aria-modal="true" aria-labelledby="ssVoucherTitle">
-        <header class="ss-dialog-header"><div><p class="ss-eyebrow">SELLER VOUCHER</p><h2 id="ssVoucherTitle">Create Voucher</h2><p>Voucher codes are displayed on selected product pages; checkout redemption is not live.</p></div><button type="button" class="ss-icon-close" data-voucher-close aria-label="Close voucher form">×</button></header>
+        <header class="ss-dialog-header"><div><p class="ss-eyebrow">SELLER VOUCHER</p><h2 id="ssVoucherTitle">Create Voucher</h2><p>Eligible Seller vouchers can be redeemed at Web and Mobile checkout, one per shop.</p></div><button type="button" class="ss-icon-close" data-voucher-close aria-label="Close voucher form">×</button></header>
         <form method="POST" action="{{ route('seller.inventory.vouchers.store') }}" id="ssVoucherForm" class="ss-dialog-form">
             @csrf <input type="hidden" name="return_to" value="promotions"><input type="hidden" name="voucher_id" id="ssVoucherId" value="{{ old('voucher_id') }}">
             <div class="ss-dialog-body">
@@ -76,11 +77,13 @@
                     <label class="ss-field"><span>Discount value *</span><input class="ss-input" type="number" id="ssVoucherValue" name="value" step="0.01" min="0.01" value="{{ old('value') }}" required></label>
                     <label class="ss-field"><span>Minimum order amount</span><input class="ss-input" type="number" id="ssVoucherMin" name="min_order_amount" step="0.01" min="0" value="{{ old('min_order_amount',0) }}"></label>
                     <label class="ss-field"><span>Usage limit</span><input class="ss-input" type="number" id="ssVoucherUsage" name="usage_limit" min="1" value="{{ old('usage_limit') }}" placeholder="Unlimited"></label>
+                    <label class="ss-field"><span>Maximum discount (₱)</span><input class="ss-input" type="number" step="0.01" min="0.01" id="ssVoucherCap" name="max_discount" value="{{ old('max_discount') }}" placeholder="No extra cap"></label>
+                    <label class="ss-field"><span>Uses per Buyer</span><input class="ss-input" type="number" min="1" id="ssVoucherBuyerLimit" name="per_buyer_limit" value="{{ old('per_buyer_limit') }}" placeholder="Unlimited"></label>
                     <div></div>
                     <label class="ss-field"><span>Starts at (optional)</span><input class="ss-input" type="datetime-local" id="ssVoucherStart" name="starts_at" value="{{ old('starts_at') }}"></label>
                     <label class="ss-field"><span>Ends at (optional)</span><input class="ss-input" type="datetime-local" id="ssVoucherEnd" name="ends_at" value="{{ old('ends_at') }}"></label>
                 </div>
-                <div class="ss-selected-head"><div><h3>Eligible product pages</h3><p>Select which product detail pages display this voucher. Unselected means no product page displays it.</p></div><span id="ssSelectedCount" class="ss-pill ss-pill-neutral">0 selected</span></div>
+                <div class="ss-selected-head"><div><h3>Eligible product pages</h3><p>Select the products eligible for this voucher at checkout. Without eligible products, the voucher cannot be redeemed.</p></div><span id="ssSelectedCount" class="ss-pill ss-pill-neutral">0 selected</span></div>
                 <input type="search" class="ss-input" id="ssProductSearch" placeholder="Search your active products by name or SKU..." autocomplete="off">
                 <div id="ssProductResults" class="ss-product-results" aria-live="polite">Type to search or view the first 25 products.</div>
                 <div id="ssSelectedProducts" class="ss-selected-products" aria-live="polite"></div>

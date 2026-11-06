@@ -110,7 +110,9 @@
         >
             @csrf
 
-            <input type="hidden" name="voucher_code" id="voucherCodeHidden" value="{{ $initialVoucherCode }}">
+            {{-- Backward-compatible legacy field remains blank when per-shop vouchers are selected. --}}
+            <input type="hidden" name="voucher_code" id="voucherCodeHidden" value="">
+            <div id="sellerVoucherFields"></div>
             {{-- COD is the only payment method. The server must still enforce this. --}}
             <input type="hidden" name="payment_method" value="cod">
             {{-- Seller codes, Platform product codes, and Platform shipping codes are independent. --}}
@@ -427,7 +429,7 @@
                             </div>
 
 
-                            {{-- Courier chosen by the Buyer (only couriers covering this address and seller) --}}
+                            {{-- Courier chosen by the Buyer (coverage plus verified inter-center connectivity) --}}
                             <div class="mt-3 pt-3 border-t border-gray-border/70">
                                 <p class="text-[10px] font-bold text-navy">Courier</p>
                                 <p class="text-[8.5px] text-navy/35 mt-0.5 mb-2">Choose who delivers your parcel</p>
@@ -445,7 +447,7 @@
                                     </div>
                                 @else
                                     <p class="text-[9px] text-navy/40">
-                                        No courier currently covers both this Seller and your delivery address. Checkout is unavailable for this shop.
+                                        No approved courier has pickup/delivery coverage and a valid delivery path for this shop. Inter-center transfers require verified transport connections.
                                     </p>
                                 @endif
                             </div>
@@ -466,7 +468,7 @@
                                             class="voucher-suggestion inline-flex items-center gap-1
                                                    px-2 py-1 rounded-md bg-gray-bg hover:bg-teal-light
                                                    text-[8px] font-semibold text-navy/45 hover:text-teal-dark transition"
-                                            data-code="{{ $voucher['code'] }}"
+                                            data-code="{{ $voucher['code'] }}" data-shop-voucher="{{ $shopId }}"
                                         >
                                             <x-lucide-ticket class="w-2.5 h-2.5" />
                                             {{ $voucher['code'] }}
@@ -475,6 +477,10 @@
                                 </div>
                             </div>
                         @endif
+                        <div class="px-4 pb-3 flex items-center justify-between gap-2 text-[10px]">
+                            <span class="font-semibold text-teal-dark" data-shop-voucher-label="{{ $shopId }}">No Seller voucher selected</span>
+                            <button type="button" class="text-navy/60 underline hover:text-teal-dark" data-remove-seller-voucher="{{ $shopId }}">Remove</button>
+                        </div>
 
 
                         {{-- Shop subtotal --}}
@@ -574,7 +580,7 @@
 
                             <div>
                                 <p class="text-[11px] font-bold text-navy">Voucher</p>
-                                <p class="text-[8.5px] text-navy/35 mt-0.5">Applies only to the matching seller</p>
+                                <p class="text-[8.5px] text-navy/35 mt-0.5">One Seller voucher per shop · choose from the shop sections</p>
                             </div>
 
                         </div>
@@ -892,6 +898,7 @@ document.addEventListener('DOMContentLoaded', function () {
     );
 
     const initialVoucherCode = @json($initialVoucherCode);
+    const initialSellerVoucherCodes = @json($sellerVoucherCodes ?? []);
     const platformCatalog = @json(collect($platformVouchers)->keyBy('code'));
     const platformInput = document.getElementById('platformVoucherInput');
     const shippingInput = document.getElementById('shippingVoucherInput');
@@ -924,13 +931,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const checkoutToast = document.getElementById('checkoutToast');
 
-    let activeVoucherCode =
-        initialVoucherCode && voucherCatalog[initialVoucherCode]
-            ? initialVoucherCode
-            : '';
-
+    const selectedSellerCodes = {...initialSellerVoucherCodes};
+    if (initialVoucherCode && voucherCatalog[initialVoucherCode]) {
+        selectedSellerCodes[voucherCatalog[initialVoucherCode].seller_id] = initialVoucherCode;
+    }
     let currentVoucherDiscount = 0;
-
 
     function formatPeso(amount) {
         // Summary previews retain cents so the server's persisted decimal total is not visually rounded.
@@ -956,82 +961,47 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
 
-    function voucherDiscountForShop(shopSubtotal, shippingFee, sellerGroupSubtotal = shopSubtotal) {
-        const voucher = activeVoucherCode ? voucherCatalog[activeVoucherCode] : null;
-
-        if (!voucher) return 0;
-
-        const minimum = Number(voucher.min_spend || 0);
-
-        if (shopSubtotal < minimum) {
-            return 0;
-        }
-
-        const base = voucher.kind === 'shipping' ? shippingFee : shopSubtotal;
+    function voucherDiscountForShop(voucher, eligibleSubtotal, shippingFee, sellerGroupSubtotal) {
+        if (!voucher || eligibleSubtotal < Number(voucher.min_spend || 0)) return 0;
+        const base = voucher.kind === 'shipping' ? shippingFee : eligibleSubtotal;
         const raw = voucher.type === 'percent'
-            ? Math.min(base, base * (Number(voucher.value || 0) / 100))
+            ? Math.min(base, Math.round(base * Number(voucher.value || 0)) / 100)
             : Math.min(Number(voucher.value || 0), base);
-
-        // Seller-funded shipping cannot exceed the Seller's available merchandise net
-        // after ShopHop's locked 10% commission. This prevents an accidental platform subsidy.
-        if (voucher.kind === 'shipping') {
-            return Math.min(raw, Math.max(0, sellerGroupSubtotal * 0.90));
-        }
-        return raw;
+        const capped = voucher.max_discount != null ? Math.min(raw, Number(voucher.max_discount)) : raw;
+        return Math.round((voucher.kind === 'shipping'
+            ? Math.min(capped, Math.max(0, sellerGroupSubtotal * .90)) : capped) * 100) / 100;
     }
 
-
-    function syncVoucherUI(voucherEligibleShopSubtotal, discount) {
-        const voucher = activeVoucherCode ? voucherCatalog[activeVoucherCode] : null;
-
+    function syncSellerVouchers(discount) {
         currentVoucherDiscount = discount;
-
-        if (voucherCodeHidden) {
-            voucherCodeHidden.value = voucher ? activeVoucherCode : '';
+        if (voucherCodeHidden) voucherCodeHidden.value = '';
+        const selected = Object.entries(selectedSellerCodes).filter(([, code]) => !!voucherCatalog[code]);
+        const container = document.getElementById('sellerVoucherFields');
+        if (container) {
+            container.replaceChildren();
+            selected.forEach(([sellerId, code]) => {
+                const field = document.createElement('input');
+                field.type = 'hidden'; field.name = 'seller_vouchers[' + sellerId + ']'; field.value = code;
+                container.appendChild(field);
+            });
         }
-
-        if (voucherAppliedBadge) {
-            voucherAppliedBadge.classList.toggle('hidden', !voucher);
-        }
-
-        if (summaryVoucherCode) {
-            summaryVoucherCode.textContent =
-                voucher ? '(' + activeVoucherCode + ')' : '';
-        }
-
-        if (summaryVoucherDiscount) {
-            summaryVoucherDiscount.textContent =
-                '-' + formatPeso(currentVoucherDiscount);
-        }
-
+        document.querySelectorAll('[data-shop-voucher-label]').forEach(label => {
+            label.textContent = selectedSellerCodes[label.dataset.shopVoucherLabel] || 'No Seller voucher selected';
+        });
+        if (voucherAppliedBadge) voucherAppliedBadge.classList.toggle('hidden', !selected.length);
+        if (summaryVoucherCode) summaryVoucherCode.textContent = '(' + selected.map(([, code]) => code).join(', ') + ')';
+        if (summaryVoucherDiscount) summaryVoucherDiscount.textContent = '-' + formatPeso(discount);
         if (summaryVoucherRow) {
-            const show = voucher && currentVoucherDiscount > 0;
-
-            summaryVoucherRow.classList.toggle('hidden', !show);
-            summaryVoucherRow.classList.toggle('flex', !!show);
+            summaryVoucherRow.classList.toggle('hidden', discount <= 0);
+            summaryVoucherRow.classList.toggle('flex', discount > 0);
         }
-
-        if (voucher) {
-            const minimum = Number(voucher.min_spend || 0);
-
-            if (voucherEligibleShopSubtotal >= minimum) {
-                voucherMessage.textContent =
-                    activeVoucherCode + ' applied — you save ' +
-                    formatPeso(currentVoucherDiscount) + '.';
-
-                voucherMessage.classList.remove('hidden', 'text-red-500');
-                voucherMessage.classList.add('text-teal-dark');
-            } else {
-                voucherMessage.textContent =
-                    'Spend ' + formatPeso(minimum) +
-                    ' on this seller\'s items to use ' + activeVoucherCode + '.';
-
-                voucherMessage.classList.remove('hidden', 'text-teal-dark');
-                voucherMessage.classList.add('text-red-500');
-            }
+        if (voucherMessage) {
+            voucherMessage.classList.remove('hidden', 'text-red-500');
+            voucherMessage.classList.add('text-teal-dark');
+            voucherMessage.textContent = selected.length ? selected.length + ' shop voucher(s) selected. Total Seller savings: ' + formatPeso(discount)
+                : 'Choose an eligible Seller voucher for each shop.';
         }
     }
-
 
     function promoDiscount(input, kind, eligible, merchandiseBase) {
         const code = (input?.value || '').trim().toUpperCase();
@@ -1043,9 +1013,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return 0;
         }
 
-        return Math.round(Math.min(eligible, promo.type === 'percent'
-            ? eligible * Number(promo.value) / 100
-            : Number(promo.value)) * 100) / 100;
+        let discount = Math.round(Math.min(eligible, promo.type === 'percent'
+            ? eligible * Number(promo.value) / 100 : Number(promo.value)) * 100) / 100;
+        if (promo.max_discount != null) discount = Math.min(discount, Number(promo.max_discount));
+        if (promo.remaining_budget != null && discount > Number(promo.remaining_budget)) return 0;
+        return discount;
     }
 
 
@@ -1053,13 +1025,12 @@ document.addEventListener('DOMContentLoaded', function () {
         let merchandiseSubtotal = 0;
         let shippingTotal = 0;
         let productSavings = 0;
-        let voucherEligibleShopSubtotal = 0;
-        let voucherDiscount = 0;
-
-        const voucher = activeVoucherCode ? voucherCatalog[activeVoucherCode] : null;
+        let sellerMerchandiseSaving = 0;
+        let sellerShippingSaving = 0;
 
         shopGroups.forEach(function (group, index) {
             let groupSubtotal = 0;
+            const voucher = voucherCatalog[selectedSellerCodes[group.dataset.shopId] || ''] || null;
             let eligibleSubtotal = 0;
             let groupWeight = 0;
 
@@ -1116,15 +1087,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (voucher && String(group.dataset.shopId) === String(voucher.seller_id)) {
-                voucherEligibleShopSubtotal = eligibleSubtotal;
-                voucherDiscount = voucherDiscountForShop(eligibleSubtotal, selectedShippingFee, groupSubtotal);
+                const discount = voucherDiscountForShop(voucher, eligibleSubtotal, selectedShippingFee, groupSubtotal);
+                if (voucher.kind === 'shipping') sellerShippingSaving += discount;
+                else sellerMerchandiseSaving += discount;
             }
         });
 
-        syncVoucherUI(voucherEligibleShopSubtotal, voucherDiscount);
-
-        const sellerMerchandiseSaving = (voucher?.kind === 'shipping') ? 0 : currentVoucherDiscount;
-        const sellerShippingSaving = (voucher?.kind === 'shipping') ? currentVoucherDiscount : 0;
+        syncSellerVouchers(sellerMerchandiseSaving + sellerShippingSaving);
         const netMerchandise = Math.max(0, merchandiseSubtotal - sellerMerchandiseSaving);
         const netShipping = Math.max(0, shippingTotal - sellerShippingSaving);
         const platformSaving = promoDiscount(platformInput, 'merchandise', netMerchandise, netMerchandise);
@@ -1259,63 +1228,30 @@ document.addEventListener('DOMContentLoaded', function () {
     */
     function applyVoucher(code, showFeedback = true) {
         const normalized = String(code || '').trim().toUpperCase();
-
         voucherInput.value = normalized;
-
-        if (!normalized || !voucherCatalog[normalized]) {
-            activeVoucherCode = '';
-
-            voucherMessage.textContent =
-                normalized ? 'Invalid or expired voucher code.' : 'Enter a voucher code first.';
-
-            voucherMessage.classList.remove('hidden', 'text-teal-dark');
-            voucherMessage.classList.add('text-red-500');
-
-            recalculate();
-
-            if (showFeedback && normalized) {
-                showToast('Voucher not available.');
-            }
-
+        const offer = voucherCatalog[normalized];
+        if (!offer) {
+            if (showFeedback) showToast(normalized ? 'Invalid or expired Seller voucher.' : 'Choose a voucher from a shop.');
             return;
         }
-
-        // A voucher code is eligible only when an assigned Product is selected from its seller.
-        const belongsToCart = Array.from(shopGroups).some((group) =>
-            String(group.dataset.shopId) === String(voucherCatalog[normalized].seller_id)
-            && Array.from(group.querySelectorAll('.checkout-item')).some((row) =>
-                voucherCatalog[normalized].product_ids.includes(Number(row.dataset.productId))
-            )
-        );
-
-        if (!belongsToCart) {
-            activeVoucherCode = '';
-
-            voucherMessage.textContent = 'This voucher does not apply to any seller in your order.';
-            voucherMessage.classList.remove('hidden', 'text-teal-dark');
-            voucherMessage.classList.add('text-red-500');
-
-            recalculate();
-
-            if (showFeedback) {
-                showToast('Voucher not applicable.');
-            }
-
+        const matchingShop = Array.from(shopGroups).find(group => String(group.dataset.shopId) === String(offer.seller_id));
+        const matchingProduct = matchingShop && Array.from(matchingShop.querySelectorAll('.checkout-item'))
+            .some(row => offer.product_ids.includes(Number(row.dataset.productId)));
+        if (!matchingProduct) {
+            if (showFeedback) showToast('This voucher is not eligible for these shop products.');
             return;
         }
-
-        activeVoucherCode = normalized;
-
+        selectedSellerCodes[String(offer.seller_id)] = normalized;
         recalculate();
-
-        if (showFeedback) {
-            // The server applies the code only after final eligibility and price validation.
-            showToast(currentVoucherDiscount > 0
-                ? normalized + ' selected for Checkout.'
-                : 'This voucher does not meet the eligible spend minimum.');
-        }
+        if (showFeedback) showToast(normalized + ' selected for this shop.');
     }
 
+    document.querySelectorAll('[data-remove-seller-voucher]').forEach(button => {
+        button.addEventListener('click', () => {
+            delete selectedSellerCodes[button.dataset.removeSellerVoucher];
+            recalculate();
+        });
+    });
 
     applyVoucherBtn.addEventListener('click', function () {
         applyVoucher(voucherInput.value);
@@ -1360,11 +1296,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
 
-    if (initialVoucherCode) {
-        applyVoucher(initialVoucherCode, false);
-    } else {
-        recalculate();
-    }
+    recalculate();
 
 });
 </script>

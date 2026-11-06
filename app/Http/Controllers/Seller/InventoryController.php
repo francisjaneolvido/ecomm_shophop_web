@@ -441,6 +441,8 @@ class InventoryController extends Controller
             'value' => ['required', 'numeric', 'min:0.01'],
             'min_order_amount' => ['nullable', 'numeric', 'min:0'],
             'usage_limit' => ['nullable', 'integer', 'min:1'],
+            'per_buyer_limit' => ['nullable', 'integer', 'min:1'],
+            'max_discount' => ['nullable', 'numeric', 'gt:0', 'max:1000000'],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
             'product_ids' => ['nullable', 'array'],
@@ -469,6 +471,8 @@ class InventoryController extends Controller
             'value' => $validated['value'],
             'min_order_amount' => $validated['min_order_amount'] ?? 0,
             'usage_limit' => $validated['usage_limit'] ?? null,
+            'per_buyer_limit' => $validated['per_buyer_limit'] ?? null,
+            'max_discount' => $validated['max_discount'] ?? null,
             'starts_at' => $validated['starts_at'] ?? null,
             'ends_at' => $validated['ends_at'] ?? null,
         ];

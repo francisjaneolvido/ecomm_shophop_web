@@ -91,6 +91,16 @@ class Order extends Model
         return $this->belongsTo(Voucher::class);
     }
 
+    public function platformVoucher(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Finance\PlatformVoucher::class, 'platform_voucher_id');
+    }
+
+    public function shippingVoucher(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Finance\PlatformVoucher::class, 'shipping_voucher_id');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
