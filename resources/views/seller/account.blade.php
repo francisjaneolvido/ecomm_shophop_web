@@ -86,10 +86,21 @@
         <p class="mt-4 text-xs text-navy/60">Business, address, and registration document changes are unavailable here.</p>
     </section>
 
-    {{-- Unsupported controls have no pretend save/upload/deactivation outcome and cannot mutate client-only account state. --}}
+    <section class="rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="passwordHeading">
+        <h2 id="passwordHeading" class="font-semibold text-navy">Change Password</h2>
+        <p class="mt-1 text-xs text-navy/60">Use at least 10 characters with uppercase, lowercase letters and a number.</p>
+        <form method="POST" action="{{ route('seller.account.password') }}" class="mt-4 space-y-3">
+            @csrf @method('PATCH')
+            @foreach(['current_password' => 'Current password', 'password' => 'New password', 'password_confirmation' => 'Confirm new password'] as $field => $label)
+                <label class="block text-sm" for="{{ $field }}">{{ $label }}</label>
+                <input class="w-full rounded-lg border border-gray-border p-2" id="{{ $field }}" name="{{ $field }}" type="password" required autocomplete="{{ $field === 'current_password' ? 'current-password' : 'new-password' }}">
+            @endforeach
+            <button class="rounded-lg bg-teal-dark px-4 py-2.5 text-sm font-semibold text-white">Change Password</button>
+        </form>
+    </section>
     <section class="rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="unavailableHeading">
         <h2 id="unavailableHeading" class="font-semibold text-navy">Unavailable Account Features</h2>
-        <p class="mt-2 text-sm text-navy/60">Profile photo and shop logo uploads, password changes, notification preferences, and self-deactivation are unavailable. No changes to these features can be saved from this page.</p>
+        <p class="mt-2 text-sm text-navy/60">Profile photo and shop logo uploads, notification preferences, and self-deactivation are unavailable. No changes to these features can be saved from this page.</p>
     </section>
 </div>
 @endsection

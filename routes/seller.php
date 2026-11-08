@@ -178,8 +178,9 @@ Route::prefix('seller')
             |--------------------------------------------------------------------------
             */
 
-            Route::view('/feedback', 'seller.feedback')
-                ->name('feedback');
+            Route::get('/feedback', [\App\Http\Controllers\Seller\FeedbackController::class, 'index'])->name('feedback');
+            Route::patch('/feedback/{review}/reply', [\App\Http\Controllers\Seller\FeedbackController::class, 'reply'])
+                ->whereNumber('review')->middleware('throttle:30,1')->name('feedback.reply');
 
 
             /*
@@ -214,6 +215,7 @@ Route::prefix('seller')
             Route::get('/account', [AccountController::class, 'show'])->name('account');
             Route::get('/shop-profile', [AccountController::class, 'shopProfile'])->name('shop-profile');
             Route::patch('/account', [AccountController::class, 'update'])->name('account.update');
+            Route::patch('/account/password', [AccountController::class, 'password'])->middleware('throttle:6,1')->name('account.password');
 
 
             /*

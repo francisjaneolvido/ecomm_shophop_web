@@ -6,6 +6,106 @@
 @section('hideChrome', true)
 
 
+
+@push('styles')
+<style>
+    /* Checkout only. Works with the existing compiled Vite CSS as-is. */
+    .shb-checkout-shell {
+        width: 100%;
+        max-width: 1240px !important;
+        margin-inline: auto !important;
+    }
+
+    .shb-checkout-page { background: #f5f8fa; }
+
+    .shb-checkout-page #checkoutForm {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 18px;
+        align-items: start;
+        width: 100%;
+        min-width: 0;
+    }
+
+    /* Hidden dynamic inputs MUST NOT consume a grid column. */
+    .shb-checkout-page #sellerVoucherFields,
+    .shb-checkout-page #sellerVoucherFields[hidden] {
+        display: none !important;
+    }
+
+    .shb-checkout-page .shb-checkout-main,
+    .shb-checkout-page .shb-checkout-summary {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .shb-checkout-page .checkout-shop-group,
+    .shb-checkout-page .shb-checkout-main > section,
+    .shb-checkout-page .shb-checkout-summary > section {
+        border-color: #e0e9ec;
+        box-shadow: 0 2px 9px rgba(16, 39, 71, .035);
+    }
+
+    .shb-checkout-page .checkout-shop-group .checkout-item {
+        padding-block: 15px;
+    }
+
+    .shb-checkout-page .shipping-option {
+        min-height: 64px;
+        max-width: 380px;
+    }
+
+    .shb-checkout-page .shipping-option:has(input:checked),
+    .shb-checkout-page label:has(input[name^="logistics_partner"]:checked) {
+        border-color: #11ad9a;
+        background: #eefbf7;
+    }
+
+    .shb-checkout-page .shb-checkout-summary #summaryTotal {
+        font-size: 24px;
+        letter-spacing: -.6px;
+        white-space: nowrap;
+    }
+
+    .shb-checkout-page #placeOrderBtn,
+    .shb-checkout-page #mobilePlaceOrderBtn {
+        background-color: #11ad9a;
+    }
+
+    .shb-checkout-page #placeOrderBtn:hover:not(:disabled),
+    .shb-checkout-page #mobilePlaceOrderBtn:hover:not(:disabled) {
+        background-color: #0b847b;
+    }
+
+    .shb-checkout-page #placeOrderBtn:disabled,
+    .shb-checkout-page #mobilePlaceOrderBtn:disabled {
+        background-color: #d9e2e6;
+    }
+
+    @media (min-width: 1024px) {
+        .shb-checkout-page #checkoutForm {
+            grid-template-columns: minmax(0, 1fr) 330px;
+            gap: 22px;
+        }
+        .shb-checkout-page .shb-checkout-summary {
+            position: sticky;
+            top: 18px;
+        }
+    }
+
+    @media (max-width: 639px) {
+        .shb-checkout-page #checkoutForm { gap: 14px; }
+        .shb-checkout-page .shipping-option { max-width: none; }
+        .shb-checkout-page .shb-checkout-summary #summaryTotal { font-size: 21px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .shb-checkout-page #placeOrderBtn,
+        .shb-checkout-page #mobilePlaceOrderBtn { transition: none; }
+    }
+</style>
+@endpush
+
 @section('content')
 
 @include('buyer.partials.navbar-buyer')
@@ -15,7 +115,7 @@
     BREADCRUMB
 ========================================================= --}}
 <div class="bg-white border-b border-gray-border/70">
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-2">
+    <div class="shb-checkout-shell max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-2">
         <nav class="flex items-center gap-1.5 text-[10px] sm:text-[10.5px] text-navy/45 overflow-x-auto whitespace-nowrap">
             <a href="{{ route('buyer.dashboard') }}" class="hover:text-teal-dark transition">Home</a>
 
@@ -35,7 +135,7 @@
     CHECKOUT
 ========================================================= --}}
 <section class="shb-checkout-page bg-gray-bg/75 min-h-[72vh] py-5 sm:py-6">
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="shb-checkout-shell max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
         @if ($errors->any())
             <div class="bg-red-50 border border-red-200 text-red-600 text-[11px] rounded-xl px-4 py-3 mb-4">
@@ -106,13 +206,16 @@
             id="checkoutForm"
             action="{{ route('buyer.checkout.place') }}"
             method="POST"
-            class="grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-5 items-start"
+            class="shb-checkout-layout grid lg:grid-cols-[minmax(0,1fr)_340px] gap-4 lg:gap-5 items-start"
         >
             @csrf
 
             {{-- Backward-compatible legacy field remains blank when per-shop vouchers are selected. --}}
             <input type="hidden" name="voucher_code" id="voucherCodeHidden" value="">
-            <div id="sellerVoucherFields"></div>
+            {{-- Dynamic voucher inputs belong in a non-rendering element.  An ordinary div
+                 here becomes a CSS Grid cell and pushes the address/items into the
+                 340px summary column, leaving a huge empty space on desktop. --}}
+            <div id="sellerVoucherFields" hidden></div>
             {{-- COD is the only payment method. The server must still enforce this. --}}
             <input type="hidden" name="payment_method" value="cod">
             {{-- Seller codes, Platform product codes, and Platform shipping codes are independent. --}}
@@ -121,7 +224,7 @@
             {{-- =================================================
                 LEFT COLUMN
             ================================================== --}}
-            <div class="space-y-3.5 min-w-0">
+            <div class="shb-checkout-main space-y-3.5 min-w-0">
 
                 {{-- DELIVERY ADDRESS --}}
                 <section class="bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm">
@@ -387,7 +490,7 @@
                             </div>
 
 
-                            <div class="grid sm:grid-cols-2 gap-2" data-shipping-group>
+                            <div class="grid grid-cols-1 gap-2" data-shipping-group>
 
                                 <label class="shipping-option flex items-center justify-between gap-2
                                               border border-teal bg-teal-light/35 rounded-xl px-3 py-2.5
@@ -565,7 +668,7 @@
             {{-- =================================================
                 RIGHT — VOUCHER + ORDER SUMMARY
             ================================================== --}}
-            <aside class="space-y-3 lg:sticky lg:top-4">
+            <aside class="shb-checkout-summary space-y-3 lg:sticky lg:top-4">
 
                 {{-- Seller voucher --}}
                 <section class="bg-white border border-gray-border rounded-2xl overflow-hidden shadow-sm">

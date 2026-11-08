@@ -215,6 +215,7 @@
     <link rel="stylesheet" href="{{ asset('css/shophop-admin-operations-v1.css') }}?v=20261104a">
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
+    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
 </head>
 
 
@@ -345,7 +346,7 @@
 <body class="sh-management-ui bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
-@includeWhen(app()->environment('local'), 'dev.account-switcher')
+{{-- Local demo/test switcher intentionally hidden from the interface. --}}
 
 <div
     id="adminShell"

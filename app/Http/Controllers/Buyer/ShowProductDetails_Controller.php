@@ -62,6 +62,7 @@ class ShowProductDetails_Controller extends Controller
                 'variant' => $review->variant_label ?? '—',
                 'date' => optional($review->created_at)->format('Y-m-d'),
                 'comment' => $review->comment,
+                    'seller_reply' => $review->seller_reply,
                 'image' => $review->image_path
                     ? asset('storage/' . ltrim($review->image_path, '/'))
                     : null,

@@ -116,7 +116,11 @@ class MobileSellerWorkspaceController extends Controller
     public function profile(Request $request): JsonResponse
     {
         $seller = $this->seller($request);
-        return $this->ok(['business_name' => $seller->business_name,
+        return $this->ok(['first_name' => $seller->first_name, 'last_name' => $seller->last_name,
+            'middle_initial' => $seller->middle_initial, 'sex' => $seller->sex,
+            'birthday' => $seller->birthday?->toDateString(),
+            'sex_options' => app(\App\Services\SellerAccountService::class)->sexOptions(),
+            'business_name' => $seller->business_name,
             'name' => trim($seller->first_name.' '.$seller->last_name),
             'email' => $request->user()->email,
             'contact_no' => $seller->contact_no,
@@ -127,6 +131,33 @@ class MobileSellerWorkspaceController extends Controller
                 $seller->municipality_name, $seller->province_name,
             ])),
         ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $this->seller($request);
+        app(\App\Services\SellerAccountService::class)->updateProfile($request);
+        return $this->ok([], 'Profile changes saved.');
+    }
+
+    public function password(Request $request): JsonResponse
+    {
+        $this->seller($request);
+        app(\App\Services\SellerAccountService::class)->changePassword($request);
+        return $this->ok([], 'Password changed.');
+    }
+
+    public function feedback(Request $request): JsonResponse
+    {
+        $this->seller($request);
+        return $this->ok(app(\App\Services\SellerFeedbackService::class)->listing($request));
+    }
+
+    public function reply(Request $request, int $review): JsonResponse
+    {
+        $this->seller($request);
+        app(\App\Services\SellerFeedbackService::class)->reply($request, $review);
+        return $this->ok([], 'Reply saved.');
     }
 
     public function reports(Request $request): JsonResponse

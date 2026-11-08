@@ -666,6 +666,7 @@
                                             <form
                                                 method="POST"
                                                 action="{{ route('seller.inventory.products.stock', $product->id) }}"
+                                                id="quick-stock-form-{{ $product->id }}"
                                                 class="quick-stock-form inline-flex items-center gap-1"
                                             >
                                                 @csrf
@@ -696,14 +697,7 @@
                                                     <x-lucide-plus class="w-3 h-3" />
                                                 </button>
 
-                                                <button
-                                                    type="submit"
-                                                    data-stock-save
-                                                    hidden
-                                                    class="h-7 px-2 rounded-lg bg-teal/10 text-teal-dark text-[10px] font-bold hover:bg-teal/15 transition"
-                                                >
-                                                    Save
-                                                </button>
+
                                             </form>
 
                                         @elseif ($product->has_variants)
@@ -740,6 +734,14 @@
                                     <td class="px-4 py-3">
 
                                         <div class="flex items-center justify-end gap-1.5">
+
+                                            @if ($product->status === 'active' && ! $product->has_variants)
+                                                <button type="submit" form="quick-stock-form-{{ $product->id }}"
+                                                    data-stock-save data-stock-form="quick-stock-form-{{ $product->id }}" hidden
+                                                    class="inventory-stock-save h-8 px-3 rounded-lg bg-teal/10 text-teal-dark text-xs font-bold hover:bg-teal/20 transition">
+                                                    Save
+                                                </button>
+                                            @endif
 
                                             <button type="button" data-open-product-overview data-product="{{ json_encode($productJson) }}" class="inventory-btn inventory-btn-muted h-8" aria-label="View {{ $product->name }} details">View</button>
 
@@ -3092,7 +3094,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 form.querySelector('[data-stock-plus]');
 
             const save =
-                form.querySelector('[data-stock-save]');
+                document.querySelector('[data-stock-form="' + form.id + '"]');
 
             const original =
                 parseInt(input.value || '0', 10) || 0;

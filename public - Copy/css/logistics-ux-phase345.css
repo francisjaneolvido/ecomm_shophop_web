@@ -1,0 +1,66 @@
+/* ShopHop Logistics · Phases 3–5 | shared partner, province hub & branch polish */
+:root { --sh-ui-navy:#0F1B3D; --sh-ui-teal:#159C84; --sh-ui-border:#E2E8EF; --sh-ui-muted:#607087; --sh-ui-surface:#fff; }
+.sh-ui-workspace, .sh-ui-directory { min-width:0; }
+.sh-ui-workspace .sh-page-header { margin-bottom:0; }
+.sh-page-header .description { max-width:65ch; }
+.sh-ui-filter { display:flex; align-items:center; flex-wrap:wrap; gap:.65rem; padding:.85rem 1rem; border:1px solid var(--sh-ui-border); border-radius:1rem; background:var(--sh-ui-surface); box-shadow:0 4px 14px rgba(15,27,61,.03); }
+.sh-ui-filter-title { flex:1 1 15rem; min-width:0; display:flex; flex-direction:column; gap:.15rem; }
+.sh-ui-filter-title strong { font-size:.86rem; color:var(--sh-ui-navy); line-height:1.3; }
+.sh-ui-filter-title span, .sh-ui-count { font-size:.7rem; color:var(--sh-ui-muted); }
+.sh-ui-filter .sh-ui-search { flex:1 1 12rem; max-width:23rem; }
+.sh-ui-filter .sh-input, .sh-ui-filter .sh-select { min-height:2.35rem; font-size:.77rem; }
+.sh-ui-count { font-weight:700; white-space:nowrap; }
+.sh-ui-list-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:.6rem; }
+.sh-ui-list-heading label { flex:1 1 11rem; max-width:19rem; }
+.sh-ui-list-heading input { width:100%; font-size:.76rem; min-height:2.3rem; }
+.sh-ui-record-stack > [data-ui-record], .sh-ui-directory > [data-ui-record] { transition:border-color .16s,box-shadow .16s,background-color .16s; }
+.sh-ui-record-stack > [data-ui-record]:hover, .sh-ui-directory > [data-ui-record]:hover { border-color:#B9DFD5; }
+[data-ui-record][hidden], [data-ui-empty][hidden] { display:none !important; }
+.sh-ui-no-results { grid-column:1 / -1; padding:2rem 1rem; border:1px dashed #C8D2DD; border-radius:.95rem; text-align:center; background:#F9FAFC; color:var(--sh-ui-muted); font-size:.82rem; }
+.sh-ui-jump { display:flex; align-items:center; flex-wrap:wrap; gap:.5rem; padding:.55rem; border:1px solid var(--sh-ui-border); border-radius:1rem; background:#fff; }
+.sh-ui-jump a { display:inline-flex; align-items:center; gap:.45rem; min-height:2.25rem; border-radius:.65rem; border:1px solid transparent; padding:.42rem .78rem; font-size:.75rem; color:#274561; font-weight:650; text-decoration:none; transition:background-color .16s,border-color .16s; }
+.sh-ui-jump a:hover, .sh-ui-jump a:focus-visible { background:#E6F7F2; border-color:#BBE7DA; color:#086B59; }
+.sh-ui-jump a span { border-radius:999px; padding:.08rem .38rem; background:#F0F4F8; font-variant-numeric:tabular-nums; font-size:.67rem; }
+.sh-ui-guide { overflow:hidden; }
+.sh-ui-guide-summary { list-style:none; cursor:pointer; display:flex; align-items:center; gap:.65rem; padding:.85rem 1rem; font-size:.78rem; color:var(--sh-ui-navy); }
+.sh-ui-guide-summary::-webkit-details-marker {display:none}
+.sh-ui-guide-summary strong {font-size:.84rem}
+.sh-ui-guide-summary span {margin-left:auto;color:var(--sh-ui-muted);font-size:.72rem}
+.sh-ui-guide[open] .sh-ui-guide-summary {border-bottom:1px solid var(--sh-ui-border)}
+.sh-ui-guide[open] .sh-ui-guide-summary svg {transform:rotate(180deg)}
+.sh-ui-directory-row { border-color:var(--sh-ui-border); }
+.sh-ui-inline-form { display:flex;flex-wrap:wrap;gap:.45rem;align-items:center;min-width:13rem }
+.sh-ui-inline-form .sh-input { min-width:10rem; flex:1 1 9rem; min-height:2.3rem; font-size:.73rem }
+.sh-ui-inline-form .sh-btn { white-space:nowrap }
+.sh-ui-money-grid > div { display:flex; flex-direction:column;justify-content:center;min-width:0;gap:.4rem; padding:.85rem 1rem }
+.sh-ui-money-grid strong { display:block; font-size:clamp(.98rem,1.5vw,1.24rem);line-height:1.25; color:var(--sh-ui-navy); font-variant-numeric:tabular-nums;overflow-wrap:anywhere }
+.sh-ui-allocation > div {background:#F7FAFC;border:1px solid var(--sh-ui-border);border-radius:.75rem;padding:.8rem;font-size:.73rem;line-height:1.5;color:var(--sh-ui-muted)}
+.sh-ui-allocation strong {display:block;color:var(--sh-ui-navy);font-size:1rem;margin-top:.2rem;overflow-wrap:anywhere}
+.sh-ui-report-stats .sh-stat,.sh-ui-branch-kpis .sh-stat,.sh-ui-kpi { padding:.9rem 1rem; min-height:auto; }
+.sh-ui-report-stats .sh-stat-value,.sh-ui-branch-kpis .sh-stat-value,.sh-ui-kpi .sh-stat-value {margin-top:.3rem;font-size:1.45rem;line-height:1.2;font-variant-numeric:tabular-nums}
+.sh-ui-section-heading {display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:1rem 1.1rem;border-bottom:1px solid var(--sh-ui-border)}
+.sh-ui-station-row {padding:.8rem 1.1rem}
+.sh-ui-progress {height:.5rem;background:#EAF0F4;border-radius:999px;overflow:hidden;margin-top:.6rem}
+.sh-ui-progress span {display:block;height:100%;background:linear-gradient(90deg,#18A98E,#52BBD2);border-radius:inherit}
+.sh-ui-activity-row {padding:.85rem 1.1rem;display:flex;justify-content:space-between;align-items:flex-start;gap:.6rem}
+.sh-ui-timestamp {font-size:.67rem;color:var(--sh-ui-muted);white-space:nowrap}
+.sh-ui-demo-banner {display:flex;flex-wrap:wrap;gap:.4rem .75rem;align-items:center;padding:.85rem 1rem;border:1px solid #EAC675;border-radius:.9rem;background:#FFFBEB;font-size:.73rem;color:#7B5313;line-height:1.5}
+.sh-ui-demo-banner strong {font-weight:750;white-space:nowrap}
+.sh-ui-demo-banner span {flex:1 1 16rem}
+.sh-ui-filter-form .sh-input {min-height:2.45rem}
+/* Tighten common containers without affecting forms or modal geometry. */
+.sh-ui-workspace .sh-surface.sh-card-pad { padding:1rem; }
+.sh-ui-workspace .sh-stat {border-color:var(--sh-ui-border)}
+.sh-ui-workspace .sh-title,.sh-ui-workspace .title {letter-spacing:-.025em}
+.sh-ui-workspace table tbody tr:hover,.sh-ui-record-stack table tbody tr:hover {background:#F8FBFA}
+.sh-ui-workspace table th {white-space:nowrap}
+.sh-ui-workspace input:focus-visible,.sh-ui-workspace select:focus-visible,.sh-ui-filter input:focus-visible,.sh-ui-filter select:focus-visible {outline:2px solid #18A98E;outline-offset:1px}
+@media(max-width:640px){.sh-ui-filter{padding:.8rem}.sh-ui-filter .sh-ui-search,.sh-ui-filter .sh-select,.sh-ui-list-heading label {flex-basis:100%;max-width:none;width:100%}.sh-ui-jump{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}.sh-ui-jump a{white-space:nowrap}.sh-ui-activity-row{flex-direction:column;gap:.2rem}.sh-ui-section-heading{padding:.8rem}.sh-ui-station-row{padding:.8rem}.sh-ui-money-grid > div{padding:.75rem}.sh-ui-filter-title{flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){.sh-ui-record-stack > [data-ui-record],.sh-ui-directory > [data-ui-record],.sh-ui-jump a{transition:none}}
+
+/* Form hierarchy: make multi-part hub setup easy to scan and validate. */
+.sh-ui-form-section {padding:1rem;border:1px solid var(--sh-ui-border);border-radius:.9rem;background:#FBFCFE}
+.sh-ui-form-section > h3 {padding-bottom:.65rem;border-bottom:1px solid var(--sh-ui-border);color:var(--sh-ui-navy)}
+.sh-ui-form-section .sh-field {min-width:0}
+.sh-ui-form-section .sh-label {display:block;margin-bottom:.35rem}
+.sh-ui-form-section input:focus-visible,.sh-ui-form-section select:focus-visible {outline:2px solid var(--sh-ui-teal);outline-offset:1px}

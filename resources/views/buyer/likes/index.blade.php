@@ -7,7 +7,7 @@
 @include('buyer.partials.navbar-buyer')
 
 <section class="shb-likes-page min-h-[70vh] bg-gray-bg/80 py-5 sm:py-7">
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="sh-shop-shell">
         <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-5">
             <div>
                 <p class="text-[9px] sm:text-[10px] font-bold uppercase tracking-[0.13em] text-teal-dark">Saved by you</p>

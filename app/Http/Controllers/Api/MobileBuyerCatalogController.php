@@ -287,6 +287,7 @@ class MobileBuyerCatalogController extends Controller
                     'variant' => $review->variant_label ?? '—',
                     'date' => optional($review->created_at)->toDateString(),
                     'comment' => $review->comment,
+                    'seller_reply' => $review->seller_reply,
                     'image' => $review->image_path
                         ? $this->productImageUrl($review->image_path)
                         : null,

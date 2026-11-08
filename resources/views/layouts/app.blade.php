@@ -63,13 +63,14 @@
     <link rel="stylesheet" href="{{ asset('css/shophop-shopper-chrome-v4.css') }}?v=20261103-shopper-chrome-v4">
     {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
 </head>
 
 
 <body class="min-h-screen bg-white text-navy font-poppins antialiased selection:bg-teal/20 selection:text-navy {{ request()->is('buyer/*') && ! request()->routeIs('buyer.dashboard') ? 'sh-buyer-v3' : '' }}">
 
     {{-- TEST/DEMO aids are local previews only and never replace normal Laravel authentication. --}}
-    @includeWhen(app()->environment('local'), 'dev.account-switcher')
+    {{-- Local demo/test switcher intentionally hidden from the interface. --}}
 
 
     {{-- ========================================

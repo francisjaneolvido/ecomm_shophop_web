@@ -495,6 +495,9 @@
                                     <p class="text-[8.5px] text-navy/30 mt-1">{{ $review['date'] }} · Variation: {{ $review['variant'] }}</p>
                                     <p class="text-[10px] sm:text-[10.5px] text-navy/60 leading-5 mt-2">{{ $review['comment'] }}</p>
 
+                                    @if (!empty($review['seller_reply']))
+                                        <p class="mt-3 rounded-lg bg-teal/10 p-3 text-sm whitespace-pre-wrap">Seller reply: {{ $review['seller_reply'] }}</p>
+                                    @endif
                                     @if ($review['image'])
                                         <button class="mt-2.5 w-16 h-16 rounded-lg overflow-hidden border border-gray-border hover:border-teal/40 transition">
                                             <img src="{{ $review['image'] }}" alt="Review photo" class="w-full h-full object-cover">

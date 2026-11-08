@@ -1,0 +1,660 @@
+@import 'tailwindcss';
+
+
+/* ================================
+   SHOPHOP THEME
+================================ */
+
+@theme {
+    /* Brand Colors */
+    --color-navy: #0F1B3D;
+
+    --color-teal: #21C3A6;
+    --color-teal-dark: #18A98E;
+    --color-teal-light: #D4F5EE;
+
+    --color-gray-bg: #F3F5F7;
+    --color-gray-border: #E2E6EA;
+
+    /* Typography */
+    --font-sans: 'Poppins', sans-serif;
+}
+
+
+/* ================================
+   GLOBAL
+================================ */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+/* Keep same-document destinations clear of the sticky marketplace header. */
+#categories,
+#deals,
+#new-arrivals,
+#trending {
+    scroll-margin-top: 7rem;
+}
+
+body {
+    margin: 0;
+
+    font-family: var(--font-sans);
+
+    background-color: #ffffff;
+    color: var(--color-navy);
+
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* These legacy utility combinations need semantic surfaces outside the default light theme. */
+html:not([data-theme="light"]) .glass-panel {
+    background: color-mix(in srgb, var(--sh-surface) 82%, transparent);
+    border-color: var(--sh-border);
+}
+
+html:not([data-theme="light"]) .mesh-teal-navy {
+    background:
+        radial-gradient(120% 140% at 0% 0%, rgba(33, 195, 166, .13) 0%, transparent 55%),
+        var(--sh-page);
+}
+
+
+/* ================================
+   RESPONSIVE TYPOGRAPHY
+================================ */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: inherit;
+    margin: 0;
+}
+
+
+/* H1
+   Mobile: 36px
+   Tablet: 42px
+   Desktop: 48px
+*/
+h1 {
+    font-size: 2.25rem;
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+}
+
+
+/* H2
+   Mobile: 28px
+   Tablet: 32px
+   Desktop: 36px
+*/
+h2 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+
+/* H3
+   Mobile: 20px
+   Desktop: 24px
+*/
+h3 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 600;
+}
+
+
+/* H4 */
+h4 {
+    font-size: 1.125rem;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+
+/* H5 */
+h5 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+
+/* H6 */
+h6 {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    font-weight: 600;
+}
+
+
+/* ================================
+   TABLET TYPOGRAPHY
+================================ */
+
+@media (min-width: 640px) {
+
+    h1 {
+        font-size: 2.625rem;
+    }
+
+    h2 {
+        font-size: 2rem;
+    }
+
+    h3 {
+        font-size: 1.375rem;
+    }
+
+}
+
+
+/* ================================
+   DESKTOP TYPOGRAPHY
+================================ */
+
+@media (min-width: 1024px) {
+
+    h1 {
+        font-size: 3rem;
+    }
+
+    h2 {
+        font-size: 2.25rem;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+    }
+
+    h4 {
+        font-size: 1.25rem;
+    }
+
+    h5 {
+        font-size: 1.125rem;
+    }
+
+}
+
+
+/* ================================
+   FORM ELEMENTS
+================================ */
+
+button,
+input,
+textarea,
+select {
+    font: inherit;
+}
+
+button,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+
+/* ================================
+   IMAGES
+================================ */
+
+img {
+    max-width: 100%;
+}
+
+
+/* ================================
+   TEXT SELECTION
+================================ */
+
+::selection {
+    background-color: var(--color-teal-light);
+    color: var(--color-navy);
+}
+
+
+/* ================================
+   SCROLLBAR
+================================ */
+
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #CBD0DA;
+    border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #AEB5C1;
+}
+
+
+/* ================================
+   MODERN INTERACTION SYSTEM
+   Shared easing + micro-interaction
+   utilities used across the landing
+   page (magnetic buttons, tilt cards,
+   staggered reveals, ripples, etc.)
+================================ */
+
+:root {
+    --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+    --ease-smooth: cubic-bezier(.16, 1, .3, 1);
+    --ease-out: cubic-bezier(.22, 1, .36, 1);
+}
+
+
+/* Magnetic buttons — nudge toward the cursor on hover */
+.magnetic {
+    will-change: transform;
+    transition: transform .45s var(--ease-spring);
+}
+
+
+/* Tilt cards — subtle 3D tilt that follows the cursor */
+.tilt-card {
+    will-change: transform;
+    transition: transform .5s var(--ease-smooth);
+    transform: perspective(700px);
+}
+
+
+/* Parallax layers — driven by JS inside a [data-parallax-container] */
+[data-parallax] {
+    will-change: transform;
+    transition: transform .4s var(--ease-smooth);
+}
+
+
+/* Ripple feedback on press */
+.ripple-surface {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .5);
+    transform: scale(0);
+    animation: rippleAnim .6s var(--ease-out);
+    pointer-events: none;
+}
+
+@keyframes rippleAnim {
+    to {
+        transform: scale(3);
+        opacity: 0;
+    }
+}
+
+
+/* Wishlist heart pop */
+@keyframes heartPop {
+    0% {
+        transform: scale(1);
+    }
+
+    35% {
+        transform: scale(1.35);
+    }
+
+    60% {
+        transform: scale(.92);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.heart-pop {
+    animation: heartPop .5s var(--ease-spring);
+}
+
+.wishlist-btn[data-wished="true"] {
+    color: #EF4444;
+    background-color: #FEE2E2 !important;
+}
+
+.wishlist-btn[data-wished="true"] svg {
+    fill: currentColor;
+}
+
+
+/* Staggered scroll-reveal — pair with an inline
+   --stagger-index custom property per item */
+.stagger-item {
+    opacity: 0;
+    transform: translateY(16px) scale(.98);
+    transition:
+        opacity .6s var(--ease-out),
+        transform .6s var(--ease-out);
+    transition-delay: calc(var(--stagger-index, 0) * 70ms);
+}
+
+.stagger-item.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+
+/* Quick-view slide-up bar on product cards */
+.quick-view-bar {
+    transform: translateY(100%);
+    transition: transform .35s var(--ease-out);
+}
+
+.group:hover .quick-view-bar {
+    transform: translateY(0);
+}
+
+
+/* ================================
+   MOVING PHOTOS — KEN BURNS SYSTEM
+   Slow, ambient zoom/pan on product &
+   lifestyle imagery. Built to sit
+   inside an `overflow-hidden` parent;
+   pauses/settles on hover so shoppers
+   can actually see the product.
+================================ */
+
+@keyframes kbZoomPan {
+    0% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
+
+    50% {
+        transform: scale(1.1) translate3d(-1.5%, -1%, 0);
+    }
+
+    100% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
+}
+
+@keyframes kbZoomPanReverse {
+    0% {
+        transform: scale(1.1) translate3d(1.5%, 1%, 0);
+    }
+
+    50% {
+        transform: scale(1) translate3d(0, 0, 0);
+    }
+
+    100% {
+        transform: scale(1.1) translate3d(1.5%, 1%, 0);
+    }
+}
+
+.kb-photo {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    will-change: transform;
+    animation: kbZoomPan 16s var(--ease-smooth) infinite;
+    transition: animation-duration .4s ease;
+}
+
+.kb-photo-alt {
+    animation-name: kbZoomPanReverse;
+    animation-duration: 19s;
+}
+
+.kb-photo-slow {
+    animation-duration: 24s;
+}
+
+/* Hover: settle + gently accelerate so detail is easy to inspect */
+.group:hover .kb-photo,
+.kb-photo:hover {
+    animation-duration: 6s;
+}
+
+/* Crossfading photo stacks (category tiles, editorial collages) */
+.kb-stack {
+    position: absolute;
+    inset: 0;
+}
+
+.kb-stack img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    animation-name: kbCrossfade, kbZoomPan;
+    animation-timing-function: ease-in-out, var(--ease-smooth);
+    animation-iteration-count: infinite, infinite;
+}
+
+@keyframes kbCrossfade {
+    0%, 4% { opacity: 0; }
+    8%, 21% { opacity: 1; }
+    25%, 100% { opacity: 0; }
+}
+
+
+/* ================================
+   PREMIUM SHEEN SWEEP
+   A refined light-sweep used on
+   primary CTAs and feature badges
+   for a more elevated, rebranded feel.
+================================ */
+
+.sheen {
+    position: relative;
+    overflow: hidden;
+}
+
+.sheen::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 45%;
+    height: 100%;
+    background: linear-gradient(115deg, transparent, rgba(255, 255, 255, .35), transparent);
+    transform: skewX(-18deg);
+    transition: left .85s var(--ease-out);
+}
+
+.sheen:hover::after {
+    left: 130%;
+}
+
+
+/* ================================
+   BRAND GLASS SURFACES
+   Reusable glass / gradient-mesh
+   surfaces used across redesigned
+   sections, built from the existing
+   navy + teal brand tokens.
+================================ */
+
+.glass-panel {
+    background: rgba(255, 255, 255, .72);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, .6);
+}
+
+.mesh-teal-navy {
+    background:
+        radial-gradient(120% 140% at 0% 0%, rgba(33, 195, 166, .16) 0%, transparent 55%),
+        radial-gradient(120% 140% at 100% 100%, rgba(15, 27, 61, .10) 0%, transparent 55%),
+        var(--color-gray-bg);
+}
+
+.photo-scrim-b {
+    background: linear-gradient(to top, rgba(15, 27, 61, .82) 0%, rgba(15, 27, 61, .22) 55%, transparent 100%);
+}
+
+
+/* ================================
+   BUYER AREA — SHARED MOTION
+   Scroll-reveal + stagger utilities
+   used across the buyer dashboard
+   and category browse pages.
+================================ */
+
+@keyframes buyerPingSoft {
+    75%, 100% {
+        transform: scale(2.1);
+        opacity: 0;
+    }
+}
+
+.buyer-ping {
+    animation: buyerPingSoft 2s cubic-bezier(0, 0, .2, 1) infinite;
+}
+
+.buyer-reveal {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+        opacity .65s ease var(--buyer-delay, 0ms),
+        transform .65s cubic-bezier(.22, 1, .36, 1) var(--buyer-delay, 0ms);
+}
+
+.buyer-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.buyer-stagger > * {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+        opacity .55s ease,
+        transform .55s cubic-bezier(.22, 1, .36, 1);
+}
+
+.buyer-stagger.is-visible > * {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.buyer-stagger.is-visible > *:nth-child(2) { transition-delay: 45ms; }
+.buyer-stagger.is-visible > *:nth-child(3) { transition-delay: 90ms; }
+.buyer-stagger.is-visible > *:nth-child(4) { transition-delay: 135ms; }
+.buyer-stagger.is-visible > *:nth-child(5) { transition-delay: 180ms; }
+.buyer-stagger.is-visible > *:nth-child(6) { transition-delay: 225ms; }
+.buyer-stagger.is-visible > *:nth-child(7) { transition-delay: 270ms; }
+.buyer-stagger.is-visible > *:nth-child(8) { transition-delay: 315ms; }
+
+.buyer-card {
+    will-change: transform;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+
+    .magnetic,
+    .tilt-card,
+    [data-parallax],
+    .heart-pop,
+    .kb-photo,
+    .kb-stack img {
+        transition: none !important;
+        animation: none !important;
+        transform: none !important;
+    }
+
+    .kb-stack img:first-child {
+        opacity: 1;
+    }
+
+    .stagger-item {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .quick-view-bar {
+        transform: translateY(0);
+    }
+
+    .sheen::after {
+        display: none;
+    }
+
+    .buyer-reveal,
+    .buyer-stagger > * {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .buyer-ping {
+        animation: none !important;
+    }
+}
+
+/* =============================================
+   RESPONSIVE WIDE-SCREEN LAYOUT
+   `max-w-310` is the shared 1240px marketplace container.
+   Keep its original compact behavior on 1280px laptops and
+   let pages occupy the available viewport on larger PCs.
+   Child sections still retain their responsive side gutters.
+============================================= */
+@media (min-width: 1440px) {
+    .max-w-310 {
+        max-width: 100%;
+    }
+}
+
+/*
+ * Wide-screen product tiles: keep a readable card width while the
+ * marketplace containers expand. Attribute selectors also work with
+ * a prebuilt Tailwind bundle until the project's next Vite build.
+ */
+@media (min-width: 1536px) {
+    [class~="2xl:grid-cols-6"] {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+    }
+
+    [class~="2xl:grid-cols-5"] {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 2000px) {
+    [class~="min-[2000px]:grid-cols-8"] {
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 2200px) {
+    [class~="2xl:grid-cols-6"] {
+        grid-template-columns: repeat(8, minmax(0, 1fr));
+    }
+
+    [class~="2xl:grid-cols-5"] {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+}

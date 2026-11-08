@@ -22,6 +22,7 @@ class Review extends Model
     ];
 
     protected $casts = [
+        'seller_replied_at' => 'datetime',
         'rating' => 'integer',
         'helpful_count' => 'integer',
     ];

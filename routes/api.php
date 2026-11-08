@@ -96,6 +96,10 @@ Route::prefix('mobile')->group(function () {
             Route::get('/inventory', [MobileSellerWorkspaceController::class, 'inventory']);
             Route::get('/reports', [MobileSellerWorkspaceController::class, 'reports']);
             Route::get('/profile', [MobileSellerWorkspaceController::class, 'profile']);
+            Route::patch('/profile', [MobileSellerWorkspaceController::class, 'updateProfile']);
+            Route::patch('/password', [MobileSellerWorkspaceController::class, 'password'])->middleware('throttle:6,1');
+            Route::get('/feedback', [MobileSellerWorkspaceController::class, 'feedback']);
+            Route::patch('/feedback/{review}/reply', [MobileSellerWorkspaceController::class, 'reply'])->whereNumber('review')->middleware('throttle:30,1');
             Route::get('/orders/{order}/couriers', [MobileSellerWorkspaceController::class, 'couriers'])->whereNumber('order');
             Route::post('/orders/{order}/accept', [MobileSellerWorkspaceController::class, 'accept'])->whereNumber('order')->middleware('throttle:20,1');
             Route::post('/orders/{order}/prepare', [MobileSellerWorkspaceController::class, 'prepare'])->whereNumber('order')->middleware('throttle:20,1');

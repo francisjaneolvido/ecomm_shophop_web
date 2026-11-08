@@ -1,0 +1,52 @@
+/* ShopHop — Required-field styling and Province Hub focused UI refresh.
+   Additive; keeps the previous Logistics Phase 1–5 theme and all name fields. */
+.sh-required-star { display:inline-block; margin-left:3px; color:#c72535 !important; font-weight:800; line-height:1; }
+.sh-hub-required-note { color:#586479; font-size:.73rem; }
+.sh-hub-steps { display:flex; flex-wrap:wrap; gap:.55rem; }
+.sh-hub-step-review { display:inline-flex; align-items:center; gap:.35rem; padding:.45rem .75rem; border-radius:12px; background:#f0f4f7; color:#697a8c; font-size:.74rem; font-weight:650; }
+.sh-hub-step-review b { display:grid; place-items:center; width:22px; height:22px; border-radius:50%; background:#e0e9ee; font-size:.7rem; }
+.sh-hub-steps[data-reviewing="1"] .sh-hub-step-review { background:#e0f5ef; color:#087b68; }
+.sh-hub-steps[data-reviewing="1"] .sh-hub-step-review b { background:#0e927d; color:#fff; }
+.sh-hub-review[hidden], #hubEditDetails[hidden], #hubReviewButton[hidden], #hubCreateSubmit[hidden], #hub-section-details[hidden], #hub-section-address[hidden], #hub-section-manager[hidden] { display:none !important; }
+.sh-hub-review { border:1px solid #d9e3e9; border-radius:16px; padding:1.05rem; background:#fafcfd; }
+.sh-hub-review-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.75rem; margin-top:1rem; }
+.sh-hub-review-grid > div { border:1px solid #e2e9ee; border-radius:11px; background:#fff; padding:.72rem .8rem; min-width:0; }
+.sh-hub-review-grid dt { color:#64748b; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+.sh-hub-review-grid dd { color:#10243a; font-size:.83rem; font-weight:650; margin-top:.25rem; overflow-wrap:anywhere; }
+.sh-hub-review-wide { grid-column:1/-1; }
+.sh-hub-review-warning { margin-top:1rem; background:#fffaeb; color:#94620b; border:1px solid #f4dda5; border-radius:10px; padding:.65rem .8rem; font-size:.74rem; }
+.sh-hub-table-wrap { width:100%; overflow-x:auto; }
+.sh-hub-table { border-spacing:0; border-collapse:collapse; width:100%; text-align:left; table-layout:fixed; }
+.sh-hub-table thead { background:#f7f9fb; }
+.sh-hub-table th { color:#617286; text-transform:uppercase; font-size:.66rem; letter-spacing:.065em; font-weight:750; padding:.8rem 1rem; border-bottom:1px solid #e4e9ef; }
+.sh-hub-table th:nth-child(1){width:29%}.sh-hub-table th:nth-child(2){width:30%}.sh-hub-table th:nth-child(3){width:11%}.sh-hub-table th:nth-child(4){width:12%}.sh-hub-table th:nth-child(5){width:18%}
+.sh-hub-table tbody td { padding:.95rem 1rem; vertical-align:middle; border-bottom:1px solid #e9edf2; font-size:.79rem; overflow-wrap:anywhere; }
+.sh-hub-table tbody tr:hover { background:#fbfdfd; }
+.sh-hub-link { color:#102c47; font-weight:750; font-size:.87rem; text-decoration:none; }
+.sh-hub-link:hover { text-decoration:underline; color:#087b68; }
+.sh-hub-secondary { margin-top:.3rem; color:#667587; font-size:.72rem; line-height:1.45; }
+.sh-hub-address { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; }
+.sh-hub-email-row { display:flex; align-items:center; flex-wrap:wrap; gap:.35rem; margin-top:.3rem; }
+.sh-hub-email { font-size:.72rem; color:#29455a; font-weight:600; overflow-wrap:anywhere; }
+.sh-hub-copy { border:1px solid #d5e1e8; background:white; border-radius:8px; padding:.25rem .55rem; font-size:.67rem; color:#29455a; font-weight:700; }
+.sh-hub-copy:hover { background:#ebf6f4; color:#087b68; }
+.sh-hub-actions { display:flex; flex-wrap:wrap; align-items:center; gap:.35rem; }
+.sh-hub-empty { text-align:center; padding:3rem 1rem !important; }
+.sh-hub-table :is(a,button):focus-visible, .sh-hub-review :is(input,button):focus-visible { outline:2px solid #139f89; outline-offset:2px; }
+@media(max-width:820px){
+  .sh-hub-table { table-layout:auto; }
+  .sh-hub-table thead { display:none; }
+  .sh-hub-table, .sh-hub-table tbody, .sh-hub-table tbody tr, .sh-hub-table tbody td { display:block; width:100%; }
+  .sh-hub-table tbody tr { border-bottom:1px solid #e1e9ef; padding:.45rem .6rem; }
+  .sh-hub-table tbody td { border:none; padding:.5rem .6rem; display:grid; grid-template-columns:minmax(85px,34%) minmax(0,1fr); align-items:start; column-gap:.5rem; }
+  .sh-hub-table tbody td:before { content:attr(data-label); font-size:.66rem; font-weight:700; color:#6b788b; text-transform:uppercase; letter-spacing:.04em; }
+  .sh-hub-table tbody td[colspan] { display:block; }
+  .sh-hub-table tbody td[colspan]:before { content:none; }
+  .sh-hub-email-row { min-width:0; }
+}
+@media(max-width:520px){
+  .sh-hub-review-grid { grid-template-columns:1fr; }
+  .sh-hub-review-wide { grid-column:auto; }
+  .sh-hub-step-review { padding:.38rem .55rem; }
+  #hubModal .sh-modal-scroll { padding:.9rem; }
+}
