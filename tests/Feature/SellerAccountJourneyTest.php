@@ -24,6 +24,7 @@ class SellerAccountJourneyTest extends TestCase
             '0001_01_01_000000_create_users_table.php',
             '2026_08_31_000001_add_account_type_and_status_to_users_table.php',
             '2026_08_29_000002_create_sellers_table.php',
+            '2026_11_01_161443_create_platform_settings_table.php',
         ] as $migration) {
             (require database_path('migrations/'.$migration))->up();
         }

@@ -20,7 +20,7 @@ class EnsureActiveRider
         }
         // Laravel caches the guard model in a request lifecycle; reload persisted eligibility for suspension.
         $rider = Auth::guard('rider')->user()->fresh(['partner.user']);
-        if (! $rider || $rider->status !== 'active' || ! $rider->email
+        if (! $rider || ! $rider->canOperate() || ! $rider->email
             || ! $rider->password || $rider->partner?->user?->status !== 'approved') {
             abort(403);
         }

@@ -2,7 +2,7 @@
     resources/views/buyer/buyer-profile-settings.blade.php
 
     Buyer Account Center — streamlined version.
-    Sections: Profile Info, Address Book, Allergens & Diet, Security,
+    Sections: Profile Info, Address Book, Security,
     Privacy & Account, Vouchers, Chats, Activity Log, Notifications,
     Help Center, plus a direct My Orders shortcut and Log Out.
 
@@ -20,71 +20,8 @@
 @section('hideChrome', true)
 
 @push('styles')
-<style>
-    html {
-        scroll-behavior: smooth;
-    }
-
-    .settings-shell {
-        background-image:
-            radial-gradient(circle at 8% 0%, rgba(20, 184, 166, 0.08), transparent 28rem),
-            radial-gradient(circle at 100% 20%, rgba(15, 27, 61, 0.05), transparent 24rem);
-    }
-
-    .settings-panel:not(.hidden) {
-        animation: settingsPanelIn 180ms ease-out;
-    }
-
-    @keyframes settingsPanelIn {
-        from {
-            opacity: 0;
-            transform: translateY(4px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .settings-shell input,
-    .settings-shell select,
-    .settings-shell textarea,
-    .settings-shell button,
-    .settings-shell a {
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    .settings-shell input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
-    .settings-shell select,
-    .settings-shell textarea {
-        transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
-    }
-
-    .settings-tab-btn:focus-visible,
-    .settings-shell button:focus-visible,
-    .settings-shell a:focus-visible,
-    .settings-shell input:focus-visible,
-    .settings-shell select:focus-visible,
-    .settings-shell textarea:focus-visible {
-        outline: 2px solid rgba(20, 184, 166, 0.75);
-        outline-offset: 2px;
-    }
-
-    .settings-sidebar-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(15, 27, 61, 0.18) transparent;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        html {
-            scroll-behavior: auto;
-        }
-
-        .settings-panel:not(.hidden) {
-            animation: none;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('css/shophop-buyer-discovery.css') }}?v=20261108">
+<link rel="stylesheet" href="{{ asset('css/shophop-buyer-account.css') }}?v=20261108-account">
 @endpush
 
 @php
@@ -95,33 +32,6 @@
     $displayName = trim(
         ($buyer?->first_name ?? 'Buyer') . ' ' . ($buyer?->last_name ?? '')
     );
-
-    $commonAllergens = [
-        'Peanuts', 'Tree Nuts', 'Milk / Dairy', 'Eggs', 'Shellfish',
-        'Fish', 'Soy', 'Wheat / Gluten', 'Sesame',
-    ];
-
-    $rawAllergens = $user->allergens ?? [];
-    $userAllergens = is_array($rawAllergens)
-        ? $rawAllergens
-        : (json_decode($rawAllergens, true) ?: []);
-
-    $normalizedAllergens = collect($userAllergens)
-        ->map(function ($allergen) {
-            if (is_array($allergen)) {
-                return [
-                    'name' => $allergen['name'] ?? '',
-                    'severity' => $allergen['severity'] ?? 'mild',
-                ];
-            }
-
-            return [
-                'name' => $allergen,
-                'severity' => 'mild',
-            ];
-        })
-        ->filter(fn ($allergen) => filled($allergen['name']))
-        ->values();
 
     $birthdayValue = old(
         'birthday',
@@ -142,75 +52,24 @@
 
 @include('buyer.partials.navbar-buyer')
 
-<section id="settings-main" class="shb-profile-page settings-shell bg-gray-bg min-h-screen py-4 sm:py-5 lg:py-6 scroll-mt-20">
-    <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
+<section id="settings-main" class="shb-profile-page settings-shell bg-gray-bg min-h-[70vh] py-4 sm:py-5 lg:py-6 scroll-mt-20">
+    <div class="sh-shop-shell">
 
-        {{-- Page heading / account overview --}}
-        <div class="relative overflow-hidden bg-white border border-gray-border rounded-2xl shadow-sm mb-4 sm:mb-5">
-            <div class="pointer-events-none absolute -top-20 -right-14 w-56 h-56 rounded-full bg-teal/10"></div>
-            <div class="pointer-events-none absolute -bottom-24 left-1/3 w-48 h-48 rounded-full bg-navy/5"></div>
-
-            <div class="relative p-4 sm:p-5">
-                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div class="min-w-0">
-                        <div class="inline-flex items-center gap-2 text-[10px] sm:text-xs font-bold text-teal-dark uppercase tracking-[0.16em]">
-                            <span class="w-1.5 h-1.5 rounded-full bg-teal"></span>
-                            Buyer Account Center
-                        </div>
-
-                        <p role="heading" aria-level="1"
-                           class="text-navy text-[22px] sm:text-[24px] font-bold leading-tight tracking-[-0.02em] mt-1">
-                            Account Center
-                        </p>
-
-                        <p class="text-[11px] sm:text-[12px] text-navy/50 mt-1.5 max-w-2xl leading-relaxed">
-                            Update your core profile and view your registered address. Other account controls are marked where unavailable.
-                        </p>
-                    </div>
-
-                    <div class="flex flex-col sm:flex-row sm:items-center gap-3 lg:justify-end">
-                        <div class="flex items-center gap-3 min-w-0 rounded-xl bg-gray-bg/80 border border-gray-border px-3 py-2.5">
-                            <img
-                                src="{{ $user->avatar_url ?? asset('images/avatar-placeholder.png') }}"
-                                alt="{{ $displayName }}"
-                                class="w-9 h-9 rounded-full object-cover border border-white shadow-sm shrink-0"
-                            >
-                            <div class="min-w-0">
-                                <p class="text-xs sm:text-sm font-semibold text-navy truncate">{{ $displayName }}</p>
-                                <p class="text-[10px] sm:text-[11px] text-navy/45 truncate">{{ $user->email ?? 'Buyer account' }}</p>
-                            </div>
-                            <span class="hidden sm:inline-flex text-[9px] font-bold uppercase tracking-wide text-teal-dark bg-teal-light px-2 py-1 rounded-md shrink-0">
-                                Buyer
-                            </span>
-                        </div>
-
-                        <div class="flex flex-wrap items-center gap-2">
-                            <a
-                                href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}"
-                                class="inline-flex items-center justify-center gap-1.5
-                                       text-[10.5px] font-semibold text-white
-                                       bg-teal hover:bg-teal-dark
-                                       rounded-xl px-3.5 py-2.5 transition-all"
-                            >
-                                <x-lucide-package class="w-3.5 h-3.5" />
-                                My Orders
-                            </a>
-
-                            <a
-                                href="{{ Route::has('buyer.dashboard') ? route('buyer.dashboard') : '#' }}"
-                                class="inline-flex items-center justify-center gap-1.5
-                                       text-[10.5px] font-semibold text-navy/65 hover:text-teal-dark
-                                       bg-white hover:bg-teal-light/30 border border-gray-border hover:border-teal/30
-                                       rounded-xl px-3.5 py-2.5 transition-all"
-                            >
-                                <x-lucide-arrow-left class="w-3.5 h-3.5" />
-                                Dashboard
-                            </a>
-                        </div>
-                    </div>
-                </div>
+        <header class="settings-page-header">
+            <div>
+                <p class="settings-eyebrow">Your ShopHop account</p>
+                <h1>Account Settings</h1>
+                <p class="settings-intro">Manage your profile, delivery address and account preferences.</p>
             </div>
-        </div>
+            <div class="settings-header-actions">
+                <a class="settings-primary-action" href="{{ route('buyer.orders') }}">
+                    <x-lucide-package class="w-4 h-4" /> My Orders
+                </a>
+                <a class="settings-secondary-action" href="{{ route('buyer.dashboard') }}">
+                    <x-lucide-arrow-left class="w-4 h-4" /> Dashboard
+                </a>
+            </div>
+        </header>
 
         {{-- Compact mobile navigation --}}
         <div class="lg:hidden sticky top-16 z-40 bg-white/95 backdrop-blur border border-gray-border rounded-xl p-3 mb-4 shadow-sm">
@@ -251,7 +110,7 @@
                 >
                     <option value="profile">Profile Info</option>
                     <option value="address">Address Book</option>
-                    <option value="allergens">Allergens & Diet</option>
+
                     <option value="security">Security</option>
                     <option value="privacy">Privacy & Account</option>
                     <option value="vouchers">Vouchers</option>
@@ -265,7 +124,7 @@
             </div>
         </div>
 
-        <div class="grid lg:grid-cols-[252px_minmax(0,1fr)] gap-4 lg:gap-5 items-start">
+        <div class="settings-layout grid lg:grid-cols-[252px_minmax(0,1fr)] gap-4 lg:gap-5 items-start">
 
             {{-- =========================================================
                 SIDEBAR NAV
@@ -364,18 +223,6 @@
                             >
                                 <x-lucide-map-pin class="w-3.5 h-3.5 shrink-0" />
                                 <span class="truncate">Address Book</span>
-                            </button>
-
-                            <button
-                                type="button"
-                                data-tab-btn="allergens"
-                                class="settings-tab-btn group w-full h-9 px-2.5 rounded-lg
-                                       flex items-center gap-2.5
-                                       text-navy/65 hover:bg-gray-bg hover:text-teal-dark
-                                       text-[11px] font-medium transition-colors duration-200"
-                            >
-                                <x-lucide-shield-alert class="w-3.5 h-3.5 shrink-0" />
-                                <span class="truncate">Allergens & Diet</span>
                             </button>
 
                             <button
@@ -702,75 +549,6 @@
                 </div>
 
                 {{-- =====================================================
-                    ALLERGENS & PREFERENCES TAB
-                ===================================================== --}}
-                <div data-tab-content="allergens" class="settings-panel hidden">
-                    <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
-
-                        <div class="flex items-start gap-3 mb-4">
-                            <div class="w-9 h-9 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0">
-                                <x-lucide-shield-alert class="w-5 h-5" />
-                            </div>
-                            <div>
-                                <h2 class="text-navy text-base sm:text-lg font-bold">Allergens & Dietary Preferences</h2>
-                                <p class="text-sm text-navy/55 mt-1">
-                                    Allergen alerts and saved dietary preferences are unavailable.
-                                </p>
-                            </div>
-                        </div>
-
-                        <form class="space-y-4">
-                            <fieldset disabled>
-                            @csrf
-                            @method('PATCH')
-
-                            <div>
-                                <label class="block text-xs font-semibold text-navy/70 mb-2.5">Common allergens — tap to add</label>
-                                <div id="commonAllergenChips" class="flex flex-wrap gap-2">
-                                    @foreach ($commonAllergens as $allergen)
-                                        <button type="button" data-common-allergen="{{ $allergen }}"
-                                            class="chip-toggle px-3 py-1.5 rounded-lg text-xs font-medium border border-gray-border bg-white text-navy/70 hover:border-teal transition-colors duration-200">
-                                            {{ $allergen }}
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-navy/70 mb-2.5">Something else? Add it manually</label>
-                                <div class="flex gap-2">
-                                    <input id="customAllergenInput" type="text" placeholder="e.g. Mangoes, MSG, Food dye..."
-                                        class="flex-1 px-3 py-2 rounded-lg border border-gray-border text-sm text-navy focus:outline-none focus:ring-2 focus:ring-teal/40 focus:border-teal">
-                                    <button type="button" id="addCustomAllergenBtn"
-                                        class="inline-flex items-center gap-1.5 bg-teal hover:bg-teal-dark text-white text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg transition-colors duration-200">
-                                        <x-lucide-plus class="w-4 h-4" /> Add
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div>
-                                <div class="flex items-center justify-between mb-2.5">
-                                    <label class="block text-xs font-semibold text-navy/70">Your allergens</label>
-                                    <span class="text-[11px] text-navy/40">Tap the severity word to cycle Mild → Moderate → Severe</span>
-                                </div>
-                                <div id="selectedAllergenList" class="flex flex-wrap gap-2 min-h-11"></div>
-                                <p id="noAllergensNote" class="text-xs text-navy/40 italic">No allergens added yet.</p>
-                            </div>
-
-                            <div id="allergenHiddenInputs"></div>
-
-                            <div class="flex justify-end pt-2">
-                                <button type="button" disabled
-                                    class="inline-flex items-center justify-center gap-1.5 bg-gray-bg text-navy/45 text-xs sm:text-sm font-semibold px-4 py-2 rounded-lg cursor-not-allowed">
-                                    Preferences unavailable
-                                </button>
-                            </div>
-                            </fieldset>
-                        </form>
-                    </div>
-                </div>
-
-                {{-- =====================================================
                     SECURITY TAB
                 ===================================================== --}}
                 <div data-tab-content="security" class="settings-panel hidden">
@@ -988,68 +766,7 @@
                     HELP CENTER TAB
                 ===================================================== --}}
                 <div data-tab-content="help" class="settings-panel hidden">
-                    <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">
-
-                        <div class="mb-4">
-                            <p role="heading" aria-level="2" class="text-[17px] sm:text-[18px] font-bold text-navy">
-                                Help Center
-                            </p>
-                            <p class="text-[11px] sm:text-[12px] text-navy/50 mt-1">
-                                Get help with orders, account access, payments, delivery, or reports.
-                            </p>
-                        </div>
-
-                        <div class="grid sm:grid-cols-3 gap-3 mb-5">
-                            <a href="{{ Route::has('buyer.orders') ? route('buyer.orders') : url('/buyer/orders') }}"
-                               class="rounded-xl border border-gray-border p-3.5 hover:border-teal/30 hover:bg-teal-light/20 transition">
-                                <span class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
-                                    <x-lucide-package class="w-4 h-4" />
-                                </span>
-                                <p class="text-[11px] font-bold text-navy mt-2.5">Order Help</p>
-                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">Buyer Orders is a frontend preview.</p>
-                            </a>
-
-                            <a href="{{ route('buyer.messages') }}"
-                               class="rounded-xl border border-gray-border p-3.5 hover:border-teal/30 hover:bg-teal-light/20 transition">
-                                <span class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
-                                    <x-lucide-message-circle class="w-4 h-4" />
-                                </span>
-                                <p class="text-[11px] font-bold text-navy mt-2.5">Messages preview</p>
-                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
-                                    Buyer Messages is a frontend demo with no conversation backend.
-                                </p>
-                            </a>
-
-                            <a href="#security"
-                               class="rounded-xl border border-gray-border p-3.5 hover:border-teal/30 hover:bg-teal-light/20 transition">
-                                <span class="w-8 h-8 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center">
-                                    <x-lucide-lock class="w-4 h-4" />
-                                </span>
-                                <p class="text-[11px] font-bold text-navy mt-2.5">Account Security</p>
-                                <p class="text-[9.5px] text-navy/45 mt-1 leading-relaxed">
-                                    Password and two-factor controls are currently unavailable.
-                                </p>
-                            </a>
-                        </div>
-
-                        <div class="divide-y divide-gray-border border-t border-gray-border">
-                            @foreach ([
-                                'Frequently Asked Questions',
-                                'Report a Technical Problem',
-                                'Terms of Service',
-                                'Privacy Policy',
-                            ] as $link)
-                                <a href="#"
-                                   class="flex items-center justify-between py-3 text-[11px] text-navy/65
-                                          hover:text-teal-dark hover:pl-1 transition-all">
-                                    {{ $link }}
-                                    <x-lucide-chevron-right class="w-3.5 h-3.5 text-navy/25" />
-                                </a>
-                            @endforeach
-                        </div>
-
-                        <p class="text-[9px] text-navy/30 mt-5">ShopHop v1.0.0</p>
-                    </div>
+                    <div class="bg-white rounded-xl border border-gray-border shadow-sm p-4 sm:p-5 lg:p-6">@include('buyer.help.content')</div>
                 </div>
 
             </div>
@@ -1278,9 +995,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     window.addEventListener('hashchange', function () {
         const hashTab = window.location.hash.replace('#', '');
-        if (validTabs.includes(hashTab)) {
-            activateTab(hashTab, false);
-        }
+        activateTab(hashTab, false);
     });
 
 
@@ -1403,217 +1118,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-
-
-    /* =====================================================
-       ALLERGEN TAG MANAGEMENT
-       DOM nodes are created with textContent instead of innerHTML
-       so custom allergen names are safely rendered.
-    ===================================================== */
-    const SEVERITY_ORDER = ['mild', 'moderate', 'severe'];
-    const SEVERITY_STYLES = {
-        mild: {
-            background: ['bg-gray-bg'],
-            text: ['text-navy/60'],
-        },
-        moderate: {
-            background: ['bg-amber-100'],
-            text: ['text-amber-700'],
-        },
-        severe: {
-            background: ['bg-red-100'],
-            text: ['text-red-600'],
-        },
-    };
-
-    let allergenTags = @json($normalizedAllergens);
-
-    const selectedList = document.getElementById('selectedAllergenList');
-    const noAllergensNote = document.getElementById('noAllergensNote');
-    const hiddenInputsContainer = document.getElementById('allergenHiddenInputs');
-    const commonChips = Array.from(
-        document.querySelectorAll('[data-common-allergen]')
-    );
-
-    function normalizedName(name) {
-        return String(name || '').trim().toLocaleLowerCase();
-    }
-
-    function findTag(name) {
-        const normalized = normalizedName(name);
-
-        return allergenTags.find(function (tag) {
-            return normalizedName(tag.name) === normalized;
-        });
-    }
-
-    function addAllergen(name) {
-        const cleanName = String(name || '').trim();
-
-        if (!cleanName || findTag(cleanName)) {
-            return;
-        }
-
-        allergenTags.push({
-            name: cleanName,
-            severity: 'mild',
-        });
-
-        renderAllergens();
-    }
-
-    function removeAllergen(name) {
-        const normalized = normalizedName(name);
-
-        allergenTags = allergenTags.filter(function (tag) {
-            return normalizedName(tag.name) !== normalized;
-        });
-
-        renderAllergens();
-    }
-
-    function cycleSeverity(name) {
-        const tag = findTag(name);
-
-        if (!tag) return;
-
-        const currentIndex = SEVERITY_ORDER.indexOf(tag.severity);
-        const safeIndex = currentIndex >= 0 ? currentIndex : 0;
-
-        tag.severity =
-            SEVERITY_ORDER[(safeIndex + 1) % SEVERITY_ORDER.length];
-
-        renderAllergens();
-    }
-
-    function renderAllergens() {
-        if (!selectedList || !hiddenInputsContainer) return;
-
-        selectedList.replaceChildren();
-        hiddenInputsContainer.replaceChildren();
-
-        if (noAllergensNote) {
-            noAllergensNote.classList.toggle(
-                'hidden',
-                allergenTags.length > 0
-            );
-        }
-
-        allergenTags.forEach(function (tag, index) {
-            const style =
-                SEVERITY_STYLES[tag.severity] ||
-                SEVERITY_STYLES.mild;
-
-            const pill = document.createElement('span');
-            pill.className =
-                'inline-flex items-center gap-1.5 rounded-lg ' +
-                'border border-gray-border bg-white pl-2.5 pr-1.5 ' +
-                'py-1.5 text-xs font-medium';
-
-            const nameText = document.createElement('span');
-            nameText.className = 'text-navy';
-            nameText.textContent = tag.name;
-
-            const severityButton = document.createElement('button');
-            severityButton.type = 'button';
-            severityButton.className =
-                'px-2 py-0.5 rounded-md text-[9px] font-bold ' +
-                'uppercase tracking-wide ' +
-                style.background.join(' ') + ' ' +
-                style.text.join(' ');
-            severityButton.textContent = tag.severity;
-            severityButton.setAttribute(
-                'aria-label',
-                'Change severity for ' + tag.name
-            );
-            severityButton.addEventListener('click', function () {
-                cycleSeverity(tag.name);
-            });
-
-            const removeButton = document.createElement('button');
-            removeButton.type = 'button';
-            removeButton.className =
-                'w-5 h-5 rounded-md flex items-center justify-center ' +
-                'text-navy/35 hover:bg-red-50 hover:text-red-500 ' +
-                'transition-colors';
-            removeButton.textContent = '×';
-            removeButton.setAttribute(
-                'aria-label',
-                'Remove ' + tag.name
-            );
-            removeButton.addEventListener('click', function () {
-                removeAllergen(tag.name);
-            });
-
-            pill.append(nameText, severityButton, removeButton);
-            selectedList.appendChild(pill);
-
-            const nameInput = document.createElement('input');
-            nameInput.type = 'hidden';
-            nameInput.name = 'allergens[' + index + '][name]';
-            nameInput.value = tag.name;
-
-            const severityInput = document.createElement('input');
-            severityInput.type = 'hidden';
-            severityInput.name =
-                'allergens[' + index + '][severity]';
-            severityInput.value = tag.severity;
-
-            hiddenInputsContainer.append(nameInput, severityInput);
-        });
-
-        commonChips.forEach(function (chip) {
-            const name = chip.getAttribute('data-common-allergen');
-            const active = Boolean(findTag(name));
-
-            chip.classList.toggle('bg-teal', active);
-            chip.classList.toggle('text-white', active);
-            chip.classList.toggle('border-teal', active);
-            chip.classList.toggle('bg-white', !active);
-            chip.classList.toggle('text-navy/70', !active);
-        });
-    }
-
-    commonChips.forEach(function (chip) {
-        chip.addEventListener('click', function () {
-            const name = chip.getAttribute('data-common-allergen');
-
-            if (findTag(name)) {
-                removeAllergen(name);
-            } else {
-                addAllergen(name);
-            }
-        });
-    });
-
-    const customInput = document.getElementById('customAllergenInput');
-    const addCustomButton = document.getElementById('addCustomAllergenBtn');
-
-    function submitCustomAllergen() {
-        if (!customInput) return;
-
-        addAllergen(customInput.value);
-        customInput.value = '';
-        customInput.focus();
-    }
-
-    if (addCustomButton) {
-        addCustomButton.addEventListener(
-            'click',
-            submitCustomAllergen
-        );
-    }
-
-    if (customInput) {
-        customInput.addEventListener('keydown', function (event) {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                submitCustomAllergen();
-            }
-        });
-    }
-
-    renderAllergens();
 
 
     /* =====================================================
@@ -2018,3 +1522,7 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endsection
+
+@push('scripts')
+<script src="{{ asset('js/shophop-buyer-discovery.js') }}?v=20261108" defer></script>
+@endpush

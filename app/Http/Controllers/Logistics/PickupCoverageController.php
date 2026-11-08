@@ -23,6 +23,9 @@ class PickupCoverageController extends Controller
 {
     public function enable(Request $request, int $order, RiderServiceAreaService $matcher): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            throw ValidationException::withMessages(['rider_id' => 'The assigned Branch confirms official barangay coverage in Rider Management. Main Hub capacity approval is required when full.']);
+        }
         $partner = LogisticsPartner::where('user_id', $request->user()->id)->firstOrFail();
         $data = $request->validate([
             'rider_id' => ['required', 'integer'],

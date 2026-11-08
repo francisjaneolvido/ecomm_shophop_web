@@ -23,6 +23,7 @@ class ParcelReturnService
         DB::transaction(function () use ($partnerId,$deliveryId,$operatorId,$reason) {
             $parcel = Delivery::where('logistics_partner_id',$partnerId)->whereKey($deliveryId)
                 ->lockForUpdate()->firstOrFail();
+            app(RiderBatchService::class)->guardReservedParcel($parcel);
             $order = Order::whereKey($parcel->order_id)->lockForUpdate()->firstOrFail();
             if ($parcel->status !== Delivery::DELIVERY_FAILED || $order->status !== Order::STATUS_TO_RECEIVE
                 || ! $order->isPaymentEligible()) $this->invalid('Only a failed, payment-eligible delivery can be returned.');
@@ -62,6 +63,7 @@ class ParcelReturnService
     public function assignRider(int $partnerId, int $caseId, int $riderId): void
     {
         DB::transaction(function () use ($partnerId,$caseId,$riderId) {
+            app(RiderBatchService::class)->guardOtherWork($riderId);
             $case=ReturnCase::where('logistics_partner_id',$partnerId)->whereKey($caseId)->lockForUpdate()->firstOrFail();
             $rider=Rider::where('logistics_partner_id',$partnerId)->where('status','active')
                 ->whereNotNull('email_verified_at')->findOrFail($riderId);
@@ -75,6 +77,7 @@ class ParcelReturnService
     public function riderCollect(int $riderId, int $partnerId, int $caseId): void
     {
         DB::transaction(function () use ($riderId,$partnerId,$caseId) {
+            app(RiderBatchService::class)->guardOtherWork($riderId);
             $case=ReturnCase::where('logistics_partner_id',$partnerId)->where('return_rider_id',$riderId)
                 ->whereKey($caseId)->lockForUpdate()->firstOrFail();
             if ($case->status !== ReturnCase::ASSIGNED) $this->invalid('Return parcel is not ready for pickup.');

@@ -115,7 +115,8 @@ class MobileAuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'status' => $this->riderAccessStatus($rider),
+                'status' => $this->riderAccessStatus($rider) === 'approved' && !$actor->tokenCan('rider:operations') && !$actor->tokenCan('*')
+                    ? 'rider_application' : $this->riderAccessStatus($rider),
                 'message' => 'Authenticated Rider account loaded.',
                 'data' => $this->riderData($rider),
             ]);
@@ -286,6 +287,14 @@ class MobileAuthController extends Controller
             ]);
         }
 
+        if (app(\App\Services\RiderManagementService::class)->available() && !$rider->canOperate()) {
+            if ($rider->partner?->user?->status !== 'approved') {
+                return response()->json(['success'=>true,'status'=>'unavailable','message'=>'Your logistics provider is unavailable.','data'=>$data]);
+            }
+            return response()->json(['success'=>true,'status'=>'rider_application',
+                'message'=>'Your Rider application and Branch activation status.',
+                'data'=>[...$data,'token'=>$rider->createToken('shophop-rider-application',['rider:application'])->plainTextToken,'token_type'=>'Bearer']]);
+        }
         if ($rider->status !== 'active') {
             return $this->reviewResponse($rider->status, $data, 'Rider application');
         }
@@ -441,6 +450,7 @@ class MobileAuthController extends Controller
         if (! $rider->email_verified_at) {
             return 'email_unverified';
         }
+        if (app(\App\Services\RiderManagementService::class)->available() && !$rider->canOperate()) return 'rider_application';
         if ($rider->status !== 'active') {
             return $rider->status;
         }

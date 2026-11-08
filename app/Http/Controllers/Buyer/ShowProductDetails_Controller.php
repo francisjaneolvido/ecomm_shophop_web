@@ -21,7 +21,7 @@ class ShowProductDetails_Controller extends Controller
         $discount = (int) ($product->discount ?? 0);
 
         $finalPrice = $discount > 0
-            ? round($price - ($price * $discount / 100))
+            ? round($price - ($price * $discount / 100), 2)
             : $price;
 
         // ---- Gallery: real images, fallback to single product image ----
@@ -174,7 +174,7 @@ class ShowProductDetails_Controller extends Controller
                 $rDiscount = (int) ($related->discount ?? 0);
 
                 $rFinalPrice = $rDiscount > 0
-                    ? round($rPrice - ($rPrice * $rDiscount / 100))
+                    ? round($rPrice - ($rPrice * $rDiscount / 100), 2)
                     : $rPrice;
 
                 $rImagePath = $related->image

@@ -15,11 +15,11 @@
         <button class="rounded-lg bg-teal-dark px-4 py-2 text-white">Filter</button>
     </form>
     <div id="feedbackResults" class="space-y-4">
-        <p class="text-sm text-navy">{{ $total ?? 0 }} product reviews ? Average {{ $average ?? 0 }}/5</p>
+        <p class="text-sm text-navy">{{ $total ?? 0 }} product reviews | Average {{ $average ?? 0 }}/5</p>
         @forelse(($reviews ?? collect()) as $review)
             <article class="rounded-xl border border-gray-border bg-white p-5">
                 <h2 class="font-semibold text-navy">{{ $review['product_name'] }}</h2>
-                <p class="mt-1 text-xs text-navy/60">{{ $review['buyer_name'] }} ? {{ $review['rating'] }}/5 ? {{ $review['date'] }}</p>
+                <p class="mt-1 text-xs text-navy/60">{{ $review['buyer_name'] }} | {{ $review['rating'] }}/5 | {{ $review['date'] }}</p>
                 <p class="mt-3 whitespace-pre-wrap text-sm">{{ $review['comment'] }}</p>
                 @if($review['seller_reply'])<p class="mt-3 rounded-lg bg-teal/10 p-3 text-sm whitespace-pre-wrap">Seller reply: {{ $review['seller_reply'] }}</p>@endif
                 <form method="POST" action="{{ route('seller.feedback.reply', $review['id']) }}" class="mt-4 space-y-2">

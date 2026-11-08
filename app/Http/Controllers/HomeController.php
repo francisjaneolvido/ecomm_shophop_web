@@ -3,8 +3,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Buyer\Order\Order;
-use App\Models\Seller\Manage_inventory\Product;
 
 class HomeController extends Controller
 {
@@ -14,41 +12,11 @@ class HomeController extends Controller
      */
     public function index()
     {
-        $publicCatalogue = fn () => Product::query()
-            ->publiclyDiscoverable()
-            ->with('images');
-
-        // Seller-configured discounts, NOT a fabricated timed sale.
-        $flashDealProducts = $publicCatalogue()
-            ->where('discount', '>', 0)
-            ->orderByDesc('discount')
-            ->latest('products.created_at')
-            ->take(12)
-            ->get();
-
-        // Ranking uses completed-order units only; a zero-sales marketplace
-        // gracefully shows current products without invented popularity figures.
-        $topProducts = $publicCatalogue()
-            ->withSum([
-                'orderItems as completed_units_sold' => function ($query) {
-                    $query->whereHas('order', function ($orderQuery) {
-                        $orderQuery->where('status', Order::STATUS_COMPLETED);
-                    });
-                },
-            ], 'quantity')
-            ->orderByDesc('completed_units_sold')
-            ->latest('products.created_at')
-            ->take(12)
-            ->get();
-
-        $hasCompletedSales = $topProducts->contains(
-            fn (Product $product) => (int) ($product->completed_units_sold ?? 0) > 0
-        );
-
-        $discoverProducts = $publicCatalogue()
-            ->latest('products.created_at')
-            ->take(24)
-            ->get();
+        $sections = app(\App\Services\MarketplaceCatalogService::class)->sections();
+        $flashDealProducts = $sections['deals'];
+        $topProducts = $sections['top'];
+        $discoverProducts = $sections['discover'];
+        $hasCompletedSales = $sections['has_completed_sales'];
 
         // The existing category browser has real public routes. Use its
         // configured slugs instead of guessing category URLs.

@@ -47,12 +47,25 @@ class MobileRiderDeliveryController extends Controller
             ->latest()
             ->get();
 
+        $batchItems = collect();
+        if (app(\App\Services\RiderBatchService::class)->available()) {
+            $batchItems = \App\Models\Logistics\RiderBatchItem::with('batch')
+                ->whereIn('reserved_delivery_id', $deliveries->pluck('id'))
+                ->whereHas('batch', fn ($q) => $q->where('rider_id', $rider->id)->where('logistics_partner_id', $rider->logistics_partner_id))
+                ->get()->keyBy('delivery_id');
+        }
+
         return response()->json([
             'success' => true,
             'status' => 'ok',
             'message' => 'Rider assignments loaded.',
             'data' => [
-                'assignments' => $deliveries->map(fn (Delivery $delivery) => $this->deliveryData($delivery, $rider))->values(),
+                'assignments' => $deliveries->map(fn (Delivery $delivery) => [
+                    ...$this->deliveryData($delivery, $rider),
+                    'rider_batch_id' => $batchItems->get($delivery->id)?->rider_batch_id,
+                    'rider_batch_status' => $batchItems->get($delivery->id)?->batch?->status,
+                    'rider_batch_pickup_failed' => (bool) $batchItems->get($delivery->id)?->pickup_failed_at,
+                ])->values(),
             ],
         ]);
     }
@@ -286,12 +299,18 @@ class MobileRiderDeliveryController extends Controller
 
     private function current(Rider $rider, int $deliveryId, bool $lock = false): Delivery
     {
+        if ($lock) {
+            Rider::whereKey($rider->id)->lockForUpdate()->firstOrFail();
+        }
         $query = Delivery::with(['order'])
             ->whereKey($deliveryId)
             ->where('rider_id', $rider->id)
             ->where('logistics_partner_id', $rider->logistics_partner_id);
 
-        return ($lock ? $query->lockForUpdate() : $query)->firstOrFail();
+        $parcel = ($lock ? $query->lockForUpdate() : $query)->firstOrFail();
+        app(\App\Services\RiderBatchService::class)->assertParcelAllowed($rider, $parcel, true);
+
+        return $parcel;
     }
 
     private function freshSuccess(Rider $rider, int $deliveryId, string $message): JsonResponse

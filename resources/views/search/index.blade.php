@@ -1,59 +1,25 @@
 @extends('layouts.app')
-
 @section('title', 'Search ShopHop')
-
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/shophop-buyer-discovery.css') }}?v=20261108">
+@endpush
 @section('content')
-    <section class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-        <div class="max-w-3xl">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.16em] text-teal-dark">Public catalogue</p>
-            <h1 class="mt-2 text-2xl sm:text-3xl font-bold text-navy">
-                @if ($search === '')
-                    Search ShopHop
-                @else
-                    Search results for <span class="text-teal-dark">“{{ $search }}”</span>
-                @endif
-            </h1>
+<section class="discovery-page sh-search-page"><div class="sh-shop-shell">
+    <header class="discovery-header"><div><p class="discovery-eyebrow">Available on ShopHop</p><h1 class="discovery-title">@if($search === '') Search ShopHop @else Search results for <span>{{ $search }}</span>@endif</h1><p class="discovery-description">@if($products){{ $products->total() }} matching {{ \Illuminate\Support\Str::plural('product', $products->total()) }}@else Find products and categories using the search bar above.@endif</p></div><a class="discovery-secondary" href="{{ route('buyer.category.index') }}">Browse categories <x-lucide-arrow-right /></a></header>
+    @if($search === '')
+        <div class="discovery-empty"><x-lucide-search /><h2>What are you looking for?</h2><p>Enter a product name, category, or description to search the available ShopHop catalogue.</p></div>
+    @elseif($products->isEmpty())
+        <div class="discovery-empty"><x-lucide-search-x /><h2>No available products matched</h2><p>Try a different product name, category, or description.</p><a class="discovery-primary" href="{{ route('buyer.category.index') }}">Explore categories</a></div>
+    @else
+        <div class="search-results-grid">
+            @foreach($products as $product)
+                <article data-search-result class="search-result-card">
+                    <a href="{{ route('buyer.product.show', $product) }}" class="search-result-image"><img src="{{ $product->image ? asset('storage/'.ltrim($product->image, '/')) : asset('images/placeholder-product.jpg') }}" alt="{{ $product->name }}" loading="lazy"></a>
+                    <div class="search-result-body"><p>{{ $product->category }}</p><h2><a href="{{ route('buyer.product.show', $product) }}">{{ $product->name }}</a></h2><strong>&#8369;{{ number_format((float) $product->price * (1 - ((int) $product->discount / 100)), 2) }}</strong><span>{{ (int) $product->stock }} in stock</span></div>
+                </article>
+            @endforeach
         </div>
-
-        @if ($search === '')
-            <div class="mt-7 max-w-3xl rounded-2xl border border-gray-border bg-gray-bg/70 px-5 py-5 text-[13px] leading-relaxed text-navy/65">
-                Enter a product name, category, or description to search the available ShopHop catalogue.
-            </div>
-        @elseif ($products->isEmpty())
-            <div class="mt-7 max-w-3xl rounded-2xl border border-gray-border bg-gray-bg/70 px-5 py-8 text-center">
-                <x-lucide-search-x class="w-7 h-7 text-navy/30 mx-auto mb-3" />
-                <p class="text-[14px] font-semibold text-navy">No available products matched “{{ $search }}”.</p>
-                <p class="mt-1 text-[12px] text-navy/55">Try a product name, category, or description.</p>
-            </div>
-        @else
-            <div class="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-5 gap-4">
-                @foreach ($products as $product)
-                    <article data-search-result class="overflow-hidden rounded-2xl border border-gray-border bg-white shadow-sm">
-                        <div class="aspect-square bg-gray-bg">
-                            <img
-                                src="{{ $product->image ? asset('storage/' . ltrim($product->image, '/')) : asset('images/placeholder-product.jpg') }}"
-                                alt="{{ $product->name }}"
-                                class="w-full h-full object-cover"
-                            >
-                        </div>
-                        <div class="p-4">
-                            <p class="text-[10px] font-semibold uppercase tracking-wide text-teal-dark">{{ $product->category }}</p>
-                            <h2 class="mt-1 text-[14px] font-semibold leading-snug text-navy">{{ $product->name }}</h2>
-                            @if ($product->description)
-                                <p class="mt-2 text-[11px] leading-relaxed text-navy/55">{{ \Illuminate\Support\Str::limit($product->description, 120) }}</p>
-                            @endif
-                            <p class="mt-3 text-[15px] font-bold text-teal-dark">₱{{ number_format((float) $product->price, 2) }}</p>
-                            <p class="mt-1 text-[11px] text-navy/55">{{ (int) $product->stock }} in stock</p>
-                        </div>
-                    </article>
-                @endforeach
-            </div>
-
-            @if ($products->hasPages())
-                <div class="mt-8">
-                    {{ $products->links() }}
-                </div>
-            @endif
-        @endif
-    </section>
+        <div class="search-pagination">{{ $products->links() }}</div>
+    @endif
+</div></section>
 @endsection

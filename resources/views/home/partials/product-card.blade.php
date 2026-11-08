@@ -3,7 +3,7 @@
     $basePrice = (float) $product->price;
     $discount = max(0, min(100, (int) ($product->discount ?? 0)));
     // Align the shown sale price with the existing public Buyer product page.
-    $salePrice = $discount > 0 ? round($basePrice - ($basePrice * $discount / 100)) : $basePrice;
+    $salePrice = $discount > 0 ? round($basePrice - ($basePrice * $discount / 100), 2) : $basePrice;
     $stockCount = (int) ($product->stock ?? 0);
     $soldCount = (int) ($product->completed_units_sold ?? 0);
     $productUrl = route('buyer.product.show', ['product' => $product->id]);

@@ -18,7 +18,7 @@
 
             <nav class="sh-shop-footer-links" aria-label="Explore ShopHop">
                 <h2>Explore</h2>
-                <a href="{{ $footerHome }}#categories">Categories</a>
+                <a href="{{ route('buyer.category.index') }}">Categories</a>
                 <a href="{{ $footerHome }}#deals">Flash Deals</a>
                 <a href="{{ $footerHome }}#new-arrivals">Top Products</a>
                 <a href="{{ $footerHome }}#trending">Daily Discover</a>
@@ -43,6 +43,7 @@
                 <a href="{{ route('register') }}" data-open-account-type-modal>Start Selling</a>
                 <a href="{{ route('logistics.home') }}">Logistics Partners</a>
                 <a href="{{ $footerHome }}">Marketplace Home</a>
+                <a href="{{ $footerBuyer ? route('buyer.help') : route('help.index') }}">Help Center</a>
                 <p>Shopping assistance is available through your account when supported.</p>
             </nav>
         </div>

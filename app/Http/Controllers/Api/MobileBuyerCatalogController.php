@@ -27,53 +27,23 @@ class MobileBuyerCatalogController extends Controller
     {
         $buyer = $this->approvedBuyer($request);
 
+        $marketplace = app(\App\Services\MarketplaceCatalogService::class);
+        $sections = $marketplace->sections();
+        $cards = fn ($products) => $products->map(fn (Product $product) => $this->productCard($product))->values();
         $data = [
             'categories' => $this->categoryPayload(),
-            'trending_products' => [],
-            'recommended_products' => [],
-            'deal_products' => [],
-            'new_arrivals' => [],
+            'banners' => $marketplace->banners(),
+            'top_products' => $cards($sections['top']),
+            'discover_products' => $cards($sections['discover']),
+            'has_completed_sales' => $sections['has_completed_sales'],
+            'deal_products' => $cards($sections['deals']),
+            // Retain the previous keys for installed mobile versions.
+            'trending_products' => $cards($sections['top']),
+            'recommended_products' => $cards($sections['discover']),
+            'new_arrivals' => $cards($sections['discover']->take(6)),
             'cart_count' => Schema::hasTable('cart_items')
-                ? CartItem::where('buyer_id', $buyer->id)->count()
-                : 0,
+                ? CartItem::where('buyer_id', $buyer->id)->count() : 0,
         ];
-
-        if (! Schema::hasTable((new Product())->getTable())) {
-            return response()->json([
-                'success' => true,
-                'message' => 'Buyer home loaded.',
-                'data' => $data,
-            ]);
-        }
-
-        $data['trending_products'] = $this->catalogQuery()
-            ->latest()
-            ->take(8)
-            ->get()
-            ->map(fn (Product $product) => $this->productCard($product))
-            ->values();
-
-        $data['recommended_products'] = $this->catalogQuery()
-            ->inRandomOrder()
-            ->take(10)
-            ->get()
-            ->map(fn (Product $product) => $this->productCard($product))
-            ->values();
-
-        $data['deal_products'] = $this->catalogQuery()
-            ->where('discount', '>', 0)
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (Product $product) => $this->productCard($product))
-            ->values();
-
-        $data['new_arrivals'] = $this->catalogQuery()
-            ->latest()
-            ->take(10)
-            ->get()
-            ->map(fn (Product $product) => $this->productCard($product))
-            ->values();
 
         return response()->json([
             'success' => true,
@@ -110,6 +80,8 @@ class MobileBuyerCatalogController extends Controller
         $validated = $request->validate([
             'q' => ['nullable', 'string', 'max:120'],
             'category' => ['nullable', 'string', 'max:160'],
+            'subcategory' => ['nullable', 'string', 'max:160'],
+            'collection' => ['nullable', Rule::in(['deals', 'top', 'discover'])],
             'sort' => [
                 'nullable',
                 Rule::in(['popular', 'latest', 'top_sales', 'price_low', 'price_high']),
@@ -141,7 +113,8 @@ class MobileBuyerCatalogController extends Controller
                 $builder
                     ->where('name', 'like', '%' . $search . '%')
                     ->orWhere('category', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('subcategory', 'like', '%' . $search . '%');
             });
         }
 
@@ -161,17 +134,25 @@ class MobileBuyerCatalogController extends Controller
             $query->where('category', $category['name']);
         }
 
+        if ($subcategory = trim((string) ($validated['subcategory'] ?? ''))) {
+            $category = $this->resolveCategory((string) ($validated['category'] ?? ''));
+            abort_unless($category && in_array($subcategory, $category['subcategories'] ?? [], true), 422, 'Unknown subcategory.');
+            $query->where('subcategory', $subcategory);
+        }
+        if (($validated['collection'] ?? '') === 'deals') {
+            $query->where('discount', '>', 0);
+        }
         $sort = $validated['sort'] ?? 'popular';
 
         match ($sort) {
             'latest' => $query->latest(),
             'top_sales' => $this->supportsSoldCount()
-                ? $query->orderByDesc('sold_count')->latest('products.created_at')
+                ? $query->orderByDesc('completed_units_sold')->latest('products.created_at')->orderByDesc('products.id')
                 : $query->latest(),
-            'price_low' => $query->orderBy('price')->latest('products.created_at'),
-            'price_high' => $query->orderByDesc('price')->latest('products.created_at'),
+            'price_low' => $query->orderByRaw('ROUND(price * (1 - COALESCE(discount, 0) / 100.0), 2) ASC')->latest('products.created_at'),
+            'price_high' => $query->orderByRaw('ROUND(price * (1 - COALESCE(discount, 0) / 100.0), 2) DESC')->latest('products.created_at'),
             default => $this->supportsSoldCount()
-                ? $query->orderByDesc('sold_count')->latest('products.created_at')
+                ? $query->orderByDesc('completed_units_sold')->latest('products.created_at')->orderByDesc('products.id')
                 : $query->latest(),
         };
 
@@ -352,21 +333,7 @@ class MobileBuyerCatalogController extends Controller
      */
     private function catalogQuery(): Builder
     {
-        $query = Product::query()
-            ->publiclyDiscoverable()
-            ->with(['seller', 'images']);
-
-        if (Schema::hasTable('reviews')) {
-            $query
-                ->withAvg('reviews as avg_rating', 'rating')
-                ->withCount('reviews as reviews_count');
-        }
-
-        if ($this->supportsSoldCount()) {
-            $query->withSum('orderItems as sold_count', 'quantity');
-        }
-
-        return $query;
+        return app(\App\Services\MarketplaceCatalogService::class)->query();
     }
 
     private function productCard(Product $product): array
@@ -393,8 +360,8 @@ class MobileBuyerCatalogController extends Controller
             'reviews' => isset($product->reviews_count)
                 ? (int) $product->reviews_count
                 : 0,
-            'sold' => isset($product->sold_count)
-                ? (int) $product->sold_count
+            'sold' => isset($product->completed_units_sold)
+                ? (int) $product->completed_units_sold
                 : 0,
             'has_variants' => (bool) $product->has_variants,
             'is_liked' => isset($this->likedProductIds[(int) $product->id]),
@@ -408,8 +375,11 @@ class MobileBuyerCatalogController extends Controller
 
     private function categoryPayload(): array
     {
+        $counts = Schema::hasTable('products')
+            ? Product::query()->publiclyDiscoverable()->selectRaw('category, COUNT(*) AS available_count')->groupBy('category')->pluck('available_count', 'category')
+            : collect();
         return collect(config('shophop_categories', []))
-            ->map(function (array $category) {
+            ->map(function (array $category) use ($counts) {
                 $folder = $category['folder'] ?? null;
                 $images = [];
 
@@ -430,6 +400,7 @@ class MobileBuyerCatalogController extends Controller
 
                 return [
                     'name' => $category['name'],
+                    'product_count' => (int) ($counts[$category['name']] ?? 0),
                     'slug' => $category['slug'],
                     'folder' => $folder,
                     'icon' => $category['icon'] ?? null,
@@ -474,7 +445,7 @@ class MobileBuyerCatalogController extends Controller
 
     private function supportsSoldCount(): bool
     {
-        return Schema::hasTable('order_items');
+        return Schema::hasTable('order_items') && Schema::hasTable('orders');
     }
 
     private function approvedBuyer(Request $request)

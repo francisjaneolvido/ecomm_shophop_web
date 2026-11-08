@@ -28,6 +28,7 @@ Route::prefix('mobile')->group(function () {
     )->middleware('throttle:10,1');
 
     Route::prefix('rider')->group(function () {
+        Route::get('/work-options', [\App\Http\Controllers\Api\MobileRiderManagementController::class, 'options'])->middleware('throttle:60,1');
         Route::get(
             '/logistics-centers',
             [MobileRiderAuthController::class, 'logisticsCenters']
@@ -140,15 +141,26 @@ Route::prefix('mobile')->group(function () {
             Route::post('/manifest/confirm', [MobileLinehaulController::class, 'confirm'])->middleware('throttle:30,1');
         });
 
-        Route::prefix('rider')->group(function () {
+        // Preserve the existing narrow cash-return path for suspended collectors.
+        Route::get('/rider/cod', [MobileRiderCodController::class, 'index']);
+        Route::post('/rider/cod/{delivery}/remit', [MobileRiderCodController::class, 'remit'])->whereNumber('delivery')->middleware('throttle:10,1');
+
+        Route::get('/rider/application', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'show']);
+        Route::post('/rider/application/documents', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'documents'])->middleware('throttle:10,1');
+        Route::post('/rider/application/confirm-branch', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'confirmBranch'])->middleware('throttle:10,1');
+        Route::post('/rider/application/session', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'session'])->middleware('throttle:10,1');
+
+        Route::prefix('rider')->middleware('rider.operational')->group(function () {
+            Route::patch('/availability', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'availability']);
+
+            Route::get('/batches', [\App\Http\Controllers\Api\MobileRiderBatchController::class, 'index']);
+            Route::get('/batches/{batch}', [\App\Http\Controllers\Api\MobileRiderBatchController::class, 'show'])->whereNumber('batch');
+            Route::post('/batches/{batch}/items/{item}/pickup-failure', [\App\Http\Controllers\Api\MobileRiderBatchController::class, 'pickupFailure'])->middleware('throttle:20,1')->whereNumber(['batch','item']);
             Route::get('/scanner/preview', [MobileRiderScannerController::class, 'preview'])->middleware('throttle:60,1');
             Route::post('/scanner/confirm', [MobileRiderScannerController::class, 'confirm'])->middleware('throttle:30,1');
             Route::get('/returns', [MobileRiderReturnController::class, 'index']);
             Route::post('/returns/{case}/pickup', [MobileRiderReturnController::class, 'pickup'])->whereNumber('case');
             Route::post('/returns/{case}/handover', [MobileRiderReturnController::class, 'handover'])->whereNumber('case');
-            Route::get('/cod', [MobileRiderCodController::class, 'index']);
-            Route::post('/cod/{delivery}/remit', [MobileRiderCodController::class, 'remit'])
-                ->whereNumber('delivery')->middleware('throttle:10,1');
             Route::get('/transfers', [MobileRiderTransitController::class, 'index']);
             Route::post('/transfers/{transfer}/depart', [MobileRiderTransitController::class, 'depart'])->whereNumber('transfer');
             Route::get('/earnings', [MobileRiderTransitController::class, 'earnings']);

@@ -203,6 +203,10 @@ Route::prefix('buyer')
         |--------------------------------------------------------------------------
         */
 
+        Route::get('/help', [\App\Http\Controllers\HelpCenterController::class, 'index'])->name('help');
+        Route::post('/help/requests', [\App\Http\Controllers\HelpCenterController::class, 'store'])
+            ->middleware('throttle:5,1')->name('help.requests');
+
         Route::get('/profile', function () {
             return view('buyer.buyer-profile-settings');
         })->name('profile');

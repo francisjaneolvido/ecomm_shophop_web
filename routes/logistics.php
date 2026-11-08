@@ -51,10 +51,28 @@ Route::domain(config('app.logistics_domain'))
 
         // Branch operators use a separate session guard: no access to company management routes.
         Route::middleware('auth:logistics_staff')->group(function () {
+            Route::get('/staff/rider-batches', [\App\Http\Controllers\Branch\RiderBatchController::class,'index'])->name('staff.rider-batches.index');
+            Route::post('/staff/rider-batches', [\App\Http\Controllers\Branch\RiderBatchController::class,'store'])->middleware('throttle:20,1')->name('staff.rider-batches.store');
+            Route::post('/staff/rider-batches/riders/{rider}/capacity', [\App\Http\Controllers\Branch\RiderBatchController::class,'configure'])->name('staff.rider-batches.capacity');
+            Route::post('/staff/rider-batches/{batch}/transition', [\App\Http\Controllers\Branch\RiderBatchController::class,'transition'])->middleware('throttle:20,1')->name('staff.rider-batches.transition');
             Route::get('/staff/workspace', [BranchStaffWorkspaceController::class, 'index'])->name('staff.workspace');
             Route::post('/staff/password', [BranchStaffWorkspaceController::class, 'changePassword'])
                 ->middleware('throttle:6,1')->name('staff.password');
         });
+
+
+        // Shared role-aware lifecycle console. The controller excludes Province Hubs and scanners.
+        foreach ([
+            ['middleware' => 'auth', 'url' => '/rider-management', 'name' => 'rider-management.'],
+            ['middleware' => 'auth:logistics_staff', 'url' => '/staff/rider-management', 'name' => 'staff.rider-management.'],
+        ] as $managementRoute) {
+            Route::middleware($managementRoute['middleware'])->prefix($managementRoute['url'])->name($managementRoute['name'])->group(function () {
+                Route::get('/', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'index'])->name('index');
+                Route::post('/riders/{rider}', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'action'])->whereNumber('rider')->middleware('throttle:30,1')->name('action');
+                Route::get('/riders/{rider}/documents/{slot}', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'document'])->whereNumber('rider')->name('document');
+                Route::post('/transfers/{transfer}', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'transferDecision'])->whereNumber('transfer')->middleware('throttle:20,1')->name('transfer');
+            });
+        }
 
         Route::middleware(['auth', 'approved.role:logistics'])->group(function () {
             Route::get('/dashboard', [LogisticsDashboardController::class, 'index'])->name('dashboard');
@@ -94,6 +112,7 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/fleet/drivers/{driver}/toggle', [FleetController::class, 'toggleDriver'])->name('fleet.drivers.toggle');
             Route::post('/fleet/drivers/{driver}/update', [FleetController::class, 'updateDriver'])->name('fleet.drivers.update');
 
+            Route::get('/rider-batches', [\App\Http\Controllers\Logistics\RiderBatchMonitoringController::class, 'index'])->name('rider-batches.index');
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
             Route::get('/demo-network', [DemoNetworkDirectoryController::class, 'index'])->name('demo-network.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');

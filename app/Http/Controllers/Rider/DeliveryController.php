@@ -221,11 +221,17 @@ class DeliveryController extends Controller
     private function current(Request $request, int $deliveryId, bool $lock = false): Delivery
     {
         $rider = $request->user('rider');
+        if ($lock) {
+            Rider::whereKey($rider->id)->lockForUpdate()->firstOrFail();
+        }
         $query = Delivery::with('order')->whereKey($deliveryId)
             ->where('rider_id', $rider->id)
             ->where('logistics_partner_id', $rider->logistics_partner_id);
 
-        return ($lock ? $query->lockForUpdate() : $query)->firstOrFail();
+        $parcel = ($lock ? $query->lockForUpdate() : $query)->firstOrFail();
+        app(\App\Services\RiderBatchService::class)->assertParcelAllowed($rider, $parcel, true);
+
+        return $parcel;
     }
 
     private function stale(): RedirectResponse

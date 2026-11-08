@@ -3,10 +3,12 @@
 namespace App\Models\Logistics;
 
 use App\Models\LogisticsCoverageArea;
+use App\Models\LogisticsPartner;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Schema;
 use Laravel\Sanctum\HasApiTokens;
 
 class Rider extends Authenticatable
@@ -65,9 +67,62 @@ class Rider extends Authenticatable
         ];
     }
 
+    public function lifecycleProfile()
+    {
+        return $this->hasOne(RiderLifecycleProfile::class);
+    }
+
+    public function managementProfile(): ?RiderLifecycleProfile
+    {
+        if ($this->relationLoaded('lifecycleProfile')) {
+            return $this->lifecycleProfile;
+        }
+        if (! Schema::hasTable('rider_lifecycle_profiles')) {
+            return null;
+        }
+
+        return $this->lifecycleProfile()->first();
+    }
+
+    public function getApplicationStatusAttribute(): string
+    {
+        return $this->managementProfile()?->application_status ?? match ($this->status) {
+            'pending' => 'pending_review','rejected' => 'rejected',default => 'approved'
+        };
+    }
+
+    public function getOperationalStatusAttribute(): string
+    {
+        return $this->managementProfile()?->operational_status ?? match ($this->status) {
+            'active' => 'active','suspended' => 'suspended','rejected' => 'inactive',default => 'pending_activation'
+        };
+    }
+
+    public function canOperate(): bool
+    {
+        $p = $this->managementProfile();
+
+        return $this->status === 'active' && (! $p || ($p->application_status === 'approved' && $p->operational_status === 'active' && ! $p->assignment_confirmation_required));
+    }
+
+    public function availabilityState(): string
+    {
+        if (! $this->canOperate()) {
+            return 'offline';
+        }
+        if ($this->availability_status === 'busy') {
+            return 'busy';
+        }
+        if (in_array($this->availability_status, ['available', 'online'], true)) {
+            return 'online';
+        }
+
+        return $this->managementProfile()?->availability_state === 'on_break' ? 'on_break' : 'offline';
+    }
+
     public function partner(): BelongsTo
     {
-        return $this->belongsTo(\App\Models\LogisticsPartner::class, 'logistics_partner_id');
+        return $this->belongsTo(LogisticsPartner::class, 'logistics_partner_id');
     }
 
     public function sortingCenter(): BelongsTo

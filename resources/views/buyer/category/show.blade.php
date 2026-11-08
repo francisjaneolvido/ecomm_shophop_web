@@ -9,6 +9,9 @@
     Buyer-specific navbar instead of the guest chrome.
 --}}
 @section('hideChrome', true)
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/shophop-buyer-discovery.css') }}?v=20261108">
+@endpush
 
 
 @section('content')
@@ -84,7 +87,7 @@
     BREADCRUMB
 ========================================================= --}}
 <div class="bg-white border-b border-gray-border/70">
-    <div class="max-w-310 mx-auto px-3 sm:px-4 lg:px-5 py-2">
+    <div class="sh-shop-shell py-2">
         <nav class="flex items-center flex-wrap gap-x-1.5 gap-y-1 text-[10px] sm:text-[10.5px] text-navy/45">
             @foreach ($breadcrumbs as $crumb)
                 @if (! $loop->last && $crumb['url'])
@@ -103,7 +106,7 @@
     CATEGORY BROWSE — SIDEBAR + FILTERS + PRODUCT GRID
 ========================================================= --}}
 <section class="shb-category-page bg-gray-bg">
-    <div class="max-w-310 mx-auto px-3 sm:px-4 lg:px-5 py-3.5 sm:py-4">
+    <div class="sh-shop-shell py-3.5 sm:py-4">
 
         <div class="grid lg:grid-cols-[205px_minmax(0,1fr)] gap-4 items-start">
 

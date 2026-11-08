@@ -14,8 +14,8 @@ class RiderApplicationDecisionNotification extends Notification
         private readonly bool $approved,
         private readonly string $logisticsName,
         private readonly ?string $reason = null,
-    ) {
-    }
+        private readonly bool $requiresBranchActivation = false,
+    ) {}
 
     public function via(object $notifiable): array
     {
@@ -29,6 +29,13 @@ class RiderApplicationDecisionNotification extends Notification
                 ? 'ShopHop Rider Application Approved'
                 : 'ShopHop Rider Application Update')
             ->greeting('Hello '.$notifiable->name.',');
+
+        if ($this->approved && $this->requiresBranchActivation) {
+            return $mail
+                ->line("Your Rider application with {$this->logisticsName} has been approved by Main Hub.")
+                ->line('Your assigned Branch must confirm your official barangays and activate your account before pickup or delivery assignments become available.')
+                ->line('Sign in to the ShopHop mobile app to check your assigned Branch and activation status.');
+        }
 
         if ($this->approved) {
             return $mail

@@ -4,24 +4,17 @@ namespace Tests\Feature;
 
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\User;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class PublicSearchTest extends TestCase
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
-
-        Schema::dropAllTables();
-
-        $this->runMigrations([
-            '0001_01_01_000000_create_users_table.php',
-            '2026_08_31_000001_add_account_type_and_status_to_users_table.php',
-            '0001_01_01_000003_create_products_table.php',
-            // Search eligibility uses the current approval schema even in this minimal disposable catalogue.
-            'Seller/Manage_inventory/2026_09_30_000001_add_product_compliance.php',
-        ]);
+        $this->assertSame(':memory:', \Illuminate\Support\Facades\DB::connection()->getDatabaseName());
     }
 
     public function test_guest_can_search_available_persisted_products_case_insensitively(): void
@@ -70,7 +63,8 @@ class PublicSearchTest extends TestCase
     {
         $this->get('/')
             ->assertOk()
-            ->assertSee('No products are available yet.')
+            ->assertViewHas('discoverProducts', fn ($products) => $products->isEmpty())
+            ->assertSee('No products available yet')
             ->assertDontSee('Minimalist Canvas Sneakers');
     }
 
@@ -98,14 +92,14 @@ class PublicSearchTest extends TestCase
             ->assertSee('Enter a product name, category, or description to search the available ShopHop catalogue.');
     }
 
-    public function test_search_results_do_not_link_guests_to_the_private_product_detail_route(): void
+    public function test_search_results_link_to_public_product_details(): void
     {
         $product = $this->createProduct('Wireless Earbuds Pro', 'Electronics and Gadgets');
 
         $this->get('/search?search=wireless')
             ->assertOk()
             ->assertSee('Wireless Earbuds Pro')
-            ->assertDontSee('/buyer/product/' . $product->id, false);
+            ->assertSee('/buyer/product/' . $product->id, false);
     }
 
     public function test_search_escapes_user_provided_query_text(): void
@@ -144,10 +138,4 @@ class PublicSearchTest extends TestCase
         ]);
     }
 
-    private function runMigrations(array $paths): void
-    {
-        foreach ($paths as $path) {
-            (require database_path('migrations/' . $path))->up();
-        }
-    }
 }

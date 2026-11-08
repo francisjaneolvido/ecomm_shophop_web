@@ -168,7 +168,8 @@
 </head>
 
 @php
-    $branchUser = auth()->user();
+    $branchStaff = request()->routeIs('logistics.staff.*') ? auth('logistics_staff')->user() : null;
+    $branchUser = $branchStaff ?? auth()->user();
 
     // Kung walang ipinasa ang controller na $center, hanapin ang branch ng naka-login.
     $branchCenter = $center
@@ -189,9 +190,9 @@
         ->implode('') ?: 'BR';
 
     $routeUrl = fn (string $name) => \Illuminate\Support\Facades\Route::has($name) ? route($name) : '#';
-    $logoutUrl = \Illuminate\Support\Facades\Route::has('branch.logout')
+    $logoutUrl = $branchStaff ? route('logistics.logout') : (\Illuminate\Support\Facades\Route::has('branch.logout')
         ? route('branch.logout')
-        : (\Illuminate\Support\Facades\Route::has('logistics.logout') ? route('logistics.logout') : '#');
+        : (\Illuminate\Support\Facades\Route::has('logistics.logout') ? route('logistics.logout') : '#'));
 
     /*
      * Station Hub (Branch) modules, ayon sa spec.
@@ -206,12 +207,22 @@
             ['label'=>'Parcel Tracking','route'=>'branch.parcels.index','pattern'=>'branch.parcels*','icon'=>'package-search'],
         ]],
         ['label' => 'Operations', 'items' => [
+            ...(\Illuminate\Support\Facades\Schema::hasTable('rider_batches') ? [
+                ['label'=>'Rider Batches','route'=>'branch.rider-batches.index','pattern'=>'branch.rider-batches*','icon'=>'route'],
+            ] : []),
             ['label'=>'Rider Dispatch','route'=>'branch.dispatch.index','pattern'=>'branch.dispatch*','icon'=>'bike'],
             ['label'=>'Incoming Transfers','route'=>'branch.transfers.index','pattern'=>'branch.transfers*','icon'=>'package-check'],
             ['label'=>'Outbound & Manifests','route'=>'branch.outbound.index','pattern'=>'branch.outbound*','icon'=>'truck'],
             ['label'=>'QR Scanner','route'=>'branch.scanner','pattern'=>'branch.scanner*','icon'=>'scan-barcode'],
         ]],
     ];
+
+    if ($branchStaff) {
+        $branchNavigation = [['label'=>'Branch operations','items'=>[
+            ['label'=>'Workspace','route'=>'logistics.staff.workspace','pattern'=>'logistics.staff.workspace','icon'=>'layout-dashboard'],
+            ['label'=>'Rider Batches','route'=>'logistics.staff.rider-batches.index','pattern'=>'logistics.staff.rider-batches*','icon'=>'route'],
+        ]]];
+    }
 
     // Alamin kung live ang bawat item (may route at hindi naka-hold) at buuin ang URL.
     $branchNavigation = collect($branchNavigation)->map(function ($section) {
@@ -244,7 +255,7 @@
         <div class="pointer-events-none absolute -top-20 -left-20 w-48 h-48 rounded-full bg-teal/10 blur-2xl"></div>
 
         <div class="sidebar-brand-wrap relative h-[68px] flex items-center gap-2 px-5 border-b border-white/10 shrink-0">
-            <a href="{{ $routeUrl('branch.dashboard') }}" class="flex items-center gap-3 min-w-0">
+            <a href="{{ $routeUrl($branchStaff ? 'logistics.staff.workspace' : 'branch.dashboard') }}" class="flex items-center gap-3 min-w-0">
                 <div class="w-9 h-9 flex items-center justify-center shrink-0">
                     <img src="{{ asset('images/logo.png') }}" alt="ShopHop Logo" class="w-9 h-9 object-contain">
                 </div>
@@ -407,7 +418,7 @@
                             <p class="truncate text-[11px] font-bold text-navy">{{ $branchName }}</p>
                             <p class="truncate text-[10px] text-navy/45">Branch account</p>
                         </div>
-                        <a href="{{ $routeUrl('branch.dashboard') }}" class="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-layout-dashboard class="h-4 w-4" /> Dashboard</a>
+                        <a href="{{ $routeUrl($branchStaff ? 'logistics.staff.workspace' : 'branch.dashboard') }}" class="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-layout-dashboard class="h-4 w-4" /> Dashboard</a>
                         <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-external-link class="h-4 w-4" /> Main ShopHop</a>
                         <form method="POST" action="{{ $logoutUrl }}" class="mt-1 border-t border-gray-border pt-1">@csrf
                             <button type="submit" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-[11px] font-semibold text-rose-600 hover:bg-rose-50"><x-lucide-log-out class="h-4 w-4" /> Sign out</button>

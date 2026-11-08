@@ -147,6 +147,7 @@ class RiderCustodyScanService
 
     private function resolveHandoff(Rider $rider, Delivery $delivery, bool $lockTransfer): array
     {
+        app(RiderBatchService::class)->assertParcelAllowed($rider, $delivery);
         $order = $delivery->order;
         if (! $order) {
             throw ValidationException::withMessages(['tracking_code' => 'Parcel order record is unavailable.']);

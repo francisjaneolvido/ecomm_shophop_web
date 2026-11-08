@@ -25,6 +25,9 @@ class MobileRiderAuthController extends Controller
             ->with('user:id,status')
             ->whereHas('user', fn ($query) => $query->where('status', 'approved'))
             ->where('accepting_riders', true)
+            ->when(app(\App\Services\RiderManagementService::class)->available(), fn ($q) => $q->whereHas('sortingCenters', fn ($branches) =>
+                $branches->where('type', 'station_hub')->where('is_main', false)->where('status', 'active')
+                    ->whereNull('archived_at')->whereHas('operationalServiceAreas')))
             ->orderBy('company_name')
             ->get()
             ->map(fn (LogisticsPartner $partner) => [
@@ -55,7 +58,11 @@ class MobileRiderAuthController extends Controller
 
     public function register(Request $request): JsonResponse
     {
+        $management = app(\App\Services\RiderManagementService::class);
         $validated = $request->validate([
+            'preferred_branch_id' => [$management->available() ? 'required' : 'nullable', 'integer'],
+            'preferred_coverage' => [$management->available() ? 'required' : 'nullable', 'array', 'min:1'],
+            'preferred_coverage.*' => ['string', 'size:64', 'distinct'],
             'logistics_partner_id' => ['required', 'integer'],
             'first_name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-zÀ-ÿñÑ\s\'.-]+$/'],
             'last_name' => ['required', 'string', 'max:100', 'regex:/^[A-Za-zÀ-ÿñÑ\s\'.-]+$/'],
@@ -150,6 +157,9 @@ class MobileRiderAuthController extends Controller
                     'id_or_license_path' => $idPath,
                 ])->saveOrFail();
 
+                if (app(\App\Services\RiderManagementService::class)->available()) {
+                    app(\App\Services\RiderManagementService::class)->registerPreferences($rider, (int)$validated['preferred_branch_id'], $validated['preferred_coverage']);
+                }
                 return $rider;
             });
         } catch (Throwable $exception) {

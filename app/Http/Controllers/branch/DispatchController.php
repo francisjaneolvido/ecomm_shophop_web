@@ -109,6 +109,7 @@ class DispatchController extends Controller
 
         try {
             return DB::transaction(function () use ($center, $rider, $pickup, $serviceAreas) {
+                app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider);
                 $pickupRequest = PickupRequest::whereKey($pickup)->lockForUpdate()->first();
 
                 if (! $pickupRequest
@@ -173,6 +174,7 @@ class DispatchController extends Controller
         }
 
         return DB::transaction(function () use ($center, $rider, $delivery, $serviceAreas) {
+            app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider);
             $owned = Delivery::with(['order', 'transfers'])
                 ->where('logistics_partner_id', $center->logistics_partner_id)
                 ->where('destination_sorting_center_id', $center->id)
@@ -199,6 +201,7 @@ class DispatchController extends Controller
                 return $this->fail('This rider does not cover the Buyer barangay or is unavailable. Check Rider Service Areas.');
             }
 
+            app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider, $owned);
             $owned->update([
                 'rider_id'             => $rider->id,
                 'delivery_rider_id'    => $rider->id,

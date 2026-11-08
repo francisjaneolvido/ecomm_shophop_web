@@ -103,7 +103,7 @@ class CodCollectionRemittanceJourneyTest extends TestCase
             ->assertOk()->assertDontSee('Order #'.$order->id);
         $this->post(route('logistics.settlements.reconcile', $delivery))->assertNotFound();
         $this->actingAs($operator)->get(route('logistics.settlements.index'))
-            ->assertOk()->assertSee('Order #'.$order->id)->assertSee('Awaiting receipt confirmation');
+            ->assertOk()->assertSee('Order #'.$order->id)->assertSee('Confirm physical cash receipt');
         $this->post(route('logistics.settlements.reconcile', $delivery), ['amount' => '0.01', 'partner_id' => 999])
             ->assertRedirect();
         $settlement = DB::table('cod_settlements')->where('delivery_id', $delivery->id)->first();
@@ -126,7 +126,7 @@ class CodCollectionRemittanceJourneyTest extends TestCase
         $this->post(route('rider.settlements.remit', $delivery))->assertNotFound();
         $this->post(route('rider.logout'));
         $this->actingAs($operator)->get(route('logistics.settlements.index'))
-            ->assertOk()->assertSee('Settlement not recorded');
+            ->assertOk()->assertSee('No COD settlement record for this delivery');
         $this->post(route('logistics.settlements.reconcile', $delivery))->assertSessionHasErrors('settlement');
         $this->assertDatabaseCount('cod_settlements', 0);
     }
@@ -174,7 +174,7 @@ class CodCollectionRemittanceJourneyTest extends TestCase
             ->assertOk()->assertSee('COD collected')->assertDontSee('Seller payout received');
         $this->post(route('logistics.settlements.reconcile', $delivery))->assertForbidden();
         $this->post(route('logout'));
-        $this->post(route('logistics.settlements.reconcile', $delivery))->assertRedirect(route('login'));
+        $this->post(route('logistics.settlements.reconcile', $delivery))->assertRedirect(route('logistics.login'));
         $this->post(route('rider.settlements.remit', $delivery))->assertRedirect(route('login'));
         $this->assertDatabaseHas('cod_settlements', ['delivery_id' => $delivery->id, 'status' => 'collected']);
     }
@@ -223,9 +223,10 @@ class CodCollectionRemittanceJourneyTest extends TestCase
 
     private function user(string $role): User
     {
-        $user = new User();
+        $user = new User;
         $user->forceFill(['email' => uniqid($role, true).'@example.test', 'password' => 'unused',
             'account_type' => $role, 'status' => 'approved', 'email_verified_at' => now()])->save();
+
         return $user;
     }
 

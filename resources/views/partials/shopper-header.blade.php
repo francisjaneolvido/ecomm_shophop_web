@@ -34,6 +34,7 @@
                 @if ($shopperIsBuyer)
                     <a href="{{ route('buyer.orders') }}">My Orders</a>
                     <a href="{{ route('buyer.profile') }}">My Account</a>
+                <a href="{{ route('buyer.help') }}">Help Center</a>
                     <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Logout</button></form>
                 @else
                     <a href="{{ route('register') }}" data-open-account-type-modal>Sign Up</a>
@@ -52,15 +53,15 @@
 
             <nav class="sh-shop-nav" aria-label="Main marketplace navigation">
                 <a class="{{ request()->routeIs('home', 'buyer.dashboard') ? 'is-active' : '' }}" href="{{ $shopperHome }}">Home</a>
-                <a class="{{ request()->routeIs('buyer.category.*') ? 'is-active' : '' }}" href="{{ $shopperHome }}#categories">Categories</a>
+                <a class="{{ request()->routeIs('buyer.category.*') ? 'is-active' : '' }}" href="{{ route('buyer.category.index') }}">Categories</a>
                 <a href="{{ $shopperHome }}#deals">Flash Deals</a>
                 <a href="{{ $shopperHome }}#new-arrivals">Top Products</a>
             </nav>
 
-            <form class="sh-shop-search" action="{{ route('search.index') }}" method="GET" role="search">
+            <form class="sh-shop-search" action="{{ route('search.index') }}" method="GET" role="search" data-search-suggestions data-suggestions-url="{{ route('search.suggestions') }}" data-categories-url="{{ route('buyer.category.index') }}">
                 <x-lucide-search class="sh-shop-search-icon" />
                 <label class="sr-only" for="sh-shop-search-desktop">Search products</label>
-                <input id="sh-shop-search-desktop" name="search" type="search" value="{{ request('search') }}" placeholder="Search products" autocomplete="off">
+                <input id="sh-shop-search-desktop" name="search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sh-shop-search-desktop-suggestions" maxlength="100" value="{{ request('search') }}" placeholder="Search products" autocomplete="off">
                 <button type="submit" aria-label="Search"><x-lucide-search /></button>
             </form>
 
@@ -98,6 +99,7 @@
                             <a href="{{ route('buyer.likes') }}"><x-lucide-heart /> My Likes</a>
                             <a href="{{ route('buyer.cart') }}"><x-lucide-shopping-cart /> My Cart</a>
                             <a href="{{ route('buyer.messages') }}"><x-lucide-message-circle /> Messages</a>
+                            <a href="{{ route('buyer.help') }}"><x-lucide-circle-help /> Help Center</a>
                             <div class="sh-shop-account-appearance">@include('partials.theme-toggle')</div>
                             <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit"><x-lucide-log-out /> Logout</button></form>
                         </div>
@@ -111,17 +113,17 @@
         </div>
 
         <div class="sh-shop-mobile-search">
-            <form action="{{ route('search.index') }}" method="GET" role="search">
+            <form action="{{ route('search.index') }}" method="GET" role="search" data-search-suggestions data-suggestions-url="{{ route('search.suggestions') }}" data-categories-url="{{ route('buyer.category.index') }}">
                 <x-lucide-search class="sh-shop-search-icon" />
                 <label class="sr-only" for="sh-shop-search-mobile">Search products</label>
-                <input id="sh-shop-search-mobile" name="search" type="search" value="{{ request('search') }}" placeholder="Search products">
+                <input id="sh-shop-search-mobile" name="search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sh-shop-search-mobile-suggestions" autocomplete="off" maxlength="100" value="{{ request('search') }}" placeholder="Search products">
                 <button type="submit" aria-label="Search"><x-lucide-search /></button>
             </form>
         </div>
 
         <nav id="sh-shop-mobile-nav" class="sh-shop-mobile-nav" aria-label="Mobile marketplace navigation" hidden>
             <a href="{{ $shopperHome }}">Home</a>
-            <a href="{{ $shopperHome }}#categories">Categories</a>
+            <a href="{{ route('buyer.category.index') }}">Categories</a>
             <a href="{{ $shopperHome }}#deals">Flash Deals</a>
             <a href="{{ $shopperHome }}#new-arrivals">Top Products</a>
             <a href="{{ $shopperIsBuyer ? route('buyer.likes') : route('login') }}" @unless ($shopperIsBuyer) data-login-required @endunless>My Likes</a>
@@ -130,7 +132,9 @@
                 <a href="{{ route('buyer.orders') }}">My Orders</a>
                 <a href="{{ route('buyer.messages') }}">Messages</a>
                 <a href="{{ route('buyer.profile') }}">My Account</a>
+                <a href="{{ route('buyer.help') }}">Help Center</a>
             @else
+                <a href="{{ route('help.index') }}">Help Center</a>
                 <a href="{{ route('login') }}">Sign In</a>
                 <a href="{{ route('register') }}" data-open-account-type-modal>Create Account</a>
             @endif

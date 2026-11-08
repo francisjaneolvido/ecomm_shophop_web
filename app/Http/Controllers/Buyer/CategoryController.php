@@ -16,8 +16,14 @@ class CategoryController extends Controller
      */
     public function index()
     {
+        $categoryCounts = \Illuminate\Support\Facades\Schema::hasTable('products')
+            ? Product::query()->publiclyDiscoverable()->selectRaw('category, COUNT(*) AS available_count')
+                ->groupBy('category')->pluck('available_count', 'category')->all()
+            : [];
+
         return view('buyer.category.index', [
             'categoryTree' => config('shophop_categories', []),
+            'categoryCounts' => $categoryCounts,
         ]);
     }
 
@@ -117,7 +123,7 @@ class CategoryController extends Controller
             $discount = (int) ($product->discount ?? 0);
 
             $finalPrice = $discount > 0
-                ? round($price - ($price * $discount / 100))
+                ? round($price - ($price * $discount / 100), 2)
                 : $price;
 
             $imagePath = $product->image

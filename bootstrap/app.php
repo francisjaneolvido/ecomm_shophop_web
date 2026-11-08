@@ -55,6 +55,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'approved.role' => EnsureApprovedRole::class,
             // Active eligibility is checked on every Rider request, not only at login.
             'active.rider' => EnsureActiveRider::class,
+            'rider.operational' => \App\Http\Middleware\EnsureRiderOperational::class,
         ]);
 
         // Maintenance mode (controlled from Admin > Platform Settings).

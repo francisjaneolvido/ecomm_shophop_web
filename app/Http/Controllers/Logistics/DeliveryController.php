@@ -101,12 +101,16 @@ class DeliveryController extends Controller
     /** Assign the rider who will collect the parcel from the Seller and bring it to the sorting center. */
     public function assign(Request $request, int $order, RiderServiceAreaService $serviceAreas): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            throw ValidationException::withMessages(['rider' => 'The assigned Branch manages daily rider assignments through Rider Batches.']);
+        }
         $partner = $this->partner($request);
         $data = $request->validate(['rider_id' => ['required', 'integer']]);
         $rider = $this->activeRider($partner, (int) $data['rider_id']);
 
         try {
             return DB::transaction(function () use ($partner, $rider, $order, $serviceAreas) {
+                app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider);
                 $ready = Order::with('pickupRequest')->whereKey($order)->lockForUpdate()->firstOrFail();
                 $pickup = PickupRequest::where('order_id', $ready->id)->lockForUpdate()->first();
                 if ($ready->status !== Order::STATUS_READY_FOR_PICKUP || ! $ready->isPaymentEligible()
@@ -226,11 +230,15 @@ class DeliveryController extends Controller
     /** Assign the rider responsible for final delivery after sorting, or after a failed attempt. */
     public function assignDelivery(Request $request, int $delivery, RiderServiceAreaService $serviceAreas): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            throw ValidationException::withMessages(['rider' => 'The assigned Branch manages daily rider assignments through Rider Batches.']);
+        }
         $partner = $this->partner($request);
         $data = $request->validate(['rider_id' => ['required', 'integer']]);
         $rider = $this->activeRider($partner, (int) $data['rider_id']);
 
         return DB::transaction(function () use ($partner, $delivery, $rider, $serviceAreas) {
+            app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider);
             $owned = Delivery::with(['order', 'destinationArea', 'transfers'])
                 ->where('logistics_partner_id', $partner->id)
                 ->whereKey($delivery)->lockForUpdate()->firstOrFail();
@@ -274,6 +282,7 @@ class DeliveryController extends Controller
                 ]);
             }
 
+            app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider, $owned);
             $owned->update([
                 'rider_id' => $rider->id,
                 'delivery_rider_id' => $rider->id,

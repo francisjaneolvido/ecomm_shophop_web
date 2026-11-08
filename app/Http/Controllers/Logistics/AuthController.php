@@ -158,6 +158,7 @@ class AuthController extends Controller
         }
 
         $center = $staff->sortingCenter;
+        if (app(\App\Services\RiderManagementService::class)->available() && $center && ($center->is_main || $center->type === 'station_hub')) return 'logistics.staff.rider-management.index';
 
         // Manager of the MAIN hub -> main logistics console.
         if ($center && $center->is_main) {

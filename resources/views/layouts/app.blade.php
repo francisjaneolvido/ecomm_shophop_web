@@ -53,6 +53,8 @@
     {{-- Page-specific styles --}}
     @stack('styles')
 
+    <link rel="stylesheet" href="{{ asset('css/shophop-search-suggestions.css') }}?v=20261108">
+
     {{-- Shared required-field styling; no field schema changes. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
     {{-- Unified Buyer Web marketplace surfaces; guest landing stays unchanged. --}}
@@ -180,6 +182,11 @@
 
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+    @if(request()->routeIs('home', 'search.index', 'buyer.dashboard', 'buyer.category.*', 'buyer.product.show'))
+        <span hidden data-catalog-revision-url="{{ route('catalog.revision') }}" data-catalog-revision="{{ app(\App\Http\Controllers\CatalogRevisionController::class)()->getData()->revision }}"></span>
+        <script src="{{ asset('js/shophop-catalog-refresh.js') }}" defer></script>
+    @endif
+    <script src="{{ asset('js/shophop-search-suggestions.js') }}?v=20261108" defer></script>
 </body>
 
 </html>

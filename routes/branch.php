@@ -38,6 +38,10 @@ Route::middleware(['auth', 'approved.role:branch'])->prefix('branch')->name('bra
     Route::post('parcels/assign', [ParcelController::class, 'assign'])->name('parcels.assign');
 
     // Dispatch: pickup rider at delivery rider
+    Route::get('rider-batches', [\App\Http\Controllers\Branch\RiderBatchController::class, 'index'])->name('rider-batches.index');
+    Route::post('rider-batches', [\App\Http\Controllers\Branch\RiderBatchController::class, 'store'])->middleware('throttle:20,1')->name('rider-batches.store');
+    Route::post('rider-batches/riders/{rider}/capacity', [\App\Http\Controllers\Branch\RiderBatchController::class, 'configure'])->name('rider-batches.capacity');
+    Route::post('rider-batches/{batch}/transition', [\App\Http\Controllers\Branch\RiderBatchController::class, 'transition'])->middleware('throttle:20,1')->name('rider-batches.transition');
     Route::get('dispatch', [DispatchController::class, 'index'])->name('dispatch.index');
     Route::post('dispatch/pickups/{pickup}/assign', [DispatchController::class, 'assignPickup'])->name('dispatch.pickups.assign');
     Route::post('dispatch/deliveries/{delivery}/assign', [DispatchController::class, 'assignDelivery'])->name('dispatch.deliveries.assign');

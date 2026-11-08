@@ -41,6 +41,11 @@ class ParcelScanService
             && (int) $delivery->origin_sorting_center_id === $centerId) {
             $action = 'Receive pickup from Rider';
             $event = 'pickup_received';
+        } elseif ($delivery->status === Delivery::DELIVERY_FAILED
+            && (int) $delivery->destination_sorting_center_id === $centerId
+            && app(RiderBatchService::class)->canReceiveFailed($delivery)) {
+            $action = 'Receive failed delivery from Rider';
+            $event = 'failed_delivery_received';
         } elseif ($delivery->status === Delivery::SORTED) {
             $transfer = ParcelTransfer::with(['linehaulTrip','cargoTransfer'])
                 ->where('delivery_id', $delivery->id)
@@ -117,6 +122,12 @@ class ParcelScanService
                 ]);
 
                 $type = 'pickup_received';
+                $transferId = null;
+            } elseif ($delivery->status === Delivery::DELIVERY_FAILED
+                && (int) $delivery->destination_sorting_center_id === $centerId
+                && app(RiderBatchService::class)->canReceiveFailed($delivery)) {
+                $delivery->update(['current_sorting_center_id' => $centerId]);
+                $type = 'failed_delivery_received';
                 $transferId = null;
             } elseif ($delivery->status === Delivery::SORTED) {
                 $transfer = ParcelTransfer::with(['linehaulTrip','cargoTransfer'])

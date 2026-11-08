@@ -24,8 +24,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class RiderController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request)
     {
+        if (app(\App\Services\RiderManagementService::class)->available() && ! $request->boolean('settings')) return app(RiderManagementController::class)->index($request);
         $partner = $this->partner($request);
         // Nationwide demo can contain 1,500+ city riders. Never hydrate every
         // rider, relationship and form in one response.
@@ -77,6 +78,7 @@ class RiderController extends Controller
     /** Operator-created Rider records remain available for controlled/manual onboarding. */
     public function store(Request $request): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) throw ValidationException::withMessages(['rider'=>'Use Rider Management: registration, Branch activation and controlled transfers are required.']);
         $partner = $this->partner($request);
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
@@ -124,6 +126,11 @@ class RiderController extends Controller
             'vehicle_type'=>['required','string','max:80'],
             'plate_number'=>['nullable','string','max:40'],
         ]);
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            app(\App\Services\RiderManagementService::class)->updateAccountDetails(
+                app(\App\Services\RiderManagementAccess::class)->request($request), $ownedRider->id, $data);
+            return back()->with('status','Rider profile updated. Branch and geographic permissions were not changed.');
+        }
         $ownedRider->update($data);
         return back()->with('status','Rider profile updated. Login, branch and geographic permissions were not changed.');
     }
@@ -159,6 +166,12 @@ class RiderController extends Controller
 
     public function approve(Request $request, int $rider): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            $data=$request->validate(['branch_id'=>['nullable','integer'],'reason'=>['nullable','string','max:2000'],'rejection_reason'=>['nullable','string','max:2000']]);
+            $data['reason']=$data['reason']??$data['rejection_reason']??null;
+            app(\App\Services\RiderManagementService::class)->review(app(\App\Services\RiderManagementAccess::class)->request($request),$rider,'approve',$data);
+            return back()->with('status','Review recorded. Branch activation is a separate step.');
+        }
         $partner = $this->partner($request);
         $ownedRider = Rider::where('logistics_partner_id', $partner->id)->findOrFail($rider);
 
@@ -191,6 +204,12 @@ class RiderController extends Controller
 
     public function reject(Request $request, int $rider): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            $data=$request->validate(['branch_id'=>['nullable','integer'],'reason'=>['nullable','string','max:2000'],'rejection_reason'=>['nullable','string','max:2000']]);
+            $data['reason']=$data['reason']??$data['rejection_reason']??null;
+            app(\App\Services\RiderManagementService::class)->review(app(\App\Services\RiderManagementAccess::class)->request($request),$rider,'reject',$data);
+            return back()->with('status','Review recorded. Branch activation is a separate step.');
+        }
         $partner = $this->partner($request);
         $ownedRider = Rider::where('logistics_partner_id', $partner->id)->findOrFail($rider);
         $data = $request->validate([
@@ -246,6 +265,7 @@ class RiderController extends Controller
 
     public function updateArea(Request $request, int $rider): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) throw ValidationException::withMessages(['rider'=>'Use Rider Management: registration, Branch activation and controlled transfers are required.']);
         $partner = $this->partner($request);
         $ownedRider = Rider::where('logistics_partner_id', $partner->id)->findOrFail($rider);
         $data = $request->validate([
@@ -332,6 +352,7 @@ class RiderController extends Controller
 
     public function syncRiderOperationalAreas(Request $request, int $rider): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) throw ValidationException::withMessages(['rider'=>'Use Rider Management: registration, Branch activation and controlled transfers are required.']);
         $partner = $this->partner($request);
         $owned = Rider::where('logistics_partner_id', $partner->id)->findOrFail($rider);
         $data = $request->validate(['area_ids' => ['nullable', 'array', 'max:150'],
@@ -357,11 +378,21 @@ class RiderController extends Controller
 
     public function suspend(Request $request, int $rider): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            $data=$request->validate(['reason'=>['required','string','max:2000']]);
+            app(\App\Services\RiderManagementService::class)->setOperationalStatus(app(\App\Services\RiderManagementAccess::class)->request($request),$rider,'suspended',$data['reason']);
+            return back()->with('status','Operational status updated; only the assigned Branch activates riders.');
+        }
         return $this->setStatus($request, $rider, 'active', 'suspended', 'offline');
     }
 
     public function activate(Request $request, int $rider): RedirectResponse
     {
+        if (app(\App\Services\RiderManagementService::class)->available()) {
+            $data=$request->validate(['reason'=>['required','string','max:2000']]);
+            app(\App\Services\RiderManagementService::class)->setOperationalStatus(app(\App\Services\RiderManagementAccess::class)->request($request),$rider,'pending_activation',$data['reason']);
+            return back()->with('status','Operational status updated; only the assigned Branch activates riders.');
+        }
         return $this->setStatus($request, $rider, 'suspended', 'active', 'available');
     }
 

@@ -461,6 +461,10 @@
                     'badge' => isset($pendingApplications) ? count($pendingApplications) : 0,
                 ],
 
+                ...(\Illuminate\Support\Facades\Schema::hasTable('rider_batches') ? [[
+                    'label'=>'Rider Batch Monitoring','route'=>'logistics.rider-batches.index',
+                    'pattern'=>'logistics.rider-batches.*','icon'=>'route',
+                ]] : []),
                 [
                     'label' => 'Fleet & Linehaul',
                     'route' => 'logistics.fleet.index',

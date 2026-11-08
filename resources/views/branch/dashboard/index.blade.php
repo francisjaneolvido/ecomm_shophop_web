@@ -6,6 +6,12 @@
     <div class="flex gap-2 flex-wrap"><a class="sh-btn-soft" href="{{ route('branch.parcels.index') }}">Parcel Tracking</a><a class="sh-btn" href="{{ route('branch.scanner') }}">Scan QR</a></div></header>
   @if(session('status'))<div class="sh-alert-success">{{ session('status') }}</div>@endif
   @if($errors->any())<div class="sh-alert-error">{{ $errors->first() }}</div>@endif
+  @if(app(\App\Services\RiderManagementService::class)->available())
+  <section class="ops-panel p-4 flex flex-wrap items-center justify-between gap-3">
+    <div><h2 class="font-semibold">Rider Management</h2><p class="ops-panel-note">Activate approved riders, confirm barangay coverage and manage availability, schedules and transfer requests.</p></div>
+    <a class="sh-btn-primary" href="{{ route('logistics.rider-management.index') }}">Manage riders</a>
+  </section>
+  @endif
   <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
     @foreach([['Pending seller pickup',$stats['pickups'],'branch.dispatch.index','pickups'],['Awaiting receipt',$stats['to_receive'],'branch.transfers.index',null],['Ready for delivery',$stats['to_assign'],'branch.dispatch.index','deliveries'],['Delivery exceptions',$stats['failed'],'branch.parcels.index',null]] as [$label,$value,$routeName,$stage])
     <a class="sh-stat block hover:border-teal/40" href="{{ route($routeName,$stage ? ['stage'=>$stage] : []) }}"><div class="sh-stat-label">{{ $label }}</div><div class="sh-stat-value">{{ number_format($value) }}</div><div class="sh-stat-note">Open work queue →</div></a>

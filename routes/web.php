@@ -21,6 +21,13 @@ use App\Http\Controllers\Auth\BuyerEmailVerificationController;
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 
+Route::get('/catalog/revision', \App\Http\Controllers\CatalogRevisionController::class)
+    ->middleware('throttle:60,1')->name('catalog.revision');
+
+Route::get('/search/suggestions', [PublicSearchController::class, 'suggestions'])
+    ->middleware('throttle:120,1')->name('search.suggestions');
+Route::get('/help', [\App\Http\Controllers\HelpCenterController::class, 'index'])->name('help.index');
+
 Route::get('/search', [PublicSearchController::class, 'index'])
     ->name('search.index');
 
