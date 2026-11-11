@@ -154,7 +154,7 @@
                 <div id="buyer-registration-panel" class="max-w-2xl mx-auto lg:py-1">
 
 
-                    <div class="pt-10 lg:pt-0">
+                    <div class="pt-0">
 
                         {{-- Mobile branding --}}
                         <div class="lg:hidden inline-flex items-center gap-3 mb-6 rounded-2xl border border-gray-border/70 bg-white px-3 py-2 shadow-sm">

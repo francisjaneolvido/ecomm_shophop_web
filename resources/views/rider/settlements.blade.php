@@ -2,7 +2,9 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>COD settlements — ShopHop Rider</title>@vite(['resources/css/app.css'])</head>
 <body class="min-h-screen bg-gray-50 p-6 text-navy"><main class="mx-auto max-w-3xl space-y-4">
-    <header class="flex items-center justify-between"><h1 class="text-2xl font-bold">COD settlements</h1>
+
+<a class="inline-block rounded border p-3 text-teal-700" href="{{ route('hybrid.index') }}">COD batches and partner compensation</a>
+<header class="flex items-center justify-between"><h1 class="text-2xl font-bold">COD settlements</h1>
         <form method="POST" action="{{ route('rider.logout') }}">@csrf<button class="text-teal underline">Sign out</button></form></header>
     @if (auth('rider')->user()?->status === 'active') <a class="text-teal underline" href="{{ route('rider.deliveries.index') }}">Assigned deliveries</a> @endif
     @if (session('status')) <p role="status" class="rounded bg-teal/10 p-3">{{ session('status') }}</p> @endif

@@ -207,20 +207,18 @@
             ['label'=>'Parcel Tracking','route'=>'branch.parcels.index','pattern'=>'branch.parcels*','icon'=>'package-search'],
         ]],
         ['label' => 'Operations', 'items' => [
-            ...(\Illuminate\Support\Facades\Schema::hasTable('rider_batches') ? [
-                ['label'=>'Rider Batches','route'=>'branch.rider-batches.index','pattern'=>'branch.rider-batches*','icon'=>'route'],
-            ] : []),
             ['label'=>'Rider Dispatch','route'=>'branch.dispatch.index','pattern'=>'branch.dispatch*','icon'=>'bike'],
             ['label'=>'Incoming Transfers','route'=>'branch.transfers.index','pattern'=>'branch.transfers*','icon'=>'package-check'],
             ['label'=>'Outbound & Manifests','route'=>'branch.outbound.index','pattern'=>'branch.outbound*','icon'=>'truck'],
             ['label'=>'QR Scanner','route'=>'branch.scanner','pattern'=>'branch.scanner*','icon'=>'scan-barcode'],
+            ['label'=>'COD Verification','route'=>'logistics.hybrid','pattern'=>'logistics.hybrid*','icon'=>'receipt'],
         ]],
     ];
 
     if ($branchStaff) {
         $branchNavigation = [['label'=>'Branch operations','items'=>[
             ['label'=>'Workspace','route'=>'logistics.staff.workspace','pattern'=>'logistics.staff.workspace','icon'=>'layout-dashboard'],
-            ['label'=>'Rider Batches','route'=>'logistics.staff.rider-batches.index','pattern'=>'logistics.staff.rider-batches*','icon'=>'route'],
+            ['label'=>'Rider Dispatch','route'=>'logistics.staff.dispatch.index','pattern'=>'logistics.staff.dispatch*','icon'=>'bike'],
         ]]];
     }
 

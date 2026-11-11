@@ -898,7 +898,7 @@ OPTIONAL / NON-BLOCKING:
 
                             <input type="hidden" name="otp_code" id="logistics-otp-hidden" value="">
 
-                            <p id="logistics-otp-error" class="hidden text-xs text-red-500 font-medium mt-2">
+                            <p id="logistics-otp-error" role="status" aria-live="polite" class="hidden text-xs text-red-500 font-medium mt-2">
                                 Please enter the full 6-digit code.
                             </p>
 
@@ -906,7 +906,7 @@ OPTIONAL / NON-BLOCKING:
                                 <p class="text-[11px] text-navy/40">Didn't get a code?</p>
                                 <button type="button" id="logistics-resend-code" disabled
                                         class="text-[11px] font-semibold text-navy/30 transition">
-                                    <span id="logistics-resend-label">Resend in</span> <span id="logistics-resend-timer">00:30</span>
+                                    <span id="logistics-resend-label">Resend in</span> <span id="logistics-resend-timer">01:00</span>
                                 </button>
                             </div>
 

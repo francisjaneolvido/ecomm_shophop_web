@@ -15,7 +15,7 @@
     font:inherit; font-size:12px; line-height:1.5; transition:box-shadow .18s,border-color .18s;
   }
   .sh-logistics-form input::placeholder,.sh-logistics-form textarea::placeholder { color:#8A9AAA; }
-  .sh-logistics-form input[data-otp-digit] { padding:0; min-height:0; aspect-ratio:1; font-size:20px; text-align:center; font-weight:700; }
+  .sh-logistics-form input[data-otp-digit] { flex:1 1 0; width:0; min-width:0; padding:0; min-height:0; aspect-ratio:1; font-size:20px; text-align:center; font-weight:700; }
   .sh-logistics-form :is(input:not([type="checkbox"]),select,textarea):focus-visible { outline:none; border-color:#18A98E; box-shadow:0 0 0 4px rgba(33,195,166,.13); }
   .sh-logistics-form :is(input,select,textarea):disabled { opacity:.65; cursor:not-allowed; }
   .sh-logistics-form :is(input[type="checkbox"],input[type="radio"]) { accent-color:#18A98E; }
@@ -570,7 +570,7 @@
 
                 <input type="hidden" name="otp_code" data-otp-hidden value="">
 
-                <p data-otp-error class="hidden text-xs text-red-500 font-medium mt-2">
+                <p data-otp-error role="status" aria-live="polite" class="hidden text-xs text-red-500 font-medium mt-2">
                     Please enter the full 6-digit code.
                 </p>
 
@@ -582,7 +582,7 @@
 
                     <button type="button" data-resend-code disabled
                         class="text-[11px] font-semibold text-navy/30 transition">
-                        <span data-resend-label>Resend in</span> <span data-resend-timer>00:30</span>
+                        <span data-resend-label>Resend in</span> <span data-resend-timer>01:00</span>
                     </button>
 
                 </div>
@@ -1315,95 +1315,63 @@
             return fallback;
         }
 
+        let verificationSendPending = false;
+        let resendDeadline = 0;
+        let resendInterval = null;
+
+        function deliveryMessage(message, failed = false) {
+            [emailVerificationStatus, otpErrorEl].filter(Boolean).forEach(function (element) {
+                element.textContent = message;
+                element.classList.remove('hidden', 'text-navy/50', 'text-red-500', 'text-teal-dark');
+                element.classList.add(failed ? 'text-red-500' : 'text-teal-dark');
+            });
+        }
+
+        function renderResendCountdown() {
+            if (!resendBtn) return;
+            const remaining = Math.max(0, Math.ceil((resendDeadline - Date.now()) / 1000));
+            resendBtn.disabled = verificationSendPending || remaining > 0;
+            resendLabel.textContent = verificationSendPending ? 'Sending...' : (remaining ? 'Resend in' : 'Resend code');
+            resendTimerEl.classList.toggle('hidden', verificationSendPending || !remaining);
+            resendTimerEl.textContent = String(Math.floor(remaining / 60)).padStart(2, '0') + ':' + String(remaining % 60).padStart(2, '0');
+            resendBtn.classList.toggle('text-navy/30', resendBtn.disabled);
+            resendBtn.classList.toggle('text-teal-dark', !resendBtn.disabled);
+        }
+
         async function sendVerificationCode(isResend = false) {
+            if (verificationSendPending) return false;
+            verificationSendPending = true;
+            renderResendCountdown();
             const email = currentAccountEmail();
             if (verifyEmailDisplay) verifyEmailDisplay.textContent = email || 'your email';
             if (otpEmailDisplay) otpEmailDisplay.textContent = email || 'your email';
-
-            if (emailVerificationStatus) {
-                emailVerificationStatus.textContent = isResend ? 'Sending a new code...' : 'Sending your verification code...';
-                emailVerificationStatus.classList.remove('text-red-500', 'text-teal-dark');
-                emailVerificationStatus.classList.add('text-navy/50');
-            }
-
+            deliveryMessage('Sending your verification code...');
             try {
                 const response = await fetch(sendVerificationUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/json',
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrfToken,
-                    },
+                    method: 'POST', credentials: 'same-origin',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken },
                     body: JSON.stringify({ email: email, resend: isResend }),
                 });
-
-                const payload = await response.json().catch(function () { return {}; });
-
-                if (!response.ok) {
-                    const message = responseMessage(payload, 'Unable to send the verification code.');
-                    if (emailVerificationStatus) {
-                        emailVerificationStatus.textContent = message;
-                        emailVerificationStatus.classList.remove('text-navy/50', 'text-teal-dark');
-                        emailVerificationStatus.classList.add('text-red-500');
-                    }
-                    if (payload.retry_after) startResendCountdown(Number(payload.retry_after));
-                    return false;
-                }
-
-                if (emailVerificationStatus) {
-                    emailVerificationStatus.textContent = responseMessage(payload, 'Verification code sent.');
-                    emailVerificationStatus.classList.remove('text-navy/50', 'text-red-500');
-                    emailVerificationStatus.classList.add('text-teal-dark');
-                }
-
-                startResendCountdown(Number(payload.retry_after || 30));
+                const payload = await response.json().catch(() => ({}));
+                if (payload.retry_after) startResendCountdown(Number(payload.retry_after));
+                deliveryMessage(responseMessage(payload, response.ok ? 'Verification email accepted for sending.' : 'Unable to send the verification code.'), !response.ok);
+                if (!response.ok) return false;
+                startResendCountdown(Number(payload.retry_after || 60));
                 return true;
             } catch (error) {
-                if (emailVerificationStatus) {
-                    emailVerificationStatus.textContent = 'Could not reach the server to send the verification code.';
-                    emailVerificationStatus.classList.remove('text-navy/50', 'text-teal-dark');
-                    emailVerificationStatus.classList.add('text-red-500');
-                }
+                deliveryMessage('Could not reach the server. Check your connection and try again.', true);
                 return false;
+            } finally {
+                verificationSendPending = false;
+                renderResendCountdown();
             }
         }
 
-        let resendInterval = null;
-
-        function startResendCountdown(initialSeconds = 30) {
-            if (!resendBtn || !resendLabel || !resendTimerEl) return;
-
-            let secondsLeft = Math.max(1, Number(initialSeconds) || 30);
-
-            resendBtn.disabled = true;
-            resendBtn.classList.add('text-navy/30');
-            resendBtn.classList.remove('text-teal-dark', 'hover:text-navy', 'cursor-pointer');
-            resendLabel.textContent = 'Resend in';
-            resendTimerEl.classList.remove('hidden');
-
+        function startResendCountdown(initialSeconds = 60) {
+            resendDeadline = Date.now() + Math.max(0, Number(initialSeconds) || 0) * 1000;
+            renderResendCountdown();
             if (resendInterval) clearInterval(resendInterval);
-
-            function renderCountdown() {
-                const mins = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-                const secs = String(secondsLeft % 60).padStart(2, '0');
-                resendTimerEl.textContent = mins + ':' + secs;
-            }
-
-            renderCountdown();
-
-            resendInterval = setInterval(function () {
-                secondsLeft--;
-                if (secondsLeft <= 0) {
-                    clearInterval(resendInterval);
-                    resendBtn.disabled = false;
-                    resendLabel.textContent = 'Resend code';
-                    resendTimerEl.classList.add('hidden');
-                    resendBtn.classList.remove('text-navy/30');
-                    resendBtn.classList.add('text-teal-dark', 'hover:text-navy', 'cursor-pointer');
-                    return;
-                }
-                renderCountdown();
-            }, 1000);
+            resendInterval = setInterval(renderResendCountdown, 1000);
         }
 
         if (resendBtn) {

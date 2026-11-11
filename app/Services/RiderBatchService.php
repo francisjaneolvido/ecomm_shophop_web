@@ -66,10 +66,11 @@ class RiderBatchService
         return $rider;
     }
 
-    private function profile(Rider $rider): RiderBatchVehicleProfile
+    private function profile(Rider $rider): ?RiderBatchVehicleProfile
     {
         $profile = RiderBatchVehicleProfile::where('rider_id', $rider->id)->first();
-        if (! $profile || $profile->vehicle_type !== $rider->vehicle_type || $profile->plate_number !== $rider->plate_number) {
+        // Capacity is optional until configured; saved limits must match the current vehicle.
+        if ($profile && ($profile->vehicle_type !== $rider->vehicle_type || $profile->plate_number !== $rider->plate_number)) {
             $this->fail('The Branch must configure capacity for the rider current vehicle first.');
         }
 
@@ -231,8 +232,8 @@ class RiderBatchService
                         'receipt_event_floor' => DB::table('parcel_scan_events')->where('delivery_id', $delivery->id)->max('id') ?? 0]);
                 }
                 $totals = ['parcels' => count($ids), 'stops' => count($stops), 'weight_kg' => round($weight, 3), 'volume_m3' => round($volume, 6), 'minutes' => $minutes];
-                $this->capacity($profile->limits, $totals);
-                $batch->update(['capacity_snapshot' => ['limits' => $profile->limits, 'totals' => $totals]]);
+                $this->capacity(($profile?->limits ?? []), $totals);
+                $batch->update(['capacity_snapshot' => ['limits' => ($profile?->limits ?? []), 'totals' => $totals]]);
                 $this->event($batch, 'created', $actorType, $actorId, ['orders' => $ids, 'capacity' => $batch->capacity_snapshot]);
 
                 return $batch;
@@ -262,7 +263,7 @@ class RiderBatchService
                     if (RiderBatch::where('active_rider_id', $rider->id)->exists()) {
                         $this->fail('This rider already has an active batch.');
                     }
-                    $this->capacity($this->profile($rider)->limits, $batch->capacity_snapshot['totals']);
+                    $this->capacity(($this->profile($rider)?->limits ?? []), $batch->capacity_snapshot['totals']);
                     if (Delivery::where('rider_id', $rider->id)->whereIn('status', [Delivery::PICKED_UP, Delivery::OUT_FOR_DELIVERY])
                         ->whereNotIn('id', $batch->items()->pluck('delivery_id'))->exists()) {
                         $this->fail('Resolve the rider existing parcel custody before starting another route.');

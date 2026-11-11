@@ -1,6 +1,8 @@
 @extends('logistics.layouts.console')
 @section('title','COD Settlements — ShopHop Logistics')
 @section('content')
+<a class="inline-block rounded border p-3 text-teal-700" href="{{ route('logistics.hybrid') }}">COD batches and partner compensation</a>
+
 <div class="sh-ops sh-finance-ops space-y-5">
     <header class="sh-page-header"><div><p class="eyebrow">Finance · Actual cash custody</p><h1 class="title">COD Settlements</h1><p class="description">Track cash collected by the rider, remitted to Logistics, reconciled by Logistics, and independently received by ShopHop Admin. No transfer occurs automatically.</p></div><a class="sh-btn-soft" href="{{ route('logistics.earnings') }}">Earnings & Payouts</a></header>
     @if(session('status'))<div role="status" class="sh-alert-success">{{ session('status') }}</div>@endif

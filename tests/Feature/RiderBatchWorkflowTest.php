@@ -241,15 +241,16 @@ class RiderBatchWorkflowTest extends TestCase
         $other = $this->network();
         $batch = $this->createBatch($n, [$this->parcel($n)]);
         $foreign = $this->createBatch($other, [$this->parcel($other)]);
-        $this->actingAs($n['user'])->get(route('branch.rider-batches.index'))
-            ->assertOk()->assertSee($batch->code)->assertDontSee($foreign->code);
+        $this->actingAs($n['user'])->get(route('branch.rider-batches.index'))->assertRedirect(route('branch.dispatch.index'));
+        $this->get(route('branch.dispatch.index'))->assertOk()->assertSee($batch->code)->assertDontSee($foreign->code)->assertDontSee('Rider Batches');
         $this->actingAs($n['owner'])->get(route('logistics.rider-batches.index'))
             ->assertOk()->assertSee($batch->code)->assertDontSee($foreign->code)->assertDontSee('Dispatch route');
         $this->get(route('logistics.rider-batches.index', ['branch' => $other['branch']->id]))->assertNotFound();
         $staff = BranchStaff::create(['logistics_partner_id' => $n['partner'], 'sorting_center_id' => $n['branch']->id,
             'name' => 'Branch Manager', 'email' => uniqid('staff').'@example.test', 'password' => 'TestPassword123!',
             'role' => 'manager', 'status' => 'active']);
-        $this->actingAs($staff, 'logistics_staff')->get(route('logistics.staff.rider-batches.index'))->assertOk()->assertSee($batch->code);
+        $this->actingAs($staff, 'logistics_staff')->get(route('logistics.staff.rider-batches.index'))->assertRedirect(route('logistics.staff.dispatch.index'));
+        $this->get(route('logistics.staff.dispatch.index'))->assertOk()->assertSee($batch->code)->assertDontSee($foreign->code)->assertDontSee('Rider Batches');
         $staff->update(['role' => 'scanner']);
         $this->actingAs($staff->fresh(), 'logistics_staff')->postJson(route('logistics.staff.rider-batches.transition', $batch->id), ['action' => 'dispatch'])->assertForbidden();
         $n['branch']->update(['is_main' => true]);
@@ -266,7 +267,7 @@ class RiderBatchWorkflowTest extends TestCase
             ->assertOk()->assertSee($batch->code)->assertDontSee($foreign->code)->assertSee('Dispatch route');
         $this->dispatch($n, $batch);
         $this->actingAs($n['owner'])->getJson(route('logistics.rider-batches.index'))
-            ->assertOk()->assertSee('In Progress')->assertDontSee($foreign->code)->assertDontSee('Complete batch');
+            ->assertOk()->assertSee('In Progress')->assertDontSee($foreign->code)->assertDontSee('Complete route');
     }
 
     public function test_dispatch_rechecks_physical_custody_address_and_current_coverage(): void
@@ -337,4 +338,144 @@ class RiderBatchWorkflowTest extends TestCase
         $this->expectException(QueryException::class);
         $second->update(['status' => 'in_progress', 'active_rider_id' => $n['rider']->id]);
     }
+
+    public function test_unified_dispatch_assigns_one_parcel_and_exposes_it_to_the_rider_mobile_api(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        $response = $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $this->plan($n, [$order]));
+        $response->assertCreated()->assertJsonPath('data.route.status', 'in_progress');
+        $batch = RiderBatch::findOrFail($response->json('data.route.id'));
+        $this->assertSame($n['rider']->id, $batch->active_rider_id);
+        $this->assertSame('busy', $n['rider']->fresh()->availability_status);
+        $this->assertSame(PickupRequest::ASSIGNED, $order->pickupRequest->fresh()->status);
+        Sanctum::actingAs($n['rider']->fresh(), ['*']);
+        $this->getJson('/api/mobile/rider/batches')->assertOk()->assertJsonPath('data.batches.0.id', $batch->id);
+        $this->getJson('/api/mobile/rider/assignments')->assertOk()
+            ->assertJsonPath('data.assignments.0.rider_batch_id', $batch->id)
+            ->assertJsonPath('data.assignments.0.rider_batch_status', 'in_progress');
+    }
+
+    public function test_unified_dispatch_groups_multiple_parcels_in_one_route(): void
+    {
+        $n = $this->network();
+        $orders = [$this->parcel($n), $this->parcel($n)];
+        $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $this->plan($n, $orders))
+            ->assertCreated()->assertJsonPath('data.route.status', 'in_progress')->assertJsonCount(2, 'data.route.items');
+        $this->assertSame(1, RiderBatch::count());
+        $this->assertSame(2, RiderBatchItem::whereNotNull('reserved_delivery_id')->count());
+    }
+
+    public function test_unified_dispatch_can_assign_a_sorted_delivery(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n, 'delivery');
+        $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $this->plan($n, [$order], 'delivery'))
+            ->assertCreated()->assertJsonPath('data.route.type', 'delivery')->assertJsonPath('data.route.status', 'in_progress');
+        $this->assertSame(Delivery::DELIVERY_ASSIGNED, $order->delivery->fresh()->status);
+    }
+
+    public function test_unified_dispatch_rolls_back_created_route_when_dispatch_fails(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        $this->mock(RiderBatchService::class)->makePartial()->shouldReceive('transition')->once()
+            ->andThrow(ValidationException::withMessages(['route' => 'The rider was claimed by another route.']));
+        $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $this->plan($n, [$order]))->assertUnprocessable();
+        $this->assertSame(0, RiderBatch::count());
+        $this->assertSame(0, RiderBatchItem::count());
+        $this->assertSame(0, Delivery::count());
+        $this->assertSame(PickupRequest::REQUESTED, $order->pickupRequest->fresh()->status);
+        $this->assertSame('available', $n['rider']->fresh()->availability_status);
+    }
+
+    public function test_unified_dispatch_rejects_a_foreign_rider_and_duplicate_submission(): void
+    {
+        $n = $this->network();
+        $other = $this->network();
+        $order = $this->parcel($n);
+        $data = $this->plan($n, [$order]);
+        $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), array_replace($data, ['rider_id' => $other['rider']->id]))->assertNotFound();
+        $this->assertSame(0, RiderBatch::count());
+        $this->postJson(route('branch.dispatch.assign'), $data)->assertCreated();
+        $this->postJson(route('branch.dispatch.assign'), $data)->assertUnprocessable();
+        $this->assertSame(1, RiderBatch::count());
+        $this->assertSame(1, RiderBatchItem::count());
+    }
+
+    public function test_unified_dispatch_enforces_capacity_and_coverage_without_partial_reservations(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        $data = $this->plan($n, [$order]);
+        $data['parcels'][0]['weight_kg'] = 101;
+        $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $data)->assertUnprocessable();
+        $uncovered = $this->parcel($n, 'pickup', 'Mayapa');
+        $this->postJson(route('branch.dispatch.assign'), $this->plan($n, [$uncovered]))->assertUnprocessable();
+        $n['rider']->update(['availability_status' => 'offline']);
+        $this->postJson(route('branch.dispatch.assign'), $this->plan($n, [$order]))->assertUnprocessable();
+        $this->assertSame(0, RiderBatch::count());
+        $this->assertSame(0, Delivery::count());
+    }
+
+    public function test_unified_dispatch_preserves_optional_scheduling_and_requires_dates(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        $data = $this->plan($n, [$order], 'pickup', 120);
+        $data['dispatch_now'] = false;
+        $missingDates = $data;
+        unset($missingDates['scheduled_start'], $missingDates['scheduled_end']);
+        $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $missingDates)->assertUnprocessable();
+        $this->postJson(route('branch.dispatch.assign'), $data)->assertCreated()->assertJsonPath('data.route.status', 'queued');
+        $this->assertNull(RiderBatch::firstOrFail()->active_rider_id);
+        $this->assertSame('available', $n['rider']->fresh()->availability_status);
+    }
+
+    public function test_unified_dispatch_handles_missing_vehicle_settings_and_staff_permissions(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        \App\Models\Logistics\RiderBatchVehicleProfile::where('rider_id', $n['rider']->id)->delete();
+        $this->actingAs($n['user'])->get(route('branch.dispatch.index'))->assertOk()
+            ->assertSee('Rider vehicle settings')->assertSee('Assign and dispatch')->assertDontSee('Rider Batches');
+        $staff = BranchStaff::create(['logistics_partner_id' => $n['partner'], 'sorting_center_id' => $n['branch']->id,
+            'name' => 'Manager', 'email' => uniqid('manager').'@example.test', 'password' => 'TestPassword123!', 'role' => 'manager', 'status' => 'active']);
+        $this->actingAs($staff, 'logistics_staff')->postJson(route('logistics.staff.dispatch.capacity', $n['rider']->id),
+            ['max_weight_kg' => 100, 'max_volume_m3' => 2, 'max_stops' => 30, 'max_duration_minutes' => 240])->assertOk();
+        $this->postJson(route('logistics.staff.dispatch.assign'), $this->plan($n, [$order]))->assertCreated();
+        $staff->update(['role' => 'scanner']);
+        $this->actingAs($staff->fresh(), 'logistics_staff')->get(route('logistics.staff.dispatch.index'))->assertForbidden();
+        $this->postJson(route('logistics.staff.dispatch.assign'), $this->plan($n, [$order]))->assertForbidden();
+    }
+
+    public function test_dispatch_without_vehicle_settings_assigns_parcels_and_reaches_mobile(): void
+    {
+        $n = $this->network();
+        \App\Models\Logistics\RiderBatchVehicleProfile::where('rider_id', $n['rider']->id)->delete();
+        $orders = [$this->parcel($n), $this->parcel($n)];
+        $response = $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $this->plan($n, $orders));
+        $response->assertCreated()->assertJsonPath('data.route.status', 'in_progress')->assertJsonCount(2, 'data.route.items');
+        $batch = RiderBatch::findOrFail($response->json('data.route.id'));
+        $this->assertSame([], $batch->capacity_snapshot['limits']);
+        $this->assertSame(0, \App\Models\Logistics\RiderBatchVehicleProfile::count());
+        Sanctum::actingAs($n['rider']->fresh(), ['*']);
+        $this->getJson('/api/mobile/rider/assignments')->assertOk()
+            ->assertJsonPath('data.assignments.0.rider_batch_id', $batch->id)
+            ->assertJsonPath('data.assignments.0.rider_batch_status', 'in_progress');
+    }
+
+    public function test_optional_capacity_preserves_coverage_checks_and_delivery_dispatch(): void
+    {
+        $n = $this->network();
+        \App\Models\Logistics\RiderBatchVehicleProfile::where('rider_id', $n['rider']->id)->delete();
+        $uncovered = $this->parcel($n, 'delivery', 'Mayapa');
+        $this->actingAs($n['user'])->postJson(route('branch.dispatch.assign'), $this->plan($n, [$uncovered], 'delivery'))
+            ->assertUnprocessable();
+        $this->assertSame(0, RiderBatch::count());
+        $order = $this->parcel($n, 'delivery');
+        $this->postJson(route('branch.dispatch.assign'), $this->plan($n, [$order], 'delivery'))
+            ->assertCreated()->assertJsonPath('data.route.status', 'in_progress');
+    }
+
 }

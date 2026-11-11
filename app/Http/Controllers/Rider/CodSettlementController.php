@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class CodSettlementController extends Controller
@@ -46,6 +47,9 @@ class CodSettlementController extends Controller
                 && $current->logistics_partner_id === $cash->logistics_partner_id
                 && $current->email && $current->password
                 && $current->partner?->user?->status === 'approved', 403);
+            if (DB::table('cod_remittance_items')->where('cod_settlement_id', $cash->id)->exists()) {
+                throw ValidationException::withMessages(['settlement' => 'Use the remittance batch workflow for this collection.']);
+            }
             if ($cash->status !== CodSettlement::COLLECTED || $cash->remitted_at) {
                 return back()->withErrors(['settlement' => 'Remittance already changed. Refresh and review it.']);
             }

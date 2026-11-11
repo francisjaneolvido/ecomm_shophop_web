@@ -3,14 +3,8 @@
 namespace App\Http\Controllers\Branch;
 
 use App\Http\Controllers\Controller;
-use App\Models\Buyer\Order\Order;
 use App\Models\Logistics\BranchStaff;
-use App\Models\Logistics\Delivery;
-use App\Models\Logistics\PickupRequest;
-use App\Models\Logistics\Rider;
 use App\Models\Logistics\RiderBatch;
-use App\Models\Logistics\RiderBatchItem;
-use App\Models\Logistics\RiderBatchVehicleProfile;
 use App\Models\Logistics\SortingCenter;
 use App\Services\RiderBatchService;
 use Illuminate\Http\Request;
@@ -40,37 +34,17 @@ class RiderBatchController extends Controller
     public function index(Request $request, RiderBatchService $service)
     {
         [$center] = $this->scope($request);
-        abort_unless($service->available(), 503, 'Batch planning is temporarily unavailable.');
-        $type = $request->query('type') === 'delivery' ? 'delivery' : 'pickup';
-        $riders = Rider::where('logistics_partner_id', $center->logistics_partner_id)->where('sorting_center_id', $center->id)->where('status', 'active')->orderBy('name')->get();
-        $profiles = RiderBatchVehicleProfile::whereIn('rider_id', $riders->pluck('id'))->get()->keyBy('rider_id');
+        if (! $request->expectsJson()) {
+            return redirect()->route($request->routeIs('logistics.staff.*') ? 'logistics.staff.dispatch.index' : 'branch.dispatch.index', $request->only(['q', 'type']));
+        }
+        abort_unless($service->available(), 503, 'Rider assignment is temporarily unavailable.');
         $batches = RiderBatch::where('logistics_partner_id', $center->logistics_partner_id)->where('sorting_center_id', $center->id)
-            ->with(['rider', 'items.delivery.order', 'branch'])->latest('id')->paginate(15, ['*'], 'batch_page')->withQueryString();
+            ->with(['rider', 'items.delivery.order', 'branch'])->latest('id')->paginate(15, ['*'], 'route_page')->withQueryString();
         $batchData = $batches->getCollection()->map(fn ($batch) => $service->data($batch));
-        $routePrefix = $request->routeIs('logistics.staff.*') ? 'logistics.staff.rider-batches' : 'branch.rider-batches';
-        if ($request->expectsJson()) {
-            return response()->json(['success' => true, 'data' => ['html' => view('logistics.partials.rider-batch-routes',
-                ['batchData' => $batchData, 'batches' => $batches, 'canManage' => true, 'routePrefix' => $routePrefix])->render()]]);
-        }
-        $orders = Order::where('logistics_partner_id', $center->logistics_partner_id)->with(['seller', 'delivery', 'pickupRequest', 'financial'])
-            ->whereNotIn('id', Delivery::whereIn('id', RiderBatchItem::whereNotNull('reserved_delivery_id')->select('reserved_delivery_id'))->select('order_id'));
-        if ($type === 'pickup') {
-            $orders->where('status', Order::STATUS_READY_FOR_PICKUP)->whereHas('pickupRequest', fn ($q) => $q
-                ->where('origin_sorting_center_id', $center->id)->whereIn('status', [PickupRequest::REQUESTED, PickupRequest::ASSIGNED]))
-                ->where(fn ($q) => $q->whereDoesntHave('delivery')->orWhereHas('delivery', fn ($d) => $d->whereIn('status', [Delivery::PICKUP_ASSIGNED, Delivery::PICKUP_ACCEPTED])));
-        } else {
-            $orders->where('status', Order::STATUS_TO_RECEIVE)->whereHas('delivery', fn ($q) => $q
-                ->where('destination_sorting_center_id', $center->id)->where('current_sorting_center_id', $center->id)
-                ->whereIn('status', [Delivery::SORTED, Delivery::DELIVERY_FAILED, Delivery::DELIVERY_ASSIGNED]));
-        }
-        $term = trim((string) $request->query('q', ''));
-        if ($term !== '') {
-            $orders->where('tracking_code', 'like', '%'.substr($term, 0, 80).'%');
-        }
-        $orders = $orders->orderBy('id')->paginate(30, ['*'], 'parcel_page')->withQueryString();
-        $routePrefix = $request->routeIs('logistics.staff.*') ? 'logistics.staff.rider-batches' : 'branch.rider-batches';
+        $routePrefix = $request->routeIs('logistics.staff.*') ? 'logistics.staff.dispatch' : 'branch.dispatch';
 
-        return view('branch.rider-batches.index', compact('center', 'riders', 'profiles', 'batches', 'batchData', 'orders', 'type', 'routePrefix'));
+        return response()->json(['success' => true, 'data' => ['html' => view('branch.dispatch.routes',
+            compact('batchData', 'batches', 'routePrefix'))->render()]]);
     }
 
     public function configure(Request $request, int $rider, RiderBatchService $service)
@@ -104,6 +78,6 @@ class RiderBatchController extends Controller
         $data = $request->validate(['action' => 'required|in:dispatch,complete,cancel']);
         $result = $service->transition($branch, $batch, $data['action'], $actorType, $actorId);
 
-        return $request->expectsJson() ? response()->json(['success' => true, 'data' => ['batch' => $service->data($result)]]) : back()->with('status', 'Batch '.$data['action'].' recorded.');
+        return $request->expectsJson() ? response()->json(['success' => true, 'data' => ['batch' => $service->data($result)]]) : back()->with('status', 'Rider route action recorded: '.$data['action'].'.');
     }
 }

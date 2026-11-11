@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Finance\LinehaulDriverEarning;
 use App\Models\Logistics\LinehaulDriver;
 use App\Models\Logistics\LinehaulTrip;
-use App\Models\Finance\LinehaulDriverEarning;
 use App\Services\LinehaulService;
+use App\Services\PersonnelFinanceReadService;
 use App\Services\PhilippineIslandGroup;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -54,7 +55,6 @@ class MobileLinehaulController extends Controller
         ]);
     }
 
-
     public function earnings(Request $request): JsonResponse
     {
         $driver = $this->driver($request);
@@ -80,6 +80,7 @@ class MobileLinehaulController extends Controller
             'status' => 'ok',
             'message' => 'Linehaul earnings loaded.',
             'data' => [
+                'partner_compensation' => app(PersonnelFinanceReadService::class)->earnings((int) $driver->logistics_partner_id, 'linehaul_driver', (int) $driver->id),
                 'pending' => (float) (clone $query)->where('status', 'pending')->sum('amount'),
                 'available' => (float) (clone $query)->where('status', 'available')->sum('amount'),
                 'paid' => (float) (clone $query)->where('status', 'paid')->sum('amount'),
@@ -143,6 +144,7 @@ class MobileLinehaulController extends Controller
         $driver = $actor->fresh(['partner.user']);
         abort_unless($driver && $driver->status === 'active' && $driver->partner?->user?->status === 'approved',
             403, 'Active Linehaul Driver required.');
+
         return $driver;
     }
 

@@ -43,6 +43,9 @@ Route::middleware(['auth', 'approved.role:branch'])->prefix('branch')->name('bra
     Route::post('rider-batches/riders/{rider}/capacity', [\App\Http\Controllers\Branch\RiderBatchController::class, 'configure'])->name('rider-batches.capacity');
     Route::post('rider-batches/{batch}/transition', [\App\Http\Controllers\Branch\RiderBatchController::class, 'transition'])->middleware('throttle:20,1')->name('rider-batches.transition');
     Route::get('dispatch', [DispatchController::class, 'index'])->name('dispatch.index');
+    Route::post('dispatch/assign', [DispatchController::class, 'assign'])->middleware('throttle:20,1')->name('dispatch.assign');
+    Route::post('dispatch/riders/{rider}/capacity', [\App\Http\Controllers\Branch\RiderBatchController::class, 'configure'])->name('dispatch.capacity');
+    Route::post('dispatch/routes/{batch}/transition', [\App\Http\Controllers\Branch\RiderBatchController::class, 'transition'])->middleware('throttle:20,1')->name('dispatch.transition');
     Route::post('dispatch/pickups/{pickup}/assign', [DispatchController::class, 'assignPickup'])->name('dispatch.pickups.assign');
     Route::post('dispatch/deliveries/{delivery}/assign', [DispatchController::class, 'assignDelivery'])->name('dispatch.deliveries.assign');
 

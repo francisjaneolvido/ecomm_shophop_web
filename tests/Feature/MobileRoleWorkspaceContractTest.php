@@ -23,6 +23,7 @@ class MobileRoleWorkspaceContractTest extends TestCase
     {
         $this->assertSame(':memory:', DB::connection()->getDatabaseName());
         $owner = $this->user('logistics');
+
         return DB::table('logistics_partners')->insertGetId([
             'user_id' => $owner->id, 'agreement_rep_name' => 'Test', 'agreement_date' => '2026-11-08',
             'agreement_signature_path' => 'test.jpg', 'company_name' => 'Test Logistics',
@@ -58,10 +59,14 @@ class MobileRoleWorkspaceContractTest extends TestCase
     public function test_mobile_workspaces_require_a_session_and_correct_role(): void
     {
         $paths = ['/seller/dashboard', '/logistics/scanner/branches', '/linehaul/trips', '/rider/assignments'];
-        foreach ($paths as $path) $this->getJson('/api/mobile'.$path)->assertUnauthorized();
+        foreach ($paths as $path) {
+            $this->getJson('/api/mobile'.$path)->assertUnauthorized();
+        }
         Sanctum::actingAs($this->seller());
         $this->getJson('/api/mobile/seller/dashboard')->assertOk();
-        foreach (array_slice($paths, 1) as $path) $this->getJson('/api/mobile'.$path)->assertForbidden();
+        foreach (array_slice($paths, 1) as $path) {
+            $this->getJson('/api/mobile'.$path)->assertForbidden();
+        }
     }
 
     public function test_linehaul_reads_owned_trips_and_cannot_acknowledge_destination_arrival(): void
@@ -119,7 +124,10 @@ class MobileRoleWorkspaceContractTest extends TestCase
             'delivery_address' => 'Calamba Laguna']);
         $delivery = Delivery::create(['order_id' => $order->id, 'logistics_partner_id' => $partner,
             'rider_id' => $rider->id, 'assigned_at' => now(), 'tracking_code' => 'SHP-20261108-000001', 'status' => Delivery::PICKUP_ASSIGNED]);
-        Sanctum::actingAs($rider);
+        // Operational APIs require an operations-capable token; applicant tokens remain excluded.
+        Sanctum::actingAs($rider, ['rider:application']);
+        $this->getJson('/api/mobile/rider/assignments')->assertForbidden();
+        Sanctum::actingAs($rider, ['rider:operations']);
         $this->getJson('/api/mobile/rider/assignments')->assertOk()
             ->assertJsonPath('data.assignments.0.assignment_type', 'pickup')
             ->assertJsonPath('data.assignments.0.can_confirm_pickup', true)
@@ -138,7 +146,7 @@ class MobileRoleWorkspaceContractTest extends TestCase
         $this->postJson('/api/mobile/rider/assignments/'.$delivery->id.'/complete', [])
             ->assertUnprocessable()->assertJsonValidationErrors(['proof', 'cash_collected']);
         $this->assertSame(Delivery::OUT_FOR_DELIVERY, $delivery->fresh()->status);
-        Sanctum::actingAs($this->rider($partner));
+        Sanctum::actingAs($this->rider($partner), ['rider:operations']);
         $this->getJson('/api/mobile/rider/assignments/'.$delivery->id)->assertNotFound();
         $this->getJson('/api/mobile/rider/assignments')->assertOk()->assertJsonCount(0, 'data.assignments');
     }

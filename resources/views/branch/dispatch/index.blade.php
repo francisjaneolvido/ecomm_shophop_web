@@ -1,76 +1,87 @@
 @extends('branch.layout.app')
-@section('title','Dispatch')
+@section('title','Rider Dispatch')
 @section('content')
+<style>#dispatchScheduleFields[hidden],#dispatchCapacityNotice[hidden]{display:none!important}#dispatchAssignModal,#dispatchCapacityModal{width:min(680px,calc(100vw - 24px));padding:0;overflow-y:auto}#dispatchAssignModal .ops-dialog-foot,#dispatchCapacityModal .ops-dialog-foot{display:flex;justify-content:flex-end;gap:12px;padding:16px 18px;border-top:1px solid #E2E6EA}</style>
 <div class="space-y-5">
-    <header class="sh-page-header"><div><p class="eyebrow">{{ $center->name }}</p><h1 class="title">Rider Dispatch</h1><p class="description">Pickup and last-mile assignment queues. Only riders eligible for the selected barangay are offered by the backend.</p></div>
-        <a href="{{ route('branch.scanner') }}" class="sh-btn-soft">Open QR Scanner</a></header>
-    @if(session('status'))<div class="sh-alert-success">{{ session('status') }}</div>@endif
-    @if($errors->any())<div class="sh-alert-error">{{ $errors->first() }}</div>@endif
+    <header class="sh-page-header">
+        <div><p class="eyebrow">{{ $center->name }}</p><h1 class="title">Rider Dispatch</h1><p class="description">Choose parcels, select an eligible rider, and assign the trip from this page.</p></div>
+        <div class="flex flex-wrap gap-2">
+            <button type="button" class="sh-btn-soft" data-capacity-open @disabled(! $dispatchEnabled)>Rider vehicle settings (optional)</button>
+            @if($routePrefix === 'branch.dispatch')<a href="{{ route('branch.scanner') }}" class="sh-btn-soft">Open QR Scanner</a>@endif
+        </div>
+    </header>
+    @unless($dispatchEnabled)<div class="sh-alert-error" role="alert">Rider assignment is temporarily unavailable. Please contact your logistics administrator.</div>@endunless
     <section class="grid grid-cols-2 gap-3 xl:grid-cols-3">
-        @foreach([['Pending pickup',$pickups->total(),'Awaiting pickup assignment'],['Ready for delivery',$deliveries->total(),'Awaiting last-mile assignment'],['Active riders',count($riders),'Current branch login accounts']] as [$label,$count,$note])
+        @foreach([['Pending pickup',$pickups->total(),'Ready to assign'],['Ready for delivery',$deliveries->total(),'At this branch'],['Active riders',$riderDetails->count(),'Assigned to this branch']] as [$label,$count,$note])
             <div class="sh-stat"><p class="sh-stat-label">{{ $label }}</p><p class="sh-stat-value">{{ number_format($count) }}</p><p class="sh-stat-note">{{ $note }}</p></div>
         @endforeach
     </section>
     <div class="ops-panel" data-ops-tabs>
         <nav class="ops-tabs" role="tablist" aria-label="Dispatch queues">
-            <button class="ops-tab" type="button" role="tab" aria-selected="true" data-ops-tab="pickups">Seller Pickups ({{ $pickups->total() }})</button>
-            <button class="ops-tab" type="button" role="tab" aria-selected="false" data-ops-tab="deliveries">Buyer Deliveries ({{ $deliveries->total() }})</button>
+            <button class="ops-tab" type="button" role="tab" aria-selected="{{ request('type') === 'delivery' ? 'false' : 'true' }}" data-ops-tab="pickups">Seller Pickups ({{ $pickups->total() }})</button>
+            <button class="ops-tab" type="button" role="tab" aria-selected="{{ request('type') === 'delivery' ? 'true' : 'false' }}" data-ops-tab="deliveries">Buyer Deliveries ({{ $deliveries->total() }})</button>
         </nav>
-        <section id="pickups" data-ops-panel="pickups" role="tabpanel">
-            <div class="ops-panel-head"><div><h2>Pickup requests</h2><p class="ops-panel-note">Choose an eligible rider to collect the parcel from the seller.</p></div><input class="sh-input" data-ops-search="pickupRows" type="search" placeholder="Search this page" aria-label="Search pickups" style="max-width:250px"></div>
-            <div class="ops-table-scroll"><table id="pickupRows" class="ops-table"><thead><tr><th>Seller / Parcel</th><th>Pickup location</th><th>Requested</th><th>Ready</th><th>Eligible riders</th><th>Action</th></tr></thead><tbody>
-            @forelse($pickups as $p)<tr data-ops-row>
-                <td><strong>{{ $p['seller'] }}</strong><div class="ops-row-sub">{{ $p['tracking'] ?? 'Tracking pending' }}</div></td>
-                <td>{{ $p['address'] ?: '—' }}</td><td>{{ $p['requested'] ?? '—' }}</td>
-                <td><span class="sh-badge {{ $p['ready'] ? 'sh-badge-success':'sh-badge-warning' }}">{{ $p['ready'] ? 'Ready' : 'Not ready' }}</span></td>
-                <td>{{ count($p['riders']) }} matched</td>
-                <td class="ops-row-actions"><button type="button" class="ops-action" data-dispatch-open data-kind="pickup" data-name="{{ $p['seller'] }}" data-tracking="{{ $p['tracking'] ?? '' }}" data-url="{{ route('branch.dispatch.pickups.assign',$p['id']) }}" data-riders="{{ json_encode($p['riders']) }}" data-suggested="{{ $p['suggested'] }}" @disabled(! $p['ready'] || empty($p['riders']))>Assign pickup</button></td>
-            </tr>@empty<tr><td class="ops-empty" colspan="6">No pickup requests currently waiting.</td></tr>@endforelse
-            <tr data-ops-search-empty hidden><td colspan="6" class="ops-empty">No matching pickups on this page.</td></tr>
+        @foreach(['pickup' => $pickups, 'delivery' => $deliveries] as $kind => $queue)
+        <section id="{{ $kind === 'pickup' ? 'pickups' : 'deliveries' }}" data-ops-panel="{{ $kind === 'pickup' ? 'pickups' : 'deliveries' }}" role="tabpanel" @if((request('type') === 'delivery') !== ($kind === 'delivery')) hidden @endif>
+            <div class="ops-panel-head">
+                <div><h2>{{ $kind === 'pickup' ? 'Pickup requests' : 'Ready for last-mile delivery' }}</h2><p class="ops-panel-note">Assign one parcel or select several for the same rider.</p></div>
+                <div class="flex flex-wrap gap-2"><input class="sh-input" data-ops-search="{{ $kind }}Rows" type="search" placeholder="Search this page" aria-label="Search {{ $kind }} parcels" style="max-width:220px"><button type="button" class="sh-btn-soft" data-assign-selected="{{ $kind }}" disabled>Assign selected (0)</button></div>
+            </div>
+            <div class="ops-table-scroll"><table id="{{ $kind }}Rows" class="ops-table"><thead><tr><th>Select</th><th>Parcel</th><th>{{ $kind === 'pickup' ? 'Pickup location' : 'Delivery location' }}</th><th>Status</th><th>Eligible riders</th><th>Action</th></tr></thead><tbody>
+            @forelse($queue as $parcel)
+                <tr data-ops-row data-dispatch-row data-kind="{{ $kind }}" data-parcel="{{ json_encode($parcel) }}">
+                    <td><input type="checkbox" data-select-parcel aria-label="Select {{ $parcel['tracking'] }}" @disabled(! $dispatchEnabled || ! $parcel['ready'] || empty($parcel['riders']))></td>
+                    <td><strong>{{ $parcel['name'] }}</strong><div class="ops-row-sub">{{ $parcel['tracking'] ?? 'Tracking pending' }}</div></td>
+                    <td>{{ $parcel['address'] ?: 'Address unavailable' }}</td><td><span class="sh-badge {{ $parcel['ready'] ? 'sh-badge-success' : 'sh-badge-warning' }}">{{ $parcel['ready'] ? 'Ready' : 'Not ready' }}</span><div class="ops-row-sub">{{ $parcel['note'] }}</div></td>
+                    <td>{{ count($parcel['riders']) }} matched</td>
+                    <td class="ops-row-actions"><button type="button" class="ops-action" data-dispatch-open @disabled(! $dispatchEnabled || ! $parcel['ready'] || empty($parcel['riders']))>Assign rider</button></td>
+                </tr>
+            @empty<tr><td class="ops-empty" colspan="6">No {{ $kind }} parcels currently waiting.</td></tr>@endforelse
+                <tr data-ops-search-empty hidden><td colspan="6" class="ops-empty">No matching parcels on this page.</td></tr>
             </tbody></table></div>
-            <div class="ops-count">{{ $pickups->firstItem() ?? 0 }}–{{ $pickups->lastItem() ?? 0 }} of {{ $pickups->total() }} requests</div>
-            @if($pickups->hasPages())<div class="border-t p-4">{{ $pickups->links() }}</div>@endif
+            <div class="ops-count">{{ $queue->firstItem() ?? 0 }}&ndash;{{ $queue->lastItem() ?? 0 }} of {{ $queue->total() }} parcels</div>
+            @if($queue->hasPages())<div class="border-t p-4">{{ $queue->appends(['stage' => $kind === 'pickup' ? 'pickups' : 'deliveries'])->links() }}</div>@endif
         </section>
-        <section id="deliveries" data-ops-panel="deliveries" role="tabpanel" hidden>
-            <div class="ops-panel-head"><div><h2>Ready for last-mile delivery</h2><p class="ops-panel-note">QR receiving and sorting must be completed before rider dispatch.</p></div><input class="sh-input" data-ops-search="deliveryRows" type="search" placeholder="Search this page" aria-label="Search deliveries" style="max-width:250px"></div>
-            <div class="ops-table-scroll"><table id="deliveryRows" class="ops-table"><thead><tr><th>Parcel</th><th>Receiver / barangay</th><th>Payment</th><th>Type</th><th>Eligible riders</th><th>Action</th></tr></thead><tbody>
-            @forelse($deliveries as $d)<tr data-ops-row>
-                <td><strong>{{ $d['tracking'] }}</strong><div class="ops-row-sub">{{ $d['failed'] ? 'Failed attempt #'.$d['attempts'] : 'Sorted / waiting' }}</div></td>
-                <td>{{ $d['receiver'] ?: '—' }}<div class="ops-row-sub">{{ $d['barangay'] ?: '—' }}</div></td>
-                <td>{{ $d['cod'] !== null ? 'COD ₱'.number_format($d['cod'],2) : 'Prepaid' }}</td>
-                <td><span class="sh-badge {{ $d['failed'] ? 'sh-badge-warning':'sh-badge-info' }}">{{ $d['failed'] ? 'Retry' : ($d['local'] ? 'Local' : 'Transfer') }}</span></td>
-                <td>{{ count($d['riders']) }} matched</td>
-                <td class="ops-row-actions"><button type="button" class="ops-action" data-dispatch-open data-kind="delivery" data-name="{{ $d['receiver'] }}" data-tracking="{{ $d['tracking'] }}" data-url="{{ route('branch.dispatch.deliveries.assign',$d['id']) }}" data-riders="{{ json_encode($d['riders']) }}" data-suggested="{{ $d['suggested'] }}" @disabled(empty($d['riders']))>{{ $d['failed'] ? 'Retry delivery':'Assign rider' }}</button></td>
-            </tr>@empty<tr><td colspan="6" class="ops-empty">No parcels ready for rider assignment.</td></tr>@endforelse
-            <tr data-ops-search-empty hidden><td colspan="6" class="ops-empty">No matching deliveries on this page.</td></tr>
-            </tbody></table></div>
-            <div class="ops-count">{{ $deliveries->firstItem() ?? 0 }}–{{ $deliveries->lastItem() ?? 0 }} of {{ $deliveries->total() }} parcels</div>
-            @if($deliveries->hasPages())<div class="border-t p-4">{{ $deliveries->links() }}</div>@endif
-        </section>
+        @endforeach
     </div>
+    <section class="space-y-3" aria-labelledby="rider-routes-title">
+        <div class="flex flex-wrap justify-between gap-2"><div><h2 id="rider-routes-title" class="font-semibold text-navy">Rider routes</h2><p class="text-xs text-slate-500">Manage active assignments, scheduled trips, and recent routes here.</p></div><p class="text-xs text-slate-500" data-batch-sync-status role="status" aria-live="polite">Routes refresh automatically.</p></div>
+        <div id="rider-batch-routes" class="space-y-3" data-live-url="{{ request()->fullUrl() }}">@include('branch.dispatch.routes')</div>
+    </section>
 </div>
-<dialog id="dispatchAssignModal" class="ops-dialog">
-    <form method="POST" id="dispatchAssignForm" data-confirm-title="Confirm rider assignment?" data-confirm-message="The assigned rider must still scan the parcel for physical custody handoff." data-confirm-button="Assign rider">
+<dialog id="dispatchAssignModal" class="ops-dialog" aria-labelledby="dispatchAssignTitle">
+    <form id="dispatchAssignForm" action="{{ route($routePrefix.'.assign') }}" method="POST">
         @csrf
-        <div class="ops-dialog-head"><div><h2 class="ops-dialog-title" id="dispatchAssignTitle">Assign rider</h2><p class="ops-panel-note" id="dispatchAssignTracking"></p></div><button type="button" class="ops-action" data-ops-close aria-label="Close">✕</button></div>
-        <div class="ops-dialog-body space-y-4"><label class="sh-field"><span class="sh-label">Eligible rider *</span><select class="sh-select" name="rider_id" id="dispatchRiderSelect" required></select></label><p class="ops-inline-alert">Only riders authorized for the location are listed. Final eligibility is rechecked when you save.</p></div>
-        <div class="ops-dialog-foot"><button type="button" class="sh-btn-ghost" data-ops-close>Cancel</button><button type="submit" class="sh-btn">Confirm assignment</button></div>
+        <div class="ops-dialog-head"><div><h2 class="ops-dialog-title" id="dispatchAssignTitle">Assign rider</h2><p class="ops-panel-note" id="dispatchSelectionLabel"></p></div><button type="button" class="ops-action" data-dialog-close aria-label="Close assignment">&times;</button></div>
+        <div class="ops-dialog-body space-y-4">
+            <label class="sh-field"><span class="sh-label">Eligible rider</span><select class="sh-select" name="rider_id" id="dispatchRiderSelect" required></select></label>
+            <div id="dispatchCapacityNotice" class="ops-inline-alert" hidden>Vehicle limits are optional. You can assign now without setting them. <button type="button" class="font-semibold underline" id="dispatchSetupCapacity">Set vehicle capacity</button></div>
+            <div id="dispatchParcelMeasurements" class="space-y-3"></div>
+            <label class="sh-field"><span class="sh-label">Estimated trip time (minutes)</span><input class="sh-input" name="estimated_minutes" type="number" min="1" max="1440" step="1" value="30" required><span class="text-xs text-slate-500">Include the return to this branch for a pickup trip.</span></label>
+            <details><summary class="cursor-pointer text-sm font-medium text-teal-dark">Schedule for later (optional)</summary><div class="space-y-3 mt-3"><label class="flex items-center gap-2 text-sm"><input type="checkbox" id="dispatchScheduleLater"> Schedule this trip instead of dispatching now</label><div id="dispatchScheduleFields" class="grid gap-3 sm:grid-cols-2" hidden><label class="sh-field"><span class="sh-label">Route start (your local time)</span><input class="sh-input" name="scheduled_start" type="datetime-local"></label><label class="sh-field"><span class="sh-label">Route end (your local time)</span><input class="sh-input" name="scheduled_end" type="datetime-local"></label></div></div></details>
+            <p class="text-xs text-slate-500">The rider must scan each parcel QR to confirm physical pickup or handoff.</p>
+            <p id="dispatchFeedback" class="text-sm text-red-600" role="status" aria-live="polite"></p>
+        </div>
+        <div class="ops-dialog-foot"><button type="button" class="sh-btn-ghost" data-dialog-close>Cancel</button><button type="submit" class="sh-btn" id="dispatchSubmit">Assign and dispatch</button></div>
     </form>
 </dialog>
+<dialog id="dispatchCapacityModal" class="ops-dialog" aria-labelledby="dispatchCapacityTitle">
+    <form id="dispatchCapacityForm" data-url="{{ route($routePrefix.'.capacity', ['rider' => 'RIDER_ID']) }}" method="POST">
+        @csrf
+        <div class="ops-dialog-head"><div><h2 class="ops-dialog-title" id="dispatchCapacityTitle">Rider vehicle settings</h2><p class="ops-panel-note">Optional. Save limits only if you want capacity checks for this vehicle.</p></div><button type="button" class="ops-action" data-dialog-close aria-label="Close vehicle settings">&times;</button></div>
+        <div class="ops-dialog-body space-y-4"><label class="sh-field"><span class="sh-label">Rider</span><select id="dispatchCapacityRider" class="sh-select" required><option value="">Choose rider</option>@foreach($riderDetails as $rider)<option value="{{ $rider['id'] }}">{{ $rider['name'] }}</option>@endforeach</select></label>
+            <div class="grid gap-3 sm:grid-cols-2">
+                @foreach(['max_weight_kg' => 'Max weight (kg)', 'max_volume_m3' => 'Max volume (m3)', 'max_stops' => 'Max stops', 'max_duration_minutes' => 'Max trip duration (minutes)', 'max_parcels' => 'Max parcels (optional)'] as $key => $label)
+                <label class="sh-field"><span class="sh-label">{{ $label }}</span><input class="sh-input" name="{{ $key }}" type="number" min="{{ $key === 'max_volume_m3' ? '0.000001' : ($key === 'max_weight_kg' ? '0.001' : '1') }}" step="{{ in_array($key, ['max_weight_kg','max_volume_m3']) ? 'any' : '1' }}" @required($key !== 'max_parcels')></label>
+                @endforeach
+            </div><p id="dispatchCapacityFeedback" class="text-sm text-red-600" role="status" aria-live="polite"></p>
+        </div>
+        <div class="ops-dialog-foot"><button type="button" class="sh-btn-ghost" data-dialog-close>Cancel</button><button type="submit" class="sh-btn">Save vehicle capacity</button></div>
+    </form>
+</dialog>
+<script type="application/json" id="dispatchRiderData">{!! json_encode($riderDetails->values(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 @endsection
 @push('scripts')
-<script>
-(() => {
- const modal=document.getElementById('dispatchAssignModal'), form=document.getElementById('dispatchAssignForm'), select=document.getElementById('dispatchRiderSelect');
- document.querySelectorAll('[data-dispatch-open]').forEach(button=>button.addEventListener('click',()=>{
-   if(button.disabled)return;
-   let options=[];try{options=JSON.parse(button.dataset.riders||'[]')}catch(_){return}
-   select.replaceChildren(new Option('Choose rider',''));
-   options.forEach(r=>{const option=new Option(r.name,r.id);option.selected=String(r.id)===button.dataset.suggested;select.add(option)});
-   document.getElementById('dispatchAssignTitle').textContent=(button.dataset.kind==='pickup'?'Assign Pickup Rider':'Assign Delivery Rider');
-   document.getElementById('dispatchAssignTracking').textContent=(button.dataset.name||'')+' · '+(button.dataset.tracking||'');
-   form.action=button.dataset.url;modal.showModal();
- }));
-})();
-</script>
+<script src="{{ asset('js/shophop-rider-dispatch.js') }}" defer></script>
+<script src="{{ asset('js/shophop-rider-batches.js') }}" defer></script>
 @endpush

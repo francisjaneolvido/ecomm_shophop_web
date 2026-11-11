@@ -1,25 +1,28 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Logistics\ReturnController;
-
+use App\Http\Controllers\Branch\RiderBatchController;
+use App\Http\Controllers\HybridFinanceController;
 use App\Http\Controllers\Logistics\AuthController as LogisticsAuthController;
-use App\Http\Controllers\Logistics\GoogleAuthController;
-use App\Http\Controllers\Logistics\RegistrationController as LogisticsRegistrationController;
-use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
-use App\Http\Controllers\Logistics\RiderController;
-use App\Http\Controllers\Logistics\DeliveryController;
-use App\Http\Controllers\Logistics\PickupCoverageController;
-use App\Http\Controllers\Logistics\ReportController;
-use App\Http\Controllers\Logistics\CodSettlementController;
-use App\Http\Controllers\Logistics\EarningsController;
-use App\Http\Controllers\Logistics\SortingCenterController;
 use App\Http\Controllers\Logistics\BranchStaffController;
 use App\Http\Controllers\Logistics\BranchStaffWorkspaceController;
-use App\Http\Controllers\Logistics\FleetController;
-use App\Http\Controllers\Logistics\RouteNetworkController;
+use App\Http\Controllers\Logistics\CodSettlementController;
+use App\Http\Controllers\Logistics\DashboardController as LogisticsDashboardController;
+use App\Http\Controllers\Logistics\DeliveryController;
 use App\Http\Controllers\Logistics\DemoNetworkDirectoryController;
+use App\Http\Controllers\Logistics\EarningsController;
+use App\Http\Controllers\Logistics\FleetController;
+use App\Http\Controllers\Logistics\GoogleAuthController;
 use App\Http\Controllers\Logistics\PartnerBrandingController;
+use App\Http\Controllers\Logistics\PickupCoverageController;
+use App\Http\Controllers\Logistics\RegistrationController as LogisticsRegistrationController;
+use App\Http\Controllers\Logistics\ReportController;
+use App\Http\Controllers\Logistics\ReturnController;
+use App\Http\Controllers\Logistics\RiderBatchMonitoringController;
+use App\Http\Controllers\Logistics\RiderController;
+use App\Http\Controllers\Logistics\RiderManagementController;
+use App\Http\Controllers\Logistics\RouteNetworkController;
+use App\Http\Controllers\Logistics\SortingCenterController;
+use Illuminate\Support\Facades\Route;
 
 /*
 | All Logistics public pages and private console live under LOGISTICS_DOMAIN.
@@ -51,15 +54,18 @@ Route::domain(config('app.logistics_domain'))
 
         // Branch operators use a separate session guard: no access to company management routes.
         Route::middleware('auth:logistics_staff')->group(function () {
-            Route::get('/staff/rider-batches', [\App\Http\Controllers\Branch\RiderBatchController::class,'index'])->name('staff.rider-batches.index');
-            Route::post('/staff/rider-batches', [\App\Http\Controllers\Branch\RiderBatchController::class,'store'])->middleware('throttle:20,1')->name('staff.rider-batches.store');
-            Route::post('/staff/rider-batches/riders/{rider}/capacity', [\App\Http\Controllers\Branch\RiderBatchController::class,'configure'])->name('staff.rider-batches.capacity');
-            Route::post('/staff/rider-batches/{batch}/transition', [\App\Http\Controllers\Branch\RiderBatchController::class,'transition'])->middleware('throttle:20,1')->name('staff.rider-batches.transition');
+            Route::get('/staff/dispatch', [\App\Http\Controllers\Branch\DispatchController::class, 'index'])->name('staff.dispatch.index');
+            Route::post('/staff/dispatch/assign', [\App\Http\Controllers\Branch\DispatchController::class, 'assign'])->middleware('throttle:20,1')->name('staff.dispatch.assign');
+            Route::post('/staff/dispatch/riders/{rider}/capacity', [RiderBatchController::class, 'configure'])->name('staff.dispatch.capacity');
+            Route::post('/staff/dispatch/routes/{batch}/transition', [RiderBatchController::class, 'transition'])->middleware('throttle:20,1')->name('staff.dispatch.transition');
+            Route::get('/staff/rider-batches', [RiderBatchController::class, 'index'])->name('staff.rider-batches.index');
+            Route::post('/staff/rider-batches', [RiderBatchController::class, 'store'])->middleware('throttle:20,1')->name('staff.rider-batches.store');
+            Route::post('/staff/rider-batches/riders/{rider}/capacity', [RiderBatchController::class, 'configure'])->name('staff.rider-batches.capacity');
+            Route::post('/staff/rider-batches/{batch}/transition', [RiderBatchController::class, 'transition'])->middleware('throttle:20,1')->name('staff.rider-batches.transition');
             Route::get('/staff/workspace', [BranchStaffWorkspaceController::class, 'index'])->name('staff.workspace');
             Route::post('/staff/password', [BranchStaffWorkspaceController::class, 'changePassword'])
                 ->middleware('throttle:6,1')->name('staff.password');
         });
-
 
         // Shared role-aware lifecycle console. The controller excludes Province Hubs and scanners.
         foreach ([
@@ -67,10 +73,10 @@ Route::domain(config('app.logistics_domain'))
             ['middleware' => 'auth:logistics_staff', 'url' => '/staff/rider-management', 'name' => 'staff.rider-management.'],
         ] as $managementRoute) {
             Route::middleware($managementRoute['middleware'])->prefix($managementRoute['url'])->name($managementRoute['name'])->group(function () {
-                Route::get('/', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'index'])->name('index');
-                Route::post('/riders/{rider}', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'action'])->whereNumber('rider')->middleware('throttle:30,1')->name('action');
-                Route::get('/riders/{rider}/documents/{slot}', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'document'])->whereNumber('rider')->name('document');
-                Route::post('/transfers/{transfer}', [\App\Http\Controllers\Logistics\RiderManagementController::class, 'transferDecision'])->whereNumber('transfer')->middleware('throttle:20,1')->name('transfer');
+                Route::get('/', [RiderManagementController::class, 'index'])->name('index');
+                Route::post('/riders/{rider}', [RiderManagementController::class, 'action'])->whereNumber('rider')->middleware('throttle:30,1')->name('action');
+                Route::get('/riders/{rider}/documents/{slot}', [RiderManagementController::class, 'document'])->whereNumber('rider')->name('document');
+                Route::post('/transfers/{transfer}', [RiderManagementController::class, 'transferDecision'])->whereNumber('transfer')->middleware('throttle:20,1')->name('transfer');
             });
         }
 
@@ -112,7 +118,7 @@ Route::domain(config('app.logistics_domain'))
             Route::post('/fleet/drivers/{driver}/toggle', [FleetController::class, 'toggleDriver'])->name('fleet.drivers.toggle');
             Route::post('/fleet/drivers/{driver}/update', [FleetController::class, 'updateDriver'])->name('fleet.drivers.update');
 
-            Route::get('/rider-batches', [\App\Http\Controllers\Logistics\RiderBatchMonitoringController::class, 'index'])->name('rider-batches.index');
+            Route::get('/rider-batches', [RiderBatchMonitoringController::class, 'index'])->name('rider-batches.index');
             Route::get('/riders', [RiderController::class, 'index'])->name('riders.index');
             Route::get('/demo-network', [DemoNetworkDirectoryController::class, 'index'])->name('demo-network.index');
             Route::post('/riders', [RiderController::class, 'store'])->name('riders.store');
@@ -156,4 +162,15 @@ Route::domain(config('app.logistics_domain'))
     });
 
 // Province Hub portal lives in its own file.
-require __DIR__ . '/hub.php';
+require __DIR__.'/hub.php';
+Route::domain(config('app.logistics_domain'))->middleware('auth')->prefix('financial-workspace')->group(function () {
+    Route::post('/policies/{policy}/end', [HybridFinanceController::class, 'closePolicy'])->whereNumber('policy')->name('logistics.hybrid.policy.end');
+    Route::post('/legacy-earnings/{earning}/approve', [HybridFinanceController::class, 'approveLegacy'])->whereNumber('earning')->name('logistics.hybrid.legacy.approve');
+    Route::post('/expenses', [HybridFinanceController::class, 'expense'])->name('logistics.hybrid.expense');
+    Route::get('/', [HybridFinanceController::class, 'index'])->name('logistics.hybrid');
+    Route::post('/batches/{batch}/verify', [HybridFinanceController::class, 'verify'])->whereNumber('batch')->name('logistics.hybrid.verify');
+    Route::post('/policies', [HybridFinanceController::class, 'policy'])->name('logistics.hybrid.policy');
+    Route::post('/payroll', [HybridFinanceController::class, 'payroll'])->name('logistics.hybrid.payroll');
+    Route::post('/earnings/{earning}/approve', [HybridFinanceController::class, 'approve'])->whereNumber('earning')->name('logistics.hybrid.approve');
+    Route::post('/earnings/{earning}/paid', [HybridFinanceController::class, 'paid'])->whereNumber('earning')->name('logistics.hybrid.paid');
+});

@@ -1,6 +1,8 @@
 @extends('admin.layout')
 @section('title', 'ShopHop Finances')
 @section('content')
+<a class="inline-block rounded border p-3 text-teal-700" href="{{ route('hybrid.index') }}">COD batches and partner compensation</a>
+
 @php
   // Reusable class strings (para consistent ang itsura ng lahat ng form)
   $card   = 'rounded-lg border border-slate-200 bg-white shadow-sm';
@@ -26,7 +28,7 @@
     <div class="max-w-2xl">
       <h1 class="text-2xl font-bold text-navy">ShopHop finances</h1>
       <p class="mt-1 text-sm text-slate-500">
-        10% commission is computed on merchandise after the Seller voucher. Platform discounts are funded by ShopHop.
+        The configured product commission is computed on merchandise after the Seller voucher. Platform discounts are funded by ShopHop.
         A recorded payout is <strong class="font-semibold text-slate-700">not</strong> an automatic money transfer.
       </p>
     </div>
@@ -69,7 +71,7 @@
       <p class="mt-1 text-xl font-bold text-slate-800">₱{{ number_format($paidPayoutTotal,2) }}</p>
     </div>
     <div class="{{ $card }} border-l-4 border-l-teal-600 p-4">
-      <p class="text-xs text-slate-500">Commission (completed orders)</p>
+      <p class="text-xs text-slate-500">Allocated platform fees</p>
       <p class="mt-1 text-xl font-bold text-slate-800">₱{{ number_format($commissionTotal,2) }}</p>
       <p class="mt-0.5 text-[11px] text-slate-400">Not a cash balance</p>
     </div>
@@ -192,15 +194,15 @@
         <div class="max-w-3xl">
           <h2 class="text-base font-bold text-slate-800">Marketplace shipping and payout rates</h2>
           <p class="mt-1 text-xs leading-relaxed text-slate-500">
-            Gross shipping = base + route distance band + linehaul component + excess weight. Express adds a percentage surcharge. ShopHop commission is locked at 10%.
+            Gross shipping = base + route distance band + linehaul component + excess weight. Express adds a percentage surcharge. Product and shipping commissions are configurable.
           </p>
         </div>
-        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">ShopHop 10%</span>
+        <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 ring-1 ring-inset ring-emerald-200">ShopHop commissions</span>
       </div>
 
       <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-teal-100 bg-teal-50/60 px-3 py-2.5">
         <p class="text-xs leading-relaxed text-teal-900"><strong>Live settings:</strong> Changes affect future checkout quotes only. Previously saved orders keep their original amounts.</p>
-        <span class="text-xs font-semibold text-teal-800">Commission fixed at 10%</span>
+        <span class="text-xs font-semibold text-teal-800">Commission settings</span>
       </div>
 
       <form id="shMarketplaceRateForm" method="POST" action="{{ route('admin.finance.rates') }}" class="mt-4 space-y-5">@csrf
@@ -208,8 +210,11 @@
         <fieldset>
           <legend class="text-sm font-semibold text-slate-700">Customer shipping</legend>
           <div class="mt-3 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <label class="{{ $label }}">Commission %
-              <input name="commission_percent" value="10" readonly class="{{ $input }} bg-slate-50 text-slate-500">
+            <label class="{{ $label }}">Product commission %
+              <input name="commission_percent" value="{{ $rates->commission_percent }}" type="number" min="0" max="100" step="0.01" class="{{ $input }}">
+            </label>
+            <label class="{{ $label }}">Shipping commission %
+              <input name="shipping_commission_percent" value="{{ $rates->shipping_commission_percent }}" type="number" min="0" max="100" step="0.01" class="{{ $input }}">
             </label>
             <label class="{{ $label }}">Base shipping
               <input name="base_shipping_fee" data-saved-rate="{{ $rates->base_shipping_fee }}" type="number" step="0.01" min="0" value="{{ old('base_shipping_fee',$rates->base_shipping_fee) }}" class="{{ $input }}">

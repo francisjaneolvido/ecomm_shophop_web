@@ -24,6 +24,11 @@ class RiderVerificationCodeNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
+            ->view(['html' => 'emails.verification-code', 'text' => 'emails.verification-code-text'], [
+                'verificationCode' => $this->code,
+                'accountLabel' => 'Rider',
+                'expiresInMinutes' => 10,
+            ])
             ->subject('ShopHop Rider Email Verification Code')
             ->greeting('Welcome to ShopHop!')
             ->line('Thank you for applying as a Rider / Courier.')

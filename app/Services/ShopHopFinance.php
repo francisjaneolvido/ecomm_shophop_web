@@ -1,17 +1,16 @@
 <?php
+
 namespace App\Services;
 
+use App\Models\Admin\Dispute;
 use App\Models\Buyer\Order\Order;
 use App\Models\Finance\CenterRevenueLedgerEntry;
-use App\Models\Finance\LogisticsOrderAllocation;
-use App\Models\Finance\MarketplaceRateSetting;
 use App\Models\Finance\OrderFinancial;
 use App\Models\Finance\SettlementEntry;
-use App\Models\Finance\PickupRiderAccrual;
 use App\Models\Logistics\CodSettlement;
 use App\Models\Logistics\Delivery;
-use App\Models\Logistics\ParcelTransfer;
-use App\Models\Logistics\SortingCenter;
+use App\Models\Logistics\ReturnCase;
+use App\Models\LogisticsPartner;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -19,10 +18,10 @@ class ShopHopFinance
 {
     /**
      * Pure marketplace ledger calculation.
-     * - Seller merchandise vouchers reduce Seller revenue before the 10% ShopHop commission.
+     * - Seller merchandise vouchers reduce Seller revenue before the configured product commission.
      * - Seller-funded shipping vouchers are deducted from Seller payout, never from Logistics entitlement.
      * - ShopHop merchandise/free-shipping vouchers are platform-funded marketing expense.
-     * - Logistics always receives the snapped gross shipping fee.
+     * - Logistics receives the snapped shipping fee less the configured shipping commission.
      */
     public static function breakdown(
         float $merchandise,
@@ -33,16 +32,28 @@ class ShopHopFinance
         float $shippingDiscount,
         float $codFee
     ): array {
-        $sellerBase = max(0, round($merchandise - $sellerDiscount, 2));
-        $commissionRate = (float) MarketplaceRateSetting::current()->commission_percent;
-        $commission = round($sellerBase * ($commissionRate / 100), 2);
-        $sellerEarnings = max(0, round($sellerBase - $commission - $sellerShippingDiscount, 2));
+        $policy = app(PlatformFinancialPolicyService::class)->active();
+        $base = max(0, FinanceMoney::minor($merchandise) - FinanceMoney::minor($sellerDiscount));
+        $shipping = max(0, FinanceMoney::minor($shippingFee));
+        $commission = FinanceMoney::percent($base, $policy['product_percent']);
+        $shippingCommission = FinanceMoney::percent($shipping, $policy['shipping_percent']);
+        $seller = $base - $commission - FinanceMoney::minor($sellerShippingDiscount);
+        if ($seller < 0) {
+            throw ValidationException::withMessages(['discount' => 'Seller shipping discount exceeds the Seller allocation.']);
+        }
 
         return [
-            'commission' => $commission,
-            'seller_earnings' => $sellerEarnings,
-            'logistics_earnings' => round(max(0, $shippingFee), 2),
-            'platform_net' => round($commission + $codFee - $platformDiscount - $shippingDiscount, 2),
+            'commission' => FinanceMoney::decimal($commission),
+            'shipping_commission' => FinanceMoney::decimal($shippingCommission),
+            'seller_earnings' => FinanceMoney::decimal($seller),
+            'logistics_earnings' => FinanceMoney::decimal($shipping - $shippingCommission),
+            'platform_net' => FinanceMoney::decimal($commission + $shippingCommission + FinanceMoney::minor($codFee)
+                - FinanceMoney::minor($platformDiscount) - FinanceMoney::minor($shippingDiscount)),
+            'product_rate_snapshot' => $policy['product_percent'],
+            'shipping_rate_snapshot' => $policy['shipping_percent'],
+            'financial_model' => 'hybrid',
+            'platform_rule_id' => $policy['id'],
+            'seller_hold_days' => $policy['seller_hold_days'],
         ];
     }
 
@@ -66,22 +77,27 @@ class ShopHopFinance
             (float) $order->cod_fee
         );
 
+        $allocated = FinanceMoney::minor($calculated['seller_earnings']) + FinanceMoney::minor($calculated['logistics_earnings']) + FinanceMoney::minor($calculated['platform_net']);
+        if ($allocated !== FinanceMoney::minor($order->total_amount)) {
+            throw ValidationException::withMessages(['financial' => 'Allocations do not reconcile to the authoritative Buyer total.']);
+        }
+
         OrderFinancial::create([
             'order_id' => $order->id,
-            'merchandise' => round($merchandise, 2),
-            'seller_discount' => round($sellerDiscount, 2),
-            'seller_shipping_discount' => round($sellerShippingDiscount, 2),
-            'platform_discount' => round($platformDiscount, 2),
-            'shipping_fee' => (float) $order->shipping_fee,
+            'merchandise' => FinanceMoney::decimal(FinanceMoney::minor($merchandise)),
+            'seller_discount' => FinanceMoney::decimal(FinanceMoney::minor($sellerDiscount)),
+            'seller_shipping_discount' => FinanceMoney::decimal(FinanceMoney::minor($sellerShippingDiscount)),
+            'platform_discount' => FinanceMoney::decimal(FinanceMoney::minor($platformDiscount)),
+            'shipping_fee' => FinanceMoney::decimal(FinanceMoney::minor($order->shipping_fee)),
             'shipping_route_band' => $shippingQuote['route_band'] ?? null,
             'shipping_weight_kg' => round((float) ($shippingQuote['weight_kg'] ?? 0), 3),
-            'shipping_base_fee' => round((float) ($shippingQuote['base_fee'] ?? 0), 2),
-            'shipping_distance_fee' => round((float) ($shippingQuote['distance_fee'] ?? 0), 2),
-            'shipping_weight_fee' => round((float) ($shippingQuote['weight_fee'] ?? 0), 2),
-            'shipping_linehaul_fee' => round((float) ($shippingQuote['linehaul_fee'] ?? 0), 2),
-            'shipping_express_surcharge' => round((float) ($shippingQuote['express_surcharge'] ?? 0), 2),
-            'shipping_discount' => round($shippingDiscount, 2),
-            'cod_fee' => (float) $order->cod_fee,
+            'shipping_base_fee' => FinanceMoney::decimal(FinanceMoney::minor($shippingQuote['base_fee'] ?? 0)),
+            'shipping_distance_fee' => FinanceMoney::decimal(FinanceMoney::minor($shippingQuote['distance_fee'] ?? 0)),
+            'shipping_weight_fee' => FinanceMoney::decimal(FinanceMoney::minor($shippingQuote['weight_fee'] ?? 0)),
+            'shipping_linehaul_fee' => FinanceMoney::decimal(FinanceMoney::minor($shippingQuote['linehaul_fee'] ?? 0)),
+            'shipping_express_surcharge' => FinanceMoney::decimal(FinanceMoney::minor($shippingQuote['express_surcharge'] ?? 0)),
+            'shipping_discount' => FinanceMoney::decimal(FinanceMoney::minor($shippingDiscount)),
+            'cod_fee' => FinanceMoney::decimal(FinanceMoney::minor($order->cod_fee)),
             ...$calculated,
         ]);
     }
@@ -89,21 +105,23 @@ class ShopHopFinance
     /**
      * Called only by explicit Admin settlement preparation; idempotent under locks.
      *
-     * Returns true when an older Order had to receive a reconstructed financial
-     * snapshot from its frozen Order/OrderItem amounts before settlement.
+     * Preserves existing financial snapshots and separates partner personnel compensation.
      */
     public function prepareForOrder(int $orderId): bool
     {
         return DB::transaction(function () use ($orderId) {
             $order = Order::with('items')->whereKey($orderId)->lockForUpdate()->firstOrFail();
             [$financial, $legacyBackfilled] = $this->financialForSettlement($order);
-            if (\App\Models\Logistics\ReturnCase::where('order_id', $order->id)->exists()) {
+            if (ReturnCase::where('order_id', $order->id)->exists()) {
                 throw ValidationException::withMessages(['order' => 'Return case exists; settlement is blocked.']);
+            }
+            if (Dispute::where('order_id', $order->id)->whereNotIn('status', Dispute::CLOSED)->exists()) {
+                throw ValidationException::withMessages(['settlement' => 'An unresolved order dispute blocks settlement.']);
             }
             if ($financial->settlement_hold) {
                 throw ValidationException::withMessages(['order' => 'This order has an unresolved settlement hold.']);
             }
-            if ($order->status !== Order::STATUS_COMPLETED || ! $order->isPaymentEligible()) {
+            if (! app(PlatformFinancialPolicyService::class)->eligible($order, $financial)) {
                 throw ValidationException::withMessages(['order' => 'Order must be completed and payment eligible first.']);
             }
 
@@ -124,122 +142,25 @@ class ShopHopFinance
             }
 
             foreach ([
-                ['seller', (int) $order->seller_id, (float) $financial->seller_earnings],
-                ['logistics', (int) $delivery->logistics_partner_id, (float) $financial->logistics_earnings],
+                ['seller', (int) $order->seller_id, $financial->seller_earnings],
+                ['logistics', (int) $delivery->logistics_partner_id, $financial->logistics_earnings],
             ] as [$kind, $payee, $amount]) {
                 if ($payee <= 0 || $amount < 0) {
                     throw ValidationException::withMessages(['order' => 'Invalid settlement beneficiary.']);
                 }
                 SettlementEntry::firstOrCreate(
                     ['order_id' => $orderId, 'kind' => $kind],
-                    ['payee_id' => $payee, 'amount' => round($amount, 2), 'status' => 'pending']
+                    ['payee_id' => $payee, 'amount' => FinanceMoney::decimal(FinanceMoney::minor($amount)), 'status' => 'pending']
                 );
             }
 
-            $rates = MarketplaceRateSetting::current();
-            $remaining = max(0, (float) $financial->logistics_earnings);
-
-            $pickupFee = 0.0;
-            if ((int) $delivery->pickup_rider_id > 0) {
-                // Honor the first-mile amount reserved at verified receipt; no double credit.
-                $accrual = PickupRiderAccrual::where('order_id', $orderId)->first();
-                if ($accrual && (int) $accrual->rider_id !== (int) $delivery->pickup_rider_id) {
-                    throw ValidationException::withMessages(['order' => 'Pickup Rider mismatch between verified handoff and settlement. Review manually.']);
-                }
-                $pickupFee = round(min($remaining, max(0, (float) ($accrual?->amount ?? $rates->pickup_rider_fee))), 2);
-                $remaining = max(0, round($remaining - $pickupFee, 2));
-                SettlementEntry::firstOrCreate(
-                    ['order_id' => $orderId, 'kind' => 'pickup_rider'],
-                    ['payee_id' => (int) $delivery->pickup_rider_id, 'amount' => $pickupFee, 'status' => 'pending']
-                );
-            }
-
-            $deliveryRiderId = (int) ($delivery->delivered_rider_id ?: $delivery->delivery_rider_id);
-            $deliveryFee = 0.0;
-            if ($deliveryRiderId > 0) {
-                $deliveryFee = round(min($remaining, max(0, (float) $rates->delivery_rider_fee)), 2);
-                $remaining = max(0, round($remaining - $deliveryFee, 2));
-                SettlementEntry::firstOrCreate(
-                    ['order_id' => $orderId, 'kind' => 'delivery_rider'],
-                    ['payee_id' => $deliveryRiderId, 'amount' => $deliveryFee, 'status' => 'pending']
-                );
-            }
-
-            $originBranchAmount = 0.0;
-            $destinationBranchAmount = 0.0;
-            $originCenter = $delivery->originSortingCenter;
-            $destinationCenter = $delivery->destinationSortingCenter;
-
-            if ($originCenter) {
-                $originBranchAmount = round(min($remaining, max(0, (float) $rates->origin_branch_fee)), 2);
-                $remaining = max(0, round($remaining - $originBranchAmount, 2));
-                $this->centerLedger($orderId, (int) $delivery->logistics_partner_id, (int) $originCenter->id,
-                    'origin_handling', $originBranchAmount, 'Origin parcel receiving/sorting allocation');
-            }
-
-            if ($destinationCenter && (! $originCenter || (int) $destinationCenter->id !== (int) $originCenter->id)) {
-                $destinationBranchAmount = round(min($remaining, max(0, (float) $rates->destination_branch_fee)), 2);
-                $remaining = max(0, round($remaining - $destinationBranchAmount, 2));
-                $this->centerLedger($orderId, (int) $delivery->logistics_partner_id, (int) $destinationCenter->id,
-                    'destination_handling', $destinationBranchAmount, 'Destination receiving/last-mile allocation');
-            }
-
-            $hubIds = collect();
-            foreach ($delivery->transfers->where('status', ParcelTransfer::RECEIVED) as $transfer) {
-                foreach ([$transfer->fromCenter, $transfer->toCenter] as $center) {
-                    if ($center && $center->type === 'province_hub') {
-                        $hubIds->push((int) $center->id);
-                    }
-                }
-            }
-            $hubIds = $hubIds->unique()->values();
-            $hubAmount = 0.0;
-            foreach ($hubIds as $hubId) {
-                if ($remaining <= 0) break;
-                $amount = round(min($remaining, max(0, (float) $rates->province_hub_fee)), 2);
-                $remaining = max(0, round($remaining - $amount, 2));
-                $hubAmount = round($hubAmount + $amount, 2);
-                $this->centerLedger($orderId, (int) $delivery->logistics_partner_id, (int) $hubId,
-                    'hub_handling', $amount, 'Province Hub handling allocation');
-            }
-
-            // The shipping quote already reserves a linehaul component. It remains with the
-            // Logistics company as a Linehaul pool; actual Driver earnings are created per completed Trip.
-            $linehaulPool = round(min($remaining, max(0, (float) $financial->shipping_linehaul_fee)), 2);
-            $remaining = max(0, round($remaining - $linehaulPool, 2));
-
-            LogisticsOrderAllocation::updateOrCreate(
-                ['order_id' => $orderId],
-                [
-                    'logistics_partner_id' => (int) $delivery->logistics_partner_id,
-                    'gross_shipping' => round((float) $financial->logistics_earnings, 2),
-                    'pickup_rider_fee' => $pickupFee,
-                    'delivery_rider_fee' => $deliveryFee,
-                    'origin_branch_amount' => $originBranchAmount,
-                    'destination_branch_amount' => $destinationBranchAmount,
-                    'province_hub_count' => $hubIds->count(),
-                    'province_hub_amount' => $hubAmount,
-                    'linehaul_pool' => $linehaulPool,
-                    'logistics_margin' => round($remaining, 2),
-                ]
-            );
-
+            // Gross partner allocation is business revenue, never an automatic personnel/facility split.
+            // Partner compensation is recorded at verified service events under partner-owned policies.
             return $legacyBackfilled;
         }, 3);
     }
 
-    /**
-     * Patch-C compatibility for COD Orders completed before OrderFinancial
-     * snapshots existed.
-     *
-     * We DO NOT recalculate an old Order using today's shipping rates or today's
-     * vouchers. The reconstruction uses only frozen values already stored on the
-     * Order and OrderItem rows. If those frozen amounts do not reconcile to the
-     * amount the Buyer actually paid, Admin is stopped instead of inventing a
-     * payout.
-     *
-     * @return array{0: OrderFinancial, 1: bool}
-     */
+    /** Historical snapshots are preserved; missing historical rates require audited review. */
     private function financialForSettlement(Order $order): array
     {
         $financial = OrderFinancial::where('order_id', $order->id)->lockForUpdate()->first();
@@ -247,103 +168,9 @@ class ShopHopFinance
             return [$financial, false];
         }
 
-        $order->loadMissing('items');
-
-        $merchandise = round((float) $order->items->sum(
-            fn ($item) => (float) $item->price * (int) $item->quantity
-        ), 2);
-
-        if ($merchandise <= 0) {
-            throw ValidationException::withMessages([
-                'order' => 'Historical settlement cannot be reconstructed because this Order has no frozen item price total.',
-            ]);
-        }
-
-        $sellerDiscount = round(max(0, (float) $order->voucher_discount), 2);
-        $sellerShippingDiscount = round(max(0, (float) $order->seller_shipping_discount), 2);
-        $platformDiscount = round(max(0, (float) $order->platform_discount), 2);
-        $shippingDiscount = round(max(0, (float) $order->shipping_discount), 2);
-        $shippingFee = round(max(0, (float) $order->shipping_fee), 2);
-        $codFee = round(max(0, (float) $order->cod_fee), 2);
-
-        $reconstructedBuyerTotal = round(
-            $merchandise
-            + $shippingFee
-            + $codFee
-            - $sellerDiscount
-            - $sellerShippingDiscount
-            - $platformDiscount
-            - $shippingDiscount,
-            2
-        );
-
-        $storedBuyerTotal = round((float) $order->total_amount, 2);
-        if (abs($reconstructedBuyerTotal - $storedBuyerTotal) > 0.02) {
-            throw ValidationException::withMessages([
-                'order' => sprintf(
-                    'Historical Order #%d does not reconcile safely (stored total ₱%s vs frozen line-item total ₱%s). Review it manually before distribution.',
-                    $order->id,
-                    number_format($storedBuyerTotal, 2),
-                    number_format($reconstructedBuyerTotal, 2)
-                ),
-            ]);
-        }
-
-        $calculated = self::breakdown(
-            $merchandise,
-            $sellerDiscount,
-            $sellerShippingDiscount,
-            $platformDiscount,
-            $shippingFee,
-            $shippingDiscount,
-            $codFee
-        );
-
-        $financial = OrderFinancial::create([
-            'order_id' => $order->id,
-            'merchandise' => $merchandise,
-            'seller_discount' => $sellerDiscount,
-            'seller_shipping_discount' => $sellerShippingDiscount,
-            'platform_discount' => $platformDiscount,
-            'shipping_fee' => $shippingFee,
-
-            // Historical Orders did not preserve the Patch-B quote components.
-            // Keep them explicit as legacy instead of pretending today's rate
-            // table was the rate used when the Buyer checked out.
-            'shipping_route_band' => 'legacy',
-            'shipping_weight_kg' => 0,
-            'shipping_base_fee' => 0,
-            'shipping_distance_fee' => 0,
-            'shipping_weight_fee' => 0,
-            'shipping_linehaul_fee' => 0,
-            'shipping_express_surcharge' => 0,
-
-            'shipping_discount' => $shippingDiscount,
-            'cod_fee' => $codFee,
-            ...$calculated,
+        throw ValidationException::withMessages([
+            'order' => 'Historical financial snapshot is missing. Reconstruct it through an audited review; current rates cannot be applied to historical orders.',
         ]);
-
-        return [$financial, true];
-    }
-
-    private function centerLedger(
-        int $orderId,
-        int $partnerId,
-        int $centerId,
-        string $kind,
-        float $amount,
-        string $note
-    ): void {
-        if ($amount <= 0) return;
-        CenterRevenueLedgerEntry::firstOrCreate(
-            ['order_id' => $orderId, 'sorting_center_id' => $centerId, 'kind' => $kind],
-            [
-                'logistics_partner_id' => $partnerId,
-                'amount' => round($amount, 2),
-                'status' => 'allocated',
-                'note' => $note,
-            ]
-        );
     }
 
     /**
@@ -355,10 +182,13 @@ class ShopHopFinance
         return DB::transaction(function () use ($orderId, $adminId) {
             $order = Order::whereKey($orderId)->lockForUpdate()->firstOrFail();
             $financial = OrderFinancial::where('order_id', $orderId)->lockForUpdate()->firstOrFail();
+            if (Dispute::where('order_id', $order->id)->whereNotIn('status', Dispute::CLOSED)->exists()) {
+                throw ValidationException::withMessages(['settlement' => 'An unresolved order dispute blocks settlement.']);
+            }
             if ($financial->settlement_hold) {
                 throw ValidationException::withMessages(['settlement' => 'This order is on settlement hold.']);
             }
-            if ($order->status !== Order::STATUS_COMPLETED || ! $order->isPaymentEligible()) {
+            if (! app(PlatformFinancialPolicyService::class)->eligible($order, $financial)) {
                 throw ValidationException::withMessages(['settlement' => 'Order is no longer eligible for settlement distribution.']);
             }
             if ($order->payment_method === 'cod') {
@@ -397,6 +227,8 @@ class ShopHopFinance
                 ->where('status', 'allocated')
                 ->update(['status' => 'posted', 'posted_at' => now(), 'updated_at' => now()]);
 
+            FinancialAudit::record('order_settlement', $orderId, 'distributed', 'user', $adminId, ['reference' => $reference]);
+
             return $reference;
         }, 3);
     }
@@ -408,7 +240,8 @@ class ShopHopFinance
             $candidate = SettlementEntry::whereKey($entryId)->firstOrFail();
             $order = Order::whereKey($candidate->order_id)->lockForUpdate()->firstOrFail();
             $entry = SettlementEntry::whereKey($entryId)->lockForUpdate()->firstOrFail();
-            if ($order->status !== Order::STATUS_COMPLETED || ! $order->isPaymentEligible()) {
+            $financial = OrderFinancial::where('order_id', $order->id)->lockForUpdate()->firstOrFail();
+            if (! app(PlatformFinancialPolicyService::class)->eligible($order, $financial)) {
                 throw ValidationException::withMessages(['settlement' => 'Order is no longer payment/receipt eligible.']);
             }
             if ($order->payment_method === 'cod') {
@@ -422,6 +255,9 @@ class ShopHopFinance
                 throw ValidationException::withMessages(['settlement' => 'Only distributed/available Seller or Logistics payouts can be recorded as paid.']);
             }
             $financial = OrderFinancial::where('order_id', $entry->order_id)->lockForUpdate()->firstOrFail();
+            if (Dispute::where('order_id', $order->id)->whereNotIn('status', Dispute::CLOSED)->exists()) {
+                throw ValidationException::withMessages(['settlement' => 'An unresolved order dispute blocks settlement.']);
+            }
             if ($financial->settlement_hold) {
                 throw ValidationException::withMessages(['settlement' => 'Order is on hold.']);
             }
@@ -429,10 +265,26 @@ class ShopHopFinance
                 'status' => 'paid', 'payment_reference' => $reference,
                 'paid_by_user_id' => $adminId, 'paid_at' => now(),
             ]);
+            FinancialAudit::record('settlement_entry', $entryId, 'paid', 'user', $adminId, ['amount' => $entry->amount, 'reference' => $reference]);
         });
     }
 
-    /** Logistics can record Pickup/Delivery Rider payout only after its own ShopHop settlement is paid. */
+    public function approveLegacyRider(int $entryId, int $partnerId, int $operatorId): void
+    {
+        DB::transaction(function () use ($entryId, $partnerId, $operatorId) {
+            abort_unless(LogisticsPartner::whereKey($partnerId)->where('user_id', $operatorId)->exists(), 403);
+            $entry = SettlementEntry::whereKey($entryId)->lockForUpdate()->firstOrFail();
+            abort_unless(Delivery::where('order_id', $entry->order_id)->where('logistics_partner_id', $partnerId)->exists(), 404);
+            if (! in_array($entry->kind, ['pickup_rider', 'delivery_rider'], true) || $entry->status !== 'pending') {
+                throw ValidationException::withMessages(['settlement' => 'Only pending historical Rider obligations can be approved.']);
+            }
+            $entry->update(['status' => 'available', 'distribution_reference' => 'PARTNER-APPROVAL-'.$entryId,
+                'distributed_at' => now(), 'distributed_by_user_id' => $operatorId]);
+            FinancialAudit::record('legacy_rider_settlement', $entryId, 'partner_approved', 'user', $operatorId, ['amount' => $entry->amount]);
+        });
+    }
+
+    /** Pay historically recorded Rider obligations from Partner funds without a Seller settlement gate. */
     public function markRiderPaid(int $entryId, int $partnerId, int $operatorId, string $reference): void
     {
         DB::transaction(function () use ($entryId, $partnerId, $operatorId, $reference) {
@@ -440,15 +292,13 @@ class ShopHopFinance
             if (! in_array($entry->kind, ['pickup_rider', 'delivery_rider'], true) || $entry->status !== 'available') {
                 throw ValidationException::withMessages(['settlement' => 'Only available Rider earnings can be recorded as paid.']);
             }
-            $logistics = SettlementEntry::where('order_id', $entry->order_id)
-                ->where('kind', 'logistics')->lockForUpdate()->first();
-            if (! $logistics || (int) $logistics->payee_id !== $partnerId || ! in_array($logistics->status, ['available', 'paid'], true)) {
-                throw ValidationException::withMessages(['settlement' => 'ShopHop must distribute the Logistics settlement before Rider payout can be recorded.']);
-            }
+            $delivery = Delivery::where('order_id', $entry->order_id)->where('logistics_partner_id', $partnerId)->first();
+            abort_unless($delivery && LogisticsPartner::whereKey($partnerId)->where('user_id', $operatorId)->exists(), 403);
             $entry->update([
                 'status' => 'paid', 'payment_reference' => $reference, 'paid_at' => now(),
                 'paid_by_user_id' => $operatorId,
             ]);
+            FinancialAudit::record('legacy_rider_settlement', $entryId, 'paid', 'user', $operatorId, ['amount' => $entry->amount, 'reference' => $reference]);
         });
     }
 }

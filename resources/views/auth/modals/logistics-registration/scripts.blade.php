@@ -646,6 +646,12 @@
         }
 
         function setVerificationMessage(message, tone) {
+            if (otpErrorEl) {
+                otpErrorEl.textContent = message || '';
+                otpErrorEl.classList.toggle('hidden', !message);
+                otpErrorEl.classList.toggle('text-red-500', tone === 'error');
+                otpErrorEl.classList.toggle('text-teal-dark', tone === 'success');
+            }
             if (!sendCodeMessage) return;
             sendCodeMessage.textContent = message || '';
             sendCodeMessage.classList.remove('text-navy/45', 'text-teal-dark', 'text-red-600');
@@ -689,6 +695,8 @@
             if (verifyEmailDisplay) verifyEmailDisplay.textContent = email;
             if (otpEmailDisplay) otpEmailDisplay.textContent = email;
 
+            const previouslySent = verificationCodeSent;
+            if (resendBtn) { resendBtn.disabled = true; resendLabel.textContent = 'Sending...'; }
             if (sendCodeBtn) {
                 sendCodeBtn.disabled = true;
                 sendCodeBtn.classList.add('opacity-60', 'cursor-wait');
@@ -716,6 +724,8 @@
 
                 verificationCodeSent = true;
                 emailVerified = false;
+                otpInputs.forEach(input => { input.value = ''; input.classList.remove('otp-filled'); });
+                serializeOtp();
                 setVerificationMessage(payload.message || 'A 6-digit verification code was sent to your e-mail.', 'success');
 
                 if (step3NextBtn) step3NextBtn.disabled = false;
@@ -723,10 +733,13 @@
                     sendCodeBtn.innerHTML = '<span>Send code again</span>';
                 }
 
-                startResendCountdown(Number(payload.retry_after || 30));
+                startResendCountdown(Number(payload.retry_after || 60));
                 return true;
             } catch (error) {
-                verificationCodeSent = false;
+                verificationCodeSent = previouslySent;
+                if (step3NextBtn) step3NextBtn.disabled = !previouslySent;
+                if (error.payload?.retry_after) startResendCountdown(Number(error.payload.retry_after));
+                else if (resendBtn) { resendBtn.disabled = false; resendLabel.textContent = 'Resend code'; resendTimerEl.classList.add('hidden'); }
                 setVerificationMessage(error.message || 'Unable to send a verification code. Please try again.', 'error');
                 return false;
             } finally {
@@ -787,7 +800,7 @@
         function startResendCountdown(initialSeconds) {
             if (!resendBtn || !resendLabel || !resendTimerEl) return;
 
-            let secondsLeft = Math.max(1, Number(initialSeconds || 30));
+            let secondsLeft = Math.max(1, Number(initialSeconds || 60));
 
             resendBtn.disabled = true;
             resendBtn.classList.add('text-navy/30');
@@ -829,11 +842,6 @@
         if (resendBtn) {
             resendBtn.addEventListener('click', function () {
                 if (resendBtn.disabled) return;
-                otpInputs.forEach(function (input) {
-                    input.value = '';
-                    input.classList.remove('otp-filled');
-                });
-                if (otpInputs[0]) otpInputs[0].focus();
                 sendVerificationCode(true);
             });
         }

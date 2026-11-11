@@ -7,8 +7,8 @@ use App\Models\Logistics\LinehaulDriver;
 use App\Models\Logistics\LinehaulTrip;
 use App\Models\Logistics\ParcelManifest;
 use App\Models\Logistics\ParcelTransfer;
-use App\Models\Finance\LinehaulDriverEarning;
-use App\Models\Finance\MarketplaceRateSetting;
+use App\Models\Logistics\RouteLink;
+use App\Models\Logistics\SortingCenter;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -16,20 +16,21 @@ class LinehaulService
 {
     /** Directional branch-to-branch road trips require a real verified link.
      * Legacy station-to-parent-hub transfers retain the existing process. */
-    private function requireVerifiedStationRoad(int $partnerId, \App\Models\Logistics\SortingCenter $from,
-        \App\Models\Logistics\SortingCenter $to): void
+    private function requireVerifiedStationRoad(int $partnerId, SortingCenter $from,
+        SortingCenter $to): void
     {
-        if ((int) $from->parent_id === (int) $to->id && $to->type === 'province_hub') return;
+        if ((int) $from->parent_id === (int) $to->id && $to->type === 'province_hub') {
+            return;
+        }
         $islands = app(PhilippineIslandGroup::class);
         if (! $islands->forCenter($from) || ! $islands->forCenter($to)
             || $islands->isCrossGroup($from, $to)
-            || ! \App\Models\Logistics\RouteLink::query()
+            || ! RouteLink::query()
                 ->where('logistics_partner_id', $partnerId)
                 ->where('from_center_id', $from->id)->where('to_center_id', $to->id)
                 ->where('mode', 'road')->where('status', 'verified')
                 ->whereNotNull('verified_at')->exists()) {
-            throw ValidationException::withMessages(['linehaul' =>
-                'Direct station-to-station road transport requires a verified directional ROAD connection. Configure it in Transport Routes first.']);
+            throw ValidationException::withMessages(['linehaul' => 'Direct station-to-station road transport requires a verified directional ROAD connection. Configure it in Transport Routes first.']);
         }
     }
 
@@ -72,14 +73,13 @@ class LinehaulService
             $to = $locked->toCenter()->firstOrFail();
             $islands = app(PhilippineIslandGroup::class);
             if ($islands->isCrossGroup($from, $to)) {
-                throw ValidationException::withMessages(['linehaul' =>
-                    'Inter-island route detected. Do not assign one road vehicle/driver from '. $from->name .' to '. $to->name .'. Book a verified Sea/Air cargo leg at the origin Province Hub.']);
+                throw ValidationException::withMessages(['linehaul' => 'Inter-island route detected. Do not assign one road vehicle/driver from '.$from->name.' to '.$to->name.'. Book a verified Sea/Air cargo leg at the origin Province Hub.']);
             }
             if ($from->type === 'province_hub' && $to->type === 'province_hub') {
                 if (! $islands->forCenter($from) || ! $islands->forCenter($to)) {
-                    throw ValidationException::withMessages(['linehaul'=>'Missing/unknown PSGC Region on one Province Hub. Fix it before assigning road transport.']);
+                    throw ValidationException::withMessages(['linehaul' => 'Missing/unknown PSGC Region on one Province Hub. Fix it before assigning road transport.']);
                 }
-                $roadLink = \App\Models\Logistics\RouteLink::where('logistics_partner_id', $locked->logistics_partner_id)
+                $roadLink = RouteLink::where('logistics_partner_id', $locked->logistics_partner_id)
                     ->where('from_center_id', $from->id)->where('to_center_id', $to->id)
                     ->where('status', 'verified')->whereNotNull('verified_at')->where('mode', 'road')->exists();
                 if (! $roadLink) {
@@ -189,10 +189,10 @@ class LinehaulService
                 throw ValidationException::withMessages(['manifest_code' => 'Legacy inter-island road assignment is blocked. Contact Logistics to reconcile the existing trip.']);
             }
             if ($trip->fromCenter()->value('type') === 'province_hub' && $trip->toCenter()->value('type') === 'province_hub') {
-                if (! \App\Models\Logistics\RouteLink::where('logistics_partner_id',$trip->logistics_partner_id)
-                    ->where('from_center_id',$trip->from_sorting_center_id)->where('to_center_id',$trip->to_sorting_center_id)
-                    ->where('status','verified')->whereNotNull('verified_at')->where('mode','road')->exists()) {
-                    throw ValidationException::withMessages(['manifest_code'=>'Verified ROAD link missing or suspended. Departure blocked.']);
+                if (! RouteLink::where('logistics_partner_id', $trip->logistics_partner_id)
+                    ->where('from_center_id', $trip->from_sorting_center_id)->where('to_center_id', $trip->to_sorting_center_id)
+                    ->where('status', 'verified')->whereNotNull('verified_at')->where('mode', 'road')->exists()) {
+                    throw ValidationException::withMessages(['manifest_code' => 'Verified ROAD link missing or suspended. Departure blocked.']);
                 }
             }
             if ($trip->fromCenter()->value('type') === 'station_hub'
@@ -299,26 +299,8 @@ class LinehaulService
                 ->where('status', FleetVehicle::IN_TRANSIT)
                 ->update(['status' => FleetVehicle::AVAILABLE]);
 
-            $from = $locked->fromCenter()->first();
-            $to = $locked->toCenter()->first();
-            $rates = MarketplaceRateSetting::current();
-            $isHubToHub = $from?->type === 'province_hub' && $to?->type === 'province_hub';
-            $driverFee = $isHubToHub
-                ? (float) $rates->linehaul_hub_hub_driver_fee
-                : (float) $rates->linehaul_branch_hub_driver_fee;
+            app(PartnerCompensationService::class)->trip($locked);
 
-            if ($driverFee > 0) {
-                LinehaulDriverEarning::firstOrCreate(
-                    ['linehaul_trip_id' => $locked->id],
-                    [
-                        'logistics_partner_id' => (int) $locked->logistics_partner_id,
-                        'driver_id' => (int) $locked->driver_id,
-                        'amount' => round($driverFee, 2),
-                        'status' => 'available',
-                        'available_at' => now(),
-                    ]
-                );
-            }
         }, 3);
     }
 

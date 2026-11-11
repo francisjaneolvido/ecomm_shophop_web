@@ -15,8 +15,6 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
-    private const COMMISSION_RATE = 10.0;
-
     public function index(Request $request): View
     {
         return view('seller.reports', $this->build($request));
@@ -34,15 +32,15 @@ class ReportController extends Controller
             fputcsv($out, ['Orders placed', $data['totalOrders']]);
             fputcsv($out, ['Completed orders', $data['completedOrders']]);
             fputcsv($out, ['Failed delivery reports', $data['failedDeliveryReports']]);
-            fputcsv($out, ['Platform commission rate', self::COMMISSION_RATE.'%']);
+            fputcsv($out, ['Platform commission basis', 'Saved per-order allocations']);
             fputcsv($out, []);
             fputcsv($out, ['Order', 'Date', 'Buyer', 'Items', 'Gross', 'Commission', 'Net', 'Status']);
             foreach ($data['recentTransactions'] as $row) {
                 fputcsv($out, [
                     $row['order_id'], $row['date'], $row['buyer'], $row['items'],
                     number_format($row['gross'], 2, '.', ''),
-                    number_format($row['commission'], 2, '.', ''),
-                    number_format($row['net'], 2, '.', ''), $row['status'],
+                    $row['commission'] === null ? 'Awaiting financial review' : number_format($row['commission'], 2, '.', ''),
+                    $row['net'] === null ? 'Awaiting financial review' : number_format($row['net'], 2, '.', ''), $row['status'],
                 ]);
             }
             fclose($out);
@@ -71,12 +69,17 @@ class ReportController extends Controller
         $previousOrders = $previousOrdersCollection->count();
         $completedOrders = $completed->count();
         $cancelledOrders = $orders->where('status', Order::STATUS_CANCELLED)->count();
+        $recorded = $completed->filter(fn (Order $order) => $order->financial !== null);
+        $commissionAmount = (float) $recorded->sum(fn (Order $order) => (float) $order->financial->commission);
+        $netEarnings = (float) $recorded->sum(fn (Order $order) => (float) $order->financial->seller_earnings);
+        $unreviewedFinancialOrders = $completed->count() - $recorded->count();
         $failedDeliveryReports = $orders->sum(
             fn (Order $order) => $order->delivery?->failureReports?->count() ?? 0
         );
 
         $dailySales = collect(CarbonPeriod::create($from->copy()->startOfDay(), $to->copy()->startOfDay()))->map(function ($date) use ($completed) {
             $dayOrders = $completed->filter(fn (Order $order) => $order->created_at->isSameDay($date));
+
             return [
                 'label' => $date->format('D'),
                 'date' => $date->format('M j'),
@@ -91,6 +94,7 @@ class ReportController extends Controller
         $topProducts = $completedItems->groupBy(fn ($row) => $row['item']->product_id)->map(function (Collection $rows) use ($totalSales) {
             $first = $rows->first()['item'];
             $revenue = (float) $rows->sum(fn ($row) => (float) $row['item']->price * (int) $row['item']->quantity);
+
             return [
                 'name' => $first->product?->name ?? 'Unavailable product',
                 'variant' => 'All variants',
@@ -126,8 +130,8 @@ class ReportController extends Controller
             $gross = $order->financial
                 ? (float) $order->financial->merchandise - (float) $order->financial->seller_discount
                 : max(0, (float) $order->items->sum(fn ($item) => (float) $item->price * (int) $item->quantity) - (float) $order->voucher_discount);
-            $commission = $isCompleted ? ($order->financial
-                ? (float) $order->financial->commission : round($gross * (self::COMMISSION_RATE / 100), 2)) : 0.0;
+            $commission = $isCompleted && $order->financial ? (float) $order->financial->commission : null;
+
             return [
                 'order_id' => 'SHP-'.str_pad((string) $order->id, 6, '0', STR_PAD_LEFT),
                 'date' => $order->created_at->format('M j, Y · g:i A'),
@@ -135,7 +139,7 @@ class ReportController extends Controller
                 'items' => (int) $order->items->sum('quantity'),
                 'gross' => $gross,
                 'commission' => $commission,
-                'net' => $gross - $commission,
+                'net' => $isCompleted && $order->financial ? (float) $order->financial->seller_earnings : null,
                 'status' => $order->statusLabel(),
             ];
         })->values();
@@ -152,7 +156,9 @@ class ReportController extends Controller
             'completedOrders' => $completedOrders,
             'cancelledOrders' => $cancelledOrders,
             'failedDeliveryReports' => $failedDeliveryReports,
-            'commissionRate' => self::COMMISSION_RATE,
+            'commissionAmount' => $commissionAmount,
+            'netEarnings' => $netEarnings,
+            'unreviewedFinancialOrders' => $unreviewedFinancialOrders,
             'dailySales' => $dailySales,
             'topProducts' => $topProducts,
             'categorySales' => $categorySales,
@@ -188,6 +194,7 @@ class ReportController extends Controller
         if ($from->diffInDays($to) > 366) {
             throw ValidationException::withMessages(['date_from' => 'Choose a report range of 366 days or less.']);
         }
+
         return [$from, $to];
     }
 

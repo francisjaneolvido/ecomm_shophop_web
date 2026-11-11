@@ -40,7 +40,7 @@ Route::prefix('seller')
         Route::post('/verify-email', [
             SellerEmailVerificationController::class,
             'verify',
-        ])->name('verify-email.verify');
+        ])->middleware('throttle:20,1')->name('verify-email.verify');
 
         Route::post('/verify-email/resend', [
             SellerEmailVerificationController::class,

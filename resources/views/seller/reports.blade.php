@@ -3,6 +3,7 @@
 @section('title', 'Reports')
 
 @section('content')
+<p class="mx-auto max-w-7xl p-4 text-sm text-slate-600">Calculated order allocations are shown below. Approval and actual payout are tracked separately in earnings. @if(($unreviewedFinancialOrders ?? 0) > 0){{ $unreviewedFinancialOrders }} older completed order(s) await financial review; their fees are excluded from these totals.@endif</p>
 
 @php
     $totalSales = (float) ($totalSales ?? 0);
@@ -12,9 +13,9 @@
     $completedOrders = (int) ($completedOrders ?? 0);
     $cancelledOrders = (int) ($cancelledOrders ?? 0);
     $failedDeliveryReports = (int) ($failedDeliveryReports ?? 0);
-    $commissionRate = (float) ($commissionRate ?? 10);
-    $commissionAmount = $totalSales * ($commissionRate / 100);
-    $netEarnings = $totalSales - $commissionAmount;
+    $commissionAmount = (float) ($commissionAmount ?? 0);
+    $netEarnings = (float) ($netEarnings ?? 0);
+    $commissionRate = $commissionAmount + $netEarnings > 0 ? $commissionAmount / ($commissionAmount + $netEarnings) * 100 : 0;
     $avgOrderValue = $totalOrders > 0 ? $totalSales / $totalOrders : 0;
     $previousAvgOrderValue = $previousOrders > 0 ? $previousSales / $previousOrders : 0;
     $salesGrowth = $previousSales > 0 ? (($totalSales - $previousSales) / $previousSales) * 100 : ($totalSales > 0 ? 100 : 0);
@@ -447,7 +448,7 @@
 
 
                 <p class="mt-1.5 text-[10px] text-navy/30">
-                    After {{ number_format($commissionRate, 0) }}% platform commission
+                    From saved per-order allocations
                 </p>
 
             </div>
@@ -472,7 +473,7 @@
                         </h2>
 
                         <p class="text-[10px] text-navy/40 mt-0.5">
-                            Gross sales minus platform commission.
+                            Recorded Seller allocations after platform fees and Seller-funded shipping discounts.
                         </p>
 
                     </div>
@@ -516,7 +517,7 @@
                             </p>
 
                             <p class="text-[10px] text-navy/35 mt-0.5">
-                                {{ number_format($commissionRate, 0) }}% of gross sales
+                                Share of recorded allocations
                             </p>
 
                         </div>

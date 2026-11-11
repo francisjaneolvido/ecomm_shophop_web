@@ -1,15 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
-use App\Http\Controllers\HomeController;
-use App\Http\Controllers\PublicSearchController;
-
-use App\Http\Controllers\Auth\BuyerRegistrationController;
-use App\Http\Controllers\Auth\SellerRegistrationController;
-use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\BuyerEmailVerificationController;
-
+use App\Http\Controllers\Auth\BuyerRegistrationController;
+use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\SellerRegistrationController;
+use App\Http\Controllers\CatalogRevisionController;
+use App\Http\Controllers\HelpCenterController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\HybridFinanceController;
+use App\Http\Controllers\PublicSearchController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,16 +21,15 @@ use App\Http\Controllers\Auth\BuyerEmailVerificationController;
 Route::get('/', [HomeController::class, 'index'])
     ->name('home');
 
-Route::get('/catalog/revision', \App\Http\Controllers\CatalogRevisionController::class)
+Route::get('/catalog/revision', CatalogRevisionController::class)
     ->middleware('throttle:60,1')->name('catalog.revision');
 
 Route::get('/search/suggestions', [PublicSearchController::class, 'suggestions'])
     ->middleware('throttle:120,1')->name('search.suggestions');
-Route::get('/help', [\App\Http\Controllers\HelpCenterController::class, 'index'])->name('help.index');
+Route::get('/help', [HelpCenterController::class, 'index'])->name('help.index');
 
 Route::get('/search', [PublicSearchController::class, 'index'])
     ->name('search.index');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -67,7 +66,6 @@ Route::get('/create-account', function () {
     return redirect()->route('register');
 })->name('create-account');
 
-
 /*
 |--------------------------------------------------------------------------
 | Future Shop Routes
@@ -88,12 +86,10 @@ Route::get('/create-account', function () {
 // Route::get('/deals', [HomeController::class, 'deals'])
 //     ->name('deals');
 
-
 // Retain public Store URLs as availability destinations; the legacy parameter has no defined public Seller lookup.
 Route::get('/buyer/store/{slug?}', function ($slug = null) {
     return view('buyer.store.show');
 })->name('buyer.store.show');
-
 
 /*
 |--------------------------------------------------------------------------
@@ -103,19 +99,29 @@ Route::get('/buyer/store/{slug?}', function ($slug = null) {
 
 Route::get('/buyer/verify-email', [
     BuyerEmailVerificationController::class,
-    'show'
+    'show',
 ])->name('buyer.verify-email.show');
-
 
 Route::post('/buyer/verify-email', [
     BuyerEmailVerificationController::class,
-    'verify'
-])->name('buyer.verify-email.verify');
-
+    'verify',
+])->middleware('throttle:20,1')->name('buyer.verify-email.verify');
 
 Route::post('/buyer/verify-email/resend', [
     BuyerEmailVerificationController::class,
-    'resend'
+    'resend',
 ])
     ->middleware('throttle:6,1')
     ->name('buyer.verify-email.resend');
+
+// Shared financial workspace; controller enforces current role, partner and facility ownership.
+Route::middleware('auth:web,rider')->prefix('financial-workspace')->name('hybrid.')->group(function () {
+    Route::post('/platform-rules', [HybridFinanceController::class, 'platformRule'])->name('platform-rule');
+    Route::get('/', [HybridFinanceController::class, 'index'])->name('index');
+    Route::post('/batches', [HybridFinanceController::class, 'submit'])->name('submit');
+    Route::post('/batches/{batch}/verify', [HybridFinanceController::class, 'verify'])->whereNumber('batch')->name('verify');
+    Route::post('/policies', [HybridFinanceController::class, 'policy'])->name('policy');
+    Route::post('/payroll', [HybridFinanceController::class, 'payroll'])->name('payroll');
+    Route::post('/earnings/{earning}/approve', [HybridFinanceController::class, 'approve'])->whereNumber('earning')->name('approve');
+    Route::post('/earnings/{earning}/paid', [HybridFinanceController::class, 'paid'])->whereNumber('earning')->name('paid');
+});

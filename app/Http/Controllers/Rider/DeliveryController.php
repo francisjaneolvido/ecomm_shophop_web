@@ -7,8 +7,10 @@ use App\Models\Buyer\Order\Order;
 use App\Models\Logistics\CodSettlement;
 use App\Models\Logistics\Delivery;
 use App\Models\Logistics\DeliveryFailureReport;
-use App\Models\Logistics\PickupRequest;
 use App\Models\Logistics\Rider;
+use App\Services\FinancialAudit;
+use App\Services\PartnerCompensationService;
+use App\Services\RiderBatchService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -98,6 +100,7 @@ class DeliveryController extends Controller
 
         $request->validate([
             'cash_collected' => $order->payment_method === 'cod' ? ['required', 'accepted'] : ['prohibited'],
+            'actual_collected_amount' => $order->payment_method === 'cod' ? ['sometimes', 'required', 'decimal:0,2', 'min:0', 'max:999999999'] : ['prohibited'],
             'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
@@ -136,17 +139,20 @@ class DeliveryController extends Controller
                     ]);
                 }
 
+                app(PartnerCompensationService::class)->delivery($owned);
+
                 if ($owned->order->payment_method === 'cod') {
-                    CodSettlement::create([
+                    $collection = CodSettlement::create([
                         'order_id' => $owned->order_id,
                         'delivery_id' => $owned->id,
                         'logistics_partner_id' => $owned->logistics_partner_id,
                         'expected_amount' => $owned->order->total_amount,
-                        'collected_amount' => $owned->order->total_amount,
+                        'collected_amount' => $request->input('actual_collected_amount', $owned->order->total_amount),
                         'status' => CodSettlement::COLLECTED,
                         'collected_by_rider_id' => $rider->id,
                         'collected_at' => now(),
                     ]);
+                    FinancialAudit::record('cod_collection', $collection->id, 'collected', 'rider', $rider->id, ['expected_amount' => $collection->expected_amount, 'collected_amount' => $collection->collected_amount, 'proof_path' => $path]);
                 }
 
                 return back()->with('status', $owned->order->payment_method === 'cod'
@@ -208,6 +214,7 @@ class DeliveryController extends Controller
     private function visible(Request $request, int $deliveryId): Delivery
     {
         $rider = $request->user('rider');
+
         return Delivery::whereKey($deliveryId)
             ->where('logistics_partner_id', $rider->logistics_partner_id)
             ->where(function ($query) use ($rider) {
@@ -229,7 +236,7 @@ class DeliveryController extends Controller
             ->where('logistics_partner_id', $rider->logistics_partner_id);
 
         $parcel = ($lock ? $query->lockForUpdate() : $query)->firstOrFail();
-        app(\App\Services\RiderBatchService::class)->assertParcelAllowed($rider, $parcel, true);
+        app(RiderBatchService::class)->assertParcelAllowed($rider, $parcel, true);
 
         return $parcel;
     }

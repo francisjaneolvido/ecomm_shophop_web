@@ -3,13 +3,10 @@
 namespace App\Services;
 
 use App\Models\Buyer;
-use App\Services\PlatformVoucherPricing;
-use App\Models\Finance\PlatformVoucher;
-use App\Models\Finance\MarketplaceRateSetting;
-use App\Services\ShopHopFinance;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Buyer\Order\Order;
 use App\Models\Buyer\Order\OrderItem;
+use App\Models\Finance\PlatformVoucher;
 use App\Models\Seller;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\ProductVariant;
@@ -22,7 +19,6 @@ use Illuminate\Validation\ValidationException;
 
 class BuyerCheckoutService
 {
-
     /**
      * Build checkout data from the same persisted cart, product, seller, stock,
      * voucher, and Buyer address records used by the web checkout.
@@ -130,11 +126,9 @@ class BuyerCheckoutService
             $buyer,
             $shippingMethods,
             $logisticsChoices,
-            $paymentMethod,
             $selectedVoucher,
             $sellerVoucherCodes,
             $availableVouchers,
-            $strictVoucher,
             &$voucherApplied,
             &$merchandiseTotal,
             &$shippingTotal,
@@ -179,8 +173,7 @@ class BuyerCheckoutService
             // Exactly one Seller voucher per shop; older single-code clients remain supported.
             $code = app(SellerVoucherPricing::class)->selectedCode($sellerId, $sellerVoucherCodes,
                 ($selectedVoucher['seller_id'] ?? null) == $sellerId ? ($selectedVoucher['code'] ?? '') : '');
-            $offer = $code === '' ? null : $availableVouchers->first(fn (array $v) =>
-                $v['code'] === $code && (int) $v['seller_id'] === $sellerId);
+            $offer = $code === '' ? null : $availableVouchers->first(fn (array $v) => $v['code'] === $code && (int) $v['seller_id'] === $sellerId);
             if ($code !== '' && ! $offer) {
                 throw ValidationException::withMessages(['seller_vouchers' => 'Invalid Seller voucher for this shop.']);
             }
@@ -191,7 +184,7 @@ class BuyerCheckoutService
                     ->filter(fn (array $item) => $eligibleIds->contains((int) $item['product_id']))
                     ->sum(fn (array $item) => (float) $item['price'] * (int) $item['qty']);
                 $discount = app(SellerVoucherPricing::class)->discounts($voucher, $eligibleSubtotal,
-                    $merchandiseSubtotal, $shippingFee, (float) MarketplaceRateSetting::current()->commission_percent);
+                    $merchandiseSubtotal, $shippingFee, (float) app(PlatformFinancialPolicyService::class)->active()['product_percent']);
                 $voucherDiscount = $discount['merchandise'];
                 $sellerShippingDiscount = $discount['shipping'];
                 $voucherApplied = true;
@@ -238,6 +231,7 @@ class BuyerCheckoutService
         );
         $groups = $groups->map(function ($group) use ($pricing) {
             $alloc = $pricing['allocations'][$group['shop']['id']] ?? ['platform_discount' => 0, 'shipping_discount' => 0];
+
             return [...$group, ...$alloc,
                 'group_total' => round($group['group_total'] - $alloc['platform_discount'] - $alloc['shipping_discount'], 2)];
         });
@@ -251,8 +245,11 @@ class BuyerCheckoutService
             'seller_vouchers' => $groups->mapWithKeys(fn ($g) => [$g['shop']['id'] => $g['seller_voucher_code']])->all(),
             'available_platform_vouchers' => PlatformVoucher::available()->orderBy('kind')->get()
                 ->filter(function ($v) use ($buyer) {
-                    if ($v->per_buyer_limit === null) return true;
+                    if ($v->per_buyer_limit === null) {
+                        return true;
+                    }
                     $column = $v->kind === 'shipping' ? 'shipping_voucher_id' : 'platform_voucher_id';
+
                     return Order::where('buyer_id', $buyer->id)->where($column, $v->id)
                         ->distinct('checkout_group_id')->count('checkout_group_id') < $v->per_buyer_limit;
                 })
@@ -373,7 +370,7 @@ class BuyerCheckoutService
                     $eligible = $shopItems->filter(fn ($item) => $eligibleIds->contains($item->product_id))
                         ->sum(fn ($item) => $item->unitPrice() * $item->quantity);
                     $savings = app(SellerVoucherPricing::class)->discounts($offer, (float) $eligible,
-                        (float) $subtotal, $grossShipping, (float) MarketplaceRateSetting::current()->commission_percent);
+                        (float) $subtotal, $grossShipping, (float) app(PlatformFinancialPolicyService::class)->active()['product_percent']);
                     $sellerSaving = $savings['merchandise'];
                     $sellerShippingSaving = $savings['shipping'];
                     $voucherApplied = true;
@@ -448,13 +445,13 @@ class BuyerCheckoutService
                     'platform_discount' => $alloc['platform_discount'],
                     'shipping_discount' => $alloc['shipping_discount'],
                     'note' => $data['groups'][$sellerId]['note'] ?? null,
-                    'delivery_name' => trim($buyer->first_name . ' ' . $buyer->last_name),
+                    'delivery_name' => trim($buyer->first_name.' '.$buyer->last_name),
                     'delivery_phone' => $buyer->contact_no,
                     'delivery_address' => trim(
-                        $buyer->street_address . ', ' .
-                        $buyer->barangay_name . ', ' .
-                        $buyer->municipality_name .
-                        ($buyer->province_name ? ', ' . $buyer->province_name : '')
+                        $buyer->street_address.', '.
+                        $buyer->barangay_name.', '.
+                        $buyer->municipality_name.
+                        ($buyer->province_name ? ', '.$buyer->province_name : '')
                     ),
                     'delivery_region_code' => $buyer->region_code,
                     'delivery_region_name' => $buyer->region_name,
@@ -513,11 +510,15 @@ class BuyerCheckoutService
             }
             // Once for each used Seller voucher, and once per platform campaign per checkout group.
             foreach ($sellerVouchers as $applied) {
-                if ($applied) $applied->increment('used_count');
+                if ($applied) {
+                    $applied->increment('used_count');
+                }
             }
             foreach (['merchandise' => 'merchandise_discount', 'shipping' => 'shipping_discount'] as $kind => $key) {
                 $applied = $platformPricing[$kind.'_voucher'];
-                if (! $applied) continue;
+                if (! $applied) {
+                    continue;
+                }
                 $applied->increment('used_count');
                 $applied->increment('spent_amount', (float) $platformPricing[$key]);
             }
@@ -538,7 +539,7 @@ class BuyerCheckoutService
     public function addressForBuyer(Buyer $buyer): array
     {
         return [
-            'name' => trim($buyer->first_name . ' ' . $buyer->last_name),
+            'name' => trim($buyer->first_name.' '.$buyer->last_name),
             'phone' => $buyer->contact_no,
             'line' => $buyer->street_address,
             'city' => implode(', ', array_filter([
@@ -576,10 +577,10 @@ class BuyerCheckoutService
                 'delivery_province_name' => $buyer->province_name,
                 'delivery_municipality_name' => $buyer->municipality_name,
                 'delivery_address' => trim(
-                    $buyer->street_address . ', ' .
-                    $buyer->barangay_name . ', ' .
-                    $buyer->municipality_name .
-                    ($buyer->province_name ? ', ' . $buyer->province_name : '')
+                    $buyer->street_address.', '.
+                    $buyer->barangay_name.', '.
+                    $buyer->municipality_name.
+                    ($buyer->province_name ? ', '.$buyer->province_name : '')
                 ),
             ])
             ->map(fn ($partner) => ['id' => (int) $partner->id, 'name' => (string) $partner->company_name])
@@ -622,6 +623,7 @@ class BuyerCheckoutService
         }
 
         $variant = $item->variant;
+
         return $product->has_variants
             && $variant
             && (int) $variant->product_id === (int) $product->id
@@ -675,8 +677,8 @@ class BuyerCheckoutService
         }
 
         return Voucher::whereHas('products', function ($query) use ($productIds) {
-                $query->whereIn('products.id', $productIds);
-            })
+            $query->whereIn('products.id', $productIds);
+        })
             ->where('status', 'active')
             ->where(function ($query) {
                 $query->whereNull('starts_at')->orWhere('starts_at', '<=', now());
@@ -694,12 +696,12 @@ class BuyerCheckoutService
                 'code' => $voucher->code,
                 'title' => ($voucher->kind ?? 'merchandise') === 'shipping'
                     ? ($voucher->type === 'percent' && (float) $voucher->value >= 100 ? 'Free Shipping'
-                        : ($voucher->type === 'percent' ? $voucher->value . '% Shipping Off' : '₱' . number_format($voucher->value) . ' Shipping Off'))
-                    : ($voucher->type === 'percent' ? $voucher->value . '% Off' : '₱' . number_format($voucher->value) . ' Off'),
+                        : ($voucher->type === 'percent' ? $voucher->value.'% Shipping Off' : '₱'.number_format($voucher->value).' Shipping Off'))
+                    : ($voucher->type === 'percent' ? $voucher->value.'% Off' : '₱'.number_format($voucher->value).' Off'),
                 'description' => (($voucher->kind ?? 'merchandise') === 'shipping' ? 'Seller-funded shipping voucher · ' : '')
-                    . 'Min. merchandise ₱' . number_format($voucher->min_order_amount)
-                    . ($voucher->max_discount === null ? '' : ' · Max ₱' . number_format((float) $voucher->max_discount))
-                    . ($voucher->per_buyer_limit === null ? '' : ' · ' . $voucher->per_buyer_limit . ' use(s) per Buyer'),
+                    .'Min. merchandise ₱'.number_format($voucher->min_order_amount)
+                    .($voucher->max_discount === null ? '' : ' · Max ₱'.number_format((float) $voucher->max_discount))
+                    .($voucher->per_buyer_limit === null ? '' : ' · '.$voucher->per_buyer_limit.' use(s) per Buyer'),
                 'kind' => $voucher->kind ?? 'merchandise',
                 'type' => $voucher->type,
                 'value' => (float) $voucher->value,

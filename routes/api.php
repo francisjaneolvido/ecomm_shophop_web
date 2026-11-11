@@ -1,24 +1,27 @@
 <?php
 
 use App\Http\Controllers\Api\MobileAuthController;
-use App\Http\Controllers\Api\MobileBuyerAuthController;
-use App\Http\Controllers\Api\MobileBuyerCatalogController;
-use App\Http\Controllers\Api\MobileBuyerCartController;
-use App\Http\Controllers\Api\MobileBuyerCheckoutController;
-use App\Http\Controllers\Api\MobileBuyerOrderController;
 use App\Http\Controllers\Api\MobileBuyerAddressController;
+use App\Http\Controllers\Api\MobileBuyerAuthController;
+use App\Http\Controllers\Api\MobileBuyerCartController;
+use App\Http\Controllers\Api\MobileBuyerCatalogController;
+use App\Http\Controllers\Api\MobileBuyerCheckoutController;
 use App\Http\Controllers\Api\MobileBuyerFavoriteController;
+use App\Http\Controllers\Api\MobileBuyerOrderController;
+use App\Http\Controllers\Api\MobileLinehaulController;
+use App\Http\Controllers\Api\MobileLogisticsScannerController;
 use App\Http\Controllers\Api\MobileRiderAuthController;
+use App\Http\Controllers\Api\MobileRiderBatchController;
+use App\Http\Controllers\Api\MobileRiderCodController;
+use App\Http\Controllers\Api\MobileRiderDeliveryController;
+use App\Http\Controllers\Api\MobileRiderManagementController;
+use App\Http\Controllers\Api\MobileRiderReturnController;
+use App\Http\Controllers\Api\MobileRiderScannerController;
+use App\Http\Controllers\Api\MobileRiderTransitController;
 use App\Http\Controllers\Api\MobileSellerAuthController;
 use App\Http\Controllers\Api\MobileSellerEarningsController;
 use App\Http\Controllers\Api\MobileSellerWorkspaceController;
-use App\Http\Controllers\Api\MobileRiderDeliveryController;
-use App\Http\Controllers\Api\MobileLogisticsScannerController;
-use App\Http\Controllers\Api\MobileLinehaulController;
-use App\Http\Controllers\Api\MobileRiderTransitController;
-use App\Http\Controllers\Api\MobileRiderCodController;
-use App\Http\Controllers\Api\MobileRiderReturnController;
-use App\Http\Controllers\Api\MobileRiderScannerController;
+use App\Http\Controllers\HybridFinanceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile')->group(function () {
@@ -28,7 +31,7 @@ Route::prefix('mobile')->group(function () {
     )->middleware('throttle:10,1');
 
     Route::prefix('rider')->group(function () {
-        Route::get('/work-options', [\App\Http\Controllers\Api\MobileRiderManagementController::class, 'options'])->middleware('throttle:60,1');
+        Route::get('/work-options', [MobileRiderManagementController::class, 'options'])->middleware('throttle:60,1');
         Route::get(
             '/logistics-centers',
             [MobileRiderAuthController::class, 'logisticsCenters']
@@ -143,19 +146,20 @@ Route::prefix('mobile')->group(function () {
 
         // Preserve the existing narrow cash-return path for suspended collectors.
         Route::get('/rider/cod', [MobileRiderCodController::class, 'index']);
+        Route::post('/rider/cod/batches', [HybridFinanceController::class, 'submit'])->middleware('throttle:10,1');
         Route::post('/rider/cod/{delivery}/remit', [MobileRiderCodController::class, 'remit'])->whereNumber('delivery')->middleware('throttle:10,1');
 
-        Route::get('/rider/application', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'show']);
-        Route::post('/rider/application/documents', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'documents'])->middleware('throttle:10,1');
-        Route::post('/rider/application/confirm-branch', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'confirmBranch'])->middleware('throttle:10,1');
-        Route::post('/rider/application/session', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'session'])->middleware('throttle:10,1');
+        Route::get('/rider/application', [MobileRiderManagementController::class, 'show']);
+        Route::post('/rider/application/documents', [MobileRiderManagementController::class, 'documents'])->middleware('throttle:10,1');
+        Route::post('/rider/application/confirm-branch', [MobileRiderManagementController::class, 'confirmBranch'])->middleware('throttle:10,1');
+        Route::post('/rider/application/session', [MobileRiderManagementController::class, 'session'])->middleware('throttle:10,1');
 
         Route::prefix('rider')->middleware('rider.operational')->group(function () {
-            Route::patch('/availability', [\App\Http\Controllers\Api\MobileRiderManagementController::class,'availability']);
+            Route::patch('/availability', [MobileRiderManagementController::class, 'availability']);
 
-            Route::get('/batches', [\App\Http\Controllers\Api\MobileRiderBatchController::class, 'index']);
-            Route::get('/batches/{batch}', [\App\Http\Controllers\Api\MobileRiderBatchController::class, 'show'])->whereNumber('batch');
-            Route::post('/batches/{batch}/items/{item}/pickup-failure', [\App\Http\Controllers\Api\MobileRiderBatchController::class, 'pickupFailure'])->middleware('throttle:20,1')->whereNumber(['batch','item']);
+            Route::get('/batches', [MobileRiderBatchController::class, 'index']);
+            Route::get('/batches/{batch}', [MobileRiderBatchController::class, 'show'])->whereNumber('batch');
+            Route::post('/batches/{batch}/items/{item}/pickup-failure', [MobileRiderBatchController::class, 'pickupFailure'])->middleware('throttle:20,1')->whereNumber(['batch', 'item']);
             Route::get('/scanner/preview', [MobileRiderScannerController::class, 'preview'])->middleware('throttle:60,1');
             Route::post('/scanner/confirm', [MobileRiderScannerController::class, 'confirm'])->middleware('throttle:30,1');
             Route::get('/returns', [MobileRiderReturnController::class, 'index']);
@@ -197,7 +201,6 @@ Route::prefix('mobile')->group(function () {
                 [MobileBuyerCatalogController::class, 'show']
             )->whereNumber('product');
 
-
             Route::get(
                 '/likes',
                 [MobileBuyerFavoriteController::class, 'index']
@@ -212,7 +215,6 @@ Route::prefix('mobile')->group(function () {
                 '/likes/{product}',
                 [MobileBuyerFavoriteController::class, 'destroy']
             )->whereNumber('product');
-
 
             /*
             |--------------------------------------------------------------------------
@@ -249,7 +251,6 @@ Route::prefix('mobile')->group(function () {
                 '/cart/{lineKey}',
                 [MobileBuyerCartController::class, 'remove']
             )->whereNumber('lineKey');
-
 
             /*
             |--------------------------------------------------------------------------

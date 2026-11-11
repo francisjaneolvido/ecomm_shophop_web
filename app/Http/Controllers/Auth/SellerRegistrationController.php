@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\EmailVerificationCode;
 use App\Models\Seller;
 use App\Models\User;
 use App\Support\RegistrationIdentity;
@@ -266,34 +265,6 @@ class SellerRegistrationController extends Controller
         |--------------------------------------------------------------------------
         */
 
-        $code = (string) random_int(100000, 999999);
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | SAVE HASHED OTP
-        |--------------------------------------------------------------------------
-        */
-
-        EmailVerificationCode::updateOrCreate(
-            [
-                'user_id' => $user->id,
-            ],
-            [
-                'code_hash' => Hash::make($code),
-                'attempts' => 0,
-                'expires_at' => now()->addMinutes(5),
-                'last_sent_at' => now(),
-            ]
-        );
-
-
-        /*
-        |--------------------------------------------------------------------------
-        | SAVE SELLER VERIFICATION SESSION
-        |--------------------------------------------------------------------------
-        */
-
         $request->session()->put(
             'seller_verification_user_id',
             $user->id
@@ -308,13 +279,11 @@ class SellerRegistrationController extends Controller
 
         try {
 
-            $user->notify(
-                new SellerVerificationCodeNotification($code)
-            );
+            app(\App\Services\AccountVerificationCodes::class)->send($user, SellerVerificationCodeNotification::class);
 
         } catch (\Throwable $e) {
 
-            report($e);
+            \Illuminate\Support\Facades\Log::warning('Registration verification dispatch failed.', ['exception' => $e::class]);
 
             return redirect()
                 ->route('seller.verify-email.show')
@@ -334,7 +303,7 @@ class SellerRegistrationController extends Controller
             ->route('seller.verify-email.show')
             ->with(
                 'status',
-                'We sent a 6-digit verification code to your email.'
+                'Verification email accepted for sending. Check your inbox and spam folder.'
             );
     }
 }

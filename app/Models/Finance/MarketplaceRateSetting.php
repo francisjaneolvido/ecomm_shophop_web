@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class MarketplaceRateSetting extends Model
 {
     protected $fillable = [
-        'commission_percent', 'base_shipping_fee', 'local_distance_fee',
+        'shipping_commission_percent', 'commission_percent', 'base_shipping_fee', 'local_distance_fee',
         'same_province_distance_fee', 'interprovince_distance_fee',
         'same_province_linehaul_fee', 'interprovince_linehaul_fee',
         'included_weight_kg', 'extra_weight_fee_per_kg', 'express_surcharge_percent',
@@ -18,6 +18,7 @@ class MarketplaceRateSetting extends Model
 
     protected $casts = [
         'commission_percent' => 'decimal:2',
+        'shipping_commission_percent' => 'decimal:2',
         'base_shipping_fee' => 'decimal:2',
         'local_distance_fee' => 'decimal:2',
         'same_province_distance_fee' => 'decimal:2',
@@ -40,6 +41,7 @@ class MarketplaceRateSetting extends Model
     {
         return static::query()->firstOrCreate(['id' => 1], [
             'commission_percent' => 10,
+            'shipping_commission_percent' => 0,
             'base_shipping_fee' => 40,
             'local_distance_fee' => 20,
             'same_province_distance_fee' => 35,

@@ -5,34 +5,13 @@ namespace Tests\Feature;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Models\Seller\Manage_inventory\Voucher;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 use Tests\TestCase;
 
 class SellerVoucherJourneyTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        parent::setUp();
-
-        Schema::dropAllTables();
-
-        foreach ([
-            '0001_01_01_000000_create_users_table.php',
-            '2026_08_31_000001_add_account_type_and_status_to_users_table.php',
-            '0001_01_01_000003_create_products_table.php',
-            'Seller/Manage_inventory/2025_01_15_000001_add_inventory_fields_to_products_table.php',
-            // Commerce fixtures include the current approval schema rather than a pre-compliance catalogue.
-            'Seller/Manage_inventory/2026_09_30_000001_add_product_compliance.php',
-            'Seller/Manage_inventory/2025_01_15_000002_create_product_images_table.php',
-            'Seller/Manage_inventory/2025_01_15_000003_create_product_variants_table.php',
-            'Seller/Manage_inventory/2025_01_15_000004_create_vouchers_table.php',
-            'Seller/Manage_inventory/2025_01_15_000005_create_voucher_product_table.php',
-        ] as $path) {
-            (require database_path('migrations/' . $path))->up();
-        }
-    }
+    use RefreshDatabase;
 
     public function test_seller_assigns_replaces_and_removes_voucher_products_through_the_inventory_form(): void
     {
@@ -123,19 +102,6 @@ class SellerVoucherJourneyTest extends TestCase
 
     public function test_buyer_product_page_shows_an_active_assigned_voucher_but_not_a_removed_one(): void
     {
-        (require database_path('migrations/2026_08_29_000002_create_sellers_table.php'))->up();
-        Schema::create('reviews', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id');
-            $table->unsignedInteger('rating');
-            $table->timestamps();
-        });
-        Schema::create('order_items', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id');
-            $table->unsignedInteger('quantity');
-        });
-
         $seller = $this->seller('seller-a@voucher.test');
         $buyer = $this->seller('buyer@voucher.test', 'buyer');
         $product = $this->product($seller, 'Buyer Voucher Product', 'BUYER-VOUCHER');
@@ -176,6 +142,7 @@ class SellerVoucherJourneyTest extends TestCase
         return array_replace([
             'name' => 'Voucher Journey Discount',
             'code' => 'SAVE20',
+            'kind' => 'merchandise',
             'type' => 'percent',
             'value' => '20.00',
             'min_order_amount' => '0',
@@ -184,7 +151,7 @@ class SellerVoucherJourneyTest extends TestCase
 
     private function seller(string $email, string $role = 'seller'): User
     {
-        $seller = new User();
+        $seller = new User;
         $seller->forceFill([
             'email' => $email,
             'password' => 'not-used-by-this-test',
@@ -222,6 +189,7 @@ class SellerVoucherJourneyTest extends TestCase
             'seller_id' => $seller->id,
             'name' => $name,
             'code' => $code,
+            'kind' => 'merchandise',
             'type' => 'percent',
             'value' => '20.00',
             'min_order_amount' => '0',
@@ -235,7 +203,7 @@ class SellerVoucherJourneyTest extends TestCase
             ->get(route('seller.inventory'));
         $response->assertOk()->assertSee($summary)->assertSee($voucher->code);
 
-        $document = new \DOMDocument();
+        $document = new \DOMDocument;
         $document->loadHTML($response->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
         $xpath = new \DOMXPath($document);
         $data = null;

@@ -23,6 +23,11 @@ class BuyerVerificationCodeNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
+            ->view(['html' => 'emails.verification-code', 'text' => 'emails.verification-code-text'], [
+                'verificationCode' => $this->code,
+                'accountLabel' => 'Buyer',
+                'expiresInMinutes' => 5,
+            ])
             ->subject('ShopHop Email Verification Code')
             ->greeting('Welcome to ShopHop!')
             ->line('Thank you for creating a buyer account.')

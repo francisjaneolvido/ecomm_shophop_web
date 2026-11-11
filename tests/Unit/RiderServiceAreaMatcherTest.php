@@ -41,6 +41,7 @@ class RiderServiceAreaMatcherTest extends TestCase
         $city = new \App\Models\Logistics\Rider(['sorting_center_id' => 7,
             'status' => 'active', 'availability_status' => 'available', 'name' => 'A Citywide']);
         $city->id = 11;
+        $city->setRelation('lifecycleProfile', null);
         $city->setRelation('operationalServiceAreas', collect([
             new OperationalServiceArea(['sorting_center_id'=>7,'province'=>'Laguna',
                 'municipality'=>'Pila','barangay'=>null,'service_type'=>'both']),
@@ -48,6 +49,7 @@ class RiderServiceAreaMatcherTest extends TestCase
         $exact = new \App\Models\Logistics\Rider(['sorting_center_id' => 7,
             'status' => 'active', 'availability_status' => 'available', 'name' => 'Z Exact']);
         $exact->id = 22;
+        $exact->setRelation('lifecycleProfile', null);
         $exact->setRelation('operationalServiceAreas', collect([
             new OperationalServiceArea(['sorting_center_id'=>7,'province'=>'Laguna',
                 'municipality'=>'Pila','barangay'=>'San Antonio','service_type'=>'delivery']),

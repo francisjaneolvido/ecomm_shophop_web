@@ -10,11 +10,11 @@
 <div class="card"><a style="color:#18A98E;font-weight:600" href="{{ route('logistics.staff.rider-management.index') }}">Open Rider Management</a></div>
 @endif
 @if($staff->role==='manager' && $staff->sortingCenter?->type==='station_hub' && !$staff->sortingCenter?->is_main && \Illuminate\Support\Facades\Schema::hasTable('rider_batches'))
-<div class="card"><a style="color:#18A98E;font-weight:600" href="{{ route('logistics.staff.rider-batches.index') }}">Manage rider batches ?</a></div>
+<div class="card"><a style="color:#18A98E;font-weight:600" href="{{ route('logistics.staff.dispatch.index') }}">Open Rider Dispatch</a></div>
 @endif
 <div class="card"><p class="muted">{{ $staff->partner->company_name }} · {{ ucfirst($staff->role) }}</p><h1>{{ $staff->sortingCenter->name }}</h1>
 <p class="muted">{{ $staff->sortingCenter->code }} · {{ $staff->sortingCenter->addressLabel() }}</p><p>Logged in as <strong>{{ $staff->name }}</strong> ({{ $staff->email }}).</p>
-<p class="muted">You are assigned only to this branch. Use the ShopHop Mobile scanner with these same credentials. Company-level earnings and branch creation stay with the Logistics owner. Authorized Branch Managers manage local rider batches.</p></div>
+<p class="muted">You are assigned only to this branch. Use the ShopHop Mobile scanner with these same credentials. Company-level earnings and branch creation stay with the Logistics owner. Authorized Branch Managers assign parcels through Rider Dispatch.</p></div>
 @if(session('status'))<div class="notice">{{ session('status') }}</div>@endif
 @if($errors->any())<div class="error">{{ $errors->first() }}</div>@endif
 <div class="card"><h2>Recent branch scans</h2><div style="overflow-x:auto"><table><thead><tr><th>Tracking code</th><th>Event</th><th>Time</th></tr></thead><tbody>

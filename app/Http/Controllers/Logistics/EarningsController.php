@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Logistics;
 
 use App\Http\Controllers\Controller;
@@ -6,9 +7,10 @@ use App\Models\Finance\CenterRevenueLedgerEntry;
 use App\Models\Finance\LinehaulDriverEarning;
 use App\Models\Finance\LogisticsOrderAllocation;
 use App\Models\Finance\SettlementEntry;
+use App\Models\Logistics\LinehaulTrip;
 use App\Models\Logistics\SortingCenter;
-use App\Services\ShopHopFinance;
 use App\Services\PickupRiderAccrualService;
+use App\Services\ShopHopFinance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -28,6 +30,7 @@ class EarningsController extends Controller
         $branchActivity = $branches->through(function ($branch) use ($partnerId) {
             $ledger = CenterRevenueLedgerEntry::where('logistics_partner_id', $partnerId)
                 ->where('sorting_center_id', $branch->id);
+
             return [
                 'name' => $branch->name,
                 'code' => $branch->code,
@@ -49,7 +52,7 @@ class EarningsController extends Controller
             'available' => (clone $query)->where('status', 'available')->sum('amount'),
             'paid' => (clone $query)->where('status', 'paid')->sum('amount'),
             'entries' => $query->orderByDesc('id')->paginate(25)->withQueryString(),
-            'riderEntries' => SettlementEntry::whereIn('order_id', $orderIds)
+            'riderEntries' => SettlementEntry::whereHas('order.delivery', fn ($q) => $q->where('logistics_partner_id', $partnerId))
                 ->whereIn('kind', ['pickup_rider', 'delivery_rider'])
                 ->orderByDesc('id')->paginate(25, ['*'], 'rider_page')->withQueryString(),
             'allocationTotals' => [
@@ -74,6 +77,7 @@ class EarningsController extends Controller
         $partnerId = (int) $request->user()->logisticsPartner?->id;
         abort_unless($partnerId, 403);
         $finance->markRiderPaid($entry, $partnerId, (int) $request->user()->id, trim($data['reference']));
+
         return back()->with('status', 'Rider payout recorded. No external transfer was made.');
     }
 
@@ -87,7 +91,7 @@ class EarningsController extends Controller
             $entry = LinehaulDriverEarning::whereKey($earning)
                 ->where('logistics_partner_id', $partnerId)
                 ->lockForUpdate()->firstOrFail();
-            if ($entry->status !== 'available' || ! $entry->trip || $entry->trip->status !== \App\Models\Logistics\LinehaulTrip::COMPLETED) {
+            if ($entry->status !== 'available' || ! $entry->trip || $entry->trip->status !== LinehaulTrip::COMPLETED) {
                 throw ValidationException::withMessages(['earning' => 'Only available earnings from a completed Linehaul Trip can be marked paid.']);
             }
             $entry->update([

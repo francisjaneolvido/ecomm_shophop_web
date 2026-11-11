@@ -462,7 +462,7 @@
                 ],
 
                 ...(\Illuminate\Support\Facades\Schema::hasTable('rider_batches') ? [[
-                    'label'=>'Rider Batch Monitoring','route'=>'logistics.rider-batches.index',
+                    'label'=>'Rider Route Monitoring','route'=>'logistics.rider-batches.index',
                     'pattern'=>'logistics.rider-batches.*','icon'=>'route',
                 ]] : []),
                 [

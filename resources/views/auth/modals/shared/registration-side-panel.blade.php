@@ -149,6 +149,48 @@
 @once
     @push('styles')
         <style>
+            .shophop-registration-dialog {
+                min-width: 0;
+                max-height: 100vh;
+                max-height: 100dvh;
+                overflow-y: auto;
+                overscroll-behavior: contain;
+                scroll-padding-block: 1.5rem;
+            }
+            .shophop-registration-dialog > .grid {
+                min-width: 0;
+                grid-template-columns: minmax(0, 1fr);
+            }
+            .shophop-registration-form-panel {
+                min-width: 0;
+                overflow-wrap: anywhere;
+                padding-top: 4.5rem;
+                padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
+            }
+            .shophop-registration-form-panel input,
+            .shophop-registration-form-panel select,
+            .shophop-registration-form-panel textarea {
+                min-width: 0;
+                max-width: 100%;
+            }
+            @media (min-width: 640px) {
+                .shophop-registration-dialog {
+                    max-height: calc(100vh - 2rem);
+                    max-height: calc(100dvh - 2rem);
+                }
+            }
+            @media (min-width: 768px) {
+                .shophop-registration-dialog {
+                    max-height: calc(100vh - 3rem);
+                    max-height: calc(100dvh - 3rem);
+                }
+            }
+            @media (min-width: 1024px) {
+                .shophop-registration-dialog > .grid {
+                    grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
+                }
+                .shophop-registration-form-panel { padding-top: 2rem; }
+            }
             .shophop-role-panel {
                 isolation: isolate;
             }

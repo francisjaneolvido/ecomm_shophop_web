@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Logistics\CodSettlement;
+use App\Services\FinancialAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -23,8 +24,8 @@ class CodRemittanceController extends Controller
     /** Distinct Admin confirmation. Screenshot/reference alone is not proof of receipt. */
     public function confirm(Request $request, int $settlement): RedirectResponse
     {
-        $data = $request->validate(['reference' => ['required','string','max:120'],
-            'received_amount' => ['required','numeric','min:0']]);
+        $data = $request->validate(['reference' => ['required', 'string', 'max:120'],
+            'received_amount' => ['required', 'decimal:0,2', 'min:0', 'max:999999999']]);
         DB::transaction(function () use ($request, $settlement, $data) {
             $cash = CodSettlement::whereKey($settlement)->lockForUpdate()->firstOrFail();
             if ($cash->status !== CodSettlement::RECONCILED || ! $cash->admin_remitted_at
@@ -37,7 +38,9 @@ class CodRemittanceController extends Controller
             }
             $cash->update(['admin_received_amount' => $cash->expected_amount,
                 'admin_received_at' => now(), 'admin_received_by_user_id' => $request->user()->id]);
+            FinancialAudit::record('cod_collection', $cash->id, 'custody_received_by_platform', 'user', $request->user()->id, ['amount' => $cash->expected_amount, 'reference' => $data['reference']]);
         });
+
         return back()->with('status', 'ShopHop Admin confirmed COD receipt. Next: prepare and distribute the settlement; no beneficiary payout is automatic.');
     }
 }

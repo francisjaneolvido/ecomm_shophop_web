@@ -202,7 +202,7 @@
                                                leading-relaxed
                                                text-white/35"
                                     >
-                                        We sent a 6-digit code to
+                                        Use the 6-digit verification code for
                                         your seller email.
                                     </p>
 
@@ -422,7 +422,7 @@
                                    tracking-tight
                                    text-navy"
                         >
-                            Check your email
+                            Verify your email
                         </h1>
 
 
@@ -432,7 +432,7 @@
                                    leading-relaxed
                                    text-navy/50"
                         >
-                            We sent a 6-digit seller verification code to
+                            Enter the 6-digit seller verification code for
                         </p>
 
 
@@ -522,7 +522,7 @@
                                            font-semibold
                                            text-red-700"
                                 >
-                                    Verification unsuccessful
+                                    Verification needs attention
                                 </p>
 
                                 <p
@@ -617,7 +617,7 @@
                             />
 
                             <span>
-                                Code expires in 5 minutes
+                                Each code expires 5 minutes after it is sent
                             </span>
 
                         </div>
@@ -692,7 +692,7 @@
                             <button
                                 type="submit"
                                 id="seller-resend-code-button"
-                                disabled
+                                @disabled(($retryAfter ?? 0) > 0)
                                 class="inline-flex
                                        items-center gap-1.5
                                        text-xs
@@ -709,7 +709,7 @@
                                 />
 
                                 <span id="seller-resend-code-text">
-                                    Resend code in 60s
+                                    {{ ($retryAfter ?? 0) > 0 ? 'Resend code in '.$retryAfter.'s' : 'Resend verification code' }}
                                 </span>
 
                             </button>
@@ -1093,37 +1093,7 @@ document.addEventListener('DOMContentLoaded', function () {
     |--------------------------------------------------------------------------
     */
 
-    let remainingSeconds = 60;
-
-    function updateResendTimer() {
-
-        if (remainingSeconds <= 0) {
-
-            resendButton.disabled = false;
-
-            resendText.textContent =
-                'Resend verification code';
-
-            return;
-        }
-
-        resendButton.disabled = true;
-
-        resendText.textContent =
-            'Resend code in ' +
-            remainingSeconds +
-            's';
-
-        remainingSeconds--;
-
-        window.setTimeout(
-            updateResendTimer,
-            1000
-        );
-
-    }
-
-    updateResendTimer();
+    @include('auth.modals.shared.resend-script')
 
 });
 </script>

@@ -18,7 +18,7 @@
                 stopped = true;
                 throw new Error('Session expired. Sign in again to refresh routes.');
             }
-            if (!response.ok) throw new Error('Routes could not refresh. Your planner selections are saved in this tab.');
+            if (!response.ok) throw new Error('Routes could not refresh. Refresh the page to check the latest assignments.');
             const payload = await response.json();
             if (!payload.success || typeof payload.data?.html !== 'string') throw new Error('Unexpected route response. Refresh this page to retry.');
             const open = [...routes.querySelectorAll('article[data-batch-id]')].filter(card => card.querySelector('details[open]')).map(card => card.dataset.batchId);

@@ -9,9 +9,9 @@
         <div class="flex flex-wrap gap-2">
             <button type="button" class="sh-btn-soft" onclick="window.location.reload()">Refresh</button>
             @if($scope['role']==='branch')
-            <a class="sh-btn-primary" href="{{ route(request()->routeIs('logistics.staff.*')?'logistics.staff.rider-batches.index':'branch.rider-batches.index') }}">Open rider batches</a>
+            <a class="sh-btn-primary" href="{{ route(request()->routeIs('logistics.staff.*')?'logistics.staff.dispatch.index':'branch.dispatch.index') }}">Open Rider Dispatch</a>
             @elseif(!$scope['center'])
-            <a class="sh-btn-soft" href="{{ route('logistics.rider-batches.index') }}">Monitor rider batches</a>
+            <a class="sh-btn-soft" href="{{ route('logistics.rider-batches.index') }}">Monitor rider routes</a>
             <a class="sh-btn-soft" href="{{ route('logistics.riders.index',['settings'=>1]) }}">Company settings & service areas</a>
             @endif
         </div>

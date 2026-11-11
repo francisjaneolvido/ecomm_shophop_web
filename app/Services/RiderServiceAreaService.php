@@ -42,6 +42,10 @@ class RiderServiceAreaService
         $barangay = Str::ascii(self::normalize($value));
         $barangay = (string) preg_replace('/^(?:barangay|brgy|bgy)\.?\s+(?:no\.?\s*)?/iu', '', $barangay);
 
+        // PSGC labels numbered poblacion barangays as, for example, 1 (Pob.).
+        // Match their short numbered labels without merging named barangays.
+        $barangay = (string) preg_replace('/^([0-9]+)\s*\((?:pob\.?|poblacion)\)$/u', '$1', $barangay);
+
         return trim((string) preg_replace('/\s+/', ' ', $barangay));
     }
 

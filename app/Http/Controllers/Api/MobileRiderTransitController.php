@@ -3,15 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Buyer\Order\Order;
 use App\Models\Finance\SettlementEntry;
-use App\Services\PickupRiderAccrualService;
-use App\Models\Logistics\Delivery;
-use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\Rider;
+use App\Services\PersonnelFinanceReadService;
+use App\Services\PickupRiderAccrualService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class MobileRiderTransitController extends Controller
 {
@@ -45,11 +42,14 @@ class MobileRiderTransitController extends Controller
             ->whereIn('kind', ['pickup_rider', 'delivery_rider'])
             ->whereHas('order.delivery', fn ($query) => $query->where('logistics_partner_id', $rider->logistics_partner_id))
             ->latest()->limit(100)->get();
+        $partnerEarnings = app(PersonnelFinanceReadService::class)->earnings((int) $rider->logistics_partner_id, 'rider', (int) $rider->id);
+
         return response()->json(['success' => true, 'status' => 'ok', 'message' => 'Rider earnings loaded.', 'data' => [
+            'partner_compensation' => $partnerEarnings,
             'pending' => round((float) $entries->where('status', 'pending')->sum('amount'), 2),
             'available' => round((float) $entries->where('status', 'available')->sum('amount'), 2),
             'paid' => round((float) $entries->where('status', 'paid')->sum('amount'), 2),
-            'pickup_provisional' => app(PickupRiderAccrualService::class)->unpaidPreview((int)$rider->logistics_partner_id, (int)$rider->id),
+            'pickup_provisional' => app(PickupRiderAccrualService::class)->unpaidPreview((int) $rider->logistics_partner_id, (int) $rider->id),
             'entries' => $entries->map(fn ($entry) => [
                 'order_id' => $entry->order_id,
                 'kind' => $entry->kind,
@@ -70,6 +70,7 @@ class MobileRiderTransitController extends Controller
         $rider = $actor->fresh(['partner.user']);
         abort_unless($rider && $rider->status === 'active' && $rider->email_verified_at
             && $rider->partner?->user?->status === 'approved', 403, 'Active Rider required.');
+
         return $rider;
     }
 }

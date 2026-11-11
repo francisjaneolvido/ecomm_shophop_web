@@ -188,13 +188,17 @@ class RegistrationController extends Controller
         $isResend = (bool) ($validated['resend'] ?? false);
         $state = $request->session()->get('logistics_email_verification');
 
+        if ($isResend && (! is_array($state) || ! isset($state['email']) || strcasecmp($state['email'], $email) !== 0)) {
+            return response()->json(['success' => false, 'message' => 'Your verification session has expired. Please send a new code from the email step.'], 419);
+        }
+
         if (
             is_array($state)
             && isset($state['email'], $state['last_sent_at'])
             && strcasecmp((string) $state['email'], $email) === 0
         ) {
             $elapsed = max(0, now()->timestamp - (int) $state['last_sent_at']);
-            $remaining = max(0, 30 - $elapsed);
+            $remaining = max(0, 60 - $elapsed);
 
             if ($remaining > 0) {
                 if ($isResend) {
@@ -213,28 +217,26 @@ class RegistrationController extends Controller
             }
         }
 
-        $code = (string) random_int(100000, 999999);
+        do {
+            $code = (string) random_int(100000, 999999);
+        } while (is_array($state) && isset($state['code_hash']) && Hash::check($code, $state['code_hash']));
 
-        $request->session()->put('logistics_email_verification', [
+        $newState = [
             'email' => $email,
             'code_hash' => Hash::make($code),
             'attempts' => 0,
             'expires_at' => now()->addMinutes(5)->timestamp,
             'last_sent_at' => now()->timestamp,
             'verified' => false,
-        ]);
+        ];
 
         try {
-            Notification::route('mail', $email)
-                ->notify(new LogisticsVerificationCodeNotification($code));
+            app(\App\Services\VerificationMail::class)->send(
+                Notification::route('mail', $email), new LogisticsVerificationCodeNotification($code)
+            );
+            $request->session()->put('logistics_email_verification', $newState);
         } catch (\Throwable $e) {
-            report($e);
-            Log::error('Logistics verification email failed.', [
-                'email' => $email,
-                'exception' => $e::class,
-                'message' => $e->getMessage(),
-            ]);
-            $request->session()->forget('logistics_email_verification');
+            Log::warning('Logistics verification email failed.', ['exception' => $e::class]);
 
             return response()->json([
                 'success' => false,
@@ -244,8 +246,8 @@ class RegistrationController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'A 6-digit verification code was sent to your email.',
-            'retry_after' => 30,
+            'message' => 'Verification email accepted for sending. Check your inbox and spam folder.',
+            'retry_after' => 60,
         ]);
     }
 

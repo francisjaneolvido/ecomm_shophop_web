@@ -4,94 +4,129 @@ namespace App\Http\Controllers\Branch;
 
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
+use App\Models\Logistics\BranchStaff;
 use App\Models\Logistics\Delivery;
 use App\Models\Logistics\ParcelTransfer;
 use App\Models\Logistics\PickupRequest;
 use App\Models\Logistics\Rider;
+use App\Models\Logistics\RiderBatch;
+use App\Models\Logistics\RiderBatchItem;
+use App\Models\Logistics\RiderBatchVehicleProfile;
 use App\Models\Logistics\SortingCenter;
+use App\Services\RiderBatchService;
 use App\Services\RiderServiceAreaService;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class DispatchController extends Controller
 {
-    public function index(Request $request, RiderServiceAreaService $serviceAreas): View
+    public function index(Request $request, RiderServiceAreaService $serviceAreas): View|JsonResponse
     {
         $center = $this->center($request);
-        $riders = $this->activeRiders($center)->with('operationalServiceAreas')->get();
+        $service = app(RiderBatchService::class);
+        $dispatchEnabled = $service->available();
+        $routePrefix = $request->routeIs('logistics.staff.*') ? 'logistics.staff.dispatch' : 'branch.dispatch';
+        $riders = $this->activeRiders($center)->with(['operationalServiceAreas', 'lifecycleProfile'])->get();
+        $profiles = $dispatchEnabled
+            ? RiderBatchVehicleProfile::whereIn('rider_id', $riders->pluck('id'))->get()->keyBy('rider_id')
+            : collect();
+        $riderDetails = $riders->mapWithKeys(function ($rider) use ($profiles) {
+            $profile = $profiles->get($rider->id);
 
-        // 1) Pickup requests ng branch na naghihintay ng pickup rider
-        $pickups = PickupRequest::with('order.seller')
-            ->where('origin_sorting_center_id', $center->id)
-            ->where('status', PickupRequest::REQUESTED)
-            ->oldest('requested_at')
-            ->paginate(25, ['*'], 'pickup_page')->withQueryString()
-            ->through(function (PickupRequest $p) use ($riders, $serviceAreas, $center) {
-                $order = $p->order;
+            return [$rider->id => ['id' => $rider->id, 'name' => $rider->name,
+                'capacity_configured' => $profile && $profile->vehicle_type === $rider->vehicle_type && $profile->plate_number === $rider->plate_number,
+                'limits' => $profile?->limits ?? []]];
+        });
+        $batches = $dispatchEnabled ? RiderBatch::where('logistics_partner_id', $center->logistics_partner_id)
+            ->where('sorting_center_id', $center->id)->with(['rider', 'items.delivery.order', 'branch'])
+            ->latest('id')->paginate(15, ['*'], 'route_page')->withQueryString() : null;
+        $batchData = $batches ? $batches->getCollection()->map(fn ($batch) => $service->data($batch)) : collect();
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'data' => ['html' => view('branch.dispatch.routes',
+                compact('batchData', 'batches', 'routePrefix'))->render()]]);
+        }
+
+        $pickups = PickupRequest::with(['order.seller', 'order.financial'])
+            ->where('logistics_partner_id', $center->logistics_partner_id)
+            ->where('origin_sorting_center_id', $center->id)->where('status', PickupRequest::REQUESTED)
+            ->oldest('requested_at')->paginate(25, ['*'], 'pickup_page')->withQueryString()
+            ->through(function (PickupRequest $pickup) use ($riders, $riderDetails, $serviceAreas, $center) {
+                $order = $pickup->order;
                 $seller = $order?->seller;
                 $eligible = $seller ? $serviceAreas->matchingRiders($riders, (int) $center->id,
-                    $seller->province_name, $seller->municipality_name,
-                    $seller->barangay_name, 'pickup') : collect();
+                    $seller->province_name, $seller->municipality_name, $seller->barangay_name, 'pickup') : collect();
 
-                return [
-                    'id'        => $p->id,
-                    'tracking'  => $order?->tracking_code,
-                    'seller'    => $order?->seller?->business_name ?? 'Seller',
-                    'address'   => $p->originAddressLabel(),
-                    'requested' => $p->requested_at?->diffForHumans(),
-                    'ready'     => $order
-                        && $order->status === Order::STATUS_READY_FOR_PICKUP
-                        && $order->isPaymentEligible(),
-                    'suggested' => $eligible->first()?->id,
-                    'riders' => $eligible->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->all(),
-                ];
+                return ['order_id' => $order?->id, 'tracking' => $order?->tracking_code,
+                    'name' => $seller?->business_name ?? 'Seller', 'address' => $pickup->originAddressLabel(),
+                    'note' => $pickup->requested_at?->diffForHumans(),
+                    'ready' => $order && $order->status === Order::STATUS_READY_FOR_PICKUP && $order->isPaymentEligible(),
+                    'weight_kg' => $order?->financial?->shipping_weight_kg,
+                    'riders' => $eligible->map(fn ($rider) => $riderDetails[$rider->id])->values()->all()];
             });
-
-        // 2) Naka-sort na sa branch na ito, wala pang delivery rider (o nag-fail at kailangan ng retry)
-        $deliveries = Delivery::with('order')
-            ->where('logistics_partner_id', $center->logistics_partner_id)
-            ->where('destination_sorting_center_id', $center->id)
-            ->where('current_sorting_center_id', $center->id)
+        $deliveries = Delivery::with('order.financial')->where('logistics_partner_id', $center->logistics_partner_id)
+            ->where('destination_sorting_center_id', $center->id)->where('current_sorting_center_id', $center->id)
             ->whereIn('status', [Delivery::SORTED, Delivery::DELIVERY_FAILED])
-            ->whereDoesntHave('transfers', fn ($q) => $q->where('status', ParcelTransfer::IN_TRANSIT))
+            ->whereDoesntHave('transfers', fn ($query) => $query->where('status', ParcelTransfer::IN_TRANSIT))
             ->whereDoesntHave('returnCase')
-            ->latest('updated_at')
-            ->paginate(25, ['*'], 'delivery_page')->withQueryString()
-            ->through(function (Delivery $d) use ($riders, $serviceAreas, $center) {
-                $order = $d->order;
-                // Exact barangay rider first, citywide second. Legacy coverage-area
-                // assignment only applies when operational service areas are not configured.
+            ->when($dispatchEnabled, fn ($query) => $query->whereNotIn('id', RiderBatchItem::whereNotNull('reserved_delivery_id')->select('reserved_delivery_id')))
+            ->latest('updated_at')->paginate(25, ['*'], 'delivery_page')->withQueryString()
+            ->through(function (Delivery $delivery) use ($riders, $riderDetails, $serviceAreas, $center) {
+                $order = $delivery->order;
                 $eligible = $serviceAreas->matchingRiders($riders, (int) $center->id,
-                    $order?->delivery_province_name, $order?->delivery_municipality_name,
-                    $order?->delivery_barangay_name, 'delivery');
-                if (! $serviceAreas->configured((int) $center->id)) {
-                    $eligible = $eligible->filter(fn ($r) => (int) $r->coverage_area_id === (int) $d->destination_area_id)->values();
-                }
+                    $order?->delivery_province_name, $order?->delivery_municipality_name, $order?->delivery_barangay_name, 'delivery');
 
-                return [
-                    'id'        => $d->id,
-                    'tracking'  => $d->tracking_code,
-                    'receiver'  => $order?->delivery_name,
-                    'barangay'  => $order?->delivery_barangay_name ?: $order?->delivery_address,
-                    'cod'       => $order && $order->payment_method === 'cod' ? (float) $order->total_amount : null,
-                    'failed'    => $d->status === Delivery::DELIVERY_FAILED,
-                    'attempts'  => (int) $d->delivery_attempts,
-                    'reason'    => $d->failure_reason,
-                    'riders'    => $eligible->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->all(),
-                    'suggested' => $eligible->first()?->id,
-                    'local' => (int) $d->origin_sorting_center_id === (int) $center->id,
-                ];
+                return ['order_id' => $order?->id, 'tracking' => $delivery->tracking_code,
+                    'name' => $order?->delivery_name ?: 'Buyer', 'address' => $order?->delivery_address,
+                    'note' => $delivery->status === Delivery::DELIVERY_FAILED ? 'Retry delivery' : 'Ready for delivery',
+                    'ready' => $order && $order->status === Order::STATUS_TO_RECEIVE && $order->isPaymentEligible(),
+                    'weight_kg' => $order?->financial?->shipping_weight_kg,
+                    'riders' => $eligible->map(fn ($rider) => $riderDetails[$rider->id])->values()->all()];
             });
 
-        return view('branch.dispatch.index', [
-            'center'     => $center,
-            'pickups'    => $pickups,
-            'deliveries' => $deliveries,
-            'riders'     => $riders->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->all(),
+        return view('branch.dispatch.index', compact('center', 'pickups', 'deliveries', 'riderDetails',
+            'dispatchEnabled', 'batchData', 'batches', 'routePrefix'));
+    }
+
+    public function assign(Request $request, RiderBatchService $service): JsonResponse|RedirectResponse
+    {
+        $center = $this->center($request);
+        abort_unless($service->available(), 503, 'Rider assignment is temporarily unavailable.');
+        $immediate = $request->boolean('dispatch_now', true);
+        $data = $request->validate([
+            'rider_id' => ['required', 'integer'], 'type' => ['required', 'in:pickup,delivery'],
+            'dispatch_now' => ['sometimes', 'boolean'],
+            'estimated_minutes' => ['required', 'integer', 'min:1', 'max:1440'],
+            'scheduled_start' => [$immediate ? 'nullable' : 'required', 'date'],
+            'scheduled_end' => [$immediate ? 'nullable' : 'required', 'date', 'after:scheduled_start'],
+            'parcels' => ['required', 'array', 'min:1', 'max:100'],
+            'parcels.*.order_id' => ['required', 'integer', 'distinct'],
+            'parcels.*.weight_kg' => ['required', 'numeric', 'min:0.001', 'max:999999'],
+            'parcels.*.volume_m3' => ['required', 'numeric', 'min:0.000001', 'max:999999'],
         ]);
+        $staff = $request->routeIs('logistics.staff.*') ? Auth::guard('logistics_staff')->user() : null;
+        $actorType = $staff ? 'staff' : 'user';
+        $actorId = (int) ($staff?->id ?? $request->user()->id);
+        if ($immediate) {
+            $start = now()->startOfSecond();
+            $data['scheduled_start'] = $start->toIso8601String();
+            $data['scheduled_end'] = $start->copy()->addMinutes($data['estimated_minutes'])->toIso8601String();
+        }
+        // A failed dispatch rolls back route creation and all parcel reservations.
+        $batch = DB::transaction(function () use ($service, $center, $data, $actorType, $actorId, $immediate) {
+            $batch = $service->create($center, $data, $actorType, $actorId);
+
+            return $immediate ? $service->transition($center, $batch->id, 'dispatch', $actorType, $actorId) : $batch;
+        }, 3);
+        $message = $immediate ? 'Parcels assigned and dispatched to the rider.' : 'Rider route scheduled. Dispatch it from this page when its schedule starts.';
+
+        return $request->expectsJson()
+            ? response()->json(['success' => true, 'message' => $message, 'data' => ['route' => $service->data($batch)]], 201)
+            : back()->with('status', $message);
     }
 
     /** I-assign ang rider na kukuha ng parcel sa seller papunta sa branch na ito. */
@@ -109,7 +144,7 @@ class DispatchController extends Controller
 
         try {
             return DB::transaction(function () use ($center, $rider, $pickup, $serviceAreas) {
-                app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider);
+                app(RiderBatchService::class)->guardLegacyAssignment($rider);
                 $pickupRequest = PickupRequest::whereKey($pickup)->lockForUpdate()->first();
 
                 if (! $pickupRequest
@@ -134,19 +169,19 @@ class DispatchController extends Controller
                 }
 
                 Delivery::create([
-                    'order_id'                 => $order->id,
-                    'tracking_code'            => $order->tracking_code ?: $this->trackingCode($order),
-                    'logistics_partner_id'     => $center->logistics_partner_id,
+                    'order_id' => $order->id,
+                    'tracking_code' => $order->tracking_code ?: $this->trackingCode($order),
+                    'logistics_partner_id' => $center->logistics_partner_id,
                     'origin_sorting_center_id' => $center->id,
-                    'rider_id'                 => $rider->id,
-                    'status'                   => Delivery::PICKUP_ASSIGNED,
-                    'assigned_at'              => now(),
+                    'rider_id' => $rider->id,
+                    'status' => Delivery::PICKUP_ASSIGNED,
+                    'assigned_at' => now(),
                 ]);
 
                 $pickupRequest->update([
-                    'status'                   => PickupRequest::ASSIGNED,
+                    'status' => PickupRequest::ASSIGNED,
                     'origin_sorting_center_id' => $center->id,
-                    'assigned_at'              => now(),
+                    'assigned_at' => now(),
                 ]);
 
                 return redirect()->route('branch.dispatch.index')
@@ -174,7 +209,7 @@ class DispatchController extends Controller
         }
 
         return DB::transaction(function () use ($center, $rider, $delivery, $serviceAreas) {
-            app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider);
+            app(RiderBatchService::class)->guardLegacyAssignment($rider);
             $owned = Delivery::with(['order', 'transfers'])
                 ->where('logistics_partner_id', $center->logistics_partner_id)
                 ->where('destination_sorting_center_id', $center->id)
@@ -201,13 +236,13 @@ class DispatchController extends Controller
                 return $this->fail('This rider does not cover the Buyer barangay or is unavailable. Check Rider Service Areas.');
             }
 
-            app(\App\Services\RiderBatchService::class)->guardLegacyAssignment($rider, $owned);
+            app(RiderBatchService::class)->guardLegacyAssignment($rider, $owned);
             $owned->update([
-                'rider_id'             => $rider->id,
-                'delivery_rider_id'    => $rider->id,
-                'status'               => Delivery::DELIVERY_ASSIGNED,
+                'rider_id' => $rider->id,
+                'delivery_rider_id' => $rider->id,
+                'status' => Delivery::DELIVERY_ASSIGNED,
                 'delivery_assigned_at' => now(),
-                'delivery_attempts'    => $owned->delivery_attempts + 1,
+                'delivery_attempts' => $owned->delivery_attempts + 1,
             ]);
 
             return redirect()->route('branch.dispatch.index')
@@ -219,12 +254,19 @@ class DispatchController extends Controller
 
     private function center(Request $request): SortingCenter
     {
-        $center = SortingCenter::where('user_id', $request->user()->id)
-            ->where('status', 'active')
-            ->whereNull('archived_at')
-            ->first();
-
-        abort_unless($center, 403, 'Walang aktibong branch na naka-link sa account mo.');
+        if ($request->routeIs('logistics.staff.*')) {
+            $staff = Auth::guard('logistics_staff')->user();
+            abort_unless($staff instanceof BranchStaff && $staff->role === 'manager'
+                && $staff->activeForBranch($staff->logistics_partner_id, $staff->sorting_center_id), 403);
+            $center = $staff->sortingCenter;
+        } else {
+            $user = $request->user();
+            abort_unless($user && $user->account_type === 'branch' && $user->status === 'approved', 403);
+            $center = SortingCenter::where('user_id', $user->id)->first();
+        }
+        abort_unless($center && $center->type === 'station_hub' && ! $center->is_main
+            && $center->status === 'active' && ! $center->archived_at
+            && $center->partner?->user?->status === 'approved', 403);
 
         return $center;
     }

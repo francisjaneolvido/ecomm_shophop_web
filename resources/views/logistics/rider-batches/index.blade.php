@@ -1,8 +1,8 @@
 @extends('logistics.layouts.console')
-@section('title','Rider Batch Monitoring')
+@section('title','Rider Route Monitoring')
 @section('content')
 <div class="ops-module space-y-5">
-    <header class="ops-hero"><div><span class="eyebrow">Company monitoring</span><h1>Rider batch monitoring</h1><p class="description">Routes and parcel outcomes grouped by Branch. Daily planning and dispatch are managed by the assigned Branch.</p></div></header>
+    <header class="ops-hero"><div><span class="eyebrow">Company monitoring</span><h1>Rider route monitoring</h1><p class="description">Routes and parcel outcomes grouped by Branch. Daily planning and dispatch are managed by the assigned Branch.</p></div></header>
     <form method="GET" class="ops-panel p-4 flex flex-wrap items-end gap-3">
         <label class="sh-field"><span class="sh-label">Branch</span><select name="branch" class="sh-input"><option value="">All branches</option>@foreach($branches as $branch)<option value="{{ $branch->id }}" @selected(request('branch')==$branch->id)>{{ $branch->name }}</option>@endforeach</select></label>
         <label class="sh-field"><span class="sh-label">Status</span><select name="status" class="sh-input"><option value="">All statuses</option>@foreach(['queued','in_progress','completed','cancelled'] as $status)<option value="{{ $status }}" @selected(request('status')===$status)>{{ ucwords(str_replace('_',' ',$status)) }}</option>@endforeach</select></label>

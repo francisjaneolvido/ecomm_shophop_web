@@ -3,41 +3,81 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Buyer\Order\Order;
 use App\Models\Logistics\CodSettlement;
 use App\Models\Logistics\Delivery;
 use App\Models\Logistics\Rider;
+use App\Models\Logistics\SortingCenter;
+use App\Services\FinanceMoney;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 
 class MobileRiderCodController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
         $rider = $this->rider($request);
-        $cash = CodSettlement::where('collected_by_rider_id', $rider->id)
-            ->where('logistics_partner_id', $rider->logistics_partner_id)
-            ->orderByDesc('id')->limit(100)->get();
-        return response()->json(['success' => true, 'status' => 'ok',
-            'data' => ['collections' => $cash->map(fn ($row) => [
-                'delivery_id' => $row->delivery_id,
-                'order_id' => $row->order_id,
-                'amount' => (string) $row->collected_amount,
-                'status' => $row->status,
-                'collected_at' => $row->collected_at?->toIso8601String(),
+        if ($unavailable = $this->unavailableResponse()) {
+            return $unavailable;
+        }
+        $query = CodSettlement::where('collected_by_rider_id', $rider->id)
+            ->where('logistics_partner_id', $rider->logistics_partner_id);
+        $cash = (clone $query)->whereIn('status', ['collected', 'discrepancy'])->orderByDesc('id')->get()
+            ->concat((clone $query)->orderByDesc('id')->limit(100)->get())->unique('id')->values();
+        $collected = FinanceMoney::minor((string) ((clone $query)->sum('collected_amount') ?: '0'));
+        $received = FinanceMoney::minor((string) ((clone $query)->sum('received_amount') ?: '0'));
+        $batches = DB::table('cod_remittance_batches')->where('rider_id', $rider->id)
+            ->where('logistics_partner_id', $rider->logistics_partner_id)->orderByDesc('id')->limit(100)->get();
+        $items = DB::table('cod_remittance_items')->whereIn('batch_id', $batches->pluck('id'))->get()->groupBy('batch_id');
+        $facilities = SortingCenter::where('logistics_partner_id', $rider->logistics_partner_id)
+            ->where('status', 'active')->get(['id', 'name']);
+        $pending = DB::table('cod_remittance_items as i')->join('cod_remittance_batches as b', 'i.batch_id', '=', 'b.id')
+            ->where('b.rider_id', $rider->id)->where('b.logistics_partner_id', $rider->logistics_partner_id)->where('b.status', 'submitted')->pluck('i.cod_settlement_id');
+
+        return response()->json(['success' => true, 'status' => 'ok', 'data' => [
+            'summary' => [
+                'to_collect' => FinanceMoney::decimal((int) (Delivery::where('logistics_partner_id', $rider->logistics_partner_id)->where('delivery_rider_id', $rider->id)
+                    ->whereIn('status', [Delivery::DELIVERY_ASSIGNED, Delivery::OUT_FOR_DELIVERY])->whereHas('order', fn ($q) => $q->where('payment_method', 'cod')->where('status', Order::STATUS_TO_RECEIVE))
+                    ->with('order')->get()->sum(fn ($d) => FinanceMoney::minor($d->order->total_amount)))),
+                'collected' => FinanceMoney::decimal($collected),
+                'remitted' => FinanceMoney::decimal($received),
+                'outstanding' => FinanceMoney::decimal(FinanceMoney::minor((string) ((clone $query)->selectRaw('COALESCE(SUM(CASE WHEN collected_amount > COALESCE(received_amount, 0) THEN collected_amount - COALESCE(received_amount, 0) ELSE 0 END), 0) as liability')->value('liability') ?: '0'))),
+                'discrepancies' => (clone $query)->where('status', 'discrepancy')->count(),
+            ],
+            'facilities' => $facilities,
+            'batches' => $batches->map(fn ($batch) => [...(array) $batch, 'items' => $items->get($batch->id, collect())]),
+            'collections' => $cash->map(fn ($row) => [
+                'collection_id' => $row->id, 'delivery_id' => $row->delivery_id, 'order_id' => $row->order_id,
+                'expected_amount' => $row->expected_amount, 'amount' => $row->collected_amount,
+                'received_amount' => $row->received_amount ?? '0.00',
+                'outstanding' => FinanceMoney::decimal(max(0, FinanceMoney::minor($row->collected_amount) - FinanceMoney::minor($row->received_amount))),
+                'status' => $row->status, 'collected_at' => $row->collected_at?->toIso8601String(),
                 'remitted_at' => $row->remitted_at?->toIso8601String(),
-                'can_remit' => $row->status === CodSettlement::COLLECTED && ! $row->remitted_at,
-            ])->values()]]);
+                'can_remit' => in_array($row->status, ['collected', 'discrepancy'], true)
+                    && ! $pending->contains($row->id)
+                    && FinanceMoney::minor($row->collected_amount) > FinanceMoney::minor($row->received_amount),
+            ])->values(),
+        ]]);
     }
 
     public function remit(Request $request, int $delivery): JsonResponse
     {
         $rider = $this->rider($request);
+        if ($unavailable = $this->unavailableResponse()) {
+            return $unavailable;
+        }
+
         return DB::transaction(function () use ($rider, $delivery) {
             $cash = CodSettlement::where('delivery_id', $delivery)
                 ->where('collected_by_rider_id', $rider->id)
                 ->where('logistics_partner_id', $rider->logistics_partner_id)
                 ->lockForUpdate()->firstOrFail();
+            if (DB::table('cod_remittance_items')->where('cod_settlement_id', $cash->id)->exists()) {
+                throw ValidationException::withMessages(['settlement' => 'Use the remittance batch workflow for this collection.']);
+            }
             if ($cash->status !== CodSettlement::COLLECTED || $cash->remitted_at) {
                 return response()->json(['success' => false, 'status' => 'stale',
                     'message' => 'Already remitted. Refresh your COD list.'], 409);
@@ -51,9 +91,25 @@ class MobileRiderCodController extends Controller
                 return response()->json(['success' => false, 'status' => 'stale',
                     'message' => 'COD status changed; refresh first.'], 409);
             }
+
             return response()->json(['success' => true, 'status' => 'ok',
                 'message' => 'Rider cash handover recorded. Logistics must confirm actual receipt.']);
         });
+    }
+
+    private function unavailableResponse(): ?JsonResponse
+    {
+        foreach (['cod_remittance_batches', 'cod_remittance_items', 'cash_custody_movements'] as $table) {
+            if (! Schema::hasTable($table)) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'financial_setup_required',
+                    'message' => 'COD remittance is not available yet. Please contact your logistics administrator.',
+                ], 503);
+            }
+        }
+
+        return null;
     }
 
     private function rider(Request $request): Rider
@@ -62,8 +118,9 @@ class MobileRiderCodController extends Controller
         abort_unless($actor instanceof Rider, 403);
         $rider = $actor->fresh(['partner.user']);
         // Suspended Riders retain the ability to return previously collected cash.
-        abort_unless($rider && in_array($rider->status, ['active','suspended'], true)
+        abort_unless($rider && in_array($rider->status, ['active', 'suspended'], true)
             && $rider->partner?->user?->status === 'approved', 403);
+
         return $rider;
     }
 }

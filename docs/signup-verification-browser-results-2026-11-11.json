@@ -1,0 +1,148 @@
+{
+  "results": [
+    {
+      "width": 320,
+      "height": 568,
+      "role": "buyer",
+      "steps": 4,
+      "failures": []
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "role": "seller",
+      "steps": 5,
+      "failures": []
+    },
+    {
+      "width": 320,
+      "height": 568,
+      "role": "logistics",
+      "steps": 7,
+      "failures": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "role": "buyer",
+      "steps": 4,
+      "failures": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "role": "seller",
+      "steps": 5,
+      "failures": []
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "role": "logistics",
+      "steps": 7,
+      "failures": []
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "role": "buyer",
+      "steps": 4,
+      "failures": []
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "role": "seller",
+      "steps": 5,
+      "failures": []
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "role": "logistics",
+      "steps": 7,
+      "failures": []
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "role": "buyer",
+      "steps": 4,
+      "failures": []
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "role": "seller",
+      "steps": 5,
+      "failures": []
+    },
+    {
+      "width": 1366,
+      "height": 768,
+      "role": "logistics",
+      "steps": 7,
+      "failures": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "role": "buyer",
+      "steps": 4,
+      "failures": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "role": "seller",
+      "steps": 5,
+      "failures": []
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "role": "logistics",
+      "steps": 7,
+      "failures": []
+    }
+  ],
+  "resend": {
+    "loading": true,
+    "calls": 1,
+    "cooldown": true,
+    "feedback": "Accepted"
+  },
+  "feedbackChecks": [
+    {
+      "page": "signup",
+      "scenario": "network",
+      "passed": true
+    },
+    {
+      "page": "signup",
+      "scenario": "expired",
+      "passed": true
+    },
+    {
+      "page": "signup",
+      "scenario": "cooldown",
+      "passed": true
+    },
+    {
+      "page": "seller",
+      "scenario": "network",
+      "passed": true
+    },
+    {
+      "page": "seller",
+      "scenario": "expired",
+      "passed": true
+    },
+    {
+      "page": "seller",
+      "scenario": "cooldown",
+      "passed": true
+    }
+  ],
+  "jsErrors": []
+}

@@ -1,6 +1,6 @@
 <article data-batch-id="{{ $batchInfo['id'] }}" class="ops-panel p-4 space-y-3">
     <div class="flex flex-wrap items-start justify-between gap-3">
-        <div><p class="text-xs text-slate-500">{{ $batchInfo['branch'] }} &middot; {{ ucfirst($batchInfo['type']) }} batch</p>
+        <div><p class="text-xs text-slate-500">{{ $batchInfo['branch'] }} &middot; {{ ucfirst($batchInfo['type']) }} route</p>
             <h3 class="text-sm font-semibold text-navy">{{ $batchInfo['code'] }}</h3>
             <p class="text-sm">{{ $batchInfo['rider'] }}</p></div>
         <span class="rounded-md bg-teal-light px-3 py-1 text-xs font-medium text-navy">{{ ucwords(str_replace('_',' ',$batchInfo['status'])) }}</span>
@@ -33,8 +33,8 @@
     </details>
     @if($canManage??false)
         <div class="flex flex-wrap gap-2">
-        @foreach(($batchInfo['status']==='queued'?['dispatch'=>'Dispatch route','cancel'=>'Cancel unstarted batch']:($batchInfo['status']==='in_progress'?['complete'=>'Complete batch']:[])) as $action=>$label)
-            <form method="POST" action="{{ route($routePrefix.'.transition',$batchInfo['id']) }}" data-confirm-title="Confirm batch action" data-confirm-message="{{ $action==='complete'?'Confirm that every parcel outcome and physical Branch return is resolved.':'Confirm this batch action after reviewing its rider, schedule and parcels.' }}" data-confirm-button="{{ $label }}">
+        @foreach(($batchInfo['status']==='queued'?['dispatch'=>'Dispatch route','cancel'=>'Cancel scheduled route']:($batchInfo['status']==='in_progress'?['complete'=>'Complete route']:[])) as $action=>$label)
+            <form method="POST" action="{{ route($routePrefix.'.transition',$batchInfo['id']) }}" data-confirm-title="Confirm route action" data-confirm-message="{{ $action==='complete'?'Confirm that every parcel outcome and physical Branch return is resolved.':'Confirm this route action after reviewing its rider, schedule and parcels.' }}" data-confirm-button="{{ $label }}">
                 @csrf<input type="hidden" name="action" value="{{ $action }}"><button class="sh-btn-soft" type="submit">{{ $label }}</button>
             </form>
         @endforeach

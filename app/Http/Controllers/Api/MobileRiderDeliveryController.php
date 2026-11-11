@@ -7,8 +7,11 @@ use App\Models\Buyer\Order\Order;
 use App\Models\Logistics\CodSettlement;
 use App\Models\Logistics\Delivery;
 use App\Models\Logistics\DeliveryFailureReport;
-use App\Models\Logistics\PickupRequest;
 use App\Models\Logistics\Rider;
+use App\Models\Logistics\RiderBatchItem;
+use App\Services\FinancialAudit;
+use App\Services\PartnerCompensationService;
+use App\Services\RiderBatchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,8 +51,8 @@ class MobileRiderDeliveryController extends Controller
             ->get();
 
         $batchItems = collect();
-        if (app(\App\Services\RiderBatchService::class)->available()) {
-            $batchItems = \App\Models\Logistics\RiderBatchItem::with('batch')
+        if (app(RiderBatchService::class)->available()) {
+            $batchItems = RiderBatchItem::with('batch')
                 ->whereIn('reserved_delivery_id', $deliveries->pluck('id'))
                 ->whereHas('batch', fn ($q) => $q->where('rider_id', $rider->id)->where('logistics_partner_id', $rider->logistics_partner_id))
                 ->get()->keyBy('delivery_id');
@@ -144,6 +147,7 @@ class MobileRiderDeliveryController extends Controller
 
         $request->validate([
             'cash_collected' => $order->payment_method === 'cod' ? ['required', 'accepted'] : ['prohibited'],
+            'actual_collected_amount' => $order->payment_method === 'cod' ? ['sometimes', 'required', 'decimal:0,2', 'min:0', 'max:999999999'] : ['prohibited'],
             'proof' => ['required', 'file', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
         ]);
 
@@ -186,17 +190,20 @@ class MobileRiderDeliveryController extends Controller
                     ]);
                 }
 
+                app(PartnerCompensationService::class)->delivery($owned);
+
                 if ($owned->order->payment_method === 'cod') {
-                    CodSettlement::create([
+                    $collection = CodSettlement::create([
                         'order_id' => $owned->order_id,
                         'delivery_id' => $owned->id,
                         'logistics_partner_id' => $owned->logistics_partner_id,
                         'expected_amount' => $owned->order->total_amount,
-                        'collected_amount' => $owned->order->total_amount,
+                        'collected_amount' => $request->input('actual_collected_amount', $owned->order->total_amount),
                         'status' => CodSettlement::COLLECTED,
                         'collected_by_rider_id' => $rider->id,
                         'collected_at' => now(),
                     ]);
+                    FinancialAudit::record('cod_collection', $collection->id, 'collected', 'rider', $rider->id, ['expected_amount' => $collection->expected_amount, 'collected_amount' => $collection->collected_amount, 'proof_path' => $path]);
                 }
 
                 return $this->freshSuccess(
@@ -308,7 +315,7 @@ class MobileRiderDeliveryController extends Controller
             ->where('logistics_partner_id', $rider->logistics_partner_id);
 
         $parcel = ($lock ? $query->lockForUpdate() : $query)->firstOrFail();
-        app(\App\Services\RiderBatchService::class)->assertParcelAllowed($rider, $parcel, true);
+        app(RiderBatchService::class)->assertParcelAllowed($rider, $parcel, true);
 
         return $parcel;
     }
@@ -441,5 +448,4 @@ class MobileRiderDeliveryController extends Controller
             'is_main' => (bool) $center->is_main,
         ];
     }
-
 }
