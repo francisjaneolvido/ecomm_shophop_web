@@ -160,4 +160,4 @@
 <link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261104-bh">
 <link rel="stylesheet" href="{{ asset('css/shophop-logistics-workspace.css') }}?v=20261104-finance">
 @endpush
-@push('scripts')<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261104-finance"></script>@endpush
+@push('scripts')@endpush

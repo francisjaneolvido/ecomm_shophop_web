@@ -9,7 +9,7 @@
   @if(app(\App\Services\RiderManagementService::class)->available())
   <section class="ops-panel p-4 flex flex-wrap items-center justify-between gap-3">
     <div><h2 class="font-semibold">Rider Management</h2><p class="ops-panel-note">Activate approved riders, confirm barangay coverage and manage availability, schedules and transfer requests.</p></div>
-    <a class="sh-btn-primary" href="{{ route('logistics.rider-management.index') }}">Manage riders</a>
+    <a class="sh-btn-primary" href="{{ route('logistics.rider-management.index', ['queue' => 'activation']) }}">Review rider activation ({{ $pendingRiderActivations }})</a>
   </section>
   @endif
   <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">

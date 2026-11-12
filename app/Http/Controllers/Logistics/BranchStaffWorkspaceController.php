@@ -30,7 +30,8 @@ class BranchStaffWorkspaceController extends Controller
             ->where('parcel_scan_events.sorting_center_id', $staff->sorting_center_id)
             ->select('parcel_scan_events.event_type', 'parcel_scan_events.scanned_at',
                 'deliveries.tracking_code')->orderByDesc('parcel_scan_events.id')->limit(15)->get();
-        return view('logistics.staff.workspace', compact('staff', 'recentScans'));
+        $center = $staff->sortingCenter;
+        return view('logistics.staff.workspace', compact('staff', 'recentScans', 'center'));
     }
 
     public function changePassword(Request $request): RedirectResponse

@@ -27,8 +27,6 @@
         <div class="sh-alert-error">Walang active Province Hub na naka-link sa branch na ito.</div>
     @endunless
 
-    <div class="ops-panel" data-ops-tabs>
-    <nav class="ops-tabs" role="tablist" aria-label="Parcel workflow stages"><button type="button" class="ops-tab" role="tab" aria-selected="true" data-ops-tab="sort">1. Sort parcels</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="manifest">2. Create manifest</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="transport">3. Transport & manifests</button></nav>
     <section class="grid gap-3 grid-cols-2 xl:grid-cols-4">
         <div class="sh-stat"><p class="sh-stat-label">To sort</p><p class="sh-stat-value">{{ number_format($stats['to_sort']) }}</p><p class="sh-stat-note">Received at branch</p></div>
         <div class="sh-stat"><p class="sh-stat-label">Ready for manifest</p><p class="sh-stat-value">{{ number_format($stats['ready']) }}</p><p class="sh-stat-note">Not reserved yet</p></div>
@@ -36,15 +34,19 @@
         <div class="sh-stat"><p class="sh-stat-label">In transit</p><p class="sh-stat-value">{{ number_format($stats['in_transit']) }}</p><p class="sh-stat-note">Driver/truck departed</p></div>
     </section>
 
-    <section class="sh-surface sh-card-pad m-3" data-ops-panel="sort" role="tabpanel">
+    <div class="ops-panel" data-ops-tabs>
+    <nav class="ops-tabs" role="tablist" aria-label="Parcel workflow stages"><button type="button" class="ops-tab" role="tab" aria-selected="true" data-ops-tab="sort">1. Sort parcels</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="manifest">2. Create manifest</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="transport">3. Transport & manifests</button></nav>
+
+
+    <section class="p-4" data-ops-panel="sort" role="tabpanel">
         <p class="sh-kicker">Step 1</p>
         <h2 id="branch-sort" class="sh-title-sm scroll-mt-6">Sort received parcels</h2>
-        <p class="mt-1 text-xs text-navy/50">Local parcels stay here for Delivery Rider. A verified direct ROAD connection can route parcels to another station; otherwise they follow the Province Hub. Local parcels stay here for last-mile dispatch.</p>
+        <p class="mt-1 text-xs text-navy/50">Local parcels stay at this Branch for delivery. Other parcels use a verified direct road connection or the Province Hub.</p>
         @if($toSort->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">Nothing to sort</p></div>
         @else
         <form method="POST" action="{{ route('branch.outbound.sort') }}" data-bulk class="mt-4">@csrf
-            <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[42rem] text-left text-sm">
+            <div class="sh-surface-soft overflow-x-auto"><table class="ops-table w-full min-w-[42rem] text-left text-sm">
                 <thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="w-10 px-4 py-3"><input type="checkbox" data-check-all></th><th class="px-4 py-3">Tracking</th><th class="px-4 py-3">Receiver</th><th class="px-4 py-3">Destination</th></tr></thead>
                 <tbody>
                 @foreach($toSort as $p)
@@ -62,7 +64,7 @@
         @endif
     </section>
 
-    <section class="sh-surface sh-card-pad m-3" data-ops-panel="manifest" role="tabpanel" hidden>
+    <section class="p-4" data-ops-panel="manifest" role="tabpanel" hidden>
         <p class="sh-kicker">Step 2</p>
         <h2 id="branch-manifests" class="sh-title-sm scroll-mt-6">Create manifest</h2>
         <p class="mt-1 text-xs text-navy/50">One manifest = one origin + one verified next stop. Direct station routes are used only when a directional ROAD connection is verified. Physical loading and driver scans remain required.</p>
@@ -77,7 +79,7 @@
                     <h3 class="text-sm font-bold text-navy">{{ $parcels->first()['next_name'] }}</h3></div>
                     <span class="sh-badge sh-badge-info">{{ $parcels->first()['leg'] === 'verified_direct_station_road' ? 'Direct branch ROAD' : 'Hub transfer' }}</span>
                 </div>
-                <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[42rem] text-left text-sm">
+                <div class="sh-surface-soft overflow-x-auto"><table class="ops-table w-full min-w-[42rem] text-left text-sm">
                     <thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="w-10 px-3 py-2"><input type="checkbox" data-check-all></th><th class="px-3 py-2">Tracking</th><th class="px-3 py-2">Receiver</th><th class="px-3 py-2">Final branch</th><th class="px-3 py-2">COD</th></tr></thead>
                     <tbody>@foreach($parcels as $p)
                         <tr class="border-b border-gray-border/60"><td class="px-3 py-2"><input type="checkbox" name="parcel_ids[]" value="{{ $p['id'] }}" data-row checked></td><td class="px-3 py-2 font-semibold">{{ $p['tracking'] }}</td><td class="px-3 py-2">{{ $p['receiver'] ?? '—' }}</td><td class="px-3 py-2">{{ $p['final'] }}</td><td class="px-3 py-2">{{ $p['cod'] ? '₱'.number_format($p['cod'],2) : 'Paid' }}</td></tr>

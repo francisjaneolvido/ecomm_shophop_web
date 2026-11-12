@@ -1,11 +1,10 @@
 @extends('admin.layout')
 @section('title', 'Inspect Product Compliance')
-@include('admin.product-compliance.styles')
 @section('content')
 {{-- Persisted detail separates review history from compatibility approval and inventory availability. --}}
-<div class="compliance-workspace">
-    <a href="{{ route('admin.compliance', ['filter' => $product->compliance_status]) }}">Back to Product Compliance</a>
-    <h1>{{ $product->name }}</h1>
+<div class="compliance-workspace space-y-4" data-console-detail-source>
+    <a data-console-detail-dismiss href="{{ route('admin.compliance', ['filter' => $product->compliance_status]) }}">Back to Product Compliance</a>
+    <h1 class="text-2xl font-bold">{{ $product->name }}</h1>
     <p>{{ $product->seller?->business_name ?? 'Seller unavailable' }} · Product #{{ $product->id }}</p>
     @if(session('status'))<p class="pc-panel" role="status">{{ session('status') }}</p>@endif
     @if($errors->any())<div class="pc-error" role="alert">@foreach($errors->all() as $error)<p>{{ $error }}</p>@endforeach</div>@endif
@@ -29,8 +28,8 @@
     @endif
     {{-- Explicit native confirmation sections remain keyboard usable and never promise archived merchandise is live. --}}
     <div class="pc-grid">
-        <details class="pc-panel"><summary>Approve Product</summary><p>Confirm approval for Buyer visibility when active and stocked. This clears rejection details.</p><form method="POST" action="{{ route('admin.compliance.approve', $product) }}">@csrf @method('PATCH')<button class="pc-button" type="submit">Confirm approval</button></form></details>
-        <details class="pc-panel" @if($errors->any()) open @endif><summary>Reject Product</summary><p>Rejecting hides this Product from Buyer discovery and prevents new purchases. The Seller may correct and resubmit it.</p><form method="POST" action="{{ route('admin.compliance.reject', $product) }}">@csrf @method('PATCH')<div class="pc-controls"><label>Rejection reason<select name="rejection_reason" required><option value="">Choose a reason</option>@foreach($reasons as $value => $label)<option value="{{ $value }}" @selected(old('rejection_reason') === $value)>{{ $label }}</option>@endforeach</select></label><label>Notes (optional)<textarea name="rejection_notes" rows="3" maxlength="2000">{{ old('rejection_notes') }}</textarea></label></div><button class="pc-button" type="submit">Confirm rejection</button></form></details>
+        <details class="pc-panel"><summary>Approve Product</summary><p>Confirm approval for Buyer visibility when active and stocked. This clears rejection details.</p><form method="POST" action="{{ route('admin.compliance.approve', $product) }}">@csrf @method('PATCH')<button class="sh-btn" type="submit">Confirm approval</button></form></details>
+        <details class="pc-panel" @if($errors->any()) open @endif><summary>Reject Product</summary><p>Rejecting hides this Product from Buyer discovery and prevents new purchases. The Seller may correct and resubmit it.</p><form method="POST" action="{{ route('admin.compliance.reject', $product) }}">@csrf @method('PATCH')<div class="pc-controls"><label>Rejection reason<select name="rejection_reason" required><option value="">Choose a reason</option>@foreach($reasons as $value => $label)<option value="{{ $value }}" @selected(old('rejection_reason') === $value)>{{ $label }}</option>@endforeach</select></label><label>Notes (optional)<textarea name="rejection_notes" rows="3" maxlength="2000">{{ old('rejection_notes') }}</textarea></label></div><button class="sh-btn-danger" type="submit">Confirm rejection</button></form></details>
     </div>
 </div>
 @endsection

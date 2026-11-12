@@ -27,7 +27,8 @@
                 <td>{{ $hub->municipality }}<div class="ops-row-sub">{{ $hub->province }}</div></td>
                 <td>{{ $hub->user?->email ?? 'Not linked' }}</td><td>{{ number_format($hub->active_riders_count) }}</td>
                 <td><span class="sh-badge {{ $active ? 'sh-badge-success':'sh-badge-neutral' }}">{{ ucfirst($hub->status) }}</span></td>
-                <td class="ops-row-actions"><details><summary>Actions ▾</summary><div>
+                <td class="ops-row-actions"><details class="ops-actions"><summary class="ops-button">Actions ▾</summary><div class="ops-actions-menu">
+                    <button type="button" data-ops-template="provinceBranchInfo{{ $hub->id }}" data-ops-title="Branch details · {{ $hub->name }}">View details</button>
                     <button type="button" data-edit-station
                         data-url="{{ route('logistics.hub.station-hubs.update',$hub->id) }}" data-id="{{ $hub->id }}"
                         data-name="{{ $hub->name }}" data-code="{{ $hub->code }}"
@@ -38,12 +39,27 @@
                         @csrf<button type="submit" class="text-left">{{ $active ? 'Deactivate':'Activate' }}</button></form>
                     </div></details></td>
             </tr>
+            <template id="provinceBranchInfo{{ $hub->id }}">
+                <div class="ops-dialog-head"><div><p class="sh-kicker">Station branch</p><h2 class="font-semibold">{{ $hub->name }}</h2><p class="ops-panel-note">{{ $hub->code }}</p></div><button type="button" class="ops-button" data-ops-close aria-label="Close branch details">✕</button></div>
+                <div class="ops-dialog-body"><dl class="sh-detail-grid">
+                    <div><dt>Status</dt><dd>{{ ucfirst($hub->status) }}</dd></div>
+                    <div><dt>Active riders</dt><dd>{{ number_format($hub->active_riders_count) }}</dd></div>
+                    <div><dt>Contact</dt><dd>{{ $hub->contact_no ?: 'Not provided' }}</dd></div>
+                    <div><dt>Province hub</dt><dd>{{ $center->name }}</dd></div>
+                    <div><dt>City / Municipality</dt><dd>{{ $hub->municipality }}</dd></div>
+                    <div><dt>Branch login</dt><dd>{{ $hub->user?->email ?? 'Not linked' }}</dd></div>
+                    <div class="sm:col-span-3"><dt>Address</dt><dd>{{ $hub->addressLabel() }}</dd></div>
+                </dl></div>
+                <div class="ops-dialog-foot"><button type="button" class="sh-btn-soft" data-ops-close>Close</button></div>
+            </template>
         @empty<tr><td colspan="6" class="ops-empty">No branches match this search.</td></tr>@endforelse
         </tbody></table></div>
         <div class="ops-count">{{ $stationHubs->firstItem() ?? 0 }}–{{ $stationHubs->lastItem() ?? 0 }} of {{ $stationHubs->total() }} branches</div>
         @if($stationHubs->hasPages())<div class="border-t p-4">{{ $stationHubs->links() }}</div>@endif
     </section>
 </div>
+
+<dialog id="opsRecordDialog" class="ops-dialog" aria-label="Branch details"><div data-ops-record-content></div></dialog>
 
 {{-- Add branch --}}
 <dialog id="stationModal" class="w-full max-w-3xl rounded-lg p-0 backdrop:bg-navy/50">

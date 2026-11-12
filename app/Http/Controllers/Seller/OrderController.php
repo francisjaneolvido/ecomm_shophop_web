@@ -217,7 +217,7 @@ class OrderController extends Controller
             'prepare' => ['title' => 'Prepare Orders', 'description' => 'Pack confirmed orders and request pickup only when ready.'],
             'courier' => ['title' => 'Courier Handover', 'description' => 'Monitor ready parcels, assigned pickups and actual courier handoffs.'],
             'confirm' => ['title' => 'Delivery Tracking & Confirmations', 'description' => 'Monitor Rider delivery evidence and Buyer receipt confirmation. Sellers cannot mark parcels delivered.'],
-            default => ['title' => 'Order Notifications', 'description' => 'Review new purchases, track orders and prioritize pending confirmations.'],
+            default => ['title' => 'All Orders', 'description' => 'Review new purchases, track orders and prioritize pending confirmations.'],
         };
 
         return view('seller.orders.' . $section, compact(

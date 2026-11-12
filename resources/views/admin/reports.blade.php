@@ -43,28 +43,28 @@
                     <input type="date" name="to" value="{{ $to->format('Y-m-d') }}"
                         class="text-sm rounded-xl border border-slate-200 px-3 py-2 bg-white text-slate-600">
                 </div>
-                <button type="submit" class="h-10 px-4 rounded-xl text-xs font-semibold text-white bg-navy hover:opacity-90 transition">Apply</button>
+                <button type="submit" class="sh-btn h-10 px-4 rounded-xl text-xs font-semibold text-white bg-navy hover:opacity-90 transition">Apply</button>
             </form>
         </div>
 
         {{-- HEADLINE CARDS --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
                 <p class="text-xs text-slate-400 font-medium">Orders placed</p>
                 <p class="text-2xl font-bold text-navy mt-1">{{ number_format($sales['total']) }}</p>
                 <p class="text-[11px] text-slate-400 mt-1">{{ $sales['completed'] }} completed &middot; {{ $sales['cancelled'] }} cancelled &middot; {{ $sales['returned'] }} returned</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
                 <p class="text-xs text-slate-400 font-medium">Completed order value</p>
                 <p class="text-2xl font-bold text-navy mt-1">{!! $peso($sales['completed_value']) !!}</p>
                 <p class="text-[11px] text-slate-400 mt-1">Avg. {!! $peso($sales['avg_order']) !!} per order</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
                 <p class="text-xs text-slate-400 font-medium">ShopHop commission</p>
                 <p class="text-2xl font-bold text-navy mt-1">{!! $peso($finance->commission) !!}</p>
                 <p class="text-[11px] text-slate-400 mt-1">Platform net {!! $peso($finance->platform_net) !!}</p>
             </div>
-            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
                 <p class="text-xs text-slate-400 font-medium">COD received by ShopHop</p>
                 <p class="text-2xl font-bold text-navy mt-1">{!! $peso($codReceived->amt) !!}</p>
                 <p class="text-[11px] text-slate-400 mt-1">{{ $codReceived->n }} order(s) confirmed by Admin</p>
@@ -72,7 +72,7 @@
         </div>
 
         {{-- TREND --}}
-        <div class="bg-white border border-slate-200 rounded-2xl p-5">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-5">
             <div class="flex items-center justify-between gap-3 mb-4">
                 <div>
                     <h2 class="font-semibold text-navy text-sm">Orders over time</h2>
@@ -104,7 +104,7 @@
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
             {{-- ORDER STATUS --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-100">
                     <h2 class="font-semibold text-navy text-sm">Orders by status</h2>
                 </div>
@@ -129,7 +129,7 @@
             </div>
 
             {{-- FINANCE --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div>
                         <h2 class="font-semibold text-navy text-sm">Finance breakdown</h2>
@@ -156,7 +156,7 @@
             </div>
 
             {{-- COD --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div>
                         <h2 class="font-semibold text-navy text-sm">COD custody</h2>
@@ -192,7 +192,7 @@
             </div>
 
             {{-- RETURNS --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div>
                         <h2 class="font-semibold text-navy text-sm">Returns &amp; refunds</h2>
@@ -224,7 +224,7 @@
             </div>
 
             {{-- REGISTRATIONS --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div>
                         <h2 class="font-semibold text-navy text-sm">New registrations</h2>
@@ -256,7 +256,7 @@
             </div>
 
             {{-- DISPUTES --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                     <div>
                         <h2 class="font-semibold text-navy text-sm">Complaints &amp; disputes</h2>
@@ -283,7 +283,7 @@
             </div>
 
             {{-- TOP SELLERS --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-100">
                     <h2 class="font-semibold text-navy text-sm">Top sellers</h2>
                     <p class="text-[11px] text-slate-400 mt-0.5">By completed order value</p>
@@ -304,7 +304,7 @@
             </div>
 
             {{-- TOP PRODUCTS --}}
-            <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-100">
                     <h2 class="font-semibold text-navy text-sm">Top products</h2>
                     <p class="text-[11px] text-slate-400 mt-0.5">By units sold in completed orders</p>

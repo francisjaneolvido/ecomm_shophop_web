@@ -1,0 +1,343 @@
+/* Canonical console components. Legacy class names are aliases during migration. */
+body.sh-management-ui {
+  --ui-ink:var(--sh-text,#0f1b3d); --ui-muted:var(--sh-muted,#59667a);
+  --ui-line:var(--sh-border,#e2e6ea); --ui-surface:var(--sh-surface,#fff);
+  --ui-soft:var(--sh-surface-soft,#f8fafb); --ui-raised:var(--sh-surface-raised,#f3f5f7);
+  --ui-action:#0f1b3d; --ui-action-hover:#22385b; --ui-accent:#087f70;
+  --ui-accent-soft:var(--sh-brand-soft,#d4f5ee); --ui-radius:8px; --ui-control:6px;
+  --shm-navy:var(--ui-ink); --shm-muted:var(--ui-muted); --shm-line:var(--ui-line);
+  color:var(--ui-ink);
+}
+html[data-theme=dark] body.sh-management-ui,html[data-theme=oled] body.sh-management-ui {
+  --ui-action:#d5e5f5; --ui-action-hover:#f0f7ff; --ui-accent:#65d9c1;
+}
+body.sh-management-ui main.sh-management-main {padding:16px!important;background:var(--sh-page,#fff)}
+body.sh-management-ui main.sh-management-main > :is(.space-y-5,.space-y-6) > :not([hidden]) ~ :not([hidden]) {margin-top:16px}
+body.sh-management-ui :is(.sh-page-header,.ops-hero,.ops-page-header) {display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}
+body.sh-management-ui :is(.sh-page-header,.ops-hero,.ops-page-header)>div:first-child {min-width:0;flex:1 1 380px}
+body.sh-management-ui :is(.sh-page-header,.ops-hero) .description {font-size:12px;line-height:1.6;max-width:76ch;margin-top:5px;color:var(--ui-muted)}
+body.sh-management-ui main.sh-management-main :is(h1,.ops-title) {font-size:22px;line-height:1.35;color:var(--ui-ink)}
+body.sh-management-ui main.sh-management-main :is(h2,h3) {color:var(--ui-ink)}
+body.sh-management-ui :is(.eyebrow,.sh-kicker) {color:var(--ui-accent);font-size:10px;font-weight:700;letter-spacing:.075em;text-transform:uppercase}
+body.sh-management-ui :is(.ss-muted,.so-muted,.pc-muted,.ops-subtitle,.ops-panel-note,.ops-row-sub,.ops-secondary,.ops-muted,.sh-help,.sh-stat-note) {color:var(--ui-muted)}
+/* Surface and metric cards share shape; a record list uses a table inside one panel. */
+body.sh-management-ui :is(.ops-panel,.ss-panel,.so-panel,.pc-panel,.sh-surface,.admin-panel,.sh-management-panel,.logistics-panel,.sh-dashboard-card,.sh-dashboard-stat,.sh-finance-summary,.sh-stat,.ss-stat,.so-metric) {
+  background:var(--ui-surface);border:1px solid var(--ui-line);border-radius:var(--ui-radius);box-shadow:none;min-width:0;
+}
+body.sh-management-ui :is(.sh-surface-soft,.sh-network-stat,.ops-modal-meta,.ops-allocation-tile) {background:var(--ui-soft);border-color:var(--ui-line);border-radius:var(--ui-radius)}
+body.sh-management-ui main.sh-management-main :is(.ops-panel-head,.ss-panel-heading,.so-panel-heading,.ops-header,.admin-panel-header,.sh-management-panel-head,.sh-dashboard-card-header) {
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;padding:12px 16px;border-bottom:1px solid var(--ui-line)
+}
+body.sh-management-ui main.sh-management-main :is(.sh-stat,.ss-stat,.so-metric,.sh-finance-summary,.sh-dashboard-stat) {padding:14px 16px;min-height:0}
+body.sh-management-ui :is(.sh-stat-label,.sh-dashboard-stat-label,.sh-finance-summary p) {font-size:11px;font-weight:600;letter-spacing:0;text-transform:none;color:var(--ui-muted)}
+body.sh-management-ui :is(.sh-stat-value,.sh-dashboard-stat-number,.sh-finance-summary strong) {font-size:24px;font-weight:700;line-height:1.25;color:var(--ui-ink);font-variant-numeric:tabular-nums}
+body.sh-management-ui :is(.sh-stat-note,.sh-dashboard-stat-note) {font-size:11px;line-height:1.5;margin-top:4px;color:var(--ui-muted)}
+/* One action hierarchy, also inside native dialogs outside the main element. */
+body.sh-management-ui :is(.ss-btn,.so-button,.inventory-btn,.sh-btn,.sh-btn-primary,.sh-btn-secondary,.sh-btn-soft,.sh-btn-ghost,.sh-btn-danger,.ops-button,.ops-action,.admin-btn,.bc-primary),
+body.sh-management-ui main.sh-management-main :is(.ss-btn,.so-button,.inventory-btn,.sh-btn,.sh-btn-primary,.sh-btn-secondary,.sh-btn-soft,.sh-btn-ghost,.sh-btn-danger,.ops-button,.ops-action,.admin-btn,.bc-primary) {
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:36px;padding:7px 12px;
+  border:1px solid var(--ui-line);border-radius:var(--ui-control);font:600 12px/1.45 Poppins,ui-sans-serif,sans-serif;
+  text-decoration:none;cursor:pointer;box-shadow:none;transform:none;transition:background-color .15s,border-color .15s,color .15s;
+}
+body.sh-management-ui :is(.ss-btn,.so-button,.inventory-btn,.ops-button,.ops-action,.sh-btn-soft,.sh-btn-ghost,.sh-btn-secondary,.admin-btn) {background:var(--ui-surface);color:var(--ui-ink)}
+body.sh-management-ui :is(.ss-btn,.so-button,.inventory-btn,.ops-button,.ops-action,.sh-btn-soft,.sh-btn-ghost,.sh-btn-secondary,.admin-btn):hover {background:var(--ui-raised);border-color:var(--ui-muted);transform:none}
+body.sh-management-ui :is(.ss-btn-primary,.ss-btn-teal,.so-button-primary,.inventory-btn-primary,.sh-btn,.sh-btn-primary,.ops-button-primary,.admin-btn-primary,.admin-btn-teal,.bc-primary) {background:var(--ui-action);border-color:var(--ui-action);color:var(--sh-page,#fff)}
+body.sh-management-ui :is(.ss-btn-primary,.ss-btn-teal,.so-button-primary,.inventory-btn-primary,.sh-btn,.sh-btn-primary,.ops-button-primary,.admin-btn-primary,.admin-btn-teal,.bc-primary):hover {background:var(--ui-action-hover);border-color:var(--ui-action-hover);color:var(--sh-page,#fff);transform:none}
+body.sh-management-ui :is(.ss-btn-danger,.sh-btn-danger,.ops-button-danger,.admin-btn-danger) {color:#ad2929;background:var(--ui-surface);border-color:#e6b1b1}
+body.sh-management-ui :is(.ss-btn-danger,.sh-btn-danger,.ops-button-danger,.admin-btn-danger):hover {background:#fff0f0;color:#8f2020;border-color:#ce7979}
+body.sh-management-ui .sh-btn-danger-solid {background:#b42318;color:#fff;border-color:#b42318}
+body.sh-management-ui :is(button:disabled,[aria-disabled=true]) {cursor:not-allowed;opacity:.55}
+body.sh-management-ui :is(.ss-input,.ss-select,.ss-textarea,.sh-input,.sh-select,.sh-textarea,.admin-input,.admin-select,.admin-textarea) {background:var(--ui-surface);color:var(--ui-ink);border:1px solid var(--ui-line);border-radius:var(--ui-control);padding:8px 10px;font-size:12px;line-height:1.5;min-height:36px;max-width:100%}
+body.sh-management-ui :is(.sh-label,.sh-field>span:first-child) {font-size:11px;font-weight:600}
+body.sh-management-ui :is(input[type=checkbox],input[type=radio]) {accent-color:#087f70}
+body.sh-management-ui :is(a,button,input,select,textarea,summary):focus-visible {outline:2px solid var(--ui-accent);outline-offset:2px}
+body.sh-management-ui :is(.ops-filters,.ops-toolbar,.admin-filter-bar) {display:flex;align-items:flex-end;flex-wrap:wrap;gap:8px}
+body.sh-management-ui .ops-filters {padding:12px 16px;border-bottom:1px solid var(--ui-line)}
+body.sh-management-ui .ops-filters .sh-field {flex:1 1 160px;min-width:130px}
+body.sh-management-ui .ops-filters .sh-field :is(input,select) {width:100%}
+/* Underline navigation for route queues and client-side panels. */
+body.sh-management-ui :is(.so-workflow-nav,.ss-tabs,.ops-tabs,.rm-queues,.bc-tabs,.sh-console-tabs) {display:flex;flex-wrap:nowrap;gap:4px;padding:0 12px;margin:0;border-bottom:1px solid var(--ui-line);background:var(--ui-surface);overflow-x:auto;scrollbar-width:thin}
+body.sh-management-ui :is(.so-workflow-nav,.ss-tabs,.ops-tabs,.rm-queues,.bc-tabs,.sh-console-tabs)>:is(a,button) {
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:0 0 auto;min-height:44px;
+  padding:10px 12px;margin:0;border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;
+  color:var(--ui-muted);font-size:12px;font-weight:600;white-space:nowrap;text-decoration:none;box-shadow:none;cursor:pointer;
+}
+body.sh-management-ui :is(.so-workflow-nav,.ss-tabs,.ops-tabs,.rm-queues,.bc-tabs,.sh-console-tabs)>:is(a,button):is([aria-selected=true],[aria-current=page]) {color:var(--ui-accent);border-bottom-color:var(--ui-accent);background:transparent}
+body.sh-management-ui :is(.so-workflow-nav,.ss-tabs,.ops-tabs,.rm-queues,.bc-tabs,.sh-console-tabs)>:is(a,button):hover {background:var(--ui-soft);color:var(--ui-accent)}
+body.sh-management-ui :is(.rm-queue-count,.sh-tab-count,.bc-tabs a span) {font-size:10px;line-height:1.5;border-radius:5px;border:0;background:var(--ui-raised);color:var(--ui-muted);padding:2px 6px;min-width:22px;text-align:center}
+/* Tables keep their own horizontal scroll; the page owns vertical scrolling. */
+body.sh-management-ui main.sh-management-main table thead th {background:var(--ui-raised);color:var(--ui-muted);font-size:10px;padding:10px 14px;border-color:var(--ui-line);letter-spacing:.045em}
+body.sh-management-ui main.sh-management-main table tbody td {color:var(--ui-ink);font-size:12px;padding:11px 14px;border-color:var(--ui-line);vertical-align:middle}
+body.sh-management-ui main.sh-management-main table tbody tr:is(:hover,:focus-within) {background:var(--ui-soft)}
+body.sh-management-ui :is(.ops-table,.sh-table) {min-width:680px}
+body.sh-management-ui :is(.ops-money,.sh-money) {text-align:right!important;font-variant-numeric:tabular-nums;white-space:nowrap}
+body.sh-management-ui :is(.ops-footer,.ops-count,.sh-management-panel-foot) {padding:10px 16px;border-top:1px solid var(--ui-line);font-size:11px;color:var(--ui-muted)}
+body.sh-management-ui .ops-footer {display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+body.sh-management-ui .ops-row-actions {text-align:right;white-space:nowrap}
+body.sh-management-ui :is(.ops-badge,.sh-badge,.admin-status,.sh-management-status) {display:inline-flex;align-items:center;gap:4px;border-radius:5px;padding:4px 8px;font-size:10px;font-weight:600;line-height:1.5;white-space:nowrap}
+body.sh-management-ui :is(.sh-badge-neutral,.sh-management-status) {background:var(--ui-raised);color:var(--ui-muted)}
+body.sh-management-ui :is(.sh-badge-success,.sh-management-status-ok,.ops-badge[data-status=active],.ops-badge[data-status=available],.ops-badge[data-status=verified]) {background:var(--ui-accent-soft);color:var(--ui-accent)}
+body.sh-management-ui :is(.sh-badge-warning,.sh-management-status-warn) {background:#fff4dc;color:#855400}
+body.sh-management-ui :is(.sh-badge-danger,.ops-badge[data-status=rejected],.ops-badge[data-status=suspended]) {background:#ffeded;color:#a12a2a}
+body.sh-management-ui :is(.sh-badge-info,.sh-management-status-info) {background:#eaf2ff;color:#285488}
+body.sh-management-ui :is(.ops-actions-menu,.sh-dropdown-menu) {position:fixed;z-index:100;max-height:min(340px,70vh);overflow:auto;min-width:180px;padding:5px;border:1px solid var(--ui-line);border-radius:8px;background:var(--ui-surface);color:var(--ui-ink);box-shadow:0 12px 28px var(--sh-shadow,rgba(15,27,61,.15))}
+body.sh-management-ui .ops-actions-menu :is(a,button) {display:flex;align-items:center;min-height:36px;width:100%;text-align:left;justify-content:flex-start;padding:8px 10px;border:0;border-radius:4px;background:transparent;color:var(--ui-ink);font-size:12px}
+body.sh-management-ui .ops-actions-menu :is(a,button):hover {background:var(--ui-soft);color:var(--ui-accent)}
+body.sh-management-ui .ops-actions-menu .ops-danger {color:#b42318}
+body.sh-management-ui :is(dialog.ops-dialog,dialog.ops-modal,dialog.admin-dialog,dialog.sh-modal) {background:var(--ui-surface);color:var(--ui-ink);border:1px solid var(--ui-line);border-radius:10px}
+body.sh-management-ui :is(.ops-dialog-head,.ops-modal-head,.ops-dialog-foot,.ops-modal-footer) {padding:12px 16px;border-color:var(--ui-line);background:var(--ui-surface)}
+body.sh-management-ui :is(.ops-dialog-body,.ops-modal-body) {padding:16px}
+body.sh-management-ui .sh-notice {padding:10px 12px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-soft);color:var(--ui-muted);font-size:12px}
+body.sh-management-ui .sh-notice-warning {border-color:#edcf8c;background:#fff8e9;color:#805800}
+body.sh-management-ui .sh-detail-grid {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+body.sh-management-ui .sh-detail-grid dt {font-size:11px;color:var(--ui-muted)}
+body.sh-management-ui .sh-detail-grid dd {font-size:12px;font-weight:600;overflow-wrap:anywhere}
+body.sh-management-ui .sh-record-details {border-top:1px solid var(--ui-line);padding-top:12px}
+body.sh-management-ui .sh-record-details>summary {font-size:12px;font-weight:600;color:var(--ui-accent);cursor:pointer}
+body.sh-management-ui .sh-detail-body {padding:12px 0}
+body.sh-management-ui .sh-flow {display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ui-muted);font-size:11px}
+body.sh-management-ui .sh-flow span {padding:5px 8px;border:1px solid var(--ui-line);border-radius:5px;background:var(--ui-soft)}
+/* One sidebar palette for Admin, Seller, company, Hub, Branch and staff. */
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) {background:#10243b!important;color:#d8e4f0;border-color:#263c51}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) nav {padding:12px 10px}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) nav>div+div {margin-top:16px}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) nav>div>p {font-size:10px;letter-spacing:.08em;color:#9cb1c6;margin:0 10px 5px}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link {gap:8px;min-height:40px;padding:6px 10px;border-radius:6px;font-size:12px;line-height:1.4;color:#c2d1df;background:transparent}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link:hover {background:#1c354d;color:#fff}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link[aria-current=page] {background:#173e49;color:#e5fff8;font-weight:600;box-shadow:inset 3px 0 #32d0b2}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link>span.shrink-0 {width:28px;height:28px;color:#91a9bf;background:transparent}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link[aria-current=page]>span.shrink-0 {color:#63dfc4;background:transparent}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link>.sidebar-expanded-only.flex-1 {white-space:normal;overflow:visible;text-overflow:clip}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link>.absolute {display:none}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-tooltip {background:#173e49;color:#fff}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) :is(.sidebar-brand-wrap,.border-t) {border-color:#2b4056}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sh-nav-badge {width:auto!important;height:auto!important;background:#d4f5ee!important;color:#0b6657!important;padding:3px 6px;border-radius:5px;font-size:10px}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) :is(.text-white\/25,.text-white\/30,.text-white\/35,.text-white\/40) {color:#9cb1c6}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) .sidebar-nav-link:focus-visible {outline:2px solid #63dfc4;outline-offset:1px}
+body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar) form .sidebar-nav-link:hover {background:#492c37;color:#ffc9c9}
+@media(min-width:1024px){body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar)[data-collapsed=false]{width:240px}}
+@media(pointer:coarse){body.sh-management-ui :is(.sh-btn,.sh-btn-primary,.sh-btn-soft,.sh-btn-ghost,.ops-button,.ops-action,.sh-input,.sh-select){min-height:44px}}
+@media(max-width:767px){
+  body.sh-management-ui main.sh-management-main {padding:12px!important}
+  body.sh-management-ui main.sh-management-main :is(h1,.ops-title){font-size:20px}
+  body.sh-management-ui .sh-detail-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+  body.sh-management-ui .ops-filters .sh-field {flex-basis:100%;min-width:0}
+  body.sh-management-ui .ops-toolbar {width:100%;justify-content:flex-start}
+  body.sh-management-ui .ops-toolbar .sh-input {max-width:none}
+}
+@media(max-width:480px){body.sh-management-ui .sh-detail-grid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){body.sh-management-ui :is(.sh-btn,.ops-button,.sidebar-nav-link){transition:none}}
+@media print{body.sh-management-ui :is(#logisticsSidebar,#branchSidebar,#adminSidebar,#sellerSidebar):is(.sh-logistics-sidebar,.sh-console-sidebar){display:none}body.sh-management-ui main.sh-management-main{padding:0!important}}
+
+/* Structured evidence and case forms share the same controls and spacing. */
+body.sh-management-ui .sh-case-record>summary{cursor:pointer;list-style:none}
+body.sh-management-ui .sh-case-record>summary::-webkit-details-marker{display:none}
+body.sh-management-ui .sh-case-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:end;gap:12px;margin-top:12px}
+body.sh-management-ui .sh-case-form label{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:600}
+body.sh-management-ui .sh-case-form :is(input:not([type=hidden]):not([type=checkbox]),select,textarea){width:100%;padding:8px 10px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-surface);color:var(--ui-ink);font-size:12px}
+body.sh-management-ui .sh-case-form textarea{min-height:90px}
+body.sh-management-ui .sh-case-record pre{font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;background:var(--ui-soft);padding:12px;border-radius:6px}
+body.sh-management-ui .sh-case-record .sh-record-details{margin-top:12px}
+@media(max-width:640px){body.sh-management-ui .sh-case-form{grid-template-columns:1fr}}
+
+body.sh-management-ui .ops-actions>summary{list-style:none;cursor:pointer}
+body.sh-management-ui .ops-actions>summary::-webkit-details-marker{display:none}
+
+@media(max-width:767px){
+ body.sh-management-ui .ops-table:has(tbody>tr:only-child>td.ops-empty){min-width:0}
+ body.sh-management-ui .ops-table:has(tbody>tr:only-child>td.ops-empty) thead{display:none}
+ body.sh-management-ui .ops-table:has(tbody>tr:only-child>td.ops-empty) td.ops-empty{white-space:normal;padding:28px 16px}
+}
+
+/* Dialog geometry belongs to the shared component, including company pages without sh-ops. */
+body.sh-management-ui :is(dialog.ops-dialog,dialog.ops-modal){
+ position:fixed;inset:0;margin:auto;width:min(760px,calc(100vw - 24px));height:fit-content;max-height:88dvh;padding:0;
+ box-shadow:0 24px 70px var(--sh-shadow,rgba(15,27,61,.24));overflow-y:auto
+}
+body.sh-management-ui :is(dialog.ops-dialog,dialog.ops-modal)::backdrop{background:var(--sh-overlay,rgba(15,27,61,.54))}
+body.sh-management-ui :is(.ops-dialog-head,.ops-modal-head){display:flex;align-items:flex-start;justify-content:space-between;gap:12px;border-bottom:1px solid var(--ui-line)}
+body.sh-management-ui :is(.ops-dialog-body,.ops-modal-body){max-height:calc(88dvh - 140px);overflow-y:auto;overscroll-behavior-y:contain}
+body.sh-management-ui :is(.ops-dialog-foot,.ops-modal-footer){display:flex;align-items:center;justify-content:flex-end;gap:8px;border-top:1px solid var(--ui-line)}
+body.sh-management-ui .ops-table form.flex{align-items:flex-end}
+body.sh-management-ui .ops-reference{white-space:nowrap}
+
+/* Native dialogs must not inherit vertical spacing from their page stack. */
+body.sh-management-ui :is(dialog.ops-dialog,dialog.ops-modal)[open]{margin:auto}
+
+/* Admin and Seller components use the same console tokens and action hierarchy. */
+body.sh-management-ui :is(.admin-workspace,.ss-workspace,.so-directory,.so-order-show){
+ --admin-navy:var(--ui-ink);--admin-line:var(--ui-line);--admin-muted:var(--ui-muted);
+ --so-navy:var(--ui-ink);--so-teal:var(--ui-accent);--so-pale:var(--ui-accent-soft);--so-border:var(--ui-line);--so-muted:var(--ui-muted);--so-bg:var(--ui-soft);
+}
+body.sh-management-ui :is(.ss-page-head,.so-page-heading){gap:12px;margin-bottom:16px;flex-wrap:wrap}
+body.sh-management-ui :is(.ss-page-head h1,.so-page-title h1){font-size:22px;line-height:1.35}
+body.sh-management-ui :is(.ss-page-head p,.ss-panel-heading p,.so-panel-heading p){font-size:12px;color:var(--ui-muted);line-height:1.6}
+body.sh-management-ui :is(.ss-stat,.so-metric){padding:14px 16px;background:var(--ui-surface);box-shadow:none}
+body.sh-management-ui :is(.ss-stat strong,.so-metric strong){font-size:24px;line-height:1.25;color:var(--ui-ink);font-variant-numeric:tabular-nums}
+body.sh-management-ui :is(.ss-stat p,.ss-stat span,.so-metric>span){color:var(--ui-muted);font-size:11px}
+body.sh-management-ui :is(.ss-btn-light,.so-button-secondary,.inventory-btn-muted){background:var(--ui-surface);color:var(--ui-ink)!important;border-color:var(--ui-line)}
+body.sh-management-ui :is(.ss-btn-primary,.ss-btn-teal,.so-button-primary,.inventory-btn-primary){background:var(--ui-action);color:var(--sh-page,#fff)!important;border-color:var(--ui-action)}
+body.sh-management-ui :is(.ss-btn-primary,.ss-btn-teal,.so-button-primary,.inventory-btn-primary):hover{background:var(--ui-action-hover);color:var(--sh-page,#fff)!important;border-color:var(--ui-action-hover);filter:none}
+body.sh-management-ui :is(.ss-btn-danger,.so-button-danger){background:var(--ui-surface);color:#ad2929!important;border-color:#e6b1b1}
+body.sh-management-ui :is(.ss-filter-bar,.so-filter-form){padding:12px 16px;gap:8px;border-color:var(--ui-line)}
+body.sh-management-ui :is(.ss-field,.so-field)>:is(span,label){font-size:11px;color:var(--ui-ink)}
+body.sh-management-ui :is(.ss-field,.so-field) :is(input,select,textarea){min-height:36px;font-size:12px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-surface);color:var(--ui-ink)}
+body.sh-management-ui :is(.ss-table-scroll,.so-table-scroller,.admin-table-scroll){max-width:100%;overflow-x:auto;border-color:var(--ui-line)}
+body.sh-management-ui :is(.ss-table,.so-table){background:var(--ui-surface)}
+body.sh-management-ui :is(.ss-table,.so-table) tbody tr:hover td{background:var(--ui-soft)}
+body.sh-management-ui :is(.ss-table,.so-table) :is(th,td){border-color:var(--ui-line)}
+body.sh-management-ui .so-money{text-align:right}
+body.sh-management-ui .so-workflow-nav{border:1px solid var(--ui-line);border-radius:8px;padding:0 12px;margin-bottom:16px}
+body.sh-management-ui .so-workflow-nav a.is-active{color:var(--ui-accent);border-bottom-color:var(--ui-accent);background:transparent}
+body.sh-management-ui .so-filter-tabs{padding:10px 16px;gap:6px}
+body.sh-management-ui .so-filter-tabs a{color:var(--ui-muted);border:1px solid var(--ui-line);border-radius:5px;background:var(--ui-surface)}
+body.sh-management-ui .so-filter-tabs a.is-active{background:var(--ui-accent-soft);color:var(--ui-accent);border-color:var(--ui-accent)}
+body.sh-management-ui :is(.so-actions-popover,.ss-dropdown){background:var(--ui-surface);color:var(--ui-ink);border-color:var(--ui-line);border-radius:8px}
+body.sh-management-ui .so-actions-popover :is(a,button){color:var(--ui-ink);min-height:36px}
+body.sh-management-ui .so-actions-popover :is(a,button):hover{background:var(--ui-soft);color:var(--ui-accent)}
+body.sh-management-ui :is(.so-dialog,.ss-modal-panel,.ss-modal-card,.inventory-overview-dialog){background:var(--ui-surface);color:var(--ui-ink);border:1px solid var(--ui-line);border-radius:10px}
+body.sh-management-ui :is(.so-dialog-header,.so-dialog-footer,.inventory-overview-header,.inventory-overview-footer){background:var(--ui-surface);border-color:var(--ui-line);padding:12px 16px}
+body.sh-management-ui :is(.so-dialog-body,.inventory-overview-body){padding:16px}
+body.sh-management-ui :is(.inventory-detail-section,.so-detail-card){background:var(--ui-soft);border-color:var(--ui-line);padding:14px;border-radius:8px}
+body.sh-management-ui :is(.inventory-detail-section dd,.inventory-detail-section h3){color:var(--ui-ink)}
+body.sh-management-ui :is(.inventory-detail-section dt,.so-product-list small,.so-count){color:var(--ui-muted)}
+body.sh-management-ui .so-count{background:var(--ui-raised)}
+body.sh-management-ui .pc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+body.sh-management-ui .pc-panel{padding:16px}
+body.sh-management-ui .pc-panel h2{font-size:14px;font-weight:600;margin-bottom:12px}
+body.sh-management-ui .pc-panel p{font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+body.sh-management-ui .pc-images{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px}
+body.sh-management-ui .pc-images img{width:140px;height:140px;object-fit:contain;background:var(--ui-soft);border:1px solid var(--ui-line);border-radius:6px}
+body.sh-management-ui .pc-panel summary{font-size:13px;font-weight:600;cursor:pointer}
+body.sh-management-ui .pc-controls{display:flex;gap:12px;flex-wrap:wrap;margin:12px 0}
+body.sh-management-ui .pc-controls label{display:grid;gap:5px;flex:1 1 180px;font-size:11px;font-weight:600}
+body.sh-management-ui .pc-controls :is(select,textarea){width:100%;padding:8px 10px;border:1px solid var(--ui-line);border-radius:6px;background:var(--ui-surface);color:var(--ui-ink);font-size:12px}
+body.sh-management-ui .pc-error{padding:12px;border:1px solid #e6b1b1;color:#ad2929;border-radius:6px}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar) .sidebar-nav-link>.sidebar-expanded-only.shrink-0{display:none}
+@media(min-width:1024px){
+ body.sh-management-ui :is(#adminShell,#sellerShell)[data-sidebar-collapsed=false]>:is(#adminSidebar,#sellerSidebar){width:240px}
+}
+/* Inventory keeps its product tools while sharing console controls, tables and theme. */
+body.sh-management-ui #sellerInventory{color:var(--ui-ink)}
+body.sh-management-ui #sellerInventory .inventory-card:hover{background:var(--ui-soft);border-color:var(--ui-accent);transform:none}
+body.sh-management-ui #sellerInventory .inventory-status-tabs{padding:0 12px;border-radius:8px;background:var(--ui-surface);border-color:var(--ui-line);gap:4px}
+body.sh-management-ui #sellerInventory .inventory-status-tab{padding:12px;min-height:44px;color:var(--ui-muted);background:transparent;border-radius:0;border-bottom:2px solid transparent}
+body.sh-management-ui #sellerInventory .inventory-status-tab.is-active{color:var(--ui-accent);background:transparent;border-bottom-color:var(--ui-accent)}
+body.sh-management-ui #sellerInventory .inventory-filter-input{height:36px;background:var(--ui-surface);color:var(--ui-ink);border-color:var(--ui-line)}
+body.sh-management-ui #sellerInventory #inventoryTable thead th{background:var(--ui-raised);color:var(--ui-muted);padding:10px 14px}
+body.sh-management-ui #sellerInventory #inventoryTable tbody td{padding:11px 14px}
+body.sh-management-ui #sellerInventory #inventoryTable tbody tr:hover{background:var(--ui-soft)}
+body.sh-management-ui #sellerInventory .inventory-section-tab{border-radius:0;border:0;border-bottom:2px solid transparent;min-height:44px;color:var(--ui-muted);background:transparent}
+body.sh-management-ui #sellerInventory .inventory-section-tab-active{border-bottom-color:var(--ui-accent);color:var(--ui-accent);background:transparent}
+body.sh-management-ui #sellerReports .report-card:hover{transform:none;box-shadow:none}
+@media(pointer:coarse){body.sh-management-ui :is(.ss-btn,.so-button,.inventory-btn,.so-field input,.so-field select,.ss-input){min-height:44px}}
+@media(max-width:640px){
+ body.sh-management-ui .pc-grid{grid-template-columns:1fr}
+ body.sh-management-ui .so-page-heading>*{max-width:100%}
+ body.sh-management-ui .so-filter-form .so-field{flex:1 1 100%}
+ body.sh-management-ui .so-filter-actions{width:100%}
+ body.sh-management-ui .so-filter-actions>*{flex:1}
+ body.sh-management-ui .so-table:has(.so-empty){min-width:0}
+ body.sh-management-ui .so-table:has(.so-empty) thead{display:none}
+ body.sh-management-ui .so-empty{white-space:normal;padding:28px 16px}
+}
+
+/* Normalize the remaining Seller surfaces and neutral information blocks. */
+body.sh-management-ui .ss-workspace{color:var(--ui-ink);gap:16px}
+body.sh-management-ui :is(.ss-panel-heading,.ss-dialog,.ss-dialog-header,.ss-dialog-footer,.ss-info,.so-header-chip,.so-order-main,.so-preview-card){background:var(--ui-surface);color:var(--ui-ink);border-color:var(--ui-line)}
+body.sh-management-ui :is(.ss-dialog-header,.ss-dialog-footer){padding:12px 16px}
+body.sh-management-ui .ss-dialog-body{padding:16px}
+body.sh-management-ui :is(.ss-secondary,.ss-count,.ss-table-footer,.ss-stat small,.ss-info dt){color:var(--ui-muted)}
+body.sh-management-ui :is(.ss-info dd,.ss-dialog-header h2,.ss-panel-heading h2,.so-preview-card h3){color:var(--ui-ink)}
+body.sh-management-ui :is(.ss-eyebrow,.ss-link,.ss-copy,.so-eyebrow){color:var(--ui-accent)}
+body.sh-management-ui :is(.ss-pill,.so-status){border-radius:5px}
+body.sh-management-ui .ss-stat-link:hover{transform:none;background:var(--ui-soft)}
+body.sh-management-ui .ss-message-info{background:var(--ui-soft);color:var(--ui-muted);border-color:var(--ui-line)}
+body.sh-management-ui #sellerInventory .inventory-card{display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:14px 16px}
+body.sh-management-ui #sellerInventory .inventory-card>div:first-child{grid-column:2;grid-row:1 / 3;align-self:center}
+body.sh-management-ui #sellerInventory .inventory-card>div:first-child>span{display:none}
+body.sh-management-ui #sellerInventory .inventory-card>p.mt-4{grid-column:1;grid-row:2;margin:0;font-size:24px;line-height:1.25;color:var(--ui-ink)}
+body.sh-management-ui #sellerInventory .inventory-card>p:last-child{grid-column:1;grid-row:1;font-size:11px;color:var(--ui-muted)}
+body.sh-management-ui #sellerInventory .inventory-card>div:first-child>div{width:30px;height:30px}
+body.sh-management-ui :is(.ss-table,.so-table) .ss-empty{color:var(--ui-muted)!important}
+body.sh-management-ui :is(.so-status-success,.ss-pill-success){background:var(--ui-accent-soft);color:var(--ui-accent)}
+body.sh-management-ui main.sh-management-main :is(.ops-panel,.ss-panel,.so-panel,.admin-panel){box-shadow:none}
+body.sh-management-ui .sh-field{display:flex;flex-direction:column;gap:5px}
+
+body.sh-management-ui :is(#adminShell,#sellerShell) .theme-toggle{border-radius:6px;min-height:36px;padding:7px 12px}
+body.sh-management-ui #sellerInventory .inventory-directory{overflow:hidden}
+body.sh-management-ui #sellerInventory .inventory-directory .inventory-status-tabs{border:0;border-bottom:1px solid var(--ui-line);border-radius:0}
+body.sh-management-ui #sellerInventory .inventory-directory .inventory-filter-section{border-bottom:1px solid var(--ui-line)}
+
+body.sh-management-ui .so-table{min-width:960px}
+
+/* Record details open in one native modal across all console roles. */
+body.sh-management-ui dialog.sh-details-dialog{
+ position:fixed;inset:0;margin:auto!important;padding:0;width:min(1080px,calc(100vw - 32px));height:min(860px,90dvh);
+ max-width:calc(100vw - 32px);max-height:90dvh;border:1px solid var(--ui-line);border-radius:10px;
+ background:var(--ui-surface);color:var(--ui-ink);box-shadow:0 24px 80px var(--sh-shadow,rgba(15,27,61,.25));overflow:hidden;
+}
+body.sh-management-ui dialog.sh-details-dialog[open]{display:flex;flex-direction:column}
+.sh-details-dialog::backdrop{background:var(--sh-overlay,rgba(15,27,61,.54))}
+.sh-details-header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:14px 18px;border-bottom:1px solid var(--ui-line);flex-shrink:0}
+.sh-details-header h2{font-size:18px;font-weight:700;line-height:1.4;margin-top:3px;overflow-wrap:anywhere}
+.sh-details-close{display:flex;align-items:center;justify-content:center;flex:none;width:36px;height:36px;border:1px solid var(--ui-line);border-radius:6px;color:var(--ui-ink);background:var(--ui-surface)}
+.sh-details-close:hover{background:var(--ui-raised)}
+.sh-details-close svg{width:18px;height:18px}
+.sh-details-content{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;position:relative}
+.sh-details-content>iframe{display:block;width:100%;height:100%;min-height:0;border:0;background:var(--ui-surface)}
+.sh-details-content>[data-console-inline-detail]{display:block!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:16px!important}
+.sh-details-content>details[data-console-inline-detail]>summary{display:none}
+.sh-details-footer{display:flex;justify-content:flex-end;gap:8px;padding:10px 18px;border-top:1px solid var(--ui-line);flex-shrink:0;background:var(--ui-surface)}
+.sh-details-status,.sh-details-error{padding:12px 18px;color:var(--ui-muted);font-size:12px;flex-shrink:0}
+.sh-details-error{display:grid;gap:10px;justify-items:start}
+.sh-details-error[hidden],.sh-details-status[hidden]{display:none}
+[data-console-inline-detail]{display:none!important}
+.sh-console-details-open main.sh-management-main{overflow:hidden!important}
+body.sh-console-embedded{visibility:hidden}
+body.sh-console-embedded.sh-console-detail-ready{visibility:visible;background:var(--ui-surface);overflow:auto}
+body.sh-console-embedded [data-console-detail-ancestor]{
+ display:block!important;position:static!important;width:100%!important;max-width:none!important;height:auto!important;min-height:0!important;max-height:none!important;
+ margin:0!important;padding:0!important;overflow:visible!important;transform:none!important;background:var(--ui-surface)!important;
+}
+body.sh-console-embedded [data-console-detail-ancestor]>:not([data-console-detail-ancestor]):not([data-console-detail-source]):not([data-console-detail-support]):not(dialog):not(script):not(style):not(link){display:none!important}
+body.sh-console-embedded [data-console-detail-source]{display:block!important;min-width:0;max-width:none;margin:0!important;padding:16px!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:var(--ui-surface)!important}
+body.sh-console-embedded [data-console-detail-source]>.ops-panel,
+body.sh-console-embedded [data-console-detail-source]>.pc-panel,
+body.sh-console-embedded [data-console-detail-source]>.so-order-main{box-shadow:none;border-radius:0;border-width:0 0 1px;padding-inline:0}
+body.sh-console-embedded [data-console-detail-dismiss]{display:none!important}
+body.sh-console-embedded :is(.pc-grid,.so-order-show){gap:16px}
+body.sh-console-embedded main.sh-management-main :is(h1,.ops-title){font-size:20px}
+@media(max-width:640px){
+ body.sh-management-ui dialog.sh-details-dialog{width:calc(100vw - 16px);max-width:calc(100vw - 16px);height:94dvh;max-height:94dvh;border-radius:8px}
+ .sh-details-header{padding:12px}
+ .sh-details-header h2{font-size:16px}
+ .sh-details-footer{padding:10px 12px}
+ body.sh-console-embedded [data-console-detail-source]{padding:12px!important}
+}
+
+.sh-details-content>iframe[hidden]{display:none}
+
+/* The record title lives in the modal header; retain dates, contacts and status below it. */
+body.sh-console-embedded [data-console-detail-source] h1{display:none}
+body.sh-console-embedded #rider-details>div h2,
+.sh-details-content>#rider-details>div h2{display:none}
+.sh-details-content>[data-console-inline-detail] [data-console-detail-dismiss]{display:none}
+
+body.sh-management-ui.sh-console-embedded main.sh-management-main{padding:0!important;height:auto!important;max-height:none!important;overflow:visible!important}
+
+/* Detail fields follow the selected theme, including legacy translucent gray panels. */
+body.sh-console-embedded [data-console-detail-source] :is([class*=" bg-gray-bg/"],[class^="bg-gray-bg/"]){background:var(--ui-soft)!important;border-color:var(--ui-line)!important}
+body.sh-console-embedded [data-console-detail-source]>.so-order-main{padding:0 0 16px!important}
+body.sh-console-embedded details[data-console-detail-source]>summary{display:none}
+body.sh-management-ui .rider-management .rm-activation{padding:16px;border-radius:8px;background:var(--ui-soft);border-color:var(--ui-accent)}
+body.sh-management-ui .rider-management .rm-activation h3{font-size:14px}
+body.sh-management-ui .rider-management :is(.rm-checklist li,.rm-coverage-option){background:var(--ui-surface);border-color:var(--ui-line);color:var(--ui-ink)}
+body.sh-management-ui .rider-management :is(.rm-coverage-option small,.rm-selection-status){color:var(--ui-muted)}
+body.sh-management-ui .rider-management .rm-check-ok strong{color:var(--ui-accent)}
+html:not([data-theme=light]) body.sh-management-ui .rider-management :is(.rm-check-blocked strong,.rm-warning){color:#f5ca7a}
+
+/* Seller record fields and preview sections use semantic surfaces in every theme. */
+body.sh-management-ui :is(.so-preview-box,.so-order-show .so-order-main>dl>div){background:var(--ui-soft);border-color:var(--ui-line)}
+body.sh-management-ui .so-preview-box :is(dd,h4){color:var(--ui-ink)}
+body.sh-management-ui .so-preview-box dt{color:var(--ui-muted)}

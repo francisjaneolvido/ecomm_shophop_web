@@ -240,7 +240,7 @@
                 <button
                     type="button"
                     data-dashboard-customize-open
-                    class="inline-flex items-center justify-center gap-1.5
+                    class="sh-btn-soft inline-flex items-center justify-center gap-1.5
                            h-9 px-3.5 rounded-lg
                            border border-gray-border
                            bg-white
@@ -256,7 +256,7 @@
 
                 <a
                     href="{{ route('admin.reports') }}"
-                    class="inline-flex items-center justify-center gap-1.5
+                    class="sh-btn inline-flex items-center justify-center gap-1.5
                            h-9 px-3.5 rounded-lg
                            bg-navy hover:bg-navy/90
                            text-xs font-semibold text-white
@@ -569,7 +569,7 @@
         COD COLLECTIONS
     ========================================================= --}}
     <section data-dashboard-widget="collections" class="dash-section">
-        <div class="bg-white border border-gray-border rounded-xl dash-card-pad">
+        <div class="ops-panel bg-white border border-gray-border rounded-xl dash-card-pad">
 
             <div class="flex items-start justify-between gap-3 mb-3">
                 <div>
@@ -1700,7 +1700,7 @@
                 <button
                     type="button"
                     data-dashboard-reset
-                    class="w-full
+                    class="sh-btn-soft w-full
                            inline-flex items-center justify-center gap-2
                            h-9 rounded-lg
                            border border-gray-border

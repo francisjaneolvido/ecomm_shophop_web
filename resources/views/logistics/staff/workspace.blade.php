@@ -1,26 +1,52 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-@include('partials.theme-head')
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-<title>Assigned Branch — ShopHop Logistics</title>
-<style>body{font-family:'Poppins',sans-serif;background:#f3f7f8;color:#162c45;margin:0}header{background:#18A98E;color:white;padding:18px max(18px,calc((100vw - 980px)/2));display:flex;align-items:center;justify-content:space-between;gap:12px}main{max-width:980px;margin:24px auto;padding:0 16px}.card{background:white;border:1px solid #dce6e7;border-radius:18px;padding:22px;margin:14px 0;box-shadow:0 5px 24px #142c4410}h1{font-size:26px;margin:0 0 5px}h2{font-size:18px;margin:0 0 15px}.muted{color:#627787;font-size:14px}label{display:block;font-weight:600;margin:12px 0 6px;font-size:13px}input{display:block;padding:11px 12px;max-width:400px;width:95%;border:1px solid #c7d7db;border-radius:10px}button{background:#18A98E;color:white;border:0;border-radius:10px;padding:11px 16px;cursor:pointer}header button{background:#ffffff26}table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;padding:11px;border-bottom:1px solid #e3e9ed}.notice{background:#e2f7ef;padding:12px;border-radius:10px}.error{background:#fff1f0;padding:12px;border-radius:10px;color:#922}</style></head>
-<body><header><strong>ShopHop · Assigned Branch Workspace</strong><form method="POST" action="{{ route('logistics.logout') }}">@csrf<button>Sign out</button></form></header>
-<main>
-@if($staff->role==='manager' && ($staff->sortingCenter?->is_main || $staff->sortingCenter?->type==='station_hub') && app(\App\Services\RiderManagementService::class)->available())
-<div class="card"><a style="color:#18A98E;font-weight:600" href="{{ route('logistics.staff.rider-management.index') }}">Open Rider Management</a></div>
-@endif
-@if($staff->role==='manager' && $staff->sortingCenter?->type==='station_hub' && !$staff->sortingCenter?->is_main && \Illuminate\Support\Facades\Schema::hasTable('rider_batches'))
-<div class="card"><a style="color:#18A98E;font-weight:600" href="{{ route('logistics.staff.dispatch.index') }}">Open Rider Dispatch</a></div>
-@endif
-<div class="card"><p class="muted">{{ $staff->partner->company_name }} · {{ ucfirst($staff->role) }}</p><h1>{{ $staff->sortingCenter->name }}</h1>
-<p class="muted">{{ $staff->sortingCenter->code }} · {{ $staff->sortingCenter->addressLabel() }}</p><p>Logged in as <strong>{{ $staff->name }}</strong> ({{ $staff->email }}).</p>
-<p class="muted">You are assigned only to this branch. Use the ShopHop Mobile scanner with these same credentials. Company-level earnings and branch creation stay with the Logistics owner. Authorized Branch Managers assign parcels through Rider Dispatch.</p></div>
-@if(session('status'))<div class="notice">{{ session('status') }}</div>@endif
-@if($errors->any())<div class="error">{{ $errors->first() }}</div>@endif
-<div class="card"><h2>Recent branch scans</h2><div style="overflow-x:auto"><table><thead><tr><th>Tracking code</th><th>Event</th><th>Time</th></tr></thead><tbody>
-@forelse($recentScans as $scan)<tr><td>{{ $scan->tracking_code }}</td><td>{{ str_replace('_',' ',ucfirst($scan->event_type)) }}</td><td>{{ $scan->scanned_at }}</td></tr>
-@empty<tr><td colspan="3" class="muted">No scans yet.</td></tr>@endforelse</tbody></table></div></div>
-<div class="card"><h2>Change your temporary password</h2><form method="POST" action="{{ route('logistics.staff.password') }}">@csrf
-<label for="current_password">Current password</label><input type="password" name="current_password" id="current_password" required autocomplete="current-password">
-<label for="password">New password (8+ characters, mixed case, number and symbol)</label><input type="password" name="password" id="password" required autocomplete="new-password">
-<label for="password_confirmation">Confirm new password</label><input type="password" name="password_confirmation" id="password_confirmation" required autocomplete="new-password"><p><button type="submit">Update password</button></p></form></div></main></body></html>
+@extends($staff->role === 'manager' && $staff->sortingCenter?->type === 'province_hub' && !$staff->sortingCenter?->is_main ? 'hub.layouts.console' : 'branch.layout.app')
+@section('title', 'Account & Workspace')
+@section('content')
+<div class="space-y-4">
+    <header class="sh-page-header">
+        <div><p class="eyebrow">{{ $staff->sortingCenter->is_main ? 'Main Hub' : ($staff->sortingCenter->type === 'province_hub' ? 'Province Hub' : 'Station Branch') }} · Account</p>
+            <h1 class="title">Account & Workspace</h1><p class="description">{{ $staff->sortingCenter->name }} · {{ $staff->partner->company_name }}</p></div>
+        <span class="sh-badge sh-badge-info">{{ ucfirst($staff->role) }}</span>
+    </header>
+    @if(session('status'))<div class="sh-alert-success" role="status">{{ session('status') }}</div>@endif
+    @if($errors->any())<div class="sh-alert-error" role="alert">{{ $errors->first() }}</div>@endif
+    <section class="ops-panel">
+        <div class="ops-panel-head"><h2>Your assigned facility</h2><span class="sh-badge sh-badge-success">Active account</span></div>
+        <dl class="sh-detail-grid p-4">
+            <div><dt>Facility</dt><dd>{{ $staff->sortingCenter->name }}</dd></div>
+            <div><dt>Facility code</dt><dd>{{ $staff->sortingCenter->code }}</dd></div>
+            <div><dt>Signed in as</dt><dd>{{ $staff->name }}</dd></div>
+            <div><dt>Login email</dt><dd>{{ $staff->email }}</dd></div>
+            <div><dt>Address</dt><dd>{{ $staff->sortingCenter->addressLabel() }}</dd></div>
+        </dl>
+        <div class="flex flex-wrap gap-2 p-4 border-t border-gray-border">
+            @if($staff->role==='manager' && ($staff->sortingCenter->is_main || $staff->sortingCenter->type==='station_hub') && app(\App\Services\RiderManagementService::class)->available())
+                <a class="sh-btn" href="{{ route('logistics.staff.rider-management.index') }}">Open Rider Management</a>
+            @endif
+            @if($staff->role==='manager' && $staff->sortingCenter->type==='station_hub' && !$staff->sortingCenter->is_main && \Illuminate\Support\Facades\Schema::hasTable('rider_batches'))
+                <a class="sh-btn-soft" href="{{ route('logistics.staff.dispatch.index') }}">Open Rider Dispatch</a>
+            @endif
+            @if($staff->role==='manager' && $staff->sortingCenter->type==='province_hub' && !$staff->sortingCenter->is_main)
+                <a class="sh-btn" href="{{ route('logistics.hub.parcels') }}">Open Parcel Operations</a>
+            @endif
+        </div>
+    </section>
+    <section class="ops-panel">
+        <div class="ops-panel-head"><div><h2>Recent facility scans</h2><p class="ops-panel-note">Latest recorded scans at your assigned facility.</p></div></div>
+        <div class="ops-table-scroll"><table class="ops-table"><thead><tr><th scope="col">Tracking code</th><th scope="col">Event</th><th scope="col">Recorded at</th></tr></thead><tbody>
+            @forelse($recentScans as $scan)<tr><td><strong>{{ $scan->tracking_code }}</strong></td><td>{{ ucwords(str_replace('_',' ',$scan->event_type)) }}</td><td>{{ \Illuminate\Support\Carbon::parse($scan->scanned_at)->timezone('Asia/Manila')->format('M j, Y · g:i A') }} PHT</td></tr>
+            @empty<tr><td colspan="3" class="ops-empty">No scans recorded at this facility yet.</td></tr>@endforelse
+        </tbody></table></div>
+    </section>
+    <section class="ops-panel">
+        <div class="ops-panel-head"><div><h2>Change password</h2><p class="ops-panel-note">Use at least 8 characters with mixed case, a number and a symbol.</p></div></div>
+        <form method="POST" action="{{ route('logistics.staff.password') }}" class="p-4 space-y-4">@csrf
+            <div class="grid gap-3 md:grid-cols-3">
+                <label class="sh-field"><span class="sh-label">Current password</span><input class="sh-input" type="password" name="current_password" required autocomplete="current-password"></label>
+                <label class="sh-field"><span class="sh-label">New password</span><input class="sh-input" type="password" name="password" required autocomplete="new-password" minlength="8"></label>
+                <label class="sh-field"><span class="sh-label">Confirm new password</span><input class="sh-input" type="password" name="password_confirmation" required autocomplete="new-password" minlength="8"></label>
+            </div>
+            <button class="sh-btn" type="submit">Update password</button>
+        </form>
+    </section>
+</div>
+@endsection

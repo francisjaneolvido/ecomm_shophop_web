@@ -13,12 +13,32 @@ use Illuminate\View\View;
 
 class CodRemittanceController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        return view('admin.finance.cod-remittances', [
-            'settlements' => CodSettlement::with(['order.settlements', 'order.financial', 'partner', 'remitter', 'reconciler'])
-                ->where('status', CodSettlement::RECONCILED)->orderByDesc('id')->paginate(30),
-        ]);
+        $data = $request->validate(['q' => ['nullable', 'string', 'max:120']]);
+        $search = trim($data['q'] ?? '');
+        $status = in_array($request->query('status'), ['awaiting', 'with_logistics', 'received'], true) ? $request->query('status') : 'all';
+        $query = CodSettlement::with(['order.settlements', 'order.financial', 'partner', 'remitter', 'reconciler'])
+            ->where('status', CodSettlement::RECONCILED);
+        $counts = [
+            'all' => (clone $query)->count(),
+            'awaiting' => (clone $query)->whereNotNull('admin_remitted_at')->whereNull('admin_received_at')->count(),
+            'with_logistics' => (clone $query)->whereNull('admin_remitted_at')->whereNull('admin_received_at')->count(),
+            'received' => (clone $query)->whereNotNull('admin_received_at')->count(),
+        ];
+        if ($status === 'awaiting') $query->whereNotNull('admin_remitted_at')->whereNull('admin_received_at');
+        if ($status === 'with_logistics') $query->whereNull('admin_remitted_at')->whereNull('admin_received_at');
+        if ($status === 'received') $query->whereNotNull('admin_received_at');
+        if ($search !== '') {
+            $query->where(fn ($q) => $q->where('order_id', 'like', '%'.$search.'%')
+                ->orWhere('admin_remittance_reference', 'like', '%'.$search.'%')
+                ->orWhereHas('partner', fn ($partner) => $partner->where('company_name', 'like', '%'.$search.'%')));
+        }
+        $settlements = $query->orderByDesc('id')->paginate(30)->withQueryString();
+        $openCases = DB::table('cod_discrepancy_cases')->whereIn('cod_settlement_id', $settlements->pluck('id'))
+            ->where('status', '!=', 'resolved')->get()->keyBy('cod_settlement_id');
+
+        return view('admin.finance.cod-remittances', compact('settlements', 'openCases', 'status', 'counts', 'search'));
     }
 
     /** Distinct Admin confirmation. Screenshot/reference alone is not proof of receipt. */
@@ -28,6 +48,7 @@ class CodRemittanceController extends Controller
             'received_amount' => ['required', 'decimal:0,2', 'min:0', 'max:999999999']]);
         DB::transaction(function () use ($request, $settlement, $data) {
             $cash = CodSettlement::whereKey($settlement)->lockForUpdate()->firstOrFail();
+            \App\Services\CodDiscrepancyService::assertCollectionClear((int) $cash->id);
             if ($cash->status !== CodSettlement::RECONCILED || ! $cash->admin_remitted_at
                 || ! $cash->admin_remittance_reference || $cash->admin_received_at
                 || $cash->admin_remittance_reference !== trim($data['reference'])

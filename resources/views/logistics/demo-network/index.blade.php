@@ -42,7 +42,7 @@
               </td>
               <td class="px-4 py-3 font-semibold">{{ $center->riders_count }}</td>
               <td class="px-4 py-3"><span class="ops-badge" data-status="{{ $center->status }}">{{ ucfirst($center->status) }}</span></td>
-              <td class="px-4 py-3"><a class="ops-button" href="{{ route('logistics.sorting-centers.show',$center) }}">View branch</a></td>
+              <td class="px-4 py-3"><a data-console-details class="ops-button" href="{{ route('logistics.sorting-centers.show',$center) }}">View branch</a></td>
             </tr>
           @empty
             <tr><td colspan="6" class="px-4 py-8 text-center text-navy/60">No matching demo branches. Run the opt-in detailed network seeder or adjust search.</td></tr>

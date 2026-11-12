@@ -20,29 +20,31 @@ class CodSettlementController extends Controller
     {
         $partner = $this->partner($request);
         $data = $request->validate(['q' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', 'in:collected,remitted,reconciled,admin_pending,admin_received,none']]);
+            'status' => ['nullable', 'in:collected,remitted,reconciled,admin_pending,admin_received,review,none']]);
         $search = trim($data['q'] ?? '');
         $status = $data['status'] ?? '';
         $base = Delivery::where('logistics_partner_id', $partner->id)
             ->whereHas('order', fn ($q) => $q->where('payment_method', 'cod'))
             ->where('status', Delivery::DELIVERED);
-        $stats = [
-            'collected' => (clone $base)->whereHas('codSettlement', fn ($q) => $q->where('status', CodSettlement::COLLECTED))->count(),
-            'remitted' => (clone $base)->whereHas('codSettlement', fn ($q) => $q->where('status', CodSettlement::REMITTED))->count(),
-            'reconciled' => (clone $base)->whereHas('codSettlement', fn ($q) => $q->where('status', CodSettlement::RECONCILED)->whereNull('admin_remitted_at'))->count(),
-            'admin_pending' => (clone $base)->whereHas('codSettlement', fn ($q) => $q->whereNotNull('admin_remitted_at')->whereNull('admin_received_at'))->count(),
-            'admin_received' => (clone $base)->whereHas('codSettlement', fn ($q) => $q->whereNotNull('admin_received_at'))->count(),
-        ];
+        $cashBase = CodSettlement::where('logistics_partner_id', $partner->id)
+            ->whereIn('delivery_id', (clone $base)->select('id'));
+        $stats = ['all' => (clone $base)->count()];
+        $amounts = [];
+        foreach (['collected', 'remitted', 'reconciled', 'admin_pending', 'admin_received', 'review'] as $stage) {
+            $cashQuery = clone $cashBase;
+            $this->filterStage($cashQuery, $stage);
+            $stats[$stage] = (clone $cashQuery)->count();
+            $amounts[$stage] = (string) $cashQuery->sum(match ($stage) {
+                'reconciled', 'admin_pending' => 'received_amount',
+                'admin_received' => 'admin_received_amount',
+                'review' => 'expected_amount',
+                default => 'collected_amount',
+            });
+        }
         if ($status === 'none') {
             $base->whereDoesntHave('codSettlement');
-        } elseif ($status === 'admin_pending') {
-            $base->whereHas('codSettlement', fn ($q) => $q->whereNotNull('admin_remitted_at')->whereNull('admin_received_at'));
-        } elseif ($status === 'admin_received') {
-            $base->whereHas('codSettlement', fn ($q) => $q->whereNotNull('admin_received_at'));
-        } elseif ($status === 'reconciled') {
-            $base->whereHas('codSettlement', fn ($q) => $q->where('status', CodSettlement::RECONCILED)->whereNull('admin_remitted_at'));
         } elseif ($status !== '') {
-            $base->whereHas('codSettlement', fn ($q) => $q->where('status', $status));
+            $base->whereHas('codSettlement', fn ($query) => $this->filterStage($query, $status));
         }
         if ($search !== '') {
             $base->where(function ($q) use ($search) {
@@ -57,7 +59,48 @@ class CodSettlementController extends Controller
         $deliveries = $base->with(['order.seller', 'rider', 'codSettlement.collector', 'codSettlement.remitter'])
             ->latest()->paginate(25)->withQueryString();
 
-        return view('logistics.settlements.index', compact('deliveries', 'stats', 'search', 'status'));
+        $openCases = \Illuminate\Support\Facades\DB::table('cod_discrepancy_cases')
+            ->whereIn('cod_settlement_id', $deliveries->pluck('codSettlement')->filter()->pluck('id'))
+            ->where('status', '!=', 'resolved')->get()->keyBy('cod_settlement_id');
+
+        $handovers = DB::table('cod_remittance_items as item')
+            ->join('cod_remittance_batches as batch', 'batch.id', '=', 'item.batch_id')
+            ->leftJoin('sorting_centers as center', 'center.id', '=', 'batch.sorting_center_id')
+            ->where('batch.logistics_partner_id', $partner->id)
+            ->whereIn('item.cod_settlement_id', $deliveries->pluck('codSettlement')->filter()->pluck('id'))
+            ->select('item.cod_settlement_id', 'batch.id as batch_id', 'batch.status as batch_status', 'batch.verified_at', 'center.name as branch_name')
+            ->orderByDesc('batch.id')->get()->unique('cod_settlement_id')->keyBy('cod_settlement_id');
+
+        return view('logistics.settlements.index', compact('deliveries', 'stats', 'amounts', 'search', 'status', 'openCases', 'handovers'));
+    }
+
+    /** Read-only queue filters; approval and custody actions retain their own checks. */
+    private function filterStage(\Illuminate\Database\Eloquent\Builder $query, string $stage): void
+    {
+        $case = fn ($q) => $q->selectRaw('1')->from('cod_discrepancy_cases')
+            ->whereColumn('cod_discrepancy_cases.cod_settlement_id', 'cod_settlements.id')
+            ->where('cod_discrepancy_cases.status', '!=', 'resolved');
+        if ($stage === 'review') {
+            $query->whereExists($case);
+            return;
+        }
+        $pendingHandover = fn ($q) => $q->selectRaw('1')->from('cod_remittance_items as pending_item')
+            ->join('cod_remittance_batches as pending_batch', 'pending_batch.id', '=', 'pending_item.batch_id')
+            ->whereColumn('pending_item.cod_settlement_id', 'cod_settlements.id')
+            ->whereColumn('pending_batch.logistics_partner_id', 'cod_settlements.logistics_partner_id')
+            ->whereNull('pending_batch.verified_at');
+        $query->whereNotExists($case);
+        if ($stage === 'remitted') {
+            $query->where(fn ($q) => $q->where('status', CodSettlement::REMITTED)->orWhereExists($pendingHandover));
+            return;
+        }
+        $query->whereNotExists($pendingHandover);
+        match ($stage) {
+            'admin_pending' => $query->whereNotNull('admin_remitted_at')->whereNull('admin_received_at'),
+            'admin_received' => $query->whereNotNull('admin_received_at'),
+            'reconciled' => $query->where('status', CodSettlement::RECONCILED)->whereNull('admin_remitted_at'),
+            default => $query->where('status', $stage),
+        };
     }
 
     public function reconcile(Request $request, int $delivery): RedirectResponse
@@ -100,6 +143,7 @@ class CodSettlementController extends Controller
         DB::transaction(function () use ($partner, $delivery, $data, $request) {
             $cash = CodSettlement::where('delivery_id', $delivery)
                 ->where('logistics_partner_id', $partner->id)->lockForUpdate()->firstOrFail();
+            \App\Services\CodDiscrepancyService::assertCollectionClear((int) $cash->id);
             if ($cash->status !== CodSettlement::RECONCILED || ! $cash->reconciled_at
                 || $cash->admin_remitted_at || $cash->admin_received_at
                 || abs((float) $cash->received_amount - (float) $cash->expected_amount) > .001) {

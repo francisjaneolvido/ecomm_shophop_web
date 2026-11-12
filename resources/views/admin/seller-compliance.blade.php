@@ -20,7 +20,7 @@
     {{-- ============ STAT SUMMARY ============ --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="ops-panel bg-white rounded-2xl border border-slate-200 p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-yellow/20 flex items-center justify-center shrink-0">
                     <x-lucide-clock class="w-5 h-5 text-yellow-600" />
@@ -32,7 +32,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="ops-panel bg-white rounded-2xl border border-slate-200 p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-mint/15 flex items-center justify-center shrink-0">
                     <x-lucide-badge-check class="w-5 h-5 text-mint-dark" />
@@ -44,7 +44,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="ops-panel bg-white rounded-2xl border border-slate-200 p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-coral/15 flex items-center justify-center shrink-0">
                     <x-lucide-x-circle class="w-5 h-5 text-coral" />
@@ -108,7 +108,7 @@
     {{-- ============ PRODUCT LIST ============ --}}
     @php $modalData = []; @endphp
 
-    <div class="bg-white rounded-2xl border border-slate-200">
+    <div class="ops-panel bg-white rounded-2xl border border-slate-200">
 
         <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h2 class="font-semibold text-navy text-sm">
@@ -298,10 +298,10 @@
             </div>
 
             <div class="px-6 py-4 border-t border-slate-100 flex justify-end gap-2">
-                <button type="button" id="modalRejectBtn" class="h-9 inline-flex items-center gap-1.5 px-4 rounded-full text-xs font-semibold text-coral border border-coral/30 hover:bg-coral/5 transition-all duration-300">
+                <button type="button" id="modalRejectBtn" class="sh-btn-danger h-9 inline-flex items-center gap-1.5 px-4 rounded-full text-xs font-semibold text-coral border border-coral/30 hover:bg-coral/5 transition-all duration-300">
                     Reject
                 </button>
-                <button type="button" id="modalApproveBtn" class="h-9 inline-flex items-center gap-1.5 px-4 rounded-full text-xs font-semibold text-white bg-mint-dark hover:opacity-90 transition-all duration-300">
+                <button type="button" id="modalApproveBtn" class="sh-btn h-9 inline-flex items-center gap-1.5 px-4 rounded-full text-xs font-semibold text-white bg-mint-dark hover:opacity-90 transition-all duration-300">
                     Approve
                 </button>
             </div>

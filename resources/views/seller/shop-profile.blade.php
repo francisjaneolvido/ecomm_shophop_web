@@ -34,6 +34,6 @@
         </dl><a href="{{ route('seller.account') }}" class="ss-link" style="font-size:11px;display:inline-block;margin-top:15px">Update supported profile fields →</a></div>
         <div class="ss-info"><h3>Available management tools</h3><a class="ss-link-row" href="{{ route('seller.inventory') }}"><div><strong>Product Inventory</strong><small>Products, pricing and stock</small></div><span>→</span></a><a class="ss-link-row" href="{{ route('seller.promotions') }}"><div><strong>Vouchers & Promotions</strong><small>Visible codes and discounts</small></div><span>→</span></a><a class="ss-link-row" href="{{ route('seller.orders.notifications') }}"><div><strong>Orders</strong><small>Prepare and track shipments</small></div><span>→</span></a></div>
     </section>
-    <div class="ss-message ss-message-info"><strong>For account security:</strong> Registered business name, category, address, and verification documents cannot be self-edited on this page. Changes to reviewed business information require an Admin-supported approval process. No unpublished shop logo or storefront customization settings are implied.</div>
+    <div class="ss-message ss-message-info"><strong>For account security:</strong> Registered business name, category, address, and verification documents cannot be self-edited on this page. Changes to reviewed business information require an Admin-supported approval process.</div>
 </div>
 @endsection

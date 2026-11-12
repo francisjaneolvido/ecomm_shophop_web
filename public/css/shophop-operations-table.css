@@ -42,10 +42,5 @@
 .sh-ops .ops-inline-alert {border:1px solid #f1d598;background:#fff9e9;padding:10px 13px;border-radius:6px;font-size:11px;color:#865700}
 .sh-ops .ops-action {border:1px solid var(--ops-stroke);border-radius:6px;padding:7px 10px;font-size:11px;font-weight:700;color:var(--ops-navy);background:#fff;cursor:pointer}
 .sh-ops .ops-action:hover {background:#eaf8f4;border-color:#b8e4da}
-.sh-ops .ops-table details {position:relative}
-.sh-ops .ops-table details>summary {cursor:pointer;list-style:none;border:1px solid var(--ops-stroke);border-radius:6px;padding:7px 9px;font-size:11px;font-weight:700}
-.sh-ops .ops-table details>summary::-webkit-details-marker{display:none}
-.sh-ops .ops-table details[open]>div {position:absolute;z-index:9;right:0;top:calc(100% + 4px);background:#fff;border:1px solid var(--ops-stroke);border-radius:6px;box-shadow:0 10px 25px #0f1b3d20;min-width:160px;padding:6px}
-.sh-ops .ops-table details[open]>div>* {width:100%;display:block;text-align:left;padding:8px;font-size:11px}
 @media(max-width:640px){.sh-ops .ops-panel-head {padding:12px}.sh-ops .ops-dialog-body {padding:13px}.sh-ops .ops-form-grid{grid-template-columns:1fr}.sh-ops .ops-dialog-head{padding:13px}}
 @media(prefers-reduced-motion:reduce){.sh-ops *{scroll-behavior:auto;transition:none!important}}

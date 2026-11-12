@@ -9,7 +9,7 @@
         <p class="mt-1 text-sm text-navy/55">Conversations with your buyers. New messages appear automatically.</p>
     </div>
 
-    <div class="sh-management-chat grid overflow-hidden rounded-lg border border-gray-border bg-white md:grid-cols-[280px_1fr]">
+    <div class="ops-panel sh-management-chat grid overflow-hidden rounded-lg border border-gray-border bg-white md:grid-cols-[280px_1fr]">
 
         {{-- Conversation list --}}
         <aside id="sellerConvPane" class="min-h-0 overflow-y-auto border-gray-border md:border-r">
@@ -43,7 +43,7 @@
                 <textarea id="sellerChatInput" rows="1" maxlength="1000" placeholder="Type a reply..."
                           class="max-h-24 min-h-9 flex-1 resize-none rounded-lg border border-gray-border px-3 py-2 text-xs focus:border-teal focus:outline-none"></textarea>
                 <button type="submit" id="sellerChatSend"
-                        class="h-9 rounded-lg bg-teal px-4 text-xs font-semibold text-white hover:bg-teal-dark disabled:opacity-60">Send</button>
+                        class="sh-btn h-9 rounded-lg bg-teal px-4 text-xs font-semibold text-white hover:bg-teal-dark disabled:opacity-60">Send</button>
             </form>
         </section>
     </div>

@@ -3,6 +3,7 @@
 @section('title', $dispute->case_no.' - Dispute')
 
 @section('content')
+<section data-console-detail-source>
 
     @if (session('status'))
         <div class="mb-5 rounded-xl border border-mint/30 bg-mint/10 px-4 py-3 text-sm text-mint-dark">{{ session('status') }}</div>
@@ -12,7 +13,7 @@
         <div class="mb-5 rounded-xl border border-coral/30 bg-coral/10 px-4 py-3 text-sm text-coral">{{ $errors->first() }}</div>
     @endif
 
-    <a href="{{ route('admin.disputes') }}" class="text-xs font-semibold text-slate-500 hover:text-navy">&larr; Back to Complaints &amp; Disputes</a>
+    <a data-console-detail-dismiss href="{{ route('admin.disputes') }}" class="text-xs font-semibold text-slate-500 hover:text-navy">&larr; Back to Complaints &amp; Disputes</a>
 
     {{-- HEADER --}}
     <div class="mt-3 mb-6 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
@@ -37,7 +38,7 @@
         {{-- LEFT: details + timeline --}}
         <div class="lg:col-span-2 space-y-5">
 
-            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-5">
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-2">Description</p>
                 <p class="text-sm text-slate-700 whitespace-pre-line">{{ $dispute->description }}</p>
             </div>
@@ -61,7 +62,7 @@
             @endif
 
             {{-- TIMELINE / NOTES --}}
-            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-5">
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">Timeline &amp; Internal Notes</p>
                 <ul class="space-y-3 mb-4">
                     @forelse ($dispute->messages as $m)
@@ -84,7 +85,7 @@
                     <textarea name="body" rows="3" maxlength="3000" required placeholder="Add an internal note (visible to admins only)..."
                         class="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-navy focus:outline-none focus:border-mint"></textarea>
                     <div class="flex justify-end mt-2">
-                        <button type="submit" class="h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-navy hover:opacity-90 transition">Add note</button>
+                        <button type="submit" class="sh-btn h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-navy hover:opacity-90 transition">Add note</button>
                     </div>
                 </form>
             </div>
@@ -93,7 +94,7 @@
         {{-- RIGHT: parties + actions --}}
         <div class="space-y-5">
 
-            <div class="bg-white border border-slate-200 rounded-2xl p-5">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-5">
                 <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">Parties</p>
                 <dl class="space-y-3">
                     <div>
@@ -118,7 +119,7 @@
             </div>
 
             @unless ($dispute->is_closed)
-                <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-5">
                     <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">Update status</p>
                     <form method="POST" action="{{ route('admin.disputes.status', $dispute) }}" class="flex gap-2">
                         @csrf
@@ -132,7 +133,7 @@
                     </form>
                 </div>
 
-                <div class="bg-white border border-slate-200 rounded-2xl p-5">
+                <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-5">
                     <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400 mb-3">Resolve / close case</p>
                     <form method="POST" action="{{ route('admin.disputes.resolve', $dispute) }}" class="space-y-3"
                           onsubmit="return confirm('Close this case? You can reopen it later.')">
@@ -152,4 +153,5 @@
         </div>
     </div>
 
+</section>
 @endsection

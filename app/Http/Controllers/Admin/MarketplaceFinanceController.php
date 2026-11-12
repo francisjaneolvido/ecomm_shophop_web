@@ -22,6 +22,9 @@ class MarketplaceFinanceController extends Controller
 {
     public function index(): View
     {
+        $blockedOrders = DB::table('cod_discrepancy_cases as cases')->join('cod_settlements as cash', 'cash.id', '=', 'cases.cod_settlement_id')
+            ->where('cases.status', '!=', 'resolved')->select('cash.order_id');
+
         return view('admin.commission', [
             'rates' => MarketplaceRateSetting::current(),
             'vouchers' => PlatformVoucher::orderByDesc('id')->limit(60)->get(),
@@ -31,7 +34,7 @@ class MarketplaceFinanceController extends Controller
                 ->latest('id')->paginate(20, ['*'], 'promo_page'),
             'finances' => OrderFinancial::orderByDesc('id')->paginate(20, ['*'], 'finance_page'),
             'settlements' => SettlementEntry::with('order')->orderByDesc('id')->paginate(30, ['*'], 'payout_page'),
-            'eligibleOrders' => Order::where(fn ($q) => $q->where('status', Order::STATUS_COMPLETED)->orWhere(fn ($a) => $a->where('status', Order::STATUS_TO_RECEIVE)->whereHas('financial', fn ($f) => $f->where('seller_hold_days', '>', 0))))
+            'eligibleOrders' => Order::whereNotIn('id', clone $blockedOrders)->where(fn ($q) => $q->where('status', Order::STATUS_COMPLETED)->orWhere(fn ($a) => $a->where('status', Order::STATUS_TO_RECEIVE)->whereHas('financial', fn ($f) => $f->where('seller_hold_days', '>', 0))))
                 ->where(fn ($q) => $q->where('payment_method', '!=', 'cod')
                     ->orWhereHas('codSettlement', fn ($cash) => $cash->whereNotNull('admin_received_at')
                         ->whereColumn('admin_received_amount', 'expected_amount')))
@@ -49,10 +52,10 @@ class MarketplaceFinanceController extends Controller
                 ->whereHas('order', fn ($q) => $q->whereNotIn('status', [Order::STATUS_CANCELLED, Order::STATUS_RETURNED]))
                 ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('disputes')->whereColumn('disputes.order_id', 'order_financials.order_id')->whereNotIn('disputes.status', ['resolved', 'rejected']))
                 ->selectRaw('COALESCE(SUM(commission + shipping_commission), 0) as total')->value('total') ?? 0),
-            'distributionOrders' => Order::with(['financial', 'settlements', 'codSettlement'])
+            'distributionOrders' => Order::with(['financial', 'settlements', 'codSettlement'])->whereNotIn('id', clone $blockedOrders)
                 ->whereHas('settlements', fn ($q) => $q->whereIn('kind', ['seller', 'logistics'])->where('status', 'pending'))
                 ->latest('id')->limit(40)->get(),
-            'availablePayouts' => SettlementEntry::with('order')
+            'availablePayouts' => SettlementEntry::with('order')->whereNotIn('order_id', clone $blockedOrders)
                 ->whereIn('kind', ['seller', 'logistics'])->where('status', 'available')
                 ->orderByDesc('distributed_at')->limit(80)->get(),
             'pendingDistributionTotal' => (float) SettlementEntry::whereIn('kind', ['seller', 'logistics'])->where('status', 'pending')->sum('amount'),

@@ -1,8 +1,8 @@
 @extends($layout)
 @section('title','Rider Management')
 @section('content')
-<div class="ops-module space-y-5" data-rider-management>
-    <header class="ops-hero">
+<div class="ops-module rider-management space-y-5" data-rider-management>
+    <header class="sh-page-header">
         <div><span class="eyebrow">{{ $scope['role']==='main' ? 'Main Hub | Company oversight' : 'Branch | Daily operations' }}</span>
         <h1>Rider Management</h1>
         <p class="description">{{ $scope['role']==='main' ? 'Review company applications, confirm primary Branches and oversee coverage, capacity and transfers.' : 'Activate approved riders, confirm official barangay coverage and manage daily availability and schedules.' }}</p></div>
@@ -22,8 +22,9 @@
 
     @if($scope['role']==='main')
     <details class="ops-panel p-4"><summary class="font-semibold cursor-pointer">Active riders by Branch</summary>
+        <p class="ops-panel-note">Showing the 12 Branches with the most active riders. Use the Branch filter below to find another Branch.</p>
         <div class="grid gap-3 mt-3 md:grid-cols-3">
-            @forelse($branches as $b)<a class="sh-stat" href="{{ route($prefix.'index',['branch'=>$b->id,'state'=>'active']) }}">
+            @forelse($branches->sortByDesc(fn ($branch) => $activeByBranch[$branch->id] ?? 0)->take(12) as $b)<a class="sh-stat" href="{{ route($prefix.'index',['branch'=>$b->id,'state'=>'active']) }}">
                 <p class="sh-stat-label">{{ $b->name }}</p><p class="sh-stat-value" data-management-branch-count="{{ $b->id }}">{{ $activeByBranch[$b->id] ?? 0 }}</p>
                 <p class="sh-stat-note">{{ $b->municipality }}, {{ $b->province }}</p></a>
             @empty<p class="ops-empty">No active Branches configured.</p>@endforelse
@@ -31,35 +32,30 @@
     </details>
     @endif
 
-    <form method="GET" class="ops-panel p-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <label class="sh-field"><span class="sh-label">Name or email</span><input class="sh-input" name="q" value="{{ request('q') }}" maxlength="150" placeholder="Search riders"></label>
-        @if($scope['role']==='main')
-        <label class="sh-field"><span class="sh-label">Branch</span><select class="sh-input" name="branch"><option value="">All company Branches</option>@foreach($branches as $b)<option value="{{ $b->id }}" @selected(request('branch')==$b->id)>{{ $b->name }}</option>@endforeach</select></label>
-        <label class="sh-field"><span class="sh-label">Province</span><select class="sh-input" name="province"><option value="">All provinces</option>@foreach($branches->pluck('province')->filter()->unique()->sort() as $province)<option @selected(request('province')===$province)>{{ $province }}</option>@endforeach</select></label>
-        @endif
-        <label class="sh-field"><span class="sh-label">Status</span><select class="sh-input" name="state"><option value="">All statuses</option>@foreach(['pending_review'=>'Pending review','under_review'=>'Under review','needs_documents'=>'Needs documents','pending_activation'=>'Pending activation','active'=>'Active','inactive'=>'Inactive','suspended'=>'Suspended','rejected'=>'Rejected'] as $value=>$label)<option value="{{ $value }}" @selected(request('state')===$value)>{{ $label }}</option>@endforeach</select></label>
-        <label class="sh-field"><span class="sh-label">Official barangay</span><input class="sh-input" name="barangay" value="{{ request('barangay') }}" maxlength="150" placeholder="Barangay"></label>
-        <div class="flex gap-2 items-end"><button class="sh-btn-primary">Apply</button><a class="sh-btn-soft" href="{{ route($prefix.'index') }}">Clear</a></div>
-    </form>
-
-    <section class="ops-panel">
-        <div class="ops-panel-head"><div><h2>{{ $scope['role']==='main'?'Company rider directory':'Branch riders & pending activation' }}</h2><p class="ops-panel-note"><span data-management-total>{{ $riders->total() }}</span> matching riders. Select a rider to review details and available actions.</p></div></div>
-        <div class="ops-table-scroll"><table class="ops-table"><thead><tr><th>Rider</th><th>Primary / preferred Branch</th><th>Application</th><th>Operations</th><th>Availability</th><th></th></tr></thead><tbody data-management-rows>
-        @include('logistics.rider-management.rows')
-        </tbody></table></div><div class="p-4" data-management-pagination>{{ $riders->links() }}</div>
-    </section>
-
+    <nav class="rm-queues" aria-label="Rider queues">
+        @foreach($queueLabels as $key => $label)
+        <a class="rm-queue" href="{{ request()->fullUrlWithQuery(['queue' => $key, 'state' => null, 'rider' => null, 'page' => null]) }}" @if($queue === $key) aria-current="page" @endif>
+            {{ $label }} <span class="rm-queue-count" data-management-queue-count="{{ $key }}">{{ $queueCounts[$key] }}</span>
+        </a>
+        @endforeach
+    </nav>
     @if($selected)
     @php
         $actionUrl=route($prefix.'action',$selected->id);
         $p=$selected->managementProfile();
-        $selectedKeys=collect($p?->accepted_coverage ?? $p?->preferred_coverage ?? [])->pluck('key')->all();
+        $suggestedCoverage=$p?->accepted_coverage ?: ($p?->preferred_coverage ?? []);
+        $selectedKeys=old('action')==='activate' ? old('coverage', []) : collect($suggestedCoverage)->pluck('key')->all();
         $reviewable=in_array($selected->application_status,['pending_review','under_review','needs_documents'],true);
     @endphp
-    <section id="rider-details" class="ops-panel p-5 space-y-4">
+    <section id="rider-details" data-console-inline-detail data-console-auto-open data-console-detail-title="{{ $selected->name }}" class="ops-panel p-5 space-y-4">
         <div class="flex flex-wrap justify-between items-start gap-3">
             <div><p class="eyebrow">Rider profile</p><h2 class="text-xl font-semibold">{{ $selected->name }}</h2><p class="ops-panel-note">{{ $selected->email }} &middot; {{ $selected->contact_no }}</p></div>
-            <a class="sh-btn-soft" href="{{ request()->fullUrlWithoutQuery('rider') }}">Close details</a>
+            <a data-console-detail-dismiss class="sh-btn-soft" href="{{ request()->fullUrlWithoutQuery('rider') }}">Close details</a>
+        </div>
+        <div class="flex flex-wrap gap-3 ops-panel-note">
+            <span>Application: <strong>{{ ucwords(str_replace('_', ' ', $selected->application_status)) }}</strong></span>
+            <span>Operations: <strong>{{ ucwords(str_replace('_', ' ', $selected->operational_status)) }}</strong></span>
+            <span>Availability: <strong>{{ ucwords(str_replace('_', ' ', $selected->availabilityState())) }}</strong></span>
         </div>
         <dl class="grid gap-4 md:grid-cols-3">
             <div><dt class="sh-label">Home address</dt><dd>{{ $selected->applicationAddress() ?: 'Not provided' }}</dd></div>
@@ -71,8 +67,8 @@
             @if($selected->getAttribute($slot.'_path'))<a class="sh-btn-soft" href="{{ route($prefix.'document',[$selected->id,$slot]) }}" target="_blank" rel="noopener">{{ $label }}</a>@endif
             @endforeach
         </div>
-        <div><p class="sh-label">Preferred coverage</p><p class="ops-panel-note">{{ collect($details['preferred_coverage'])->pluck('label')->implode(' ? ') ?: 'Not provided on legacy registration' }}</p></div>
-        <div><p class="sh-label">Official coverage</p><p class="ops-panel-note">{{ collect($details['official_coverage'])->pluck('label')->implode(' ? ') ?: 'Branch must confirm official coverage' }}</p></div>
+        <div><p class="sh-label">Preferred coverage</p><p class="ops-panel-note">{{ collect($details['preferred_coverage'])->pluck('label')->implode('; ') ?: 'Not provided on legacy registration' }}</p></div>
+        <div><p class="sh-label">Official coverage</p><p class="ops-panel-note">{{ collect($details['official_coverage'])->pluck('label')->implode('; ') ?: 'Branch must confirm official coverage' }}</p></div>
         @if($details['assignment_confirmation_required'])<div class="sh-alert-error">The rider must accept the confirmed Branch and choose coverage in the mobile app before activation.</div>@endif
         @if($details['document_request'])<div class="ops-inline-alert">{{ $details['document_request']['message'] }}</div>@endif
         @if($details['rejection_reason'])<div class="sh-alert-error">{{ $details['rejection_reason'] }}</div>@endif
@@ -96,18 +92,7 @@
         @endif
 
         @if($scope['role']==='branch' && $selected->application_status==='approved')
-        <form method="POST" action="{{ $actionUrl }}" class="space-y-3">@csrf<input type="hidden" name="action" value="activate">
-            <h3 class="font-semibold">Confirm official barangays & activate</h3>
-            <p class="ops-panel-note">Coverage supports pickup and delivery. Capacity includes active riders from every Branch of this company. Full barangays require an individual Main Hub override.</p>
-            <div class="grid gap-2 md:grid-cols-2 max-h-72 overflow-auto">
-            @forelse($coverage as $key=>$place)
-                <label class="flex gap-2 items-start rounded-lg border border-slate-200 p-3">
-                    <input type="checkbox" class="mt-1 accent-teal-600" name="coverage[]" value="{{ $key }}" @checked(in_array($key,$selectedKeys,true))>
-                    <span>{{ $place['label'] }}<span class="block ops-row-sub">{{ $capacity[$key]['active_count'] }} / {{ $capacity[$key]['limit'] }} active riders</span></span>
-                </label>
-            @empty<p class="ops-empty">Configure Branch pickup and delivery service areas first.</p>@endforelse
-            </div><button class="sh-btn-primary" @disabled(!$coverage || $details['assignment_confirmation_required'] || $selected->operational_status==='suspended')>Confirm coverage & activate</button>
-        </form>
+        @include('logistics.rider-management.activation')
         @if($selected->canOperate())
         <div class="grid gap-4 md:grid-cols-2">
             <form method="POST" action="{{ $actionUrl }}" class="space-y-3">@csrf<input type="hidden" name="action" value="availability">
@@ -162,6 +147,24 @@
     </section>
     @endif
 
+    <form method="GET" class="ops-panel p-4 grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <label class="sh-field"><span class="sh-label">Name or email</span><input class="sh-input" name="q" value="{{ request('q') }}" maxlength="150" placeholder="Search riders"></label>
+        @if($scope['role']==='main')
+        <label class="sh-field"><span class="sh-label">Branch</span><select class="sh-input" name="branch"><option value="">All company Branches</option>@foreach($branches as $b)<option value="{{ $b->id }}" @selected(request('branch')==$b->id)>{{ $b->name }}</option>@endforeach</select></label>
+        <label class="sh-field"><span class="sh-label">Province</span><select class="sh-input" name="province"><option value="">All provinces</option>@foreach($branches->pluck('province')->filter()->unique()->sort() as $province)<option @selected(request('province')===$province)>{{ $province }}</option>@endforeach</select></label>
+        @endif
+        <label class="sh-field"><span class="sh-label">Queue</span><select class="sh-input" name="queue">@foreach($queueLabels as $value=>$label)<option value="{{ $value }}" @selected($queue===$value)>{{ $label }}</option>@endforeach</select></label>
+        <label class="sh-field"><span class="sh-label">Official barangay</span><input class="sh-input" name="barangay" value="{{ request('barangay') }}" maxlength="150" placeholder="Barangay"></label>
+        <div class="flex gap-2 items-end"><button class="sh-btn-primary">Apply</button><a class="sh-btn-soft" href="{{ route($prefix.'index') }}">Clear</a></div>
+    </form>
+
+    <section class="ops-panel">
+        <div class="ops-panel-head"><div><h2>{{ $queueLabels[$queue] ?? 'Company rider directory' }}</h2><p class="ops-panel-note"><span data-management-total>{{ $riders->total() }}</span> matching riders. Select a rider to review details and available actions.</p></div></div>
+        <div class="ops-table-scroll"><table class="ops-table"><thead><tr><th>Rider</th><th>Primary / preferred Branch</th><th>Application</th><th>Operations</th><th>Availability</th><th></th></tr></thead><tbody data-management-rows>
+        @include('logistics.rider-management.rows')
+        </tbody></table></div><div class="p-4" data-management-pagination>{{ $riders->links() }}</div>
+    </section>
+
     <section class="ops-panel">
         <div class="ops-panel-head"><div><h2>Controlled Branch transfers</h2><p class="ops-panel-note">Main Hub decides requests. Outstanding batches, parcel custody and unremitted COD must be resolved before approval.</p></div></div>
         <div class="ops-table-scroll"><table class="ops-table"><thead><tr><th>Rider</th><th>From / to</th><th>Status & reason</th><th>Decision</th></tr></thead><tbody>
@@ -179,6 +182,11 @@
 </div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/shophop-rider-management.css') }}?v=20261112-activation">
+@endpush
+
 @push('scripts')
-<script src="{{ asset('js/shophop-rider-management.js') }}" defer></script>
+<script src="{{ asset('js/shophop-rider-management.js') }}?v=20261112-queues" defer></script>
+<script src="{{ asset('js/shophop-rider-activation.js') }}?v=20261112-activation" defer></script>
 @endpush

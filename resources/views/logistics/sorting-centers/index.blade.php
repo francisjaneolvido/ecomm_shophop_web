@@ -62,7 +62,7 @@
                         @php $manager = $center->staff->first(fn ($s) => $s->role === 'manager' && $s->status === 'active'); @endphp
                         <tr>
                             <td data-label="Province hub">
-                                <a class="sh-hub-link" href="{{ route('logistics.sorting-centers.show', $center) }}">{{ $center->name }}</a>
+                                <a data-console-details class="sh-hub-link" href="{{ route('logistics.sorting-centers.show', $center) }}">{{ $center->name }}</a>
                                 <p class="sh-hub-secondary">{{ $center->code }} · {{ $center->province }}, {{ $center->region }}</p>
                                 <p class="sh-hub-secondary sh-hub-address" title="{{ $center->addressLabel() }}">{{ $center->addressLabel() }}</p>
                             </td>
@@ -80,7 +80,7 @@
                             <td data-label="Actions">
                                 <div class="sh-hub-actions">
                                     <details class="ops-actions"><summary class="ops-button">Actions ▾</summary><div class="ops-actions-menu">
-                                    <a href="{{ route('logistics.sorting-centers.show', $center) }}">View hub / branches</a>
+                                    <a data-console-details href="{{ route('logistics.sorting-centers.show', $center) }}">View hub / branches</a>
                                     <button type="button" data-ops-open="hubProfileModal" data-ops-record-edit="hubProfileModal"
                                       data-url="{{ route('logistics.sorting-centers.profile', $center) }}"
                                       data-title="Edit province hub"

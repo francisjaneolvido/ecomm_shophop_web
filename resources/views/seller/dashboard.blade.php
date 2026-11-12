@@ -370,7 +370,7 @@
     {{-- =========================================================
         TODAY'S TASKS
     ========================================================= --}}
-    <section class="bg-white border border-gray-border rounded-xl overflow-hidden">
+    <section class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
         <div class="px-4 sm:px-5 py-4 border-b border-gray-border flex items-center justify-between gap-3">
             <div>
@@ -457,7 +457,7 @@
     {{-- =========================================================
         ORDER PIPELINE
     ========================================================= --}}
-    <section class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+    <section class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
         <div class="flex items-start sm:items-center justify-between gap-3 mb-5">
             <div>
@@ -522,7 +522,7 @@
     <section class="grid grid-cols-1 xl:grid-cols-[1.7fr_.8fr] gap-5">
 
         {{-- Recent Orders --}}
-        <div class="bg-white border border-gray-border rounded-xl overflow-hidden">
+        <div class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
             <div class="px-4 sm:px-5 py-4 border-b border-gray-border flex items-center justify-between gap-3">
                 <div>
@@ -640,7 +640,7 @@
                                     </td>
 
                                     <td class="px-5 py-3.5 text-right">
-                                        <a
+                                        <a data-console-details
                                             href="{{ route('seller.orders.show', $order['id']) }}"
                                             class="text-[11px] font-bold text-teal-dark hover:text-teal transition"
                                         >
@@ -661,7 +661,7 @@
         {{-- Inventory Summary --}}
         <div class="space-y-5">
 
-            <div class="bg-white border border-gray-border rounded-xl p-5">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl p-5">
 
                 <div class="flex items-start justify-between gap-3">
                     <div>
@@ -732,7 +732,7 @@
             </div>
 
 
-            <div class="bg-white border border-gray-border rounded-xl overflow-hidden">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
                 <div class="px-5 py-4 border-b border-gray-border flex items-center justify-between gap-2">
                     <div>
@@ -789,7 +789,7 @@
     <section class="grid grid-cols-1 xl:grid-cols-[1.7fr_.8fr] gap-5">
 
         {{-- Sales Overview --}}
-        <div class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+        <div class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
             <div class="flex items-start sm:items-center justify-between gap-3 mb-5">
                 <div>
@@ -896,7 +896,7 @@
 
 
         {{-- Fulfillment --}}
-        <div class="bg-white border border-gray-border rounded-xl p-5">
+        <div class="ops-panel bg-white border border-gray-border rounded-xl p-5">
 
             <div class="flex items-start justify-between gap-3">
                 <div>
@@ -951,7 +951,7 @@
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-5">
 
         {{-- Top Products --}}
-        <div class="bg-white border border-gray-border rounded-xl overflow-hidden">
+        <div class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
             <div class="px-5 py-4 border-b border-gray-border flex items-center justify-between gap-2">
                 <div>
@@ -1012,7 +1012,7 @@
 
 
         {{-- Customer Feedback --}}
-        <div class="bg-white border border-gray-border rounded-xl overflow-hidden">
+        <div class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
             <div class="px-5 py-4 border-b border-gray-border flex items-center justify-between gap-2">
                 <div>
@@ -1090,7 +1090,7 @@
 
 
         {{-- Messaging has no persisted feed, so this card must not claim an empty or unread state. --}}
-        <div class="bg-white border border-gray-border rounded-xl overflow-hidden">
+        <div class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
             <div class="px-5 py-4 border-b border-gray-border flex items-center justify-between gap-2">
                 <div>

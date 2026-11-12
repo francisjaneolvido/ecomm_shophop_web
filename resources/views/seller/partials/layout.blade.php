@@ -226,6 +226,7 @@
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
     <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
+    @include('partials.console-assets')
 </head>
 
 
@@ -247,7 +248,7 @@
         ?? 'ShopHop Seller';
 
     $sellerBusinessName = $sellerBusinessName
-        ?? $authSeller?->business_name
+        ?? $authSeller?->seller?->business_name
         ?? 'My Store';
 
     $sellerInitials = collect(preg_split('/[\s._-]+/', trim($sellerDisplayName)))
@@ -270,118 +271,36 @@
     | same convention as admin.layout.
     */
     $sellerNavigation = [
-        [
-            'label' => 'Overview',
-            'items' => [
-                [
-                    'label' => 'Dashboard',
-                    'route' => 'seller.dashboard',
-                    'pattern' => 'seller.dashboard',
-                    'icon' => 'layout-dashboard',
-                ],
-            ],
-        ],
-
-        [
-            'label' => 'Catalog',
-            'items' => [
-                [
-                    'label' => 'Manage Inventory',
-                    'route' => 'seller.inventory',
-                    'pattern' => 'seller.inventory*',
-                    'icon' => 'package',
-                ],
-                [
-                    'label' => 'Vouchers & Promotions',
-                    'route' => 'seller.promotions',
-                    'pattern' => 'seller.promotions*',
-                    'icon' => 'ticket-percent',
-                ],
-            ],
-        ],
-
-        [
-            'label' => 'Orders',
-            'items' => [
-                [
-                    'label' => 'Order Notifications',
-                    'route' => 'seller.orders.notifications',
-                    'pattern' => 'seller.orders.notifications*',
-                    'icon' => 'bell-ring',
-                ],
-                [
-                    'label' => 'Prepare Orders',
-                    'route' => 'seller.orders.prepare',
-                    'pattern' => 'seller.orders.prepare*',
-                    'icon' => 'box',
-                ],
-                [
-                    'label' => 'Courier Hand-Over',
-                    'route' => 'seller.orders.courier',
-                    'pattern' => 'seller.orders.courier*',
-                    'icon' => 'truck',
-                ],
-                [
-                    'label' => 'Delivery Confirmations',
-                    'route' => 'seller.orders.confirm',
-                    'pattern' => 'seller.orders.confirm*',
-                    'icon' => 'package-check',
-                ],
-                [
-                    'label' => 'Customer Feedback',
-                    'route' => 'seller.feedback',
-                    'pattern' => 'seller.feedback*',
-                    'icon' => 'star',
-                ],
-            ],
-        ],
-
-        [
-            'label' => 'Insights',
-            'items' => [
-                [
-                    'label' => 'Seller Earnings',
-                    'route' => 'seller.earnings',
-                    'pattern' => 'seller.earnings*',
-                    'icon' => 'wallet',
-                ],
-                [
-                    'label' => 'Generate Report',
-                    'route' => 'seller.reports',
-                    'pattern' => 'seller.reports*',
-                    'icon' => 'file-chart-column-increasing',
-                ],
-            ],
-        ],
-
-        [
-            'label' => 'System',
-            'items' => [
-                [
-                    'label' => 'Chat / Messaging',
-                    'route' => 'seller.chat',
-                    'pattern' => 'seller.chat*',
-                    'icon' => 'messages-square',
-                ],
-                [
-                    'label' => 'Shop Profile',
-                    'route' => 'seller.shop-profile',
-                    'pattern' => 'seller.shop-profile*',
-                    'icon' => 'store',
-                ],
-                [
-                    'label' => 'Account Management',
-                    'route' => 'seller.account',
-                    'pattern' => 'seller.account*',
-                    'icon' => 'user-cog',
-                ],
-            ],
-        ],
+        ['label' => 'Overview', 'items' => [
+            ['label' => 'Dashboard', 'route' => 'seller.dashboard', 'pattern' => 'seller.dashboard', 'icon' => 'layout-dashboard'],
+        ]],
+        ['label' => 'Orders', 'items' => [
+            ['label' => 'All Orders', 'route' => 'seller.orders.notifications', 'pattern' => 'seller.orders.notifications*', 'icon' => 'shopping-bag'],
+            ['label' => 'Prepare Orders', 'route' => 'seller.orders.prepare', 'pattern' => 'seller.orders.prepare*', 'icon' => 'box'],
+            ['label' => 'Courier Handover', 'route' => 'seller.orders.courier', 'pattern' => 'seller.orders.courier*', 'icon' => 'truck'],
+            ['label' => 'Delivery Tracking', 'route' => 'seller.orders.confirm', 'pattern' => 'seller.orders.confirm*', 'icon' => 'package-check'],
+        ]],
+        ['label' => 'Catalog', 'items' => [
+            ['label' => 'Product Inventory', 'route' => 'seller.inventory', 'pattern' => 'seller.inventory*', 'icon' => 'package'],
+            ['label' => 'Vouchers & Promotions', 'route' => 'seller.promotions', 'pattern' => 'seller.promotions*', 'icon' => 'ticket-percent'],
+        ]],
+        ['label' => 'Finance & Insights', 'items' => [
+            ['label' => 'Earnings & Payouts', 'route' => 'seller.earnings', 'pattern' => 'seller.earnings*', 'icon' => 'wallet'],
+            ['label' => 'Reports', 'route' => 'seller.reports', 'pattern' => 'seller.reports*', 'icon' => 'file-chart-column-increasing'],
+        ]],
+        ['label' => 'Support', 'items' => [
+            ['label' => 'Messages', 'route' => 'seller.chat', 'pattern' => 'seller.chat*', 'icon' => 'messages-square'],
+            ['label' => 'Customer Feedback', 'route' => 'seller.feedback', 'pattern' => 'seller.feedback*', 'icon' => 'star'],
+        ]],
+        ['label' => 'Account', 'items' => [
+            ['label' => 'Shop Profile', 'route' => 'seller.shop-profile', 'pattern' => 'seller.shop-profile*', 'icon' => 'store'],
+            ['label' => 'My Account', 'route' => 'seller.account', 'pattern' => 'seller.account*', 'icon' => 'user-cog'],
+        ]],
     ];
 @endphp
 
 
-<body class="sh-management-ui bg-gray-bg text-navy antialiased">
+<body class="{{ (request()->boolean('console_modal') || request()->header('Sec-Fetch-Dest') === 'iframe') ? 'sh-console-embedded' : '' }} sh-management-ui sh-seller-ui bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 {{-- Local demo/test switcher intentionally hidden from the interface. --}}
@@ -410,7 +329,7 @@
     ========================================================= --}}
     <aside
         id="sellerSidebar"
-        class="relative
+        class="sh-console-sidebar relative
                w-64
                bg-navy text-white
                flex flex-col shrink-0
@@ -531,6 +450,10 @@
 
                             @php
                                 $isActive = request()->routeIs($item['pattern']);
+                                if (request()->routeIs('seller.orders.show')) {
+                                    $orderSection = in_array(request('from'), ['notifications', 'prepare', 'courier', 'confirm'], true) ? request('from') : 'notifications';
+                                    $isActive = $item['route'] === 'seller.orders.'.$orderSection;
+                                }
                             @endphp
 
 
@@ -538,6 +461,7 @@
 
                                 <a
                                     href="{{ route($item['route']) }}"
+                                    @if($isActive) aria-current="page" @endif
                                     class="sidebar-nav-link
                                            relative
                                            flex items-center gap-3
@@ -1811,5 +1735,7 @@ document.addEventListener('DOMContentLoaded', function () {
 @stack('scripts')
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-modal2"></script>
+@include('partials.console-details')
 </body>
 </html>

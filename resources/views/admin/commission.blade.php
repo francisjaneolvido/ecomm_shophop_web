@@ -1,16 +1,15 @@
 @extends('admin.layout')
 @section('title', 'ShopHop Finances')
 @section('content')
-<a class="inline-block rounded border p-3 text-teal-700" href="{{ route('hybrid.index') }}">COD batches and partner compensation</a>
 
 @php
   // Reusable class strings (para consistent ang itsura ng lahat ng form)
-  $card   = 'rounded-lg border border-slate-200 bg-white shadow-sm';
-  $input  = 'mt-1 block w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30';
-  $label  = 'block text-xs font-medium text-slate-600';
-  $btn    = 'inline-flex items-center justify-center rounded-md bg-teal-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/40';
-  $btnSm  = 'inline-flex items-center justify-center rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/40';
-  $btnOut = 'inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-teal-500/30';
+  $card   = 'ops-panel';
+  $input  = 'sh-input mt-1 block w-full';
+  $label  = 'sh-label block';
+  $btn    = 'sh-btn';
+  $btnSm  = 'sh-btn';
+  $btnOut = 'sh-btn-soft';
   $th     = 'px-4 py-2.5 text-xs font-semibold text-slate-500';
   $td     = 'px-4 py-3 align-top';
   $badge  = fn($s) => match(strtolower((string)$s)) {
@@ -24,21 +23,12 @@
 <div class="mx-auto max-w-7xl space-y-5">
 
   {{-- ============ PAGE HEADER ============ --}}
-  <header class="flex flex-wrap items-end justify-between gap-4">
+  <header class="sh-page-header">
     <div class="max-w-2xl">
-      <h1 class="text-2xl font-bold text-navy">ShopHop finances</h1>
-      <p class="mt-1 text-sm text-slate-500">
-        The configured product commission is computed on merchandise after the Seller voucher. Platform discounts are funded by ShopHop.
-        A recorded payout is <strong class="font-semibold text-slate-700">not</strong> an automatic money transfer.
-      </p>
+      <h1 class="text-2xl font-bold text-navy">Settlements & Payouts</h1>
+      <p class="description">Prepare settlements after verified receipts, distribute allocations, and record actual payouts.</p>
     </div>
-    <nav class="flex flex-wrap gap-2 text-xs font-semibold" aria-label="Jump to section">
-      <a href="#distribution-queue" class="{{ $btnOut }}">Distribution</a>
-      <a href="#available-payouts" class="{{ $btnOut }}">Payouts</a>
-      <a href="#settings" class="{{ $btnOut }}">Settings</a>
-      <a href="#vouchers" class="{{ $btnOut }}">Vouchers</a>
-      <a href="#history" class="{{ $btnOut }}">History</a>
-    </nav>
+    <a href="{{ route('hybrid.index') }}" class="sh-btn-soft">Partner compensation</a>
   </header>
 
   {{-- ============ ALERTS ============ --}}
@@ -77,19 +67,22 @@
     </div>
   </section>
 
-  {{-- ============ QUICK LINKS ============ --}}
-  <section class="grid gap-3 md:grid-cols-2">
-    <a href="{{ route('admin.finance.cod.index') }}" class="{{ $card }} group block p-4 transition hover:border-emerald-300">
-      <p class="text-sm font-semibold text-emerald-700 group-hover:underline">COD cash remittance verification</p>
-      <p class="mt-1 text-xs text-slate-500">Verify actual Logistics-to-ShopHop cash receipt before releasing Seller or Logistics payouts.</p>
-    </a>
-    <a href="{{ route('admin.returns.index') }}" class="group block rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm transition hover:border-amber-300">
-      <p class="text-sm font-semibold text-amber-900 group-hover:underline">Review return-to-Seller and manual refunds</p>
-      <p class="mt-1 text-xs text-amber-800">No refund is automatic. The Seller must confirm physical receipt first.</p>
-    </a>
-  </section>
+  <nav class="ops-toolbar" aria-label="Related finance queues">
+    <a href="{{ route('admin.finance.cod.index') }}" class="sh-btn-soft">COD receipt verification</a>
+    <a href="{{ route('admin.returns.index') }}" class="sh-btn-soft">Returns & refunds</a>
+    <a href="{{ route('hybrid.discrepancies.index') }}" class="sh-btn-soft">COD discrepancies</a>
+  </nav>
 
-  {{-- ============ 1. PREPARE SETTLEMENT ============ --}}
+<div data-ops-tabs data-ops-tab-param="tab" class="space-y-4">
+    <nav class="sh-console-tabs" role="tablist" aria-label="Finance workspace">
+      <button type="button" data-ops-tab="distribution" aria-selected="true" aria-controls="finance-distribution">Distribution</button>
+      <button type="button" data-ops-tab="payouts" aria-controls="finance-payouts">Payouts</button>
+      <button type="button" data-ops-tab="settings" aria-controls="finance-settings">Settings</button>
+      <button type="button" data-ops-tab="vouchers" aria-controls="finance-vouchers">Vouchers</button>
+      <button type="button" data-ops-tab="history" aria-controls="finance-history">History</button>
+    </nav>
+    <div id="finance-distribution" data-ops-panel="distribution" class="space-y-4">
+    {{-- ============ 1. PREPARE SETTLEMENT ============ --}}
   <section class="{{ $card }} p-5">
     <h2 class="text-base font-bold text-slate-800">Completed orders awaiting settlement preparation</h2>
     <p class="mt-1 max-w-3xl text-xs leading-relaxed text-slate-500">
@@ -147,6 +140,8 @@
   </section>
 
   {{-- ============ 3. AVAILABLE PAYOUTS ============ --}}
+    </div>
+    <div id="finance-payouts" data-ops-panel="payouts" class="space-y-4">
   <section id="available-payouts" class="{{ $card }} scroll-mt-6 p-5">
     <h2 class="text-base font-bold text-slate-800">Available Seller and Logistics payouts</h2>
     <p class="mt-1 text-xs text-slate-500">Available means Admin already distributed the ledger amount. Mark as paid only after the actual or manual payout is verified.</p>
@@ -186,6 +181,8 @@
   </section>
 
   {{-- ============ 4. MARKETPLACE RATES ============ --}}
+    </div>
+    <div id="finance-settings" data-ops-panel="settings" class="space-y-4">
   <div id="settings" class="scroll-mt-5 space-y-4">
 
     {{-- RATES --}}
@@ -297,6 +294,8 @@
   </div>
 
   {{-- ============ 5. VOUCHERS ============ --}}
+    </div>
+    <div id="finance-vouchers" data-ops-panel="vouchers" class="space-y-4">
   <section id="vouchers" class="{{ $card }} scroll-mt-6 p-5">
     <h2 class="text-base font-bold text-slate-800">ShopHop-funded vouchers</h2>
     <p class="mt-2 text-sm text-teal-dark font-semibold">ShopHop promotional budget committed at checkout: ₱{{ number_format($platformPromoSpent,2) }} · Capped campaign budgets: ₱{{ number_format($platformPromoBudget,2) }}</p>
@@ -404,6 +403,8 @@
 
 
   {{-- ============ 6. HISTORY ============ --}}
+    </div>
+    <div id="finance-history" data-ops-panel="history" class="space-y-4">
   <div id="history" class="scroll-mt-5 space-y-4">
 
     {{-- Snapshots --}}
@@ -491,6 +492,8 @@
     </section>
   </div>
 
+    </div>
+  </div>
 </div>
 
 @push('scripts')

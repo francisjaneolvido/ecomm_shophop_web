@@ -3,7 +3,7 @@
 @section('title', 'Reports')
 
 @section('content')
-<p class="mx-auto max-w-7xl p-4 text-sm text-slate-600">Calculated order allocations are shown below. Approval and actual payout are tracked separately in earnings. @if(($unreviewedFinancialOrders ?? 0) > 0){{ $unreviewedFinancialOrders }} older completed order(s) await financial review; their fees are excluded from these totals.@endif</p>
+
 
 @php
     $totalSales = (float) ($totalSales ?? 0);
@@ -145,7 +145,7 @@
                 <button
                     type="button"
                     id="printReportButton"
-                    class="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg bg-navy text-xs font-semibold text-white hover:bg-navy/90 transition"
+                    class="sh-btn inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg bg-navy text-xs font-semibold text-white hover:bg-navy/90 transition"
                 >
                     <x-lucide-printer class="w-4 h-4" />
                     Print
@@ -157,10 +157,12 @@
     </section>
 
 
+<p class="sh-notice report-no-print">Calculated order allocations are shown below. Approval and actual payout are tracked separately in earnings. @if(($unreviewedFinancialOrders ?? 0) > 0){{ $unreviewedFinancialOrders }} older completed order(s) await financial review; their fees are excluded from these totals.@endif</p>
+
     {{-- =========================================================
         DATE RANGE
     ========================================================= --}}
-    <section class="report-no-print bg-white border border-gray-border rounded-xl p-3">
+    <section class="ops-panel report-no-print bg-white border border-gray-border rounded-xl p-3">
 
         <div class="flex flex-col xl:flex-row xl:items-end gap-3">
 
@@ -238,7 +240,7 @@
 
                 <button
                     type="submit"
-                    class="h-9 px-4 rounded-lg bg-navy hover:bg-navy/90 text-xs font-semibold text-white transition"
+                    class="sh-btn h-9 px-4 rounded-lg bg-navy hover:bg-navy/90 text-xs font-semibold text-white transition"
                 >
                     Apply Range
                 </button>
@@ -298,7 +300,7 @@
         <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
 
             {{-- Sales --}}
-            <div class="report-card bg-white border border-gray-border rounded-xl p-4">
+            <div class="ops-panel report-card bg-white border border-gray-border rounded-xl p-4">
 
                 <div class="flex items-start justify-between gap-3">
 
@@ -339,7 +341,7 @@
 
 
             {{-- Orders --}}
-            <div class="report-card bg-white border border-gray-border rounded-xl p-4">
+            <div class="ops-panel report-card bg-white border border-gray-border rounded-xl p-4">
 
                 <div class="flex items-start justify-between gap-3">
 
@@ -380,7 +382,7 @@
 
 
             {{-- AOV --}}
-            <div class="report-card bg-white border border-gray-border rounded-xl p-4">
+            <div class="ops-panel report-card bg-white border border-gray-border rounded-xl p-4">
 
                 <div class="flex items-start justify-between gap-3">
 
@@ -421,7 +423,7 @@
 
 
             {{-- Net earnings --}}
-            <div class="report-card bg-white border border-gray-border rounded-xl p-4">
+            <div class="ops-panel report-card bg-white border border-gray-border rounded-xl p-4">
 
                 <div class="flex items-start justify-between gap-3">
 
@@ -462,7 +464,7 @@
         <section class="grid grid-cols-1 xl:grid-cols-[1fr_.8fr] gap-5">
 
             {{-- Earnings --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
                 <div class="flex items-start justify-between gap-3">
 
@@ -589,7 +591,7 @@
 
 
             {{-- Order Health --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
                 <div>
 
@@ -671,7 +673,7 @@
         <section class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.65fr)_minmax(320px,.85fr)] gap-5">
 
             {{-- Sales trend --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
                 <div class="flex flex-wrap items-start justify-between gap-3 mb-5">
 
@@ -826,7 +828,7 @@
 
 
             {{-- Top Products --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
                 <div class="flex items-start justify-between gap-3">
 
@@ -929,7 +931,7 @@
         <section class="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
             {{-- Category Sales --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
                 <div>
 
@@ -998,7 +1000,7 @@
 
 
             {{-- Payment methods --}}
-            <div class="bg-white border border-gray-border rounded-xl p-4 sm:p-5">
+            <div class="ops-panel bg-white border border-gray-border rounded-xl p-4 sm:p-5">
 
                 <div>
 
@@ -1069,7 +1071,7 @@
         {{-- =========================================================
             RECENT TRANSACTIONS
         ========================================================= --}}
-        <section class="bg-white border border-gray-border rounded-xl overflow-hidden">
+        <section class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
             <div class="px-4 sm:px-5 py-4 border-b border-gray-border flex flex-wrap items-center justify-between gap-3">
 

@@ -26,10 +26,10 @@
     </header>
 
     <nav class="so-workflow-nav" aria-label="Seller order workflow">
-        <a class="{{ $section === 'notifications' ? 'is-active' : '' }}" href="{{ route('seller.orders.notifications') }}">All / New Orders</a>
-        <a class="{{ $section === 'prepare' ? 'is-active' : '' }}" href="{{ route('seller.orders.prepare') }}">Prepare Orders</a>
-        <a class="{{ $section === 'courier' ? 'is-active' : '' }}" href="{{ route('seller.orders.courier') }}">Courier Handover</a>
-        <a class="{{ $section === 'confirm' ? 'is-active' : '' }}" href="{{ route('seller.orders.confirm') }}">Delivery Tracking</a>
+        <a class="{{ $section === 'notifications' ? 'is-active' : '' }}" @if($section === 'notifications') aria-current="page" @endif href="{{ route('seller.orders.notifications') }}">All / New Orders</a>
+        <a class="{{ $section === 'prepare' ? 'is-active' : '' }}" @if($section === 'prepare') aria-current="page" @endif href="{{ route('seller.orders.prepare') }}">Prepare Orders</a>
+        <a class="{{ $section === 'courier' ? 'is-active' : '' }}" @if($section === 'courier') aria-current="page" @endif href="{{ route('seller.orders.courier') }}">Courier Handover</a>
+        <a class="{{ $section === 'confirm' ? 'is-active' : '' }}" @if($section === 'confirm') aria-current="page" @endif href="{{ route('seller.orders.confirm') }}">Delivery Tracking</a>
     </nav>
 
     <div class="so-metrics" aria-label="Order status overview">
@@ -131,7 +131,7 @@
                     @endphp
                     <tr>
                         <td>
-                            <a class="so-order-id" href="{{ route('seller.orders.show', array_merge(['order' => $order->id], $detailQuery)) }}">SHP-{{ str_pad((string)$order->id, 6, '0', STR_PAD_LEFT) }}</a>
+                            <a data-console-details class="so-order-id" href="{{ route('seller.orders.show', array_merge(['order' => $order->id], $detailQuery)) }}">SHP-{{ str_pad((string)$order->id, 6, '0', STR_PAD_LEFT) }}</a>
                             <span class="so-muted">{{ $buyerName }}</span>
                         </td>
                         <td>
@@ -152,11 +152,11 @@
                         </td>
                         <td class="so-actions-col">
                             <div class="so-row-actions">
-                                <button type="button" class="so-button so-button-secondary so-button-small" data-so-preview="{{ $previewId }}">View</button>
+                                <a data-console-details data-console-detail-title="Order details" class="so-button so-button-secondary so-button-small" href="{{ route('seller.orders.show', array_merge(['order' => $order->id], $detailQuery)) }}">View details</a>
                                 <details class="so-actions-menu">
                                     <summary aria-label="More actions for Order SHP-{{ $order->id }}">⋯</summary>
                                     <div class="so-actions-popover">
-                                        <a href="{{ route('seller.orders.show', array_merge(['order' => $order->id], $detailQuery)) }}">Full order & actions</a>
+                                        <a data-console-details href="{{ route('seller.orders.show', array_merge(['order' => $order->id], $detailQuery)) }}">Full order & actions</a>
                                         @if ($order->status === \App\Models\Buyer\Order\Order::STATUS_READY_FOR_PICKUP && $order->pickupRequest)
                                             <a href="{{ route('seller.orders.shipping-label', $order) }}" target="_blank" rel="noopener">Print waybill</a>
                                         @endif
@@ -221,7 +221,7 @@
                 <p class="so-preview-hint">Delivery actions belong to the Rider and Buyer; Seller may monitor proof and timeline.</p>
             @endif
             <div class="so-preview-links">
-                <a class="so-button so-button-primary" href="{{ route('seller.orders.show', array_merge(['order' => $order->id], $detailQuery)) }}">Open full order & actions</a>
+                <a data-console-details class="so-button so-button-primary" href="{{ route('seller.orders.show', array_merge(['order' => $order->id], $detailQuery)) }}">Open full order & actions</a>
                 @if($delivery?->proof_path)<a class="so-button so-button-secondary" href="{{ route('delivery.proof', $delivery) }}" target="_blank" rel="noopener">View proof</a>@endif
                 @if($order->status === \App\Models\Buyer\Order\Order::STATUS_READY_FOR_PICKUP && $order->pickupRequest)
                     <a class="so-button so-button-secondary" href="{{ route('seller.orders.shipping-label', $order) }}" target="_blank" rel="noopener">Print waybill</a>

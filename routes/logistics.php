@@ -164,6 +164,11 @@ Route::domain(config('app.logistics_domain'))
 // Province Hub portal lives in its own file.
 require __DIR__.'/hub.php';
 Route::domain(config('app.logistics_domain'))->middleware('auth')->prefix('financial-workspace')->group(function () {
+    Route::get('/discrepancies', [\App\Http\Controllers\CodDiscrepancyController::class, 'index'])->name('logistics.hybrid.discrepancies.index');
+    Route::post('/discrepancies/{case}/notes', [\App\Http\Controllers\CodDiscrepancyController::class, 'note'])->whereNumber('case')->name('logistics.hybrid.discrepancies.note');
+    Route::post('/discrepancies/{case}/proposals', [\App\Http\Controllers\CodDiscrepancyController::class, 'propose'])->whereNumber('case')->name('logistics.hybrid.discrepancies.propose');
+    Route::post('/discrepancies/{case}/resolutions/{resolution}/review', [\App\Http\Controllers\CodDiscrepancyController::class, 'review'])->whereNumber('case')->whereNumber('resolution')->name('logistics.hybrid.discrepancies.review');
+    Route::post('/discrepancies/{case}/resolutions/{resolution}/return', [\App\Http\Controllers\CodDiscrepancyController::class, 'recordReturn'])->whereNumber('case')->whereNumber('resolution')->name('logistics.hybrid.discrepancies.return');
     Route::post('/policies/{policy}/end', [HybridFinanceController::class, 'closePolicy'])->whereNumber('policy')->name('logistics.hybrid.policy.end');
     Route::post('/legacy-earnings/{earning}/approve', [HybridFinanceController::class, 'approveLegacy'])->whereNumber('earning')->name('logistics.hybrid.legacy.approve');
     Route::post('/expenses', [HybridFinanceController::class, 'expense'])->name('logistics.hybrid.expense');

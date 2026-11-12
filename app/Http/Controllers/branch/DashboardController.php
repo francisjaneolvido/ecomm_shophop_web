@@ -18,6 +18,11 @@ class DashboardController extends Controller
             ->where('status', 'active')->whereNull('archived_at')->first();
         abort_unless($center, 403, 'Walang aktibong branch na naka-link sa account mo.');
 
+        $pendingRiderActivations = app(\App\Services\RiderManagementService::class)->available()
+            ? \App\Models\Logistics\Rider::where('logistics_partner_id', $center->logistics_partner_id)->where('sorting_center_id', $center->id)
+                ->whereHas('lifecycleProfile', fn ($profile) => $profile->where('application_status', 'approved')->where('operational_status', 'pending_activation'))->count()
+            : 0;
+
         // Papunta sa branch: (a) pickup na dala ng rider, (b) transfers na umalis na
         $pickedUp = Delivery::with('order.seller')
             ->where('origin_sorting_center_id', $center->id)
@@ -99,6 +104,6 @@ class DashboardController extends Controller
             $alerts[] = ['level' => 'info', 'title' => "{$pendingPickups} pickup request(s) naghihintay ng rider", 'detail' => 'I-assign sa Logistics board.'];
         }
 
-        return view('branch.dashboard.index', compact('center', 'stats', 'awaiting', 'toAssign', 'riders', 'alerts'));
+        return view('branch.dashboard.index', compact('pendingRiderActivations', 'center', 'stats', 'awaiting', 'toAssign', 'riders', 'alerts'));
     }
 }

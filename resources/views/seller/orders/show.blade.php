@@ -7,9 +7,9 @@
 
 @section('content')
 {{-- This page displays only the Order selected through the authenticated Seller's sellers.id scope. --}}
-<section class="so-order-show mx-auto max-w-4xl space-y-5">
-    <a href="{{ $backUrl ?? route('seller.orders.notifications') }}" class="text-sm font-semibold text-teal-dark hover:underline">Back to Orders</a>
-    <div class="so-order-main rounded-xl border border-gray-border bg-white p-6">
+<section data-console-detail-source class="so-order-show mx-auto max-w-4xl space-y-5">
+    <a data-console-detail-dismiss href="{{ $backUrl ?? route('seller.orders.notifications') }}" class="text-sm font-semibold text-teal-dark hover:underline">Back to Orders</a>
+    <div class="ops-panel so-order-main rounded-xl border border-gray-border bg-white p-6">
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-bold text-navy">Order SHP-{{ str_pad((string) $order->id, 6, '0', STR_PAD_LEFT) }}</h1>
@@ -36,7 +36,7 @@
               <a class="mt-3 inline-block text-sm font-semibold underline" href="{{route('seller.returns.proof',$order->returnCase)}}" target="_blank">Review Rider handover proof</a>
               <form class="mt-3" method="POST" action="{{route('seller.returns.confirm',$order->returnCase)}}">@csrf
                 <label class="flex items-start gap-2 text-sm text-amber-900"><input required type="checkbox" value="1" name="physically_received"> I confirm the returned parcel is physically in my possession.</label>
-                <button class="mt-3 rounded-lg bg-teal-dark text-white px-4 py-2 text-sm font-bold" onclick="return confirm('Confirm that you received the actual parcel?')">Confirm Returned Parcel Received</button>
+                <button class="sh-btn mt-3 rounded-lg bg-teal-dark text-white px-4 py-2 text-sm font-bold" onclick="return confirm('Confirm that you received the actual parcel?')">Confirm Returned Parcel Received</button>
               </form>
             @else<p class="mt-3 text-xs text-amber-800">Logistics and Return Rider are handling the physical return.</p>@endif
           </section>
@@ -50,7 +50,7 @@
                         <p class="mt-1 text-xs text-navy/55">Pickup requested from {{ $order->pickupRequest->partner?->company_name ?? 'Logistics' }}@if($order->pickupRequest->originSortingCenter) · Origin: {{ $order->pickupRequest->originSortingCenter->name }}@endif</p>
                     @endif
                 </div>
-                <a href="{{ route('seller.orders.shipping-label', $order) }}" target="_blank" class="inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-white px-4 py-2 text-sm font-semibold text-teal-dark hover:bg-teal-light">
+                <a href="{{ route('seller.orders.shipping-label', $order) }}" target="_blank" class="sh-btn-soft inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-white px-4 py-2 text-sm font-semibold text-teal-dark hover:bg-teal-light">
                     <x-lucide-printer class="h-4 w-4" /> Print Waybill
                 </a>
             </div>
@@ -144,7 +144,7 @@
                     <form class="mt-3" method="POST" action="{{ route('seller.orders.accept', $order) }}">
                         @csrf
                         @method('PATCH')
-                        <button class="rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark">Accept / Confirm Order</button>
+                        <button class="sh-btn rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark">Accept / Confirm Order</button>
                     </form>
                 </div>
             @elseif ($order->isPaymentEligible() && $order->status === \App\Models\Buyer\Order\Order::STATUS_CONFIRMED)
@@ -152,7 +152,7 @@
                     <form method="POST" action="{{ route('seller.orders.start-preparation', $order) }}">
                         @csrf
                         @method('PATCH')
-                        <button class="rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark">Start Preparation</button>
+                        <button class="sh-btn rounded-lg bg-teal px-5 py-2.5 text-sm font-semibold text-white hover:bg-teal-dark">Start Preparation</button>
                     </form>
                 </div>
             @elseif ($order->isPaymentEligible() && $order->status === \App\Models\Buyer\Order\Order::STATUS_PREPARING)
@@ -175,7 +175,7 @@
                     @if ($order->logistics_partner_id)
                         @php($buyerCourierOk = $logisticsPartners->contains('id', $order->logistics_partner_id))
 
-                        <div class="mt-4 rounded-lg border border-gray-border bg-white p-3 text-sm">
+                        <div class="ops-panel mt-4 rounded-lg border border-gray-border bg-white p-3 text-sm">
                             <span class="text-navy/50">Courier chosen by Buyer:</span>
                             <strong class="text-navy">{{ $order->logisticsPartner?->company_name ?? 'Unavailable' }}</strong>
                         </div>
@@ -218,7 +218,7 @@
                         <p class="text-sm font-semibold text-navy">Pickup request sent.</p>
                         <p class="mt-1 text-xs text-navy/55">Print and attach the routed ShopHop waybill, then keep the parcel sealed while waiting for the assigned Rider.</p>
                     </div>
-                    <a target="_blank" href="{{ route('seller.orders.shipping-label', $order) }}" class="inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-white px-4 py-2 text-sm font-semibold text-teal-dark hover:bg-teal-light">
+                    <a target="_blank" href="{{ route('seller.orders.shipping-label', $order) }}" class="sh-btn-soft inline-flex items-center gap-2 rounded-lg border border-teal/30 bg-white px-4 py-2 text-sm font-semibold text-teal-dark hover:bg-teal-light">
                         <x-lucide-printer class="h-4 w-4" /> Print Waybill
                     </a>
                 </div>

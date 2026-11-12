@@ -9,6 +9,7 @@ use App\Models\Logistics\Delivery;
 use App\Models\Logistics\Rider;
 use App\Models\Logistics\SortingCenter;
 use App\Services\FinanceMoney;
+use App\Services\CodDiscrepancyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,13 +26,17 @@ class MobileRiderCodController extends Controller
         }
         $query = CodSettlement::where('collected_by_rider_id', $rider->id)
             ->where('logistics_partner_id', $rider->logistics_partner_id);
-        $cash = (clone $query)->whereIn('status', ['collected', 'discrepancy'])->orderByDesc('id')->get()
+        $openCases = DB::table('cod_discrepancy_cases')->where('status', '!=', 'resolved')->select('cod_settlement_id');
+        $cash = (clone $query)->where(fn ($q) => $q->whereIn('status', ['collected', 'discrepancy'])
+            ->orWhereIn('id', clone $openCases))->orderByDesc('id')->get()
             ->concat((clone $query)->orderByDesc('id')->limit(100)->get())->unique('id')->values();
         $collected = FinanceMoney::minor((string) ((clone $query)->sum('collected_amount') ?: '0'));
         $received = FinanceMoney::minor((string) ((clone $query)->sum('received_amount') ?: '0'));
         $batches = DB::table('cod_remittance_batches')->where('rider_id', $rider->id)
             ->where('logistics_partner_id', $rider->logistics_partner_id)->orderByDesc('id')->limit(100)->get();
         $items = DB::table('cod_remittance_items')->whereIn('batch_id', $batches->pluck('id'))->get()->groupBy('batch_id');
+        $caseSummaries = app(CodDiscrepancyService::class)->summaries($cash->pluck('id')
+            ->merge($items->flatten()->pluck('cod_settlement_id'))->unique()->all());
         $facilityNames = SortingCenter::whereIn('id', $batches->pluck('sorting_center_id'))->pluck('name', 'id');
         $facilities = SortingCenter::where('logistics_partner_id', $rider->logistics_partner_id)
             ->where('status', 'active')->get(['id', 'name']);
@@ -53,18 +58,33 @@ class MobileRiderCodController extends Controller
                 'collected' => FinanceMoney::decimal($collected),
                 'remitted' => FinanceMoney::decimal($received),
                 'outstanding' => FinanceMoney::decimal(FinanceMoney::minor((string) ((clone $query)->selectRaw('COALESCE(SUM(CASE WHEN collected_amount > COALESCE(received_amount, 0) THEN collected_amount - COALESCE(received_amount, 0) ELSE 0 END), 0) as liability')->value('liability') ?: '0'))),
-                'discrepancies' => (clone $query)->where('status', 'discrepancy')->count(),
+                'discrepancies' => (clone $query)->where(fn ($q) => $q->where('status', 'discrepancy')
+                    ->orWhereIn('id', clone $openCases))->count(),
             ],
             'facilities' => $facilities,
-            'batches' => $batches->map(fn ($batch) => [...(array) $batch, 'receiving_facility' => $facilityNames->get($batch->sorting_center_id), 'items' => $items->get($batch->id, collect())]),
+            'batches' => $batches->map(fn ($batch) => [...(array) $batch, 'receiving_facility' => $facilityNames->get($batch->sorting_center_id),
+                'items' => $items->get($batch->id, collect()),
+                'discrepancy_cases' => $items->get($batch->id, collect())->map(fn ($item) => $caseSummaries->get($item->cod_settlement_id))->filter()->values()]),
             'collections' => $cash->map(fn ($row) => [
                 'collection_id' => $row->id, 'delivery_id' => $row->delivery_id, 'order_id' => $row->order_id,
                 'expected_amount' => $row->expected_amount, 'amount' => $row->collected_amount,
+                'discrepancy_case' => $caseSummaries->get($row->id),
                 'received_amount' => $row->received_amount ?? '0.00',
                 'outstanding' => FinanceMoney::decimal(max(0, FinanceMoney::minor($row->collected_amount) - FinanceMoney::minor($row->received_amount))),
                 'status' => $row->status, 'collected_at' => $row->collected_at?->toIso8601String(),
                 'remitted_at' => $row->remitted_at?->toIso8601String(),
                 'receipt_verified' => $row->reconciled_at !== null,
+                'receipt_verified_at' => $row->reconciled_at?->toIso8601String(),
+                'logistics_remitted_at' => $row->admin_remitted_at?->toIso8601String(),
+                'shophop_received_at' => $row->admin_received_at?->toIso8601String(),
+                'platform_receipt_status' => match (true) {
+                    $row->status === 'discrepancy'
+                        || (($caseSummaries->get($row->id)['status'] ?? 'resolved') !== 'resolved') => 'under_review',
+                    $row->status !== CodSettlement::RECONCILED => 'not_ready',
+                    $row->admin_received_at !== null => 'confirmed',
+                    $row->admin_remitted_at !== null => 'awaiting_confirmation',
+                    default => 'with_logistics',
+                },
                 'receiving_facility' => $handoverDetails->get($row->id)?->receiving_facility,
                 'handover_status' => $handoverDetails->get($row->id)?->handover_status
                     ?? ($row->reconciled_at ? 'verified' : ($row->remitted_at ? 'submitted' : null)),
@@ -111,7 +131,7 @@ class MobileRiderCodController extends Controller
 
     private function unavailableResponse(): ?JsonResponse
     {
-        foreach (['cod_remittance_batches', 'cod_remittance_items', 'cash_custody_movements'] as $table) {
+        foreach (['cod_remittance_batches', 'cod_remittance_items', 'cash_custody_movements', 'cod_discrepancy_cases', 'cod_discrepancy_resolutions', 'cod_cash_adjustments'] as $table) {
             if (! Schema::hasTable($table)) {
                 return response()->json([
                     'success' => false,

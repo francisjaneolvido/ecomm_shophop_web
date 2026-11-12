@@ -27,7 +27,7 @@
     @endif
 
     {{-- The native form remains usable without JavaScript and submits only fields supported by the current schema. --}}
-    <section class="rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="profileHeading">
+    <section class="ops-panel rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="profileHeading">
         <h2 id="profileHeading" class="font-semibold text-navy">Personal Information</h2>
         <p class="mt-1 text-xs text-navy/60">Email: <span class="break-all">{{ auth()->user()->email }}</span>. Email changes require a separate verification flow and are unavailable here.</p>
         <form method="POST" action="{{ route('seller.account.update') }}" class="mt-5 space-y-4">
@@ -70,12 +70,12 @@
                     @error('birthday')<p id="birthdayError" class="mt-1 text-xs text-red-700">{{ $message }}</p>@enderror
                 </div>
             </div>
-            <button type="submit" class="rounded-lg bg-teal-dark px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-teal focus:ring-offset-2">Save Profile</button>
+            <button type="submit" class="sh-btn rounded-lg bg-teal-dark px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-teal focus:ring-offset-2">Save Profile</button>
         </form>
     </section>
 
     {{-- Registered business/address and account approval are read-only; core edits cannot rewrite reviewed facts or expose private documents. --}}
-    <section class="rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="businessHeading">
+    <section class="ops-panel rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="businessHeading">
         <h2 id="businessHeading" class="font-semibold text-navy">Registered Business</h2>
         <dl class="mt-4 grid gap-4 sm:grid-cols-2 text-sm">
             <div><dt class="text-xs text-navy/60">Business Name</dt><dd class="mt-1 text-navy break-words">{{ $seller->business_name }}</dd></div>
@@ -86,7 +86,7 @@
         <p class="mt-4 text-xs text-navy/60">Business, address, and registration document changes are unavailable here.</p>
     </section>
 
-    <section class="rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="passwordHeading">
+    <section class="ops-panel rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="passwordHeading">
         <h2 id="passwordHeading" class="font-semibold text-navy">Change Password</h2>
         <p class="mt-1 text-xs text-navy/60">Use at least 10 characters with uppercase, lowercase letters and a number.</p>
         <form method="POST" action="{{ route('seller.account.password') }}" class="mt-4 space-y-3">
@@ -95,10 +95,10 @@
                 <label class="block text-sm" for="{{ $field }}">{{ $label }}</label>
                 <input class="w-full rounded-lg border border-gray-border p-2" id="{{ $field }}" name="{{ $field }}" type="password" required autocomplete="{{ $field === 'current_password' ? 'current-password' : 'new-password' }}">
             @endforeach
-            <button class="rounded-lg bg-teal-dark px-4 py-2.5 text-sm font-semibold text-white">Change Password</button>
+            <button class="sh-btn rounded-lg bg-teal-dark px-4 py-2.5 text-sm font-semibold text-white">Change Password</button>
         </form>
     </section>
-    <section class="rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="unavailableHeading">
+    <section class="ops-panel rounded-xl border border-gray-border bg-white p-4 sm:p-6" aria-labelledby="unavailableHeading">
         <h2 id="unavailableHeading" class="font-semibold text-navy">Unavailable Account Features</h2>
         <p class="mt-2 text-sm text-navy/60">Profile photo and shop logo uploads, notification preferences, and self-deactivation are unavailable. No changes to these features can be saved from this page.</p>
     </section>

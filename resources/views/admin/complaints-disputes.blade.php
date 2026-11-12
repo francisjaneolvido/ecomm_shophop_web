@@ -35,7 +35,7 @@
             ];
         @endphp
         @foreach ($cards as [$label, $value, $tone, $icon])
-            <div class="bg-white border border-slate-200 rounded-2xl p-4">
+            <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
                 <div class="flex items-center justify-between gap-3">
                     <div>
                         <p class="text-xs text-slate-400 font-medium">{{ $label }}</p>
@@ -47,7 +47,7 @@
                 </div>
             </div>
         @endforeach
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
             <p class="text-xs text-slate-400 font-medium">Avg. Resolution Time</p>
             <p class="text-2xl font-bold text-navy mt-1">{{ $counts['avg_hours'] === null ? '—' : $counts['avg_hours'].' h' }}</p>
         </div>
@@ -132,7 +132,7 @@
     </form>
 
     {{-- LIST --}}
-    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="ops-panel bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div class="flex items-center justify-between gap-4 px-5 py-4 border-b border-slate-100">
             <h2 class="font-semibold text-navy text-sm">Cases</h2>
             <span class="text-xs text-slate-400">{{ $disputes->total() }} total</span>
@@ -149,7 +149,7 @@
                 <td><div class="max-w-[220px] text-xs">{{ $d->complainant?->display_name ?? 'No complainant' }}</div><div class="text-[11px] text-slate-500">→ {{ $d->respondent?->display_name ?? 'No respondent' }}</div></td>
                 <td><span class="admin-status {{ $d->is_closed ? 'admin-status-ok' : ($d->priority === 'high' ? 'admin-status-danger' : 'admin-status-warn') }}">{{ $d->status_label }}</span>@if($d->priority === 'high')<div class="mt-1 text-[10px] font-semibold text-red-600">High priority</div>@endif</td>
                 <td class="text-xs">{{ $d->created_at->format('M j, Y') }}<div class="mt-1 text-slate-500">{{ $d->age_days }} day(s)</div></td>
-                <td><div class="admin-row-actions"><a href="{{ route('admin.disputes.show', $d) }}" class="admin-btn">View case</a></div></td>
+                <td><div class="admin-row-actions"><a data-console-details href="{{ route('admin.disputes.show', $d) }}" class="admin-btn">View case</a></div></td>
               </tr>
               @empty<tr><td colspan="6" class="admin-empty">{{ $counts['all'] === 0 ? 'No complaints have been logged yet.' : 'No cases match the selected filters.' }}</td></tr>@endforelse
             </tbody>

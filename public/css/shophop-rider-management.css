@@ -1,0 +1,18 @@
+.rider-management .rm-queues{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+.rider-management .rm-queue{display:flex;gap:10px;align-items:center;padding:10px 14px;border:1px solid #d9e2e8;border-radius:8px;background:white;color:#172546;font-weight:600;font-size:12px}
+.rider-management .rm-queue[aria-current=page]{background:#e3f8f2;border-color:#17a88e;color:#086c5e}
+.rider-management .rm-queue-count{min-width:23px;padding:2px 7px;border-radius:12px;background:#edf1f5;text-align:center}
+.rider-management #rider-details{scroll-margin-top:85px}
+.rider-management .rm-activation{padding:20px;border:1px solid #87d8c7;border-radius:10px;background:#f6fffc}
+.rider-management .rm-activation h3{font-size:18px;font-weight:700;margin-bottom:8px}
+.rider-management .rm-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:16px 0;padding:0;list-style:none}
+.rider-management .rm-checklist li{display:flex;flex-direction:column;padding:10px;border:1px solid #d7e6e0;border-radius:7px;background:white;font-size:12px}
+.rider-management .rm-checklist span{margin-top:3px}.rider-management .rm-check-ok strong{color:#087965}.rider-management .rm-check-blocked strong,.rider-management .rm-warning{color:#9d5313}
+.rider-management .rm-activation legend{font-weight:700}.rider-management .rm-search{margin:12px 0}
+.rider-management .rm-coverage-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:300px;overflow:auto;padding:2px}
+.rider-management .rm-coverage-option{display:flex;align-items:flex-start;gap:10px;border:1px solid #d9e2e8;border-radius:7px;padding:12px;background:white}
+.rider-management .rm-coverage-option input{margin-top:4px;accent-color:#118a78}.rider-management .rm-coverage-option small{display:block;font-size:11px;color:#56657c}
+.rider-management .rm-coverage-option[hidden]{display:none}.rider-management .rm-selection-status{margin:12px 0;color:#47576e;font-size:12px}
+.rider-management .rm-confirm{display:flex;align-items:flex-start;gap:9px;margin:16px 0;font-weight:600;font-size:12px}
+.rider-management button:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:640px){.rider-management .rm-checklist,.rider-management .rm-coverage-list{grid-template-columns:1fr}.rider-management .rm-activation{padding:14px}.rider-management .rm-queue{padding:8px 10px}}

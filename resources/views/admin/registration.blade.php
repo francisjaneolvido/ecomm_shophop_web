@@ -38,7 +38,7 @@
     {{-- ============ SUMMARY CARDS ============ --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <p class="text-xs text-slate-400 font-medium">Pending Review</p>
@@ -50,7 +50,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <p class="text-xs text-slate-400 font-medium">Buyers</p>
@@ -62,7 +62,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <p class="text-xs text-slate-400 font-medium">Sellers</p>
@@ -74,7 +74,7 @@
             </div>
         </div>
 
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <p class="text-xs text-slate-400 font-medium">Logistics</p>
@@ -88,79 +88,23 @@
 
     </div>
 
-    {{-- ============ STATUS TABS + ROLE PILLS + SORT + SEARCH ============ --}}
-    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-5">
-
-        <div class="flex items-center gap-2 flex-wrap">
-            <a href="{{ request()->fullUrlWithQuery(['filter' => 'pending', 'role' => $role, 'sort' => $sort]) }}"
-               class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition {{ $filter === 'pending' ? 'bg-navy text-white' : 'text-slate-500 hover:bg-slate-100' }}">
-                Pending <span class="ml-1 opacity-70">({{ $counts['pending'] }})</span>
-            </a>
-            <a href="{{ request()->fullUrlWithQuery(['filter' => 'approved', 'role' => $role, 'sort' => $sort]) }}"
-               class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition {{ $filter === 'approved' ? 'bg-navy text-white' : 'text-slate-500 hover:bg-slate-100' }}">
-                Approved <span class="ml-1 opacity-70">({{ $counts['approved'] }})</span>
-            </a>
-            <a href="{{ request()->fullUrlWithQuery(['filter' => 'rejected', 'role' => $role, 'sort' => $sort]) }}"
-               class="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition {{ $filter === 'rejected' ? 'bg-navy text-white' : 'text-slate-500 hover:bg-slate-100' }}">
-                Rejected <span class="ml-1 opacity-70">({{ $counts['rejected'] }})</span>
-            </a>
-        </div>
-
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-
-            {{-- ROLE PILLS --}}
-            <div class="flex items-center gap-1 p-1 rounded-xl bg-slate-50">
-                <a href="{{ request()->fullUrlWithQuery(['filter' => $filter, 'role' => 'all', 'sort' => $sort]) }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $role === 'all' ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:bg-white' }}">
-                    All
-                </a>
-                <a href="{{ request()->fullUrlWithQuery(['filter' => $filter, 'role' => 'buyer', 'sort' => $sort]) }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $role === 'buyer' ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:bg-white' }}">
-                    Buyers
-                </a>
-                <a href="{{ request()->fullUrlWithQuery(['filter' => $filter, 'role' => 'seller', 'sort' => $sort]) }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $role === 'seller' ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:bg-white' }}">
-                    Sellers
-                </a>
-                <a href="{{ request()->fullUrlWithQuery(['filter' => $filter, 'role' => 'logistics', 'sort' => $sort]) }}"
-                   class="px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ $role === 'logistics' ? 'bg-white text-navy shadow-sm' : 'text-slate-500 hover:bg-white' }}">
-                    Logistics
-                </a>
-            </div>
-
-            {{-- SORT --}}
-            <form method="GET" class="shrink-0">
-                <input type="hidden" name="filter" value="{{ $filter }}">
-                <input type="hidden" name="role" value="{{ $role }}">
-                <input type="hidden" name="search" value="{{ request('search') }}">
-                <select name="sort" onchange="this.form.submit()"
-                    class="text-sm rounded-xl border border-slate-200 px-3 py-2.5 bg-white text-slate-600 font-medium focus:outline-none focus:ring-2 focus:ring-mint/20 transition">
-                    <option value="newest" {{ $sort === 'newest' ? 'selected' : '' }}>Newest first</option>
-                    <option value="oldest" {{ $sort === 'oldest' ? 'selected' : '' }}>Oldest first</option>
-                    <option value="az" {{ $sort === 'az' ? 'selected' : '' }}>Name (A–Z)</option>
-                    <option value="za" {{ $sort === 'za' ? 'selected' : '' }}>Name (Z–A)</option>
-                </select>
-            </form>
-
-            {{-- SEARCH --}}
-            <form method="GET" class="relative w-full sm:w-64">
-                <input type="hidden" name="filter" value="{{ $filter }}">
-                <input type="hidden" name="role" value="{{ $role }}">
-                <input type="hidden" name="sort" value="{{ $sort }}">
-
-                <x-lucide-search class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-
-                <input type="text" name="search" value="{{ request('search') }}"
-                    placeholder="Search applicant..."
-                    class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-navy placeholder:text-slate-400 focus:outline-none focus:border-mint focus:ring-2 focus:ring-mint/10 transition">
-            </form>
-
-        </div>
-
-    </div>
+    <section class="ops-panel mb-4" aria-label="Directory filters">
+        <nav class="sh-console-tabs" aria-label="Directory status">
+            @foreach(['pending' => 'Pending', 'approved' => 'Approved', 'rejected' => 'Rejected'] as $state => $label)
+                <a href="{{ request()->fullUrlWithQuery(['filter' => $state, 'page' => null]) }}" @if($filter === $state) aria-current="page" @endif>{{ $label }} <span class="sh-tab-count">{{ $counts[$state] ?? 0 }}</span></a>
+            @endforeach
+        </nav>
+        <form method="GET" action="{{ route('admin.registrations') }}" class="ops-filters" role="search">
+            <input type="hidden" name="filter" value="{{ $filter }}">
+            <label class="sh-field"><span>Name or email</span><input class="sh-input" type="search" name="search" value="{{ request('search') }}" placeholder="Search accounts"></label>
+            <label class="sh-field"><span>Account type</span><select name="role" class="sh-select">@foreach(['all' => 'All types','buyer' => 'Buyers','seller' => 'Sellers','logistics' => 'Logistics'] as $value => $label)<option value="{{ $value }}" @selected($role === $value)>{{ $label }}</option>@endforeach</select></label>
+            <label class="sh-field"><span>Sort by</span><select class="sh-select" name="sort">@foreach(['newest' => 'Newest first','oldest' => 'Oldest first','az' => 'Name A–Z','za' => 'Name Z–A'] as $value => $label)<option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>@endforeach</select></label>
+            <button class="sh-btn" type="submit">Filter</button><a class="sh-btn-soft" href="{{ route('admin.registrations', ['filter' => $filter]) }}">Clear</a>
+        </form>
+    </section>
 
     {{-- ============ REGISTRATIONS LIST ============ --}}
-    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="ops-panel bg-white rounded-2xl border border-slate-200 overflow-hidden">
 
         <div class="flex items-center justify-between gap-4 px-5 py-4 border-b border-slate-100">
             <div>
@@ -195,7 +139,7 @@
                   <button type="button" class="registration-view-btn admin-btn" data-show-url="{{ route('admin.registrations.show', $registration, false) }}">View</button>
                   @if ($registration->status === 'pending')
                     <button type="button" class="registration-approve-btn admin-btn admin-btn-teal" data-id="{{ $registration->id }}" data-name="{{ $registration->display_name }}" data-role="{{ $rStyle['label'] }}" data-approve-url="{{ route('admin.users.approve', $registration, false) }}">Approve</button>
-                    <button type="button" class="registration-reject-btn admin-btn" data-id="{{ $registration->id }}" data-name="{{ $registration->display_name }}" data-role="{{ $rStyle['label'] }}" data-reject-url="{{ route('admin.users.reject', $registration, false) }}">Reject</button>
+                    <button type="button" class="registration-reject-btn admin-btn admin-btn-danger" data-id="{{ $registration->id }}" data-name="{{ $registration->display_name }}" data-role="{{ $rStyle['label'] }}" data-reject-url="{{ route('admin.users.reject', $registration, false) }}">Reject</button>
                   @else
                     <span class="admin-status {{ $registration->status === 'approved' ? 'admin-status-ok' : 'admin-status-danger' }}">{{ ucfirst($registration->status) }}</span>
                   @endif

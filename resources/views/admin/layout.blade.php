@@ -216,6 +216,7 @@
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
     <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
+    @include('partials.console-assets')
 </head>
 
 
@@ -254,96 +255,36 @@
     | Centralized here so the UI is easier to customize later.
     */
     $adminNavigation = [
-        [
-            'label' => 'Overview',
-            'items' => [
-                [
-                    'label' => 'Dashboard',
-                    'route' => 'admin.dashboard',
-                    'pattern' => 'admin.dashboard',
-                    'icon' => 'layout-dashboard',
-                ],
-            ],
-        ],
-
-        [
-            'label' => 'Operations',
-            'items' => [
-                [
-                    'label' => 'Account Registrations',
-                    'route' => 'admin.registrations',
-                    'pattern' => 'admin.registrations*',
-                    'icon' => 'user-round-plus',
-                ],
-                [
-                    'label' => 'User Accounts',
-                    'route' => 'admin.users',
-                    'pattern' => 'admin.users*',
-                    'icon' => 'users',
-                ],
-                // Product review now lives under Seller Compliance.
-                [
-                    'label' => 'Seller Compliance',
-                    'route' => 'admin.compliance',
-                    'pattern' => 'admin.compliance*',
-                    'icon' => 'badge-check',
-                ],
-                [
-                    'label' => 'Complaints & Disputes',
-                    'route' => 'admin.disputes',
-                    'pattern' => 'admin.disputes*',
-                    'icon' => 'message-square-warning',
-                    'tone' => 'danger',
-                ],
-                [
-                    'label' => 'Chat / Messaging',
-                    'route' => 'admin.chat',
-                    'pattern' => 'admin.chat*',
-                    'icon' => 'messages-square',
-                ],
-            ],
-        ],
-
-        [
-            'label' => 'Finance & Insights',
-            'items' => [
-                [
-                    'label' => 'Commission',
-                    'route' => 'admin.commission',
-                    'pattern' => 'admin.commission*',
-                    'icon' => 'landmark',
-                ],
-                [
-                    'label' => 'Reports',
-                    'route' => 'admin.reports',
-                    'pattern' => 'admin.reports*',
-                    'icon' => 'file-chart-column-increasing',
-                ],
-            ],
-        ],
-
-        [
-            'label' => 'System',
-            'items' => [
-                [
-                    'label' => 'Platform Settings',
-                    'route' => 'admin.settings',
-                    'pattern' => 'admin.settings*',
-                    'icon' => 'settings-2',
-                ],
-                [
-                    'label' => 'Account Management',
-                    'route' => 'admin.accounts',
-                    'pattern' => 'admin.accounts*',
-                    'icon' => 'shield-user',
-                ],
-            ],
-        ],
+        ['label' => 'Overview', 'items' => [
+            ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'pattern' => 'admin.dashboard', 'icon' => 'layout-dashboard'],
+        ]],
+        ['label' => 'Accounts & Catalog', 'items' => [
+            ['label' => 'Account Registrations', 'route' => 'admin.registrations', 'pattern' => 'admin.registrations*', 'icon' => 'user-round-plus'],
+            ['label' => 'User Accounts', 'route' => 'admin.users', 'pattern' => 'admin.users*', 'icon' => 'users'],
+            ['label' => 'Product Compliance', 'route' => 'admin.compliance', 'pattern' => 'admin.compliance*', 'icon' => 'badge-check'],
+        ]],
+        ['label' => 'Finance', 'items' => [
+            ['label' => 'Settlements & Payouts', 'route' => 'admin.commission', 'pattern' => 'admin.commission*', 'icon' => 'landmark'],
+            ['label' => 'COD Receipt Verification', 'route' => 'admin.finance.cod.index', 'pattern' => 'admin.finance.cod.*', 'icon' => 'banknote'],
+            ['label' => 'COD Discrepancies', 'route' => 'hybrid.discrepancies.index', 'pattern' => 'hybrid.discrepancies.*', 'icon' => 'clipboard-check'],
+            ['label' => 'Returns & Refunds', 'route' => 'admin.returns.index', 'pattern' => 'admin.returns.*', 'icon' => 'package-search'],
+        ]],
+        ['label' => 'Support', 'items' => [
+            ['label' => 'Complaints & Disputes', 'route' => 'admin.disputes', 'pattern' => 'admin.disputes*', 'icon' => 'message-square-warning'],
+            ['label' => 'Messages', 'route' => 'admin.chat', 'pattern' => 'admin.chat*', 'icon' => 'messages-square'],
+        ]],
+        ['label' => 'Insights', 'items' => [
+            ['label' => 'Reports', 'route' => 'admin.reports', 'pattern' => 'admin.reports*', 'icon' => 'file-chart-column-increasing'],
+        ]],
+        ['label' => 'System', 'items' => [
+            ['label' => 'Platform Settings', 'route' => 'admin.settings', 'pattern' => 'admin.settings*', 'icon' => 'settings-2'],
+            ['label' => 'My Account', 'route' => 'admin.accounts', 'pattern' => 'admin.accounts*', 'icon' => 'shield-user'],
+        ]],
     ];
 @endphp
 
 
-<body class="sh-management-ui bg-gray-bg text-navy antialiased">
+<body class="{{ (request()->boolean('console_modal') || request()->header('Sec-Fetch-Dest') === 'iframe') ? 'sh-console-embedded' : '' }} sh-management-ui sh-admin-ui bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 {{-- Local demo/test switcher intentionally hidden from the interface. --}}
@@ -372,7 +313,7 @@
     ========================================================= --}}
     <aside
         id="adminSidebar"
-        class="relative
+        class="sh-console-sidebar relative
                w-64
                bg-navy text-white
                flex flex-col shrink-0
@@ -502,6 +443,7 @@
 
                                 <a
                                     href="{{ route($item['route']) }}"
+                                    @if($isActive) aria-current="page" @endif
                                     class="sidebar-nav-link
                                            relative
                                            flex items-center gap-3
@@ -1796,5 +1738,7 @@ document.addEventListener('DOMContentLoaded', function () {
 @stack('scripts')
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-modal2"></script>
+@include('partials.console-details')
 </body>
 </html>

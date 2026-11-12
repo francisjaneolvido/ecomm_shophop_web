@@ -56,7 +56,7 @@
             <button
                 type="button"
                 id="openAddAdminBtn"
-                class="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-mint-dark hover:opacity-90 transition flex items-center gap-2"
+                class="sh-btn px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-mint-dark hover:opacity-90 transition flex items-center gap-2"
             >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
@@ -69,7 +69,7 @@
     {{-- ============ STAT SUMMARY ============ --}}
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="ops-panel bg-white rounded-2xl border border-slate-200 p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-mint/15 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5 text-mint-dark" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -83,7 +83,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="ops-panel bg-white rounded-2xl border border-slate-200 p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-sky/15 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5 text-sky" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -97,7 +97,7 @@
             </div>
         </div>
 
-        <div class="bg-white rounded-2xl border border-slate-200 p-5">
+        <div class="ops-panel bg-white rounded-2xl border border-slate-200 p-5">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-coral/15 flex items-center justify-center shrink-0">
                     <svg class="w-5 h-5 text-coral" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
@@ -114,7 +114,7 @@
     </div>
 
     {{-- ============ ADMIN ACCOUNTS TABLE ============ --}}
-    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
+    <div class="ops-panel bg-white rounded-2xl border border-slate-200 overflow-hidden">
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm">
@@ -207,7 +207,7 @@
                                                 @method('PATCH')
                                                 <button
                                                     type="submit"
-                                                    class="px-3 py-1.5 rounded-lg text-xs font-semibold text-coral border border-coral/30 hover:bg-coral/5"
+                                                    class="sh-btn-danger px-3 py-1.5 rounded-lg text-xs font-semibold text-coral border border-coral/30 hover:bg-coral/5"
                                                 >
                                                     Disable
                                                 </button>
@@ -371,7 +371,7 @@
                     </button>
                     <button
                         type="submit"
-                        class="h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-mint-dark hover:opacity-90 transition"
+                        class="sh-btn h-9 inline-flex items-center px-4 rounded-full text-xs font-semibold text-white bg-mint-dark hover:opacity-90 transition"
                     >
                         Create Account
                     </button>

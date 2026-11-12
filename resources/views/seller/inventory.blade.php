@@ -188,7 +188,7 @@
                 <button
                     type="button"
                     data-open-voucher-modal
-                    class="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg border border-gray-border bg-white text-xs font-semibold text-navy/60 hover:border-teal/30 hover:text-teal-dark transition"
+                    class="sh-btn-soft inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg border border-gray-border bg-white text-xs font-semibold text-navy/60 hover:border-teal/30 hover:text-teal-dark transition"
                 >
                     <x-lucide-ticket-percent class="w-4 h-4" />
                     Create Voucher
@@ -197,7 +197,7 @@
                 <button
                     type="button"
                     data-open-product-modal
-                    class="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg bg-navy hover:bg-navy-light text-xs font-semibold text-white transition"
+                    class="sh-btn inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg bg-navy hover:bg-navy-light text-xs font-semibold text-white transition"
                 >
                     <x-lucide-plus class="w-4 h-4" />
                     Add Product
@@ -211,12 +211,12 @@
     {{-- =========================================================
         PRODUCTS / VOUCHERS
     ========================================================= --}}
-    <section class="bg-white border border-gray-border rounded-xl p-2 overflow-x-auto">
-        <div class="flex items-center gap-1 min-w-max">
+    <section class="ops-panel bg-white border border-gray-border rounded-xl p-2 overflow-x-auto">
+        <div class="flex items-center gap-1 min-w-max" role="tablist" aria-label="Inventory workspace">
 
             <button
                 type="button"
-                data-section-tab="products"
+                data-section-tab="products" role="tab" id="inventory-tab-products" aria-controls="inventoryProductsSection" aria-selected="true" tabindex="0"
                 class="inventory-section-tab inventory-section-tab-active h-9 px-3.5 rounded-lg border border-transparent text-xs font-bold transition"
             >
                 Products
@@ -225,7 +225,7 @@
 
             <button
                 type="button"
-                data-section-tab="vouchers"
+                data-section-tab="vouchers" role="tab" id="inventory-tab-vouchers" aria-controls="inventoryVouchersSection" aria-selected="false" tabindex="-1"
                 class="inventory-section-tab h-9 px-3.5 rounded-lg border border-transparent text-xs font-bold text-navy/45 hover:bg-gray-bg transition"
             >
                 Vouchers
@@ -239,7 +239,7 @@
     {{-- =========================================================
         PRODUCTS SECTION
     ========================================================= --}}
-    <div id="inventoryProductsSection" class="space-y-5">
+    <div id="inventoryProductsSection" role="tabpanel" aria-labelledby="inventory-tab-products" class="space-y-5">
 
         {{-- Summary cards --}}
         <section class="grid grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
@@ -331,7 +331,8 @@
 
 
         {{-- Server-side status tabs and filters. Tabs are genuine URLs so they keep working with pagination. --}}
-        <nav aria-label="Product status" class="inventory-status-tabs flex items-center gap-1 overflow-x-auto border border-gray-border bg-white rounded-lg p-2">
+        <section class="ops-panel inventory-directory">
+        <nav aria-label="Product status" class="inventory-status-tabs flex items-center gap-1 overflow-x-auto">
             @foreach ([
                 ['key' => 'all', 'label' => 'All', 'count' => $inventoryCounts['all']],
                 ['key' => 'active', 'label' => 'Active', 'count' => $activeCount],
@@ -345,7 +346,7 @@
             @endforeach
         </nav>
 
-        <section class="bg-white border border-gray-border rounded-lg p-4">
+        <section class="inventory-filter-section p-4">
             <form method="GET" action="{{ route('seller.inventory') }}" class="inventory-filter-grid" aria-label="Filter inventory">
                 <input type="hidden" name="status" value="{{ $currentStatus }}">
                 <label class="inventory-filter-search">
@@ -411,7 +412,7 @@
         </section>
 
         {{-- Products table --}}
-        <section class="bg-white border border-gray-border rounded-xl overflow-hidden">
+        <section class="inventory-records overflow-hidden">
             <div id="inventoryBulkToolbar" class="inventory-bulk-toolbar" hidden>
                 <div><strong id="inventorySelectedCount">0 selected</strong><span class="ml-2 text-xs text-navy/60">Current page only</span></div>
                 <div class="flex flex-wrap items-center gap-2">
@@ -445,7 +446,7 @@
                     <button
                         type="button"
                         data-open-product-modal
-                        class="mt-4 inline-flex items-center gap-2 h-9 px-3.5 rounded-lg bg-navy text-white text-xs font-semibold hover:bg-navy-light transition"
+                        class="sh-btn mt-4 inline-flex items-center gap-2 h-9 px-3.5 rounded-lg bg-navy text-white text-xs font-semibold hover:bg-navy-light transition"
                     >
                         <x-lucide-plus class="w-3.5 h-3.5" />
                         Add Your First Product
@@ -814,15 +815,16 @@
 
         </section>
 
+        </section>
     </div>
 
 
     {{-- =========================================================
         VOUCHERS SECTION
     ========================================================= --}}
-    <div id="inventoryVouchersSection" hidden class="space-y-5">
+    <div id="inventoryVouchersSection" role="tabpanel" aria-labelledby="inventory-tab-vouchers" hidden class="space-y-5">
 
-        <section class="bg-white border border-gray-border rounded-xl overflow-hidden">
+        <section class="ops-panel bg-white border border-gray-border rounded-xl overflow-hidden">
 
             <div class="px-5 py-4 border-b border-gray-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
@@ -840,7 +842,7 @@
                 <button
                     type="button"
                     data-open-voucher-modal
-                    class="inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg bg-navy text-white text-xs font-semibold hover:bg-navy-light transition"
+                    class="sh-btn inline-flex items-center justify-center gap-2 h-9 px-3.5 rounded-lg bg-navy text-white text-xs font-semibold hover:bg-navy-light transition"
                 >
                     <x-lucide-plus class="w-3.5 h-3.5" />
                     Create Voucher
@@ -1596,7 +1598,7 @@
 
                 <button
                     type="submit"
-                    class="h-9 px-4 rounded-lg bg-navy hover:bg-navy-light text-xs font-semibold text-white transition inline-flex items-center gap-2"
+                    class="sh-btn h-9 px-4 rounded-lg bg-navy hover:bg-navy-light text-xs font-semibold text-white transition inline-flex items-center gap-2"
                 >
                     <x-lucide-save class="w-3.5 h-3.5" />
                     <span id="productSubmitText">Add Product</span>
@@ -1930,7 +1932,7 @@
 
                 <button
                     type="submit"
-                    class="h-9 px-4 rounded-lg bg-navy text-white text-xs font-semibold hover:bg-navy-light transition"
+                    class="sh-btn h-9 px-4 rounded-lg bg-navy text-white text-xs font-semibold hover:bg-navy-light transition"
                 >
                     Save Voucher
                 </button>
@@ -2030,6 +2032,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 button.dataset.sectionTab ===
                 (productsActive ? 'products' : 'vouchers');
 
+            button.setAttribute('aria-selected', String(active));
+            button.tabIndex = active ? 0 : -1;
             button.classList.toggle(
                 'inventory-section-tab-active',
                 active
@@ -2049,6 +2053,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+
+    sectionTabs.forEach(function (button, index) {
+        button.addEventListener('keydown', function (event) {
+            if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+            event.preventDefault();
+            const next = event.key === 'Home' ? 0 : event.key === 'End' ? sectionTabs.length - 1 : (index + (event.key === 'ArrowRight' ? 1 : -1) + sectionTabs.length) % sectionTabs.length;
+            setSection(sectionTabs[next].dataset.sectionTab);
+            sectionTabs[next].focus();
+        });
+    });
 
     /* =========================================================
        PRODUCT MODAL

@@ -60,7 +60,7 @@
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
 
         {{-- All Users --}}
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
 
             <div class="flex items-center justify-between gap-3">
 
@@ -89,7 +89,7 @@
 
 
         {{-- Buyers --}}
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
 
             <div class="flex items-center justify-between gap-3">
 
@@ -118,7 +118,7 @@
 
 
         {{-- Sellers --}}
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
 
             <div class="flex items-center justify-between gap-3">
 
@@ -147,7 +147,7 @@
 
 
         {{-- Logistics --}}
-        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+        <div class="ops-panel bg-white border border-slate-200 rounded-2xl p-4">
 
             <div class="flex items-center justify-between gap-3">
 
@@ -177,218 +177,20 @@
     </div>
 
 
-    {{-- =========================================================
-        FILTER + SORT + SEARCH
-    ========================================================= --}}
-    <div
-        class="flex flex-col xl:flex-row
-               xl:items-center
-               xl:justify-between
-               gap-4
-               mb-5"
-    >
+    <section class="ops-panel mb-4" aria-label="Directory filters">
+        <nav class="sh-console-tabs" aria-label="Directory status">
+            @foreach(['all' => 'All accounts', 'buyers' => 'Buyers', 'sellers' => 'Sellers', 'logistics' => 'Logistics', 'suspended' => 'Suspended'] as $state => $label)
+                <a href="{{ request()->fullUrlWithQuery(['filter' => $state, 'page' => null]) }}" @if($filter === $state) aria-current="page" @endif>{{ $label }} <span class="sh-tab-count">{{ $counts[$state] ?? 0 }}</span></a>
+            @endforeach
+        </nav>
+        <form method="GET" action="{{ route('admin.users') }}" class="ops-filters" role="search">
+            <input type="hidden" name="filter" value="{{ $filter }}">
+            <label class="sh-field"><span>Name or email</span><input class="sh-input" type="search" name="search" value="{{ request('search') }}" placeholder="Search accounts"></label>
 
-        {{-- FILTER TABS --}}
-        <div class="flex items-center gap-1 flex-wrap">
-
-            {{-- All --}}
-            <a
-                href="{{ route('admin.users', ['sort' => $sort]) }}"
-                class="px-4 py-2
-                       rounded-xl
-                       text-xs sm:text-sm
-                       font-semibold
-                       transition
-                       {{
-                           $filter === 'all'
-                               ? 'bg-navy text-white'
-                               : 'text-slate-500 hover:bg-slate-100'
-                       }}"
-            >
-                All
-
-                <span class="ml-1 opacity-70">
-                    ({{ $counts['all'] ?? 0 }})
-                </span>
-            </a>
-
-
-            {{-- Buyers --}}
-            <a
-                href="{{ route('admin.users', ['filter' => 'buyers', 'sort' => $sort]) }}"
-                class="px-4 py-2
-                       rounded-xl
-                       text-xs sm:text-sm
-                       font-semibold
-                       transition
-                       {{
-                           $filter === 'buyers'
-                               ? 'bg-navy text-white'
-                               : 'text-slate-500 hover:bg-slate-100'
-                       }}"
-            >
-                Buyers
-
-                <span class="ml-1 opacity-70">
-                    ({{ $counts['buyers'] ?? 0 }})
-                </span>
-            </a>
-
-
-            {{-- Sellers --}}
-            <a
-                href="{{ route('admin.users', ['filter' => 'sellers', 'sort' => $sort]) }}"
-                class="px-4 py-2
-                       rounded-xl
-                       text-xs sm:text-sm
-                       font-semibold
-                       transition
-                       {{
-                           $filter === 'sellers'
-                               ? 'bg-navy text-white'
-                               : 'text-slate-500 hover:bg-slate-100'
-                       }}"
-            >
-                Sellers
-
-                <span class="ml-1 opacity-70">
-                    ({{ $counts['sellers'] ?? 0 }})
-                </span>
-            </a>
-
-
-            {{-- Logistics --}}
-            <a
-                href="{{ route('admin.users', ['filter' => 'logistics', 'sort' => $sort]) }}"
-                class="px-4 py-2
-                       rounded-xl
-                       text-xs sm:text-sm
-                       font-semibold
-                       transition
-                       {{
-                           $filter === 'logistics'
-                               ? 'bg-navy text-white'
-                               : 'text-slate-500 hover:bg-slate-100'
-                       }}"
-            >
-                Logistics
-
-                <span class="ml-1 opacity-70">
-                    ({{ $counts['logistics'] ?? 0 }})
-                </span>
-            </a>
-
-
-            {{-- Suspended --}}
-            <a
-                href="{{ route('admin.users', ['filter' => 'suspended', 'sort' => $sort]) }}"
-                class="px-4 py-2
-                       rounded-xl
-                       text-xs sm:text-sm
-                       font-semibold
-                       transition
-                       {{
-                           $filter === 'suspended'
-                               ? 'bg-navy text-white'
-                               : 'text-slate-500 hover:bg-slate-100'
-                       }}"
-            >
-                Suspended
-
-                <span class="ml-1 opacity-70">
-                    ({{ $counts['suspended'] ?? 0 }})
-                </span>
-            </a>
-
-        </div>
-
-
-        {{-- SORT + SEARCH --}}
-        <div class="flex items-center gap-2 w-full xl:w-auto">
-
-            {{-- SORT --}}
-            <form method="GET" action="{{ route('admin.users') }}" class="shrink-0">
-                <input type="hidden" name="filter" value="{{ $filter }}">
-                <input type="hidden" name="search" value="{{ request('search') }}">
-
-                <select
-                    name="sort"
-                    onchange="this.form.submit()"
-                    class="text-sm
-                           rounded-xl
-                           border border-slate-200
-                           px-3 py-2.5
-                           bg-white
-                           text-slate-600
-                           font-medium
-                           focus:outline-none
-                           focus:ring-2
-                           focus:ring-mint/20
-                           transition"
-                >
-                    <option value="newest" {{ $sort === 'newest' ? 'selected' : '' }}>Newest first</option>
-                    <option value="oldest" {{ $sort === 'oldest' ? 'selected' : '' }}>Oldest first</option>
-                    <option value="az" {{ $sort === 'az' ? 'selected' : '' }}>Name (A–Z)</option>
-                    <option value="za" {{ $sort === 'za' ? 'selected' : '' }}>Name (Z–A)</option>
-                </select>
-            </form>
-
-
-            {{-- SEARCH --}}
-            <form
-                method="GET"
-                action="{{ route('admin.users') }}"
-                class="relative w-full xl:w-72"
-            >
-
-                <input
-                    type="hidden"
-                    name="filter"
-                    value="{{ $filter }}"
-                >
-
-                <input
-                    type="hidden"
-                    name="sort"
-                    value="{{ $sort }}"
-                >
-
-
-                <x-lucide-search
-                    class="w-4 h-4
-                           absolute left-3 top-1/2
-                           -translate-y-1/2
-                           text-slate-400"
-                />
-
-
-                <input
-                    type="text"
-                    name="search"
-                    value="{{ request('search') }}"
-                    placeholder="Search by name or email..."
-                    class="w-full
-                           pl-9 pr-4
-                           py-2.5
-                           text-sm
-                           rounded-xl
-                           bg-white
-                           border border-slate-200
-                           text-navy
-                           placeholder:text-slate-400
-                           focus:border-mint
-                           focus:outline-none
-                           focus:ring-2
-                           focus:ring-mint/20
-                           transition"
-                >
-
-            </form>
-
-        </div>
-
-    </div>
-
+            <label class="sh-field"><span>Sort by</span><select class="sh-select" name="sort">@foreach(['newest' => 'Newest first','oldest' => 'Oldest first','az' => 'Name A–Z','za' => 'Name Z–A'] as $value => $label)<option value="{{ $value }}" @selected($sort === $value)>{{ $label }}</option>@endforeach</select></label>
+            <button class="sh-btn" type="submit">Filter</button><a class="sh-btn-soft" href="{{ route('admin.users', ['filter' => $filter]) }}">Clear</a>
+        </form>
+    </section>
 
     {{-- =========================================================
         USER ACCOUNTS TABLE
@@ -640,7 +442,7 @@
 
                                             <button
                                                 type="button"
-                                                class="reactivate-btn
+                                                class="sh-btn reactivate-btn
                                                        action-btn
                                                        h-8 w-full
                                                        inline-flex items-center justify-center gap-1.5
@@ -662,7 +464,7 @@
 
                                             <button
                                                 type="button"
-                                                class="suspend-btn
+                                                class="sh-btn-danger suspend-btn
                                                        action-btn
                                                        h-8 w-full
                                                        inline-flex items-center justify-center gap-1.5
@@ -690,7 +492,7 @@
 
                                         <button
                                             type="button"
-                                            class="user-view-btn
+                                            class="sh-btn-soft user-view-btn
                                                    action-btn
                                                    h-8 w-full
                                                    inline-flex items-center justify-center gap-1.5

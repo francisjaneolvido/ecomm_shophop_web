@@ -116,6 +116,11 @@ Route::post('/buyer/verify-email/resend', [
 
 // Shared financial workspace; controller enforces current role, partner and facility ownership.
 Route::middleware('auth:web,rider')->prefix('financial-workspace')->name('hybrid.')->group(function () {
+    Route::get('/discrepancies', [\App\Http\Controllers\CodDiscrepancyController::class, 'index'])->name('discrepancies.index');
+    Route::post('/discrepancies/{case}/notes', [\App\Http\Controllers\CodDiscrepancyController::class, 'note'])->whereNumber('case')->name('discrepancies.note');
+    Route::post('/discrepancies/{case}/proposals', [\App\Http\Controllers\CodDiscrepancyController::class, 'propose'])->whereNumber('case')->name('discrepancies.propose');
+    Route::post('/discrepancies/{case}/resolutions/{resolution}/review', [\App\Http\Controllers\CodDiscrepancyController::class, 'review'])->whereNumber('case')->whereNumber('resolution')->name('discrepancies.review');
+    Route::post('/discrepancies/{case}/resolutions/{resolution}/return', [\App\Http\Controllers\CodDiscrepancyController::class, 'recordReturn'])->whereNumber('case')->whereNumber('resolution')->name('discrepancies.return');
     Route::post('/platform-rules', [HybridFinanceController::class, 'platformRule'])->name('platform-rule');
     Route::get('/', [HybridFinanceController::class, 'index'])->name('index');
     Route::post('/batches', [HybridFinanceController::class, 'submit'])->name('submit');

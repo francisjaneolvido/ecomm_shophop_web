@@ -3,6 +3,8 @@
 @section('content')
 @if(!$isRider && $actor->account_type === 'branch')
     @include('finance.branch-cod')
+@elseif($isPartner)
+    @include('finance.partner-workspace')
 @else
 <div class="finance-workspace">
 <style>
@@ -13,6 +15,7 @@
 @media(max-width:600px){.finance-workspace h1{font-size:24px}.finance-workspace section{padding:16px}.finance-workspace form{display:block}.finance-workspace form>*{margin-top:10px}}
 </style>
 <h1 class="text-2xl font-bold">COD handovers and verification</h1>
+@if(!$isRider)<a href="{{ route($isPartner ? 'logistics.hybrid.discrepancies.index' : 'hybrid.discrepancies.index') }}">Review COD discrepancies</a>@endif
 <a class="inline-block rounded border p-2 text-teal-700" href="{{ $isRider ? route('rider.settlements.index') : route(match($actor->account_type) { 'admin' => 'admin.commission', 'logistics' => 'logistics.earnings', default => 'branch.dashboard' }) }}">Back to financial overview</a>
 <p>Full COD cash handover and partner personnel compensation are separate records. Amounts shown here are records of obligations and receipts. External payments require confirmation.</p>
 @if(session('status'))<p role="status" class="rounded bg-teal-50 p-3">{{ session('status') }}</p>@endif

@@ -49,4 +49,19 @@ class MobileRiderCodAvailabilityTest extends TestCase
     {
         $this->assertUnavailableWhenMissing('cash_custody_movements');
     }
+
+    public function test_missing_cod_discrepancy_cases_returns_safe_unavailable_response(): void
+    {
+        $this->assertUnavailableWhenMissing('cod_discrepancy_cases');
+    }
+
+    public function test_missing_cod_discrepancy_resolutions_returns_safe_unavailable_response(): void
+    {
+        $this->assertUnavailableWhenMissing('cod_discrepancy_resolutions');
+    }
+
+    public function test_missing_cod_cash_adjustments_returns_safe_unavailable_response(): void
+    {
+        $this->assertUnavailableWhenMissing('cod_cash_adjustments');
+    }
 }

@@ -12,7 +12,7 @@
             <option value="">All ratings</option>
             @foreach(range(5,1) as $rating)<option value="{{ $rating }}" @selected((string) request('rating') === (string) $rating)>{{ $rating }} stars</option>@endforeach
         </select>
-        <button class="rounded-lg bg-teal-dark px-4 py-2 text-white">Filter</button>
+        <button class="sh-btn rounded-lg bg-teal-dark px-4 py-2 text-white">Filter</button>
     </form>
     <div id="feedbackResults" class="space-y-4">
         <p class="text-sm text-navy">{{ $total ?? 0 }} product reviews | Average {{ $average ?? 0 }}/5</p>
@@ -26,7 +26,7 @@
                     @csrf @method('PATCH')
                     <label for="reply{{ $review['id'] }}" class="block text-xs">{{ $review['seller_reply'] ? 'Edit reply' : 'Reply to customer' }}</label>
                     <textarea id="reply{{ $review['id'] }}" name="reply" required maxlength="2000" rows="3" class="w-full rounded-lg border p-2">{{ old('reply', $review['seller_reply']) }}</textarea>
-                    <button class="rounded-lg bg-teal-dark px-4 py-2 text-sm text-white">Save reply</button>
+                    <button class="sh-btn rounded-lg bg-teal-dark px-4 py-2 text-sm text-white">Save reply</button>
                 </form>
             </article>
         @empty

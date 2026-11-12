@@ -35,7 +35,7 @@
 </head>
 <body>
 <div class="toolbar">
-    <a href="{{ route('seller.orders.show', $order) }}">Back to Order</a>
+    <a data-console-details href="{{ route('seller.orders.show', $order) }}">Back to Order</a>
     <button type="button" onclick="window.print()">Print Waybill</button>
 </div>
 <section class="label">

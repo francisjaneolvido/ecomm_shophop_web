@@ -9,7 +9,7 @@
             <p class="text-sm text-slate-500 mt-1">Support inbox for buyers, sellers and logistics partners.</p>
         </div>
 
-        <div class="flex flex-1 min-h-0 bg-white rounded-2xl border border-gray-border overflow-hidden shadow-soft">
+        <div class="ops-panel flex flex-1 min-h-0 bg-white rounded-2xl border border-gray-border overflow-hidden shadow-soft">
 
             {{-- ============ CONVERSATION LIST ============ --}}
             <aside id="chatListPane" class="w-full md:w-80 lg:w-96 shrink-0 md:border-r border-gray-border flex flex-col min-h-0">

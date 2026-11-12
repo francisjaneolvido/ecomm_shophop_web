@@ -132,6 +132,7 @@ class ShopHopFinance
             }
 
             if ($order->payment_method === 'cod') {
+                CodDiscrepancyService::assertOrderClear((int) $order->id);
                 $cod = CodSettlement::where('order_id', $order->id)->lockForUpdate()->first();
                 if (! $cod || $cod->status !== CodSettlement::RECONCILED
                     || ! $cod->admin_remitted_at || ! $cod->admin_received_at
@@ -192,6 +193,7 @@ class ShopHopFinance
                 throw ValidationException::withMessages(['settlement' => 'Order is no longer eligible for settlement distribution.']);
             }
             if ($order->payment_method === 'cod') {
+                CodDiscrepancyService::assertOrderClear((int) $order->id);
                 $cod = CodSettlement::where('order_id', $orderId)->lockForUpdate()->first();
                 if (! $cod || ! $cod->admin_received_at
                     || abs((float) $cod->admin_received_amount - (float) $cod->expected_amount) > .001) {
@@ -245,6 +247,7 @@ class ShopHopFinance
                 throw ValidationException::withMessages(['settlement' => 'Order is no longer payment/receipt eligible.']);
             }
             if ($order->payment_method === 'cod') {
+                CodDiscrepancyService::assertOrderClear((int) $order->id);
                 $cod = CodSettlement::where('order_id', $order->id)->lockForUpdate()->first();
                 if (! $cod || ! $cod->admin_received_at
                     || abs((float) $cod->admin_received_amount - (float) $cod->expected_amount) > .001) {

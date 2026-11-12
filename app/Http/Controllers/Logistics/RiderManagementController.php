@@ -28,6 +28,7 @@ class RiderManagementController extends Controller
             'q' => ['nullable', 'string', 'max:150'], 'branch' => ['nullable', 'integer', 'min:1'],
             'rider' => ['nullable', 'integer', 'min:1'], 'province' => ['nullable', 'string', 'max:150'],
             'barangay' => ['nullable', 'string', 'max:150'],
+            'queue' => ['nullable', 'in:all,applications,activation,active,inactive,suspended,needs_documents,rejected'],
             'state' => ['nullable', 'in:pending_review,under_review,needs_documents,approved,rejected,pending_activation,active,inactive,suspended'],
         ]);
         $company = $scope['company_id'];
@@ -37,6 +38,19 @@ class RiderManagementController extends Controller
         if ($scope['role'] === 'branch') {
             $q->where('sorting_center_id', $scope['branch_id']);
         }
+        $queueBase = clone $q;
+        $queueLabels = $scope['role'] === 'branch'
+            ? ['activation' => 'For activation', 'active' => 'Active', 'inactive' => 'Inactive', 'suspended' => 'Suspended', 'all' => 'All riders']
+            : ['applications' => 'Applications', 'activation' => 'Awaiting Branch activation', 'active' => 'Active', 'needs_documents' => 'Needs documents',
+                'inactive' => 'Inactive', 'suspended' => 'Suspended', 'rejected' => 'Rejected', 'all' => 'All riders'];
+        $queue = $request->query('queue') ?: ($request->has('state') ? 'all' : ($scope['role'] === 'branch' ? 'activation' : 'all'));
+        $queueCounts = [];
+        foreach (array_keys($queueLabels) as $key) {
+            $countQuery = clone $queueBase;
+            $this->filterQueue($countQuery, $key);
+            $queueCounts[$key] = $countQuery->count();
+        }
+        $this->filterQueue($q, $queue);
         if ($request->filled('branch')) {
             $branch = $branches->find((int) $request->query('branch'));
             abort_unless($branch, 404);
@@ -80,8 +94,9 @@ class RiderManagementController extends Controller
                 ->selectRaw('sorting_center_id, COUNT(*) as total')->groupBy('sorting_center_id')->pluck('total', 'sorting_center_id');
 
             return response()->json(['success' => true, 'data' => [
-                'rows' => view('logistics.rider-management.rows', compact('riders', 'prefix'))->render(),
+                'rows' => view('logistics.rider-management.rows', compact('riders', 'prefix', 'scope'))->render(),
                 'pagination' => (string) $riders->links(), 'active_by_branch' => $active, 'total' => $riders->total(),
+                'queue_counts' => $queueCounts,
             ]]);
         }
         $selected = null;
@@ -89,6 +104,9 @@ class RiderManagementController extends Controller
         $coverage = [];
         $capacity = [];
         $performance = [];
+        $coverageError = null;
+        $activationChecks = [];
+        $overrides = [];
         if ($request->filled('rider')) {
             $selected = Rider::where('logistics_partner_id', $company)
                 ->when($scope['role'] === 'branch', fn ($q) => $q->where('sorting_center_id', $scope['branch_id']))
@@ -97,9 +115,29 @@ class RiderManagementController extends Controller
             $bid = $selected->sorting_center_id ?: $selected->managementProfile()?->preferred_branch_id;
             $b = $branches->find($bid);
             if ($b) {
-                $coverage = $this->directory->coverage($b);
-                $capacity = $this->service->capacities($company, array_values($coverage));
+                try {
+                    $coverage = $this->directory->coverage($b);
+                } catch (\Illuminate\Http\Client\ConnectionException|\Illuminate\Validation\ValidationException $e) {
+                    $coverageError = 'The barangay directory could not load. Refresh to retry before confirming coverage.';
+                }
+                $capacity = $this->service->capacities($company, array_values($coverage), $scope['role'] === 'branch' ? (int) $selected->id : null);
+                $overrides = \Illuminate\Support\Facades\DB::table('rider_capacity_overrides')
+                    ->where('logistics_partner_id', $company)->where('rider_id', $selected->id)->where('active', true)->pluck('location_key')->all();
             }
+            $legacy = $selected->managementProfile()?->legacy_onboarding ?? in_array($selected->status, ['active', 'suspended'], true);
+            $activationChecks = [
+                ['label' => 'Main Hub application approval', 'passed' => $selected->application_status === 'approved',
+                    'help' => 'Main Hub must approve the application first.'],
+                ['label' => 'Verified email and required documents', 'passed' => (bool) $selected->email_verified_at
+                    && ($legacy || ($selected->or_cr_path && $selected->id_or_license_path)),
+                    'help' => 'Email verification and required registration documents must be complete.'],
+                ['label' => 'Assigned Branch accepted', 'passed' => ! $details['assignment_confirmation_required'],
+                    'help' => 'The Rider must accept the changed Branch in the mobile app.'],
+                ['label' => 'Branch service areas available', 'passed' => (bool) $coverage,
+                    'help' => $coverageError ?: 'Logistics must configure authorized pickup and delivery service areas for this Branch.'],
+                ['label' => 'Operations cleared for activation', 'passed' => in_array($selected->operational_status, ['pending_activation', 'inactive', 'active'], true),
+                    'help' => 'Main Hub must release a compliance suspension before Branch activation.'],
+            ];
             $performance = Delivery::where('logistics_partner_id', $company)->where(fn ($q) => $q->where('rider_id', $selected->id)
                 ->orWhere('pickup_rider_id', $selected->id)->orWhere('delivery_rider_id', $selected->id))
                 ->selectRaw('status, COUNT(*) as total')->groupBy('status')->pluck('total', 'status')->all();
@@ -116,7 +154,32 @@ class RiderManagementController extends Controller
         $layout = $staff ? 'logistics.rider-management.staff-layout' : ($scope['role'] === 'main' && ! $scope['center'] ? 'logistics.layouts.console' : 'branch.layout.app');
 
         return view('logistics.rider-management.index', compact('scope', 'branches', 'riders', 'selected', 'details', 'coverage', 'capacity',
-            'performance', 'transfers', 'activeByBranch', 'prefix', 'layout', 'center'));
+            'performance', 'transfers', 'activeByBranch', 'prefix', 'layout', 'center',
+            'queue', 'queueLabels', 'queueCounts', 'activationChecks', 'coverageError', 'overrides'));
+    }
+
+    private function filterQueue(\Illuminate\Database\Eloquent\Builder $query, string $queue): void
+    {
+        if ($queue === 'all') {
+            return;
+        }
+        if ($queue === 'applications') {
+            $query->where(fn ($q) => $q->whereHas('lifecycleProfile', fn ($p) => $p->whereIn('application_status', ['pending_review', 'under_review', 'needs_documents']))
+                ->orWhere(fn ($legacy) => $legacy->doesntHave('lifecycleProfile')->where('status', 'pending')));
+
+            return;
+        }
+        if (in_array($queue, ['needs_documents', 'rejected'], true)) {
+            $query->where(fn ($q) => $q->whereHas('lifecycleProfile', fn ($p) => $p->where('application_status', $queue))
+                ->orWhere(fn ($legacy) => $legacy->doesntHave('lifecycleProfile')->where('status', $queue === 'rejected' ? 'rejected' : '__none__')));
+
+            return;
+        }
+        $state = $queue === 'activation' ? 'pending_activation' : $queue;
+        $query->where(fn ($q) => $q->whereHas('lifecycleProfile', fn ($p) => $p->where('operational_status', $state)
+                ->when($state === 'pending_activation', fn ($p) => $p->where('application_status', 'approved')))
+            ->orWhere(fn ($legacy) => $legacy->doesntHave('lifecycleProfile')->whereIn('status',
+                match ($state) { 'active' => ['active'], 'suspended' => ['suspended'], default => [] })));
     }
 
     public function action(Request $request, int $rider)
@@ -160,7 +223,9 @@ class RiderManagementController extends Controller
                 Rider::where('logistics_partner_id', $scope['company_id'])->findOrFail($rider))]]);
         }
 
-        return back()->with('status', 'Rider Management updated successfully.');
+        return back()->with('status', $data['action'] === 'activate'
+            ? 'Rider activated. Official coverage is saved; the Rider can refresh the mobile status and open the workspace.'
+            : 'Rider Management updated successfully.');
     }
 
     public function transferDecision(Request $request, int $transfer)

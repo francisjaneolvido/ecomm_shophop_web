@@ -5,7 +5,7 @@
     <header class="sh-page-header flex flex-wrap items-end justify-between gap-3">
         <div>
             <p class="text-[11px] font-bold uppercase tracking-wider text-teal-dark">Seller finances</p>
-            <h1 class="mt-1 text-2xl font-bold text-navy">My Earnings</h1>
+            <h1 class="mt-1 text-2xl font-bold text-navy">Earnings & Payouts</h1>
             <p class="mt-1 max-w-3xl text-sm leading-relaxed text-navy/60">Track distribution and payout records. A payout is marked Paid only after the transfer is recorded; available earnings are not automatically transferred.</p>
         </div>
     </header>
@@ -17,11 +17,16 @@
     </div>
 
     <section class="sh-management-panel" aria-labelledby="sellerEarningsHistoryTitle">
+        <nav class="sh-console-tabs" aria-label="Earnings status">
+            @foreach(['all' => 'All records', 'pending' => 'Pending distribution', 'available' => 'Available', 'paid' => 'Paid'] as $value => $label)
+                <a href="{{ route('seller.earnings', ['status' => $value]) }}" @if($status === $value) aria-current="page" @endif>{{ $label }} <span class="sh-tab-count">{{ $value === 'all' ? $counts->sum() : ($counts[$value] ?? 0) }}</span></a>
+            @endforeach
+        </nav>
         <div class="sh-management-panel-head">
             <div><h2 id="sellerEarningsHistoryTitle">Earnings history</h2><p>All recorded Seller allocations from ShopHop settlements.</p></div>
         </div>
         <div class="sh-management-table-scroll" tabindex="0" role="region" aria-label="Seller earnings history table">
-            <table class="w-full min-w-[650px]">
+            <table class="ops-table w-full text-left">
                 <thead><tr><th scope="col">Order</th><th scope="col" class="text-right">Amount</th><th scope="col">Payout status</th><th scope="col">Distribution / payout reference</th></tr></thead>
                 <tbody>
                     @forelse($entries as $entry)
@@ -32,13 +37,13 @@
                             <td class="break-all text-navy/65">{{ $entry->payment_reference ?? $entry->distribution_reference ?? '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="4" class="py-10 text-center text-navy/55">No Seller earnings have been prepared yet.</td></tr>
+                        <tr><td colspan="4" class="ops-empty py-10 text-center text-navy/55">No earnings match this status.</td></tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
         <div class="sh-management-panel-foot">{{ $entries->links() }}</div>
     </section>
-    <p class="text-xs leading-relaxed text-navy/60">ShopHop commission is 10% of merchandise after Seller-funded merchandise discounts, excluding shipping. Seller-funded shipping vouchers reduce Seller payout; ShopHop-funded vouchers do not.</p>
+    <p class="text-xs leading-relaxed text-navy/60">Commission follows the rate recorded for each order, after Seller-funded merchandise discounts and excluding shipping. Seller-funded shipping vouchers reduce Seller payout; ShopHop-funded vouchers do not.</p>
 </section>
 @endsection

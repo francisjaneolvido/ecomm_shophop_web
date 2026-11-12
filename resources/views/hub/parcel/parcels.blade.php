@@ -29,7 +29,7 @@
 
     <div class="ops-panel" data-ops-tabs>
     <nav class="ops-tabs" role="tablist" aria-label="Parcel workflow stages"><button type="button" class="ops-tab" role="tab" aria-selected="true" data-ops-tab="receive">1. Inbound receiving</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="sort">2. Sort parcels</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="manifest">3. Create manifest</button><button type="button" class="ops-tab" role="tab" aria-selected="false" data-ops-tab="transport">4. Transport & manifests</button></nav>
-    <section data-ops-panel="receive" role="tabpanel" id="hub-receive" class="sh-surface sh-card-pad space-y-4 scroll-mt-6">
+    <section data-ops-panel="receive" role="tabpanel" id="hub-receive" class="p-4 space-y-4 scroll-mt-6">
         <div><p class="sh-kicker">Step 1</p><h2 class="sh-title-sm">Receive inbound Road / Sea / Air</h2><p class="mt-1 text-xs text-navy/50">Normal intact batch: use Logistics mobile → Receive inbound manifest, scan the Manifest QR, acknowledge arrival, then confirm the physical count. The parcel field below is only for individual exception/reconciliation.</p></div>
         <form method="POST" action="{{ route('logistics.hub.parcels.receive') }}" data-confirm-title="Receive exception parcel?" data-confirm-message="Verify the physical parcel and its tracking code before recording hub receipt." data-confirm-button="Confirm receipt" class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end">@csrf
             <label class="sh-field"><span class="sh-label">Exception Parcel QR / tracking</span><input class="sh-input" id="hub-exception-code" name="tracking_code" placeholder="SHP-YYYYMMDD-000001" required></label>
@@ -38,7 +38,7 @@
         @include('partials.logistics-qr-scanner', ['inputId' => 'hub-exception-code'])
 
         @if($awaiting->isNotEmpty())
-        <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[46rem] text-left text-sm">
+        <div class="sh-surface-soft overflow-x-auto"><table class="ops-table w-full min-w-[46rem] text-left text-sm">
             <thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="px-4 py-3">Tracking</th><th class="px-4 py-3">From</th><th class="px-4 py-3">Manifest</th><th class="px-4 py-3">Status</th></tr></thead>
             <tbody>@foreach($awaiting as $t)<tr class="border-b border-gray-border/60"><td class="px-4 py-3 font-semibold">{{ $t->delivery?->tracking_code }}</td><td class="px-4 py-3">{{ $t->fromCenter?->name }}</td><td class="px-4 py-3">{{ $t->manifest?->code ?? 'Direct transfer' }}</td><td class="px-4 py-3"><span class="sh-badge sh-badge-success">Ready to unload</span></td></tr>@endforeach</tbody>
         </table></div>
@@ -53,13 +53,13 @@
         @endif
     </section>
 
-    <section data-ops-panel="sort" role="tabpanel" hidden id="hub-sort" class="sh-surface sh-card-pad scroll-mt-6">
+    <section data-ops-panel="sort" role="tabpanel" hidden id="hub-sort" class="p-4 scroll-mt-6">
         <p class="sh-kicker">Step 2</p><h2 class="sh-title-sm">Sort & validate next hop</h2>
         @if($toSort->isEmpty())
             <div class="sh-empty mt-4"><p class="text-sm font-semibold text-navy">Nothing to sort</p></div>
         @else
         <form method="POST" action="{{ route('logistics.hub.parcels.sort') }}" data-bulk class="mt-4">@csrf
-            <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[52rem] text-left text-sm">
+            <div class="sh-surface-soft overflow-x-auto"><table class="ops-table w-full min-w-[52rem] text-left text-sm">
                 <thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="w-10 px-4 py-3"><input type="checkbox" data-check-all></th><th class="px-4 py-3">Tracking</th><th class="px-4 py-3">Final destination</th><th class="px-4 py-3">Required next hop</th></tr></thead>
                 <tbody>@foreach($toSort as $p)<tr class="border-b border-gray-border/60"><td class="px-4 py-3"><input type="checkbox" data-row name="parcel_ids[]" value="{{ $p['id'] }}" @disabled(!$p['sortable'])></td><td class="px-4 py-3 font-semibold">{{ $p['tracking'] }}</td><td class="px-4 py-3">{{ $p['destination'] ?? '—' }}</td><td class="px-4 py-3">@if($p['sortable'])<span class="sh-badge sh-badge-info">{{ $p['next_hop'] }}</span>@else<span class="sh-badge sh-badge-danger">{{ $p['issue'] ?? 'Routing issue' }}</span>@endif</td></tr>@endforeach</tbody>
             </table></div>
@@ -74,7 +74,7 @@
         <form method="POST" action="{{ route('logistics.hub.parcels.manifests.store') }}" data-bulk class="sh-surface sh-card-pad space-y-4">@csrf
             <input type="hidden" name="next_sorting_center_id" value="{{ $group['next_id'] }}">
             <div><p class="text-xs font-bold uppercase tracking-[.12em] text-teal">Required next hop</p><h3 class="mt-1 font-bold text-navy">{{ $group['next_name'] }}</h3><p class="text-xs text-navy/45">{{ $group['next_type']==='province_hub' ? 'Province Hub' : 'Station Hub' }} · {{ count($group['parcels']) }} parcel(s)</p></div>
-            <div class="sh-surface-soft overflow-x-auto"><table class="w-full min-w-[52rem] text-left text-sm"><thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="w-10 px-4 py-3"><input type="checkbox" data-check-all></th><th class="px-4 py-3">Tracking</th><th class="px-4 py-3">Receiver</th><th class="px-4 py-3">Final station</th><th class="px-4 py-3">COD</th></tr></thead><tbody>
+            <div class="sh-surface-soft overflow-x-auto"><table class="ops-table w-full min-w-[52rem] text-left text-sm"><thead><tr class="border-b border-gray-border text-xs text-navy/50"><th class="w-10 px-4 py-3"><input type="checkbox" data-check-all></th><th class="px-4 py-3">Tracking</th><th class="px-4 py-3">Receiver</th><th class="px-4 py-3">Final station</th><th class="px-4 py-3">COD</th></tr></thead><tbody>
                 @foreach($group['parcels'] as $parcel)<tr class="border-b border-gray-border/60"><td class="px-4 py-3"><input type="checkbox" data-row name="parcel_ids[]" value="{{ $parcel['id'] }}"></td><td class="px-4 py-3 font-semibold">{{ $parcel['tracking'] }}</td><td class="px-4 py-3">{{ $parcel['receiver'] ?? '—' }}</td><td class="px-4 py-3">{{ $parcel['final_destination'] ?? '—' }}</td><td class="px-4 py-3">{{ $parcel['cod']!==null ? '₱'.number_format($parcel['cod'],2) : 'Paid' }}</td></tr>@endforeach
             </tbody></table></div>
             <div class="grid gap-3 md:grid-cols-[1fr_auto] md:items-end"><label class="sh-field"><span class="sh-label">Manifest note</span><input class="sh-input" name="note" maxlength="255"></label><button class="sh-btn" data-submit>Create manifest (<span data-count>0</span>)</button></div>

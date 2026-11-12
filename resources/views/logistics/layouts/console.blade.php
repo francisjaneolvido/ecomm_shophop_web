@@ -349,6 +349,7 @@
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
     <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
+    @include('partials.console-assets')
 </head>
 
 
@@ -402,137 +403,51 @@
     |--------------------------------------------------------------------------
     */
 
+    $navigationCompany = $logisticsUser?->logisticsPartner;
+    $riderManagementReady = app(\App\Services\RiderManagementService::class)->available();
+    $applicationBadge = $riderManagementReady && $navigationCompany
+        ? \App\Models\Logistics\Rider::where('logistics_partner_id', $navigationCompany->id)
+            ->whereHas('lifecycleProfile', fn ($profile) => $profile->whereIn('application_status', ['pending_review', 'under_review', 'needs_documents']))->count()
+        : 0;
     $logisticsNavigation = [
-
-        [
-            'label' => 'Overview',
-
-            'items' => [
-
-                [
-                    'label' => 'Dashboard',
-                    'route' => 'logistics.dashboard',
-                    'pattern' => 'logistics.dashboard',
-                    'icon' => 'layout-dashboard',
-                ],
-
-            ],
-        ],
-
-
-        [
-            'label' => 'Network & People',
-
-            'items' => [
-
-                [
-                    'label' => 'Partner Profile & Logo',
-                    'route' => 'logistics.partner-profile.edit',
-                    'pattern' => 'logistics.partner-profile.*',
-                    'icon' => 'image',
-                ],
-
-                [
-                    'label' => 'Branches & Hubs',
-                    'route' => 'logistics.sorting-centers.index',
-                    'pattern' => 'logistics.sorting-centers.*',
-                    'icon' => 'warehouse',
-                ],
-
-                [
-                    'label' => 'Demo Network Directory',
-                    'route' => 'logistics.demo-network.index',
-                    'pattern' => 'logistics.demo-network.*',
-                    'icon' => 'map-pinned',
-                ],
-
-                [
-                    'label' => 'Transport Routes',
-                    'route' => 'logistics.route-network.index',
-                    'pattern' => 'logistics.route-network.*',
-                    'icon' => 'route',
-                ],
-
-                [
-                    'label' => 'Riders',
-                    'route' => 'logistics.riders.index',
-                    'pattern' => 'logistics.riders.*',
-                    'icon' => 'bike',
-                    'badge' => isset($pendingApplications) ? count($pendingApplications) : 0,
-                ],
-
-                ...(\Illuminate\Support\Facades\Schema::hasTable('rider_batches') ? [[
-                    'label'=>'Rider Route Monitoring','route'=>'logistics.rider-batches.index',
-                    'pattern'=>'logistics.rider-batches.*','icon'=>'route',
-                ]] : []),
-                [
-                    'label' => 'Fleet & Linehaul',
-                    'route' => 'logistics.fleet.index',
-                    'pattern' => 'logistics.fleet.*',
-                    'icon' => 'truck',
-                ],
-
-            ],
-        ],
-
-
-        [
-            'label' => 'Operations',
-
-            'items' => [
-
-                [
-                    'label' => 'Parcel Operations',
-                    'route' => 'logistics.deliveries.board',
-                    'pattern' => 'logistics.deliveries.*',
-                    'icon' => 'package-check',
-                ],
-
-                // COD custody is a distinct persisted operation beside delivery fulfillment.
-                [
-                    'label' => 'Returns & Exceptions',
-                    'route' => 'logistics.returns.index',
-                    'pattern' => 'logistics.returns.*',
-                    'icon' => 'package-x',
-                ],
-                [
-                    'label' => 'COD Settlements',
-                    'route' => 'logistics.settlements.index',
-                    'pattern' => 'logistics.settlements.*',
-                    'icon' => 'wallet',
-                ],
-
-            ],
-        ],
-
-
-        [
-            'label' => 'Analytics',
-
-            'items' => [
-
-                [
-                    'label' => 'Logistics Earnings',
-                    'route' => 'logistics.earnings',
-                    'pattern' => 'logistics.earnings*',
-                    'icon' => 'wallet',
-                ],
-                [
-                    'label' => 'Delivery Reports',
-                    'route' => 'logistics.reports.index',
-                    'pattern' => 'logistics.reports.*',
-                    'icon' => 'chart-no-axes-combined',
-                ],
-
-            ],
-        ],
-
+        ['label'=>'Overview','items'=>[
+            ['label'=>'Dashboard','route'=>'logistics.dashboard','pattern'=>'logistics.dashboard','icon'=>'layout-dashboard'],
+        ]],
+        ['label'=>'Operations','items'=>[
+            ['label'=>'Parcel Operations','route'=>'logistics.deliveries.board','pattern'=>'logistics.deliveries.*','icon'=>'package-check'],
+            ['label'=>'Returns & Exceptions','route'=>'logistics.returns.index','pattern'=>'logistics.returns.*','icon'=>'package-x'],
+            ...(\Illuminate\Support\Facades\Schema::hasTable('rider_batches') ? [[
+                'label'=>'Rider Routes','route'=>'logistics.rider-batches.index','pattern'=>'logistics.rider-batches.*','icon'=>'route',
+            ]] : []),
+        ]],
+        ['label'=>'Network & People','items'=>[
+            ['label'=>'Province Hubs','route'=>'logistics.sorting-centers.index','pattern'=>'logistics.sorting-centers.*','icon'=>'warehouse'],
+            ['label'=>'Station Branches','route'=>'logistics.branches.index','pattern'=>'logistics.branches.*','icon'=>'building-2'],
+            ['label'=>'Riders & Applications','route'=>$riderManagementReady ? 'logistics.rider-management.index' : 'logistics.riders.index',
+                'pattern'=>['logistics.rider-management.*','logistics.riders.*'],'icon'=>'bike','badge'=>$applicationBadge],
+            ['label'=>'Transport Routes','route'=>'logistics.route-network.index','pattern'=>'logistics.route-network.*','icon'=>'route'],
+            ['label'=>'Fleet & Linehaul','route'=>'logistics.fleet.index','pattern'=>'logistics.fleet.*','icon'=>'truck'],
+        ]],
+        ['label'=>'Finance','items'=>[
+            ['label'=>'COD Settlements','route'=>'logistics.settlements.index','pattern'=>'logistics.settlements.*','icon'=>'wallet'],
+            ['label'=>'Cash Handovers','route'=>'logistics.hybrid','pattern'=>'logistics.hybrid','section'=>'handovers','params'=>['section'=>'handovers'],'icon'=>'receipt'],
+            ['label'=>'Discrepancy Review','route'=>'logistics.hybrid.discrepancies.index','pattern'=>'logistics.hybrid.discrepancies.*','icon'=>'circle-alert'],
+            ['label'=>'Earnings & Payouts','route'=>'logistics.earnings','pattern'=>'logistics.earnings*','icon'=>'wallet'],
+            ['label'=>'Compensation & Costs','route'=>'logistics.hybrid','pattern'=>'logistics.hybrid','section'=>'compensation','params'=>['section'=>'compensation'],'icon'=>'sliders-horizontal'],
+        ]],
+        ['label'=>'Insights','items'=>[
+            ['label'=>'Delivery Reports','route'=>'logistics.reports.index','pattern'=>'logistics.reports.*','icon'=>'chart-no-axes-combined'],
+        ]],
+        ['label'=>'Account','items'=>[
+            ['label'=>'Partner Profile','route'=>'logistics.partner-profile.edit','pattern'=>'logistics.partner-profile.*','icon'=>'image'],
+            ['label'=>'Demo Directory','route'=>'logistics.demo-network.index','pattern'=>'logistics.demo-network.*','icon'=>'map-pinned'],
+        ]],
     ];
 
 @endphp
 
 
-<body class="sh-management-ui logistics-console bg-gray-bg text-navy antialiased">
+<body class="{{ (request()->boolean('console_modal') || request()->header('Sec-Fetch-Dest') === 'iframe') ? 'sh-console-embedded' : '' }} sh-management-ui logistics-console bg-gray-bg text-navy antialiased">
 
 {{-- Local previews need an obvious TEST/DEMO control without exposing it in production. --}}
 {{-- Local demo/test switcher intentionally hidden from the interface. --}}
@@ -562,9 +477,9 @@
         SIDEBAR
     ========================================================= --}}
     <aside
-        id="logisticsSidebar"
+        id="logisticsSidebar" data-console-sidebar
         data-collapsed="false"
-        class="relative
+        class="sh-logistics-sidebar relative
                w-60
                bg-navy
                text-white
@@ -804,11 +719,8 @@
 
                             @php
 
-                                $active =
-                                    request()
-                                    ->routeIs(
-                                        $item['pattern']
-                                    );
+                                $active = request()->routeIs(...(array) $item['pattern'])
+                                    && (!isset($item['section']) || request('section', 'handovers') === $item['section']);
 
                             @endphp
 
@@ -816,7 +728,7 @@
                             <div class="relative group">
 
                                 
-                                    <a href="{{ route($item['route']) }}"
+                                    <a href="{{ route($item['route'], $item['params'] ?? []) }}"
                                     @if($active) aria-current="page" @endif
                                     class="sidebar-nav-link
                                            relative
@@ -874,7 +786,7 @@
 
 
                                     @if (!empty($item['badge']))
-                                        <span class="sidebar-expanded-only text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full leading-none shrink-0">
+                                        <span class="sh-nav-badge sidebar-expanded-only text-[10px] font-bold bg-red-500 text-white px-1.5 py-0.5 rounded-full leading-none shrink-0">
                                             {{ $item['badge'] }}
                                         </span>
                                     @endif
@@ -1303,7 +1215,7 @@
                 @foreach ($section['items'] as $item)
 
                     <a
-                        href="{{ route($item['route']) }}"
+                        href="{{ route($item['route'], $item['params'] ?? []) }}"
                         data-logistics-command-item
                         data-search-text="{{ strtolower($item['label'] . ' ' . $section['label']) }}"
                         class="group
@@ -1958,9 +1870,11 @@ document.addEventListener('DOMContentLoaded', function () {
     <script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261027"></script>
 @stack('scripts')
     {{-- Required for searchable directories, Actions dropdowns, and Add/Edit modals. --}}
-    <script defer src="{{ asset('js/logistics-directory-v1.js') }}?v=20261104-ui-repair-2"></script>
+    <script defer src="{{ asset('js/logistics-directory-v1.js') }}?v=20261112-console"></script>
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-modal2"></script>
+@include('partials.console-details')
 </body>
 
 </html>

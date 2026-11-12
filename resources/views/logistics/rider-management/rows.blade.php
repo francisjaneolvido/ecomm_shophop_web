@@ -3,5 +3,5 @@
             <td>{{ $r->sortingCenter?->name ?? $r->lifecycleProfile?->preferredBranch?->name ?? 'Awaiting assignment' }}<div class="ops-row-sub">{{ $r->sortingCenter?->province }}</div></td>
             <td>{{ ucwords(str_replace('_',' ',$r->application_status)) }}@if(!$r->email_verified_at)<div class="ops-row-sub">Email verification required</div>@endif</td>
             <td>{{ ucwords(str_replace('_',' ',$r->operational_status)) }}</td><td>{{ ucwords(str_replace('_',' ',$r->availabilityState())) }}</td>
-            <td><a class="ops-action" href="{{ request()->fullUrlWithQuery(['rider'=>$r->id]) }}#rider-details">View details</a></td></tr>
+            <td><a data-console-details data-console-detail-target="rider-details" data-console-detail-title="Rider details" class="ops-action" href="{{ request()->fullUrlWithQuery(['rider'=>$r->id]) }}#rider-details">{{ ($scope['role'] ?? '') === 'branch' && $r->application_status === 'approved' && in_array($r->operational_status, ['pending_activation', 'inactive'], true) ? 'Review & activate' : (($scope['role'] ?? '') === 'main' && in_array($r->application_status, ['pending_review', 'under_review', 'needs_documents'], true) ? 'Review application' : 'View details') }}</a></td></tr>
         @empty<tr><td colspan="6" class="ops-empty">No riders match these filters.</td></tr>@endforelse

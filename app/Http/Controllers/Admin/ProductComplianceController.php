@@ -39,7 +39,7 @@ class ProductComplianceController extends Controller
         $column = in_array($sort, ['az', 'za'], true) ? 'name' : 'submitted_at';
         $direction = in_array($sort, ['oldest', 'az'], true) ? 'asc' : 'desc';
         $products = $query->orderBy($column, $direction)->orderBy('id', $direction)->paginate(10)->withQueryString();
-        return view('admin.seller-compliance', compact('products', 'counts', 'filter', 'sort', 'search'));
+        return view('admin.product-compliance.index', compact('products', 'counts', 'filter', 'sort', 'search'));
     }
 
     public function show(Product $product)

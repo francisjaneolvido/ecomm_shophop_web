@@ -2,7 +2,7 @@
 <article class="rounded-xl border border-gray-border bg-white p-5 shadow-sm">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <a href="{{ route('seller.orders.show', $order) }}" class="text-base font-bold text-teal-dark hover:underline">
+            <a data-console-details href="{{ route('seller.orders.show', $order) }}" class="text-base font-bold text-teal-dark hover:underline">
                 Order SHP-{{ str_pad((string) $order->id, 6, '0', STR_PAD_LEFT) }}
             </a>
             <p class="mt-1 text-xs text-navy/55">Placed {{ $order->created_at->format('M j, Y g:i A') }}</p>
@@ -25,5 +25,5 @@
         <span class="text-navy/60">{{ ucfirst($order->shipping_method ?? 'Shipping unavailable') }} · {{ $order->payment_method === 'cod' ? 'Cash on Delivery' : ($order->isPaymentEligible() ? 'Verified by ShopHop Admin' : $order->statusLabel()) }}</span>
         <strong class="text-navy">Order total ₱{{ number_format((float) $order->total_amount, 2) }}</strong>
     </div>
-    <a href="{{ route('seller.orders.show', $order) }}" class="mt-4 inline-block text-sm font-semibold text-teal-dark hover:underline">View Order details</a>
+    <a data-console-details href="{{ route('seller.orders.show', $order) }}" class="mt-4 inline-block text-sm font-semibold text-teal-dark hover:underline">View Order details</a>
 </article>

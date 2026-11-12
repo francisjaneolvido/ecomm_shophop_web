@@ -101,6 +101,61 @@ class HybridFinancialWorkflowTest extends TestCase
             ->assertViewHas('commissionAmount', 50.0)->assertViewHas('netEarnings', 950.0);
     }
 
+    public function test_mobile_tracks_company_remittance_until_admin_receipt_before_settlement(): void
+    {
+        [$order, $delivery, $rider, $operator, $center, $cash] = $this->collected();
+        $this->post(route('rider.logout'));
+        $order->update(['status' => Order::STATUS_COMPLETED]);
+        app(ShopHopFinance::class)->snapshot($order, 1000, 0, 0, 0, 0);
+        $read = function (string $stage) use ($rider) {
+            auth('web')->logout();
+            Sanctum::actingAs($rider);
+
+            return $this->getJson('/api/mobile/rider/cod')->assertOk()
+                ->assertJsonPath('data.collections.0.platform_receipt_status', $stage);
+        };
+        $read('not_ready')->assertJsonPath('data.collections.0.receipt_verified', false);
+        $batch = app(CodRemittanceService::class)->submit($rider, $center->id, 'tracked-handover', 'BRANCH-1100',
+            [['collection_id' => $cash->id, 'amount' => '1100.00']]);
+        $read('not_ready')->assertJsonPath('data.summary.outstanding', '1100.00');
+
+        $branch = $this->user('branch');
+        $center->update(['user_id' => $branch->id]);
+        $this->actingAs($branch, 'web')->post(route('hybrid.verify', $batch->id),
+            ['items' => [['collection_id' => $cash->id, 'amount' => '1100.00']]])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $read('with_logistics')->assertJsonPath('data.collections.0.receipt_verified', true)
+            ->assertJsonPath('data.summary.outstanding', '0.00')
+            ->assertJsonPath('data.collections.0.shophop_received_at', null);
+
+        $this->actingAs($operator, 'web')->post(route('logistics.settlements.remit-admin', $delivery),
+            ['reference' => 'LOGISTICS-BANK-1100'])->assertRedirect()->assertSessionHasNoErrors();
+        $read('awaiting_confirmation')->assertJsonPath('data.collections.0.shophop_received_at', null);
+
+        $admin = $this->user('admin');
+        $this->actingAs($admin, 'web')->post(route('admin.finance.prepare', $order))
+            ->assertSessionHasErrors('order');
+        $this->assertDatabaseCount('settlement_entries', 0);
+        foreach ([['WRONG-REFERENCE', '1100.00'], ['LOGISTICS-BANK-1100', '1050.00']] as [$reference, $amount]) {
+            $this->actingAs($admin, 'web')->post(route('admin.finance.cod.confirm', $cash->id),
+                ['reference' => $reference, 'received_amount' => $amount])->assertSessionHasErrors('settlement');
+            $this->assertNull($cash->fresh()->admin_received_at);
+        }
+        $this->actingAs($admin, 'web')->post(route('admin.finance.cod.confirm', $cash->id),
+            ['reference' => 'LOGISTICS-BANK-1100', 'received_amount' => '1100.00'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $read('confirmed')->assertJsonPath('data.collections.0.shophop_received_at', $cash->fresh()->admin_received_at->toIso8601String());
+        $this->assertDatabaseCount('settlement_entries', 0);
+        $this->actingAs($admin, 'web')->post(route('admin.finance.prepare', $order))
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertDatabaseCount('settlement_entries', 2);
+        $this->actingAs($admin, 'web')->post(route('admin.finance.distribute', $order))
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame(2, SettlementEntry::where('order_id', $order->id)->where('status', 'available')->count());
+        $this->assertDatabaseHas('financial_audit_events', ['subject_type' => 'cod_collection', 'subject_id' => $cash->id,
+            'action' => 'custody_received_by_platform']);
+    }
+
     public function test_shortage_remains_owed_and_supplemental_batch_preserves_original(): void
     {
         [, , $rider, $operator, $center, $cash] = $this->collected();
@@ -415,6 +470,238 @@ class HybridFinancialWorkflowTest extends TestCase
         $this->assertSame('paid', $entry->fresh()->status);
         $this->assertSame(Order::STATUS_TO_RECEIVE, $order->fresh()->status);
         $this->assertDatabaseMissing('settlement_entries', ['order_id' => $order->id, 'kind' => 'logistics']);
+    }
+
+    public function test_shortage_case_requires_supplemental_cash_and_admin_closure(): void
+    {
+        [$order, $delivery, $rider, $operator, $branch, $center, $cash, $original, $case] = $this->discrepancyFixture('1050.00');
+        $service = app(\App\Services\CodDiscrepancyService::class);
+        $this->assertSame(-5000, (int) $case->opening_difference_minor);
+        $this->actingAs($branch, 'web')->get(route('logistics.hybrid.discrepancies.index'))
+            ->assertOk()->assertSee($case->reference)->assertSee('Shortage');
+        $this->actingAs($branch, 'web')->post(route('logistics.hybrid.discrepancies.note', $case->id),
+            ['reason' => 'Counted cash is fifty pesos short.', 'evidence_reference' => 'COUNT-SHEET-50'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $proposal = ['kind' => 'balance_confirmed', 'reason' => 'Supplemental receipt reviewed.', 'evidence_reference' => 'SUPPLEMENT-50'];
+        $this->assertDiscrepancyInvalid(fn () => $service->propose($operator, $case->id, $proposal));
+
+        $topup = app(CodRemittanceService::class)->submit($rider, $center->id, 'case-topup', 'TOPUP-50',
+            [['collection_id' => $cash->id, 'amount' => '50.00']]);
+        app(CodRemittanceService::class)->verify($branch, $topup->id, [['collection_id' => $cash->id, 'amount' => '50.00']]);
+        $this->assertSame('1100.00', $cash->fresh()->received_amount);
+        $this->assertSame('open', DB::table('cod_discrepancy_cases')->where('id', $case->id)->value('status'));
+        $this->actingAs($operator, 'web')->post(route('logistics.settlements.remit-admin', $delivery),
+            ['reference' => 'NOT-YET-ALLOWED'])->assertSessionHasErrors('settlement');
+
+        $this->actingAs($operator, 'web')->post(route('logistics.hybrid.discrepancies.propose', $case->id), $proposal)
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $resolution = DB::table('cod_discrepancy_resolutions')->where('case_id', $case->id)->firstOrFail();
+        $admin = $this->user('admin');
+        $this->actingAs($admin, 'web')->get(route('hybrid.discrepancies.index'))
+            ->assertOk()->assertSee('Approve resolution')->assertSee('Supplemental receipt reviewed.');
+        $this->actingAs($admin, 'web')->post(route('hybrid.discrepancies.review', [$case->id, $resolution->id]),
+            ['decision' => 'approve', 'notes' => 'Verified both physical cash receipts.'])
+            ->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('resolved', DB::table('cod_discrepancy_cases')->where('id', $case->id)->value('status'));
+        $this->assertDatabaseCount('cod_cash_adjustments', 0);
+        $this->assertDatabaseHas('cod_remittance_batches', ['id' => $original->id, 'status' => 'discrepancy', 'difference_minor' => -5000]);
+        $this->actingAs($operator, 'web')->post(route('logistics.settlements.remit-admin', $delivery),
+            ['reference' => 'COMPANY-REMIT-1100'])->assertRedirect()->assertSessionHasNoErrors();
+        $this->assertSame('COMPANY-REMIT-1100', $cash->fresh()->admin_remittance_reference);
+    }
+
+    public function test_open_cash_case_blocks_all_settlement_stages_even_after_balancing(): void
+    {
+        [$order, , $rider, $operator, $branch, $center, $cash, , $case] = $this->discrepancyFixture('1050.00');
+        $topup = app(CodRemittanceService::class)->submit($rider, $center->id, 'gate-topup', 'GATE-TOPUP',
+            [['collection_id' => $cash->id, 'amount' => '50.00']]);
+        app(CodRemittanceService::class)->verify($branch, $topup->id, [['collection_id' => $cash->id, 'amount' => '50.00']]);
+        $order->update(['status' => Order::STATUS_COMPLETED]);
+        $finance = app(ShopHopFinance::class);
+        $finance->snapshot($order, 1000, 0, 0, 0, 0);
+        // Defend against a historical receipt marker without a completed case review.
+        $cash->update(['admin_remitted_at' => now(), 'admin_remittance_reference' => 'OLD-REFERENCE',
+            'admin_received_at' => now(), 'admin_received_amount' => '1100.00']);
+        $admin = $this->user('admin');
+        $this->assertDiscrepancyInvalid(fn () => $finance->prepareForOrder($order->id), 'settlement');
+        $entry = SettlementEntry::create(['order_id' => $order->id, 'kind' => 'seller', 'payee_id' => $order->seller_id,
+            'amount' => '900.00', 'status' => 'available']);
+        $this->assertDiscrepancyInvalid(fn () => $finance->distributeOrder($order->id, $admin->id), 'settlement');
+        $this->assertDiscrepancyInvalid(fn () => $finance->markAdminPaid($entry->id, $admin->id, 'MUST-NOT-PAY'), 'settlement');
+        $this->assertSame('available', $entry->fresh()->status);
+        $this->assertSame('open', DB::table('cod_discrepancy_cases')->where('id', $case->id)->value('status'));
+    }
+
+    public function test_approved_overage_return_requires_actual_receipt_and_is_posted_only_once(): void
+    {
+        [, , , $operator, , , $cash, $batch, $case] = $this->discrepancyFixture('1120.00');
+        $service = app(\App\Services\CodDiscrepancyService::class);
+        $resolution = $service->propose($operator, $case->id, [
+            'kind' => 'overage_return', 'reason' => 'Verified twenty pesos excess from cash source.',
+            'evidence_reference' => 'OVERAGE-COUNT', 'recipient' => 'Verified cash source with signed acknowledgment',
+        ]);
+        $return = ['returned_amount' => '20.00', 'reference' => 'EXCESS-RETURN-20',
+            'recipient_acknowledgment' => 'SIGNED-ACK-20', 'cash_returned' => '1'];
+        $this->assertDiscrepancyInvalid(fn () => $service->recordReturn($operator, $case->id, $resolution, $return));
+        $admin = $this->user('admin');
+        $service->review($admin, $case->id, $resolution, 'approve', 'Cash source and excess verified independently.');
+        $this->assertSame('1120.00', $cash->fresh()->received_amount);
+        $this->assertDatabaseCount('cod_cash_adjustments', 0);
+        $this->assertDiscrepancyInvalid(fn () => $service->recordReturn($operator, $case->id, $resolution,
+            [...$return, 'returned_amount' => '19.00']));
+        $this->actingAs($operator, 'web')->get(route('logistics.hybrid.discrepancies.index'))
+            ->assertOk()->assertSee('Record actual return')->assertSee('Recipient acknowledgment reference');
+        $service->recordReturn($operator, $case->id, $resolution, $return);
+        $service->recordReturn($operator, $case->id, $resolution, $return);
+        $this->assertSame('1100.00', $cash->fresh()->received_amount);
+        $this->assertSame('reconciled', $cash->fresh()->status);
+        $this->assertDatabaseHas('cod_cash_adjustments', ['resolution_id' => $resolution, 'amount_minor' => -2000,
+            'reference' => 'EXCESS-RETURN-20', 'recipient_acknowledgment' => 'SIGNED-ACK-20']);
+        $this->assertDatabaseCount('cod_cash_adjustments', 1);
+        $this->assertDatabaseHas('cash_custody_movements', ['batch_id' => $batch->id, 'amount_minor' => 112000]);
+        $this->assertDatabaseHas('cod_remittance_items', ['batch_id' => $batch->id, 'verified_minor' => 112000]);
+        $this->assertDatabaseHas('cod_remittance_batches', ['id' => $batch->id, 'difference_minor' => 2000, 'status' => 'discrepancy']);
+        $this->assertDiscrepancyInvalid(fn () => $service->recordReturn($operator, $case->id, $resolution,
+            [...$return, 'reference' => 'ALTERED-RETURN']));
+        $this->assertDatabaseCount('settlement_entries', 0);
+        $this->assertDatabaseCount('partner_personnel_earnings', 0);
+    }
+
+    public function test_discrepancy_roles_ownership_and_independent_approval_are_enforced(): void
+    {
+        [, , $rider, $operator, $branch, , , , $case] = $this->discrepancyFixture('1120.00');
+        $payload = ['kind' => 'overage_return', 'reason' => 'Investigated excess cash source.',
+            'evidence_reference' => 'SOURCE-PROOF', 'recipient' => 'Verified cash source'];
+        $foreign = $this->user('logistics');
+        $this->partner($foreign);
+        $this->actingAs($foreign, 'web')->get(route('logistics.hybrid.discrepancies.index'))
+            ->assertOk()->assertDontSee($case->reference);
+        $this->actingAs($foreign, 'web')->post(route('logistics.hybrid.discrepancies.propose', $case->id), $payload)->assertNotFound();
+        $otherBranch = $this->user('branch');
+        $this->actingAs($otherBranch, 'web')->post(route('logistics.hybrid.discrepancies.note', $case->id),
+            ['reason' => 'Attempted unrelated branch evidence.', 'evidence_reference' => 'FOREIGN-COUNT'])->assertNotFound();
+        $this->actingAs($branch, 'web')->post(route('logistics.hybrid.discrepancies.propose', $case->id), $payload)->assertForbidden();
+        $buyer = $this->user('buyer');
+        $this->actingAs($buyer, 'web')->get(route('hybrid.discrepancies.index'))->assertForbidden();
+        auth('web')->logout();
+        $this->actingAs($rider, 'rider')->get(route('hybrid.discrepancies.index'))->assertForbidden();
+        $service = app(\App\Services\CodDiscrepancyService::class);
+        $resolution = $service->propose($operator, $case->id, $payload);
+        $this->actingAs($operator, 'web')->post(route('hybrid.discrepancies.review', [$case->id, $resolution]),
+            ['decision' => 'approve', 'notes' => 'Attempted approval by proposing company.'])->assertForbidden();
+        $operator->update(['account_type' => 'admin']);
+        $this->actingAs($operator, 'web')->post(route('hybrid.discrepancies.review', [$case->id, $resolution]),
+            ['decision' => 'approve', 'notes' => 'Proposer changed role but must not self approve.'])->assertForbidden();
+        $this->assertDatabaseCount('cod_cash_adjustments', 0);
+        $this->assertDatabaseHas('cod_discrepancy_resolutions', ['id' => $resolution, 'status' => 'pending']);
+    }
+
+    public function test_rejection_preserves_evidence_and_allows_a_new_reviewed_proposal(): void
+    {
+        [, , , $operator, , , $cash, , $case] = $this->discrepancyFixture('1120.00');
+        $service = app(\App\Services\CodDiscrepancyService::class);
+        $proposal = ['kind' => 'overage_return', 'reason' => 'Cash source still requires evidence review.',
+            'evidence_reference' => 'FIRST-EVIDENCE', 'recipient' => 'Proposed cash source'];
+        $first = $service->propose($operator, $case->id, $proposal);
+        $admin = $this->user('admin');
+        $service->review($admin, $case->id, $first, 'reject', 'Recipient acknowledgment needs further investigation.');
+        $service->note($operator, $case->id, ['reason' => 'Added independently verified recipient identity.',
+            'evidence_reference' => 'NEW-RECIPIENT-ID']);
+        $second = $service->propose($operator, $case->id, [...$proposal, 'evidence_reference' => 'NEW-RECIPIENT-ID']);
+        $this->assertNotSame($first, $second);
+        $this->assertDatabaseHas('cod_discrepancy_resolutions', ['id' => $first, 'status' => 'rejected', 'evidence_reference' => 'FIRST-EVIDENCE']);
+        $this->assertDatabaseHas('financial_audit_events', ['subject_type' => 'cod_discrepancy', 'subject_id' => $case->id, 'action' => 'resolution_reject']);
+        $this->assertDatabaseHas('financial_audit_events', ['subject_type' => 'cod_discrepancy', 'subject_id' => $case->id, 'action' => 'evidence_added']);
+        $this->assertSame('1120.00', $cash->fresh()->received_amount);
+    }
+
+    public function test_mobile_case_survives_cash_topup_until_authorized_closure(): void
+    {
+        [, , $rider, $operator, $branch, $center, $cash, , $case] = $this->discrepancyFixture('1050.00');
+        $topup = app(CodRemittanceService::class)->submit($rider, $center->id, 'mobile-case-topup', 'MOBILE-TOPUP',
+            [['collection_id' => $cash->id, 'amount' => '50.00']]);
+        app(CodRemittanceService::class)->verify($branch, $topup->id, [['collection_id' => $cash->id, 'amount' => '50.00']]);
+        auth('web')->logout();
+        Sanctum::actingAs($rider);
+        $this->getJson('/api/mobile/rider/cod')->assertOk()
+            ->assertJsonPath('data.summary.outstanding', '0.00')->assertJsonPath('data.summary.discrepancies', 1)
+            ->assertJsonPath('data.collections.0.platform_receipt_status', 'under_review')
+            ->assertJsonPath('data.collections.0.discrepancy_case.reference', $case->reference)
+            ->assertJsonPath('data.collections.0.discrepancy_case.status', 'open')
+            ->assertJsonMissingPath('data.collections.0.discrepancy_case.recipient')
+            ->assertJsonMissingPath('data.collections.0.discrepancy_case.evidence_reference');
+        $service = app(\App\Services\CodDiscrepancyService::class);
+        $resolution = $service->propose($operator, $case->id,
+            ['kind' => 'balance_confirmed', 'reason' => 'All supplemental cash independently counted.', 'evidence_reference' => 'MOBILE-TOPUP']);
+        $service->review($this->user('admin'), $case->id, $resolution, 'approve', 'Supplemental receipts reconcile to full COD.');
+        $this->getJson('/api/mobile/rider/cod')->assertOk()->assertJsonPath('data.summary.discrepancies', 0)
+            ->assertJsonPath('data.collections.0.platform_receipt_status', 'with_logistics')
+            ->assertJsonPath('data.collections.0.discrepancy_case.status', 'resolved');
+    }
+
+    public function test_discrepancy_migration_indexes_old_cases_without_rewriting_receipts(): void
+    {
+        [, , , , , , $cash, $batch] = $this->discrepancyFixture('1120.00');
+        DB::table('cod_settlements')->where('id', $cash->id)->update(['updated_at' => null]);
+        $migration = require database_path('migrations/2026_11_12_000001_create_cod_discrepancy_resolution.php');
+        $migration->down();
+        $migration->up();
+        $this->assertDatabaseHas('cod_discrepancy_cases', ['cod_settlement_id' => $cash->id, 'origin' => 'migration',
+            'opening_difference_minor' => 2000, 'status' => 'open']);
+        $this->assertSame('1120.00', $cash->fresh()->received_amount);
+        $this->assertDatabaseHas('cash_custody_movements', ['batch_id' => $batch->id, 'amount_minor' => 112000]);
+    }
+
+    public function test_cod_discrepancy_does_not_delay_partner_rider_payroll(): void
+    {
+        [, $delivery, $rider, $operator, , , $cash, , $case] = $this->discrepancyFixture('1120.00');
+        $this->policy($operator, $rider);
+        $compensation = app(PartnerCompensationService::class);
+        $compensation->delivery($delivery);
+        $earning = DB::table('partner_personnel_earnings')->firstOrFail();
+        $compensation->approve($operator, $earning->id);
+        $compensation->paid($operator, $earning->id, 'PARTNER-SEPARATE-PAYROLL');
+        $this->assertDatabaseHas('partner_personnel_earnings', ['id' => $earning->id, 'status' => 'paid', 'amount_minor' => 2500]);
+        $this->assertSame('1100.00', $cash->fresh()->collected_amount);
+        $this->assertSame('1120.00', $cash->fresh()->received_amount);
+        $this->assertDatabaseHas('cod_discrepancy_cases', ['id' => $case->id, 'status' => 'open']);
+        $this->assertDatabaseCount('cod_cash_adjustments', 0);
+    }
+
+    public function test_case_evidence_rejects_blank_reasons_and_unsupported_writeoffs(): void
+    {
+        [, , , $operator, , , $cash, , $case] = $this->discrepancyFixture('1050.00');
+        $service = app(\App\Services\CodDiscrepancyService::class);
+        $this->assertDiscrepancyInvalid(fn () => $service->note($operator, $case->id,
+            ['reason' => '            ', 'evidence_reference' => '    ']), 'reason');
+        $this->assertDiscrepancyInvalid(fn () => $service->propose($operator, $case->id,
+            ['kind' => 'earnings_deduction', 'reason' => 'Attempted to deduct Rider earnings.', 'evidence_reference' => 'WRONG-DEDUCTION']), 'kind');
+        $this->assertSame('1050.00', $cash->fresh()->received_amount);
+        $this->assertDatabaseCount('cod_discrepancy_resolutions', 0);
+    }
+
+    private function discrepancyFixture(string $amount): array
+    {
+        [$order, $delivery, $rider, $operator, $center, $cash] = $this->collected();
+        $this->post(route('rider.logout'));
+        $branch = $this->user('branch');
+        $center->update(['user_id' => $branch->id]);
+        $batch = app(CodRemittanceService::class)->submit($rider, $center->id, 'discrepancy-fixture', 'COUNT-RECEIPT',
+            [['collection_id' => $cash->id, 'amount' => $amount]]);
+        app(CodRemittanceService::class)->verify($branch, $batch->id, [['collection_id' => $cash->id, 'amount' => $amount]]);
+        $case = DB::table('cod_discrepancy_cases')->where('cod_settlement_id', $cash->id)->firstOrFail();
+
+        return [$order, $delivery, $rider, $operator, $branch, $center, $cash, $batch, $case];
+    }
+
+    private function assertDiscrepancyInvalid(callable $action, string $field = 'discrepancy'): void
+    {
+        try {
+            $action();
+            $this->fail('Invalid financial action was accepted.');
+        } catch (ValidationException $e) {
+            $this->assertArrayHasKey($field, $e->errors());
+        }
     }
 
     private function complete(Delivery $delivery, Rider $rider): void

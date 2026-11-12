@@ -27,6 +27,11 @@
             root.querySelectorAll('[data-management-branch-count]').forEach((cell) => {
                 cell.textContent = String(payload.data.active_by_branch?.[cell.dataset.managementBranchCount] ?? 0);
             });
+            if (payload.data.queue_counts) {
+                root.querySelectorAll('[data-management-queue-count]').forEach((cell) => {
+                    cell.textContent = String(payload.data.queue_counts[cell.dataset.managementQueueCount] ?? 0);
+                });
+            }
             const total = root.querySelector('[data-management-total]');
             if (total) total.textContent = String(payload.data.total);
             status.textContent = 'Directory updated just now. Open forms keep your entries.';

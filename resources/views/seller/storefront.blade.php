@@ -11,7 +11,7 @@
     </div>
 
     {{-- Informational copy replaces the missing view; unsupported management has no action controls or shop metrics. --}}
-    <div class="rounded-xl border border-gray-border bg-white p-5 sm:p-6">
+    <div class="ops-panel rounded-xl border border-gray-border bg-white p-5 sm:p-6">
         <span class="inline-flex rounded-full bg-teal/10 px-3 py-1 text-xs font-semibold text-teal-dark">Unavailable</span>
         <h2 class="mt-4 text-lg font-semibold text-navy">Storefront management is not available yet.</h2>
         <p class="mt-2 text-sm text-navy/60">Shop customization and publishing are unavailable.</p>

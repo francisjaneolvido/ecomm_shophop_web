@@ -165,6 +165,7 @@
     <link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261104-bh">
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
+    @include('partials.console-assets')
 </head>
 
 @php
@@ -173,6 +174,7 @@
 
     // Kung walang ipinasa ang controller na $center, hanapin ang branch ng naka-login.
     $branchCenter = $center
+        ?? $branchStaff?->sortingCenter
         ?? ($branchUser
             ? \App\Models\Logistics\SortingCenter::where('user_id', $branchUser->id)
                 ->where('status', 'active')->whereNull('archived_at')->first()
@@ -201,27 +203,51 @@
      *  - 'hash'    : anchor sa loob ng page (opsyonal).
      *  - 'hold'    : true = patayin muna kahit may route (sira o sample pa ang page).
      */
+    $isMainHub = (bool) $branchCenter?->is_main;
+    $portalLabel = $isMainHub ? 'Main Hub' : ($branchCenter?->type === 'province_hub' ? 'Province Hub' : 'Station Branch');
     $branchNavigation = [
-        ['label' => 'Overview', 'items' => [
+        ['label'=>'Overview','items'=>[
             ['label'=>'Dashboard','route'=>'branch.dashboard','pattern'=>'branch.dashboard','icon'=>'layout-dashboard'],
-            ['label'=>'Parcel Tracking','route'=>'branch.parcels.index','pattern'=>'branch.parcels*','icon'=>'package-search'],
         ]],
-        ['label' => 'Operations', 'items' => [
+        ['label'=>'Operations','items'=>[
+            ['label'=>'Parcel Tracking','route'=>'branch.parcels.index','pattern'=>'branch.parcels*','icon'=>'package-search'],
             ['label'=>'Rider Dispatch','route'=>'branch.dispatch.index','pattern'=>'branch.dispatch*','icon'=>'bike'],
             ['label'=>'Incoming Transfers','route'=>'branch.transfers.index','pattern'=>'branch.transfers*','icon'=>'package-check'],
-            ['label'=>'Outbound & Manifests','route'=>'branch.outbound.index','pattern'=>'branch.outbound*','icon'=>'truck'],
+            ['label'=>'Outbound Manifests','route'=>'branch.outbound.index','pattern'=>'branch.outbound*','icon'=>'truck'],
             ['label'=>'QR Scanner','route'=>'branch.scanner','pattern'=>'branch.scanner*','icon'=>'scan-barcode'],
-            ['label'=>'COD Verification','route'=>'logistics.hybrid','pattern'=>'logistics.hybrid*','icon'=>'receipt'],
+        ]],
+        ['label'=>'People','items'=>[]],
+        ['label'=>'Finance','items'=>[
+            ['label'=>'COD Verification','route'=>'logistics.hybrid','pattern'=>'logistics.hybrid','icon'=>'receipt'],
+            ['label'=>'Discrepancy Review','route'=>'logistics.hybrid.discrepancies.index','pattern'=>'logistics.hybrid.discrepancies.*','icon'=>'circle-alert'],
         ]],
     ];
-
     if ($branchStaff) {
-        $branchNavigation = [['label'=>'Branch operations','items'=>[
-            ['label'=>'Workspace','route'=>'logistics.staff.workspace','pattern'=>'logistics.staff.workspace','icon'=>'layout-dashboard'],
-            ['label'=>'Rider Dispatch','route'=>'logistics.staff.dispatch.index','pattern'=>'logistics.staff.dispatch*','icon'=>'bike'],
-        ]]];
+        $branchNavigation = [
+            ['label'=>'Overview','items'=>[
+                ['label'=>'Workspace','route'=>'logistics.staff.workspace','pattern'=>'logistics.staff.workspace','icon'=>'layout-dashboard'],
+            ]],
+            ['label'=>'Operations','items'=> $branchStaff->role === 'manager' && !$isMainHub && $branchCenter?->type === 'station_hub' ? [
+                ['label'=>'Rider Dispatch','route'=>'logistics.staff.dispatch.index','pattern'=>'logistics.staff.dispatch*','icon'=>'bike'],
+            ] : []],
+            ['label'=>'People','items'=>[]],
+        ];
     }
-
+    $canManageRiders = $branchCenter && app(\App\Services\RiderManagementService::class)->available()
+        && ($isMainHub || $branchCenter->type === 'station_hub')
+        && (!$branchStaff || $branchStaff->role === 'manager');
+    if ($canManageRiders) {
+        $pendingRiderActivations = $pendingRiderActivations ?? \App\Models\Logistics\Rider::where('logistics_partner_id', $branchCenter->logistics_partner_id)
+            ->where('sorting_center_id', $branchCenter->id)
+            ->whereHas('lifecycleProfile', fn ($profile) => $profile->where('application_status', 'approved')->where('operational_status', 'pending_activation'))->count();
+        $branchNavigation[2]['items'][] = [
+            'label'=>$isMainHub ? 'Rider Applications' : 'Riders & Activation',
+            'route'=>$branchStaff ? 'logistics.staff.rider-management.index' : 'logistics.rider-management.index',
+            'pattern'=>$branchStaff ? 'logistics.staff.rider-management.*' : 'logistics.rider-management.*',
+            'icon'=>'users', 'badge'=>$isMainHub ? 0 : $pendingRiderActivations,
+        ];
+    }
+    $branchNavigation = array_values(array_filter($branchNavigation, fn ($section) => count($section['items'])));
     // Alamin kung live ang bawat item (may route at hindi naka-hold) at buuin ang URL.
     $branchNavigation = collect($branchNavigation)->map(function ($section) {
         $section['items'] = collect($section['items'])->map(function ($item) {
@@ -238,7 +264,7 @@
     })->all();
 @endphp
 
-<body class="sh-management-ui branch-console bg-gray-bg text-navy antialiased sh-ops">
+<body class="{{ (request()->boolean('console_modal') || request()->header('Sec-Fetch-Dest') === 'iframe') ? 'sh-console-embedded' : '' }} sh-management-ui branch-console bg-gray-bg text-navy antialiased sh-ops">
 
 <div id="branchShell" data-mobile-open="false" class="flex h-screen overflow-hidden">
 
@@ -248,7 +274,7 @@
 
     {{-- SIDEBAR --}}
     <aside id="branchSidebar" data-collapsed="false"
-           class="relative w-64 bg-navy text-white flex flex-col shrink-0 border-r border-white/5 transition-[width] duration-200">
+           class="sh-logistics-sidebar relative w-64 bg-navy text-white flex flex-col shrink-0 border-r border-white/5 transition-[width] duration-200">
 
         <div class="pointer-events-none absolute -top-20 -left-20 w-48 h-48 rounded-full bg-teal/10 blur-2xl"></div>
 
@@ -259,7 +285,7 @@
                 </div>
                 <div class="sidebar-expanded-only min-w-0">
                     <p class="text-[15px] font-bold leading-tight tracking-tight text-white">Shop<span class="text-teal">Hop</span></p>
-                    <p class="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold mt-0.5">Branch Portal</p>
+                    <p class="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold mt-0.5">{{ $portalLabel }} Portal</p>
                 </div>
             </a>
 
@@ -326,7 +352,7 @@
                                         <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
 
                                         @if (!empty($item['badge']))
-                                            <span class="sidebar-expanded-only text-[10px] font-bold bg-coral text-white px-1.5 py-0.5 rounded-full leading-none shrink-0">{{ $item['badge'] }}</span>
+                                            <span class="sh-nav-badge sidebar-expanded-only text-[10px] font-bold bg-coral text-white px-1.5 py-0.5 rounded-full leading-none shrink-0">{{ $item['badge'] }}</span>
                                         @endif
                                     </a>
                                 @else
@@ -356,7 +382,7 @@
                 <div class="w-8 h-8 rounded-full bg-gradient-to-br from-teal to-sky text-navy flex items-center justify-center text-[10px] font-bold shrink-0">{{ $branchInitials }}</div>
                 <div class="sidebar-expanded-only min-w-0 flex-1">
                     <p class="text-[10px] font-semibold text-white truncate">{{ $userName }}</p>
-                    <p class="text-[8px] text-white/30 truncate">Branch account</p>
+                    <p class="text-[8px] text-white/30 truncate">{{ $portalLabel }} account</p>
                 </div>
             </div>
 
@@ -403,7 +429,7 @@
                 <div class="hidden sm:block w-px h-6 bg-gray-border"></div>
 
                 <details class="branch-profile-menu relative">
-                    <summary class="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl px-1.5 transition hover:bg-gray-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" aria-label="Branch account menu">
+                    <summary class="flex h-10 cursor-pointer list-none items-center gap-2 rounded-xl px-1.5 transition hover:bg-gray-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal" aria-label="{{ $portalLabel }} account menu">
                         <span class="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal to-sky text-[10px] font-bold text-navy">{{ $branchInitials }}</span>
                         <span class="hidden min-w-0 max-w-36 text-left md:block">
                             <span class="block truncate text-[10px] font-semibold text-navy">{{ $userName }}</span>
@@ -414,7 +440,7 @@
                     <div class="absolute right-0 top-[calc(100%+10px)] z-[85] w-56 rounded-2xl border border-gray-border bg-white p-2 shadow-panel">
                         <div class="border-b border-gray-border px-3 py-2">
                             <p class="truncate text-[11px] font-bold text-navy">{{ $branchName }}</p>
-                            <p class="truncate text-[10px] text-navy/45">Branch account</p>
+                            <p class="truncate text-[10px] text-navy/45">{{ $portalLabel }} account</p>
                         </div>
                         <a href="{{ $routeUrl($branchStaff ? 'logistics.staff.workspace' : 'branch.dashboard') }}" class="mt-1 flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-layout-dashboard class="h-4 w-4" /> Dashboard</a>
                         <a href="{{ route('home') }}" target="_blank" rel="noopener noreferrer" class="flex items-center gap-2 rounded-lg px-3 py-2 text-[11px] text-navy/70 hover:bg-gray-bg"><x-lucide-external-link class="h-4 w-4" /> Main ShopHop</a>
@@ -654,6 +680,8 @@ document.addEventListener('DOMContentLoaded', function () {
 @stack('scripts')
 
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
-    <script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261104-bh"></script>
+
+<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-modal2"></script>
+@include('partials.console-details')
 </body>
 </html>

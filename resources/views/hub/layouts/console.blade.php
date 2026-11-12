@@ -178,6 +178,7 @@
     <link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261104-bh">
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
+    @include('partials.console-assets')
 </head>
 
 @php
@@ -210,14 +211,14 @@
             ['label'=>'Dashboard','route'=>'logistics.hub.dashboard','pattern'=>'logistics.hub.dashboard','icon'=>'layout-dashboard','keywords'=>'overview hub workload'],
         ]],
         ['label'=>'Network','items'=>[
-            ['label'=>'Branches / Station Hubs','route'=>'logistics.hub.station-hubs','pattern'=>'logistics.hub.station-hubs*','icon'=>'warehouse','keywords'=>'city municipal branch rider login'],
+            ['label'=>'Station Branches','route'=>'logistics.hub.station-hubs','pattern'=>'logistics.hub.station-hubs*','icon'=>'warehouse','keywords'=>'city municipal branch rider login'],
         ]],
         ['label'=>'Operations','items'=>[
             ['label'=>'Parcel Operations','route'=>'logistics.hub.parcels','pattern'=>'logistics.hub.parcels*','icon'=>'package-check','keywords'=>'receive sort manifest road sea air'],
             ['label'=>'QR Scanner','route'=>'logistics.hub.scanner','pattern'=>'logistics.hub.scanner*','icon'=>'scan-barcode','keywords'=>'scan parcel QR manifest'],
         ]],
         ['label'=>'Account','items'=>[
-            ['label'=>'Account & Password','route'=>'logistics.staff.workspace','pattern'=>'logistics.staff.*','icon'=>'user','keywords'=>'profile security password'],
+            ['label'=>'Account & Workspace','route'=>'logistics.staff.workspace','pattern'=>'logistics.staff.workspace','icon'=>'user','keywords'=>'profile security password'],
         ]],
     ];
 
@@ -229,7 +230,7 @@
     }
 @endphp
 
-<body class="sh-management-ui logistics-console bg-gray-bg text-navy antialiased sh-ops">
+<body class="{{ (request()->boolean('console_modal') || request()->header('Sec-Fetch-Dest') === 'iframe') ? 'sh-console-embedded' : '' }} sh-management-ui logistics-console bg-gray-bg text-navy antialiased sh-ops">
 
 <div id="logisticsShell" data-mobile-open="false" class="flex h-screen overflow-hidden">
 
@@ -239,7 +240,7 @@
 
     {{-- SIDEBAR --}}
     <aside id="logisticsSidebar" data-collapsed="false"
-           class="relative w-64 bg-navy text-white flex flex-col shrink-0 border-r border-white/5 transition-[width] duration-200">
+           class="sh-logistics-sidebar relative w-64 bg-navy text-white flex flex-col shrink-0 border-r border-white/5 transition-[width] duration-200">
 
         <div class="pointer-events-none absolute -top-20 -left-20 w-48 h-48 rounded-full bg-teal/10 blur-2xl"></div>
 
@@ -324,7 +325,7 @@
                                         <span class="sidebar-expanded-only flex-1 min-w-0 truncate">{{ $item['label'] }}</span>
 
                                         @if ($item['badge'] > 0)
-                                            <span class="sidebar-expanded-only rounded-full bg-coral/90 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
+                                            <span class="sh-nav-badge sidebar-expanded-only rounded-full bg-coral/90 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">{{ $item['badge'] > 99 ? '99+' : $item['badge'] }}</span>
                                         @endif
                                     </a>
                                 @else
@@ -706,6 +707,8 @@ document.addEventListener('DOMContentLoaded', function () {
 <script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261027"></script>
 @stack('scripts')
     <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
-    <script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261104-bh"></script>
+
+<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-modal2"></script>
+@include('partials.console-details')
 </body>
 </html>

@@ -4,9 +4,9 @@
 
 @section('content')
 @php
-  $card  = 'rounded-2xl border border-slate-200 bg-white shadow-sm';
-  $input = 'mt-1 block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-500/30';
-  $label = 'block text-xs font-medium text-slate-600';
+  $card  = 'ops-panel';
+  $input = 'sh-input mt-1 block w-full';
+  $label = 'sh-label block';
   $hint  = 'mt-1 text-[11px] text-slate-400';
   $isOn  = (bool) $setting->maintenance_mode;
 @endphp
@@ -150,8 +150,8 @@
       <div class="sticky bottom-4 z-10 flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white/90 px-4 py-3 shadow-lg backdrop-blur">
         <p class="hidden text-xs text-slate-500 sm:block">Save to apply your changes.</p>
         <div class="ml-auto flex items-center gap-2">
-          <a href="{{ route('admin.settings') }}" class="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</a>
-          <button type="submit" class="inline-flex items-center rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/40">Save settings</button>
+          <a href="{{ route('admin.settings') }}" class="sh-btn-soft inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancel</a>
+          <button type="submit" class="sh-btn inline-flex items-center rounded-lg bg-teal-600 px-5 py-2 text-sm font-semibold text-white transition hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500/40">Save settings</button>
         </div>
       </div>
     </form>

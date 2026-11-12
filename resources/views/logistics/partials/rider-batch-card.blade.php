@@ -14,7 +14,8 @@
         <span>{{ $batchInfo['capacity']['totals']['volume_m3'] }} m3</span>
         <span>Estimated {{ $batchInfo['capacity']['totals']['minutes'] }} min</span>
     </div>
-    <details><summary class="cursor-pointer text-sm font-medium text-teal-dark">Stops & parcels</summary>
+    <button type="button" class="sh-btn-soft" data-console-details="#route-stops-{{ $batchInfo['id'] }}">View stops & parcels</button>
+    <section id="route-stops-{{ $batchInfo['id'] }}" data-console-inline-detail data-console-detail-title="Route {{ $batchInfo['code'] }} · Stops & parcels">
         <ol class="mt-3 space-y-3">
         @foreach(collect($batchInfo['items'])->groupBy('stop_sequence') as $position=>$stopItems)
             <li class="border-t border-gray-border pt-2">
@@ -30,7 +31,7 @@
             </li>
         @endforeach
         </ol>
-    </details>
+    </section>
     @if($canManage??false)
         <div class="flex flex-wrap gap-2">
         @foreach(($batchInfo['status']==='queued'?['dispatch'=>'Dispatch route','cancel'=>'Cancel scheduled route']:($batchInfo['status']==='in_progress'?['complete'=>'Complete route']:[])) as $action=>$label)

@@ -14,6 +14,8 @@ class CodRemittanceService
 {
     public function submit(Rider $rider, int $centerId, string $key, string $reference, array $items): object
     {
+        CodDiscrepancyService::ready();
+
         return DB::transaction(function () use ($rider, $centerId, $key, $reference, $items) {
             // Serialize all submissions by this collector, including different idempotency keys.
             $rider = Rider::whereKey($rider->id)->lockForUpdate()->firstOrFail();
@@ -86,6 +88,8 @@ class CodRemittanceService
 
     public function verify(User $user, int $batchId, array $amounts): object
     {
+        CodDiscrepancyService::ready();
+
         return DB::transaction(function () use ($user, $batchId, $amounts) {
             $user = User::whereKey($user->id)->lockForUpdate()->firstOrFail();
             abort_unless($user->status === 'approved' && in_array($user->account_type, ['logistics', 'branch'], true), 403);
@@ -135,6 +139,9 @@ class CodRemittanceService
                 $cash->update(['received_amount' => FinanceMoney::decimal($received),
                     'status' => $balanced ? CodSettlement::RECONCILED : 'discrepancy',
                     'reconciled_by_user_id' => $user->id, 'reconciled_at' => $balanced ? now() : null]);
+                if (! $balanced) {
+                    app(CodDiscrepancyService::class)->record($cash, (int) $batch->sorting_center_id, $user);
+                }
             }
             DB::table('cod_remittance_batches')->where('id', $batchId)->update([
                 'verified_minor' => $total, 'difference_minor' => $difference,
