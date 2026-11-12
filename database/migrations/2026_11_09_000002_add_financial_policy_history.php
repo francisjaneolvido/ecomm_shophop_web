@@ -15,7 +15,7 @@ return new class extends Migration
             $t->unsignedSmallInteger('seller_hold_days');
             $t->timestamp('effective_at')->unique();
             $t->foreignId('created_by_user_id')->constrained('users')->restrictOnDelete();
-            $t->timestamp('created_at');
+            $t->timestamp('created_at')->useCurrent();
         });
         Schema::table('order_financials', function (Blueprint $t) {
             $t->foreignId('platform_rule_id')->nullable()->constrained('platform_financial_rules')->restrictOnDelete();
@@ -32,7 +32,7 @@ return new class extends Migration
             $t->unique(['logistics_partner_id', 'evidence_reference'], 'partner_expense_reference_unique');
             $t->string('payment_reference', 120)->nullable();
             $t->foreignId('created_by_user_id')->constrained('users')->restrictOnDelete();
-            $t->timestamp('created_at');
+            $t->timestamp('created_at')->useCurrent();
         });
     }
 

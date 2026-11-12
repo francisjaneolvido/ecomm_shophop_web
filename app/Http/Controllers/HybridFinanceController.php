@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Logistics\Rider;
+use App\Models\Logistics\CodSettlement;
 use App\Models\Logistics\SortingCenter;
 use App\Models\LogisticsPartner;
 use App\Models\User;
@@ -49,7 +50,28 @@ class HybridFinanceController extends Controller
             $batchQuery->whereIn('sorting_center_id', SortingCenter::where('user_id', $actor->id)->select('id'));
         }
         $batches = $batchQuery->orderByDesc('id')->paginate(20);
+        // Single-order handovers predate batches. Keep their original records visible;
+        // never invent a receiving facility or a verified cash receipt for them.
+        $directQuery = CodSettlement::with(['delivery', 'remitter', 'reconciler', 'partner'])
+            ->whereNotNull('remitted_at')
+            ->whereNotExists(fn ($q) => $q->selectRaw('1')->from('cod_remittance_items')
+                ->whereColumn('cod_remittance_items.cod_settlement_id', 'cod_settlements.id'));
+        if ($isRider) {
+            $directQuery->where('collected_by_rider_id', $actor->id)->where('logistics_partner_id', $partnerId);
+        } elseif ($isPartner) {
+            $directQuery->where('logistics_partner_id', $partnerId);
+        } elseif ($actor->account_type === 'branch') {
+            // A rider's assigned branch can see the handover, but only the company
+            // can verify this older record because no receiving branch was recorded.
+            $directQuery->whereHas('remitter.sortingCenter', fn ($q) => $q->where('user_id', $actor->id)
+                ->whereColumn('sorting_centers.logistics_partner_id', 'cod_settlements.logistics_partner_id'));
+        }
+        $directHandovers = $directQuery->orderByDesc('id')->paginate(20, ['*'], 'handovers_page');
         $items = DB::table('cod_remittance_items')->whereIn('batch_id', $batches->pluck('id'))->get()->groupBy('batch_id');
+        $riderNames = DB::table('riders')->whereIn('id', $batches->pluck('rider_id'))->pluck('name', 'id');
+        $centerNames = DB::table('sorting_centers')->whereIn('id', $batches->pluck('sorting_center_id'))->pluck('name', 'id');
+        $receiverNames = User::with(['buyer', 'seller', 'logisticsPartner'])->whereIn('id', $batches->pluck('verified_by_user_id')->filter())
+            ->get()->mapWithKeys(fn ($user) => [$user->id => $user->display_name]);
         $collections = $isRider ? DB::table('cod_settlements')->where('collected_by_rider_id', $actor->id)
             ->where('logistics_partner_id', $partnerId)->whereIn('status', ['collected', 'discrepancy'])->get() : collect();
         $centers = $isRider ? SortingCenter::where('logistics_partner_id', $partnerId)->where('status', 'active')->get() : collect();
@@ -62,7 +84,7 @@ class HybridFinanceController extends Controller
 
         $audit = ! $isRider && $actor->account_type === 'admin' ? DB::table('financial_audit_events')->orderByDesc('id')->paginate(30, ['*'], 'audit_page') : null;
 
-        return view('finance.hybrid', compact('actor', 'isRider', 'isPartner', 'batches', 'items', 'collections', 'centers', 'policies', 'earnings', 'personnel', 'drivers', 'rules', 'expenses', 'audit'));
+        return view('finance.hybrid', compact('actor', 'isRider', 'isPartner', 'batches', 'directHandovers', 'riderNames', 'centerNames', 'receiverNames', 'items', 'collections', 'centers', 'policies', 'earnings', 'personnel', 'drivers', 'rules', 'expenses', 'audit'));
     }
 
     public function approveLegacy(Request $request, int $earning, ShopHopFinance $service)

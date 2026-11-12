@@ -328,6 +328,31 @@ class HybridFinancialWorkflowTest extends TestCase
         $this->assertDatabaseHas('partner_personnel_earnings', ['personnel_type' => 'linehaul_driver', 'amount_minor' => 20000]);
     }
 
+    public function test_mobile_handover_identifies_receiving_branch_and_awaits_independent_receipt(): void
+    {
+        [, , $rider, , $center, $cash] = $this->collected();
+        $branch = $this->user('branch');
+        $center->update(['user_id' => $branch->id]);
+        Sanctum::actingAs($rider);
+        $this->postJson('/api/mobile/rider/cod/batches', [
+            'sorting_center_id' => $center->id, 'idempotency_key' => 'mobile-cash-receipt',
+            'reference' => 'CASH-RECEIPT', 'items' => [['collection_id' => $cash->id, 'amount' => '1100.00']],
+        ])->assertOk();
+        $this->getJson('/api/mobile/rider/cod')->assertOk()
+            ->assertJsonPath('data.collections.0.receipt_verified', false)
+            ->assertJsonPath('data.collections.0.receiving_facility', 'Receiving branch')
+            ->assertJsonPath('data.collections.0.handover_status', 'submitted')
+            ->assertJsonPath('data.collections.0.can_remit', false)
+            ->assertJsonPath('data.summary.outstanding', '1100.00')
+            ->assertJsonPath('data.summary.remitted', '0.00');
+        $batch = DB::table('cod_remittance_batches')->first();
+        app(CodRemittanceService::class)->verify($branch, $batch->id, [['collection_id' => $cash->id, 'amount' => '1100.00']]);
+        $this->getJson('/api/mobile/rider/cod')->assertOk()
+            ->assertJsonPath('data.collections.0.receipt_verified', true)
+            ->assertJsonPath('data.summary.outstanding', '0.00')
+            ->assertJsonPath('data.summary.remitted', '1100.00');
+    }
+
     public function test_branch_verification_and_mobile_contract_preserve_outstanding_cash(): void
     {
         [, , $rider, , $center, $cash] = $this->collected();

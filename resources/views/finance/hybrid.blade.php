@@ -1,7 +1,18 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>ShopHop financial workspace</title>@vite(['resources/css/app.css'])</head>
-<body class="bg-slate-50 text-slate-900"><main class="mx-auto max-w-6xl space-y-6 p-6">
-<h1 class="text-2xl font-bold">Financial workspace</h1>
+@extends($isPartner ? 'logistics.layouts.console' : (!$isRider && $actor->account_type === 'branch' ? 'branch.layout.app' : 'finance.layout'))
+@section('title', 'COD handovers and verification')
+@section('content')
+@if(!$isRider && $actor->account_type === 'branch')
+    @include('finance.branch-cod')
+@else
+<div class="finance-workspace">
+<style>
+.finance-workspace{color:#0f1b3d;max-width:1200px;margin:auto;font-family:Poppins,Arial,sans-serif;font-size:14px;line-height:1.6}
+.finance-workspace h1{font-size:28px;font-weight:700;line-height:1.25;margin:0 0 16px}.finance-workspace h2{font-size:20px;font-weight:700;margin:0 0 12px}.finance-workspace h3{font-weight:600;font-size:16px}
+.finance-workspace>p{margin:16px 0;color:#52617a}.finance-workspace section{background:var(--surface,#fff);border:1px solid #e2e6ea;border-radius:14px;padding:22px;margin:22px 0}.finance-workspace article{border:1px solid #e2e6ea;border-radius:10px;padding:18px;margin:14px 0}.finance-workspace article p{margin:6px 0}
+.finance-workspace a,.finance-workspace button{display:inline-block;padding:10px 15px;border:1px solid #d6dfe7;border-radius:8px;font-weight:600;font-size:13px;cursor:pointer}.finance-workspace a{color:#007f75;text-decoration:none}.finance-workspace button{background:#0f1b3d;color:#fff}.finance-workspace form{display:flex;flex-wrap:wrap;align-items:end;gap:14px;margin-top:14px}.finance-workspace label{display:block;font-size:13px}.finance-workspace input:not([type=hidden]):not([type=checkbox]),.finance-workspace select{display:block;border:1px solid #cfd8e3;padding:9px;border-radius:7px;max-width:100%;background:transparent}.finance-workspace .cash-pending{background:#fff8e7;color:#805600;padding:12px;border-radius:8px}.finance-workspace .cash-verified{background:#d4f5ee;color:#007f75;padding:12px;border-radius:8px}.finance-workspace .cash-note{color:#52617a;font-size:13px}.finance-workspace nav a{padding:5px}.finance-workspace svg{max-height:24px;max-width:24px}
+@media(max-width:600px){.finance-workspace h1{font-size:24px}.finance-workspace section{padding:16px}.finance-workspace form{display:block}.finance-workspace form>*{margin-top:10px}}
+</style>
+<h1 class="text-2xl font-bold">COD handovers and verification</h1>
 <a class="inline-block rounded border p-2 text-teal-700" href="{{ $isRider ? route('rider.settlements.index') : route(match($actor->account_type) { 'admin' => 'admin.commission', 'logistics' => 'logistics.earnings', default => 'branch.dashboard' }) }}">Back to financial overview</a>
 <p>Full COD cash handover and partner personnel compensation are separate records. Amounts shown here are records of obligations and receipts. External payments require confirmation.</p>
 @if(session('status'))<p role="status" class="rounded bg-teal-50 p-3">{{ session('status') }}</p>@endif
@@ -31,12 +42,37 @@
 <script>document.getElementById('add-cash-item').addEventListener('click', function () { const root = document.getElementById('cash-items'); const i = root.children.length; if(i >= 100) return; const row = root.firstElementChild.cloneNode(true); row.querySelectorAll('input').forEach(input => { input.name = input.name.replace('[0]', '[' + i + ']'); input.value = ''; }); root.appendChild(row); });</script>
 </section>
 @endif
-<section><h2 class="text-xl font-semibold">COD remittance history and verification</h2>
+<section aria-label="Single-order cash handovers">
+<h2>Single-order COD handovers</h2>
+<p class="cash-note">These handovers were recorded without a receiving branch. The logistics company account must verify actual receipt. No branch or cashier is assumed.</p>
+@forelse($directHandovers as $cash)
+<article>
+<h3>Order #{{ $cash->order_id }} · {{ $cash->delivery?->tracking_code ?: 'Tracking unavailable' }}</h3>
+<p><strong>Rider:</strong> {{ $cash->remitter?->name ?: 'Rider unavailable' }} · <strong>Company:</strong> {{ $cash->partner?->company_name ?: 'Logistics company' }}</p>
+<p><strong>Cash handed over:</strong> PHP {{ $cash->collected_amount }} · <strong>Submitted:</strong> {{ $cash->remitted_at?->format('M j, Y g:i A') }}</p>
+@if($cash->reconciled_at)
+<p class="cash-verified">Receipt verified · PHP {{ $cash->received_amount }} received by {{ $cash->reconciler?->display_name ?: 'Logistics user #'.$cash->reconciled_by_user_id }} on {{ $cash->reconciled_at->format('M j, Y g:i A') }}</p>
+@else
+<p class="cash-pending">Awaiting logistics receipt verification</p>
+<p class="cash-note">Receiving branch and cashier were not recorded by the original mobile handover.</p>
+@endif
+@if($isPartner)
+<a href="{{ route('logistics.settlements.index', ['q' => (string) $cash->order_id]) }}">{{ $cash->reconciled_at ? 'View COD receipt' : 'Review cash receipt' }}</a>
+@elseif(!$isRider && $actor->account_type === 'branch')
+<p class="cash-note">Ask your logistics company account to open COD Settlements → Order #{{ $cash->order_id }} → Manage and confirm only the cash physically received.</p>
+@endif
+</article>
+@empty<p class="cash-note">No single-order cash handovers.</p>@endforelse
+{{ $directHandovers->links() }}
+</section>
+<section><h2 class="text-xl font-semibold">Branch cash handovers</h2>
+<p class="cash-note">The selected receiving branch or its logistics company counts the cash and verifies receipt here.</p>
 @forelse($batches as $batch)
 <article class="my-3 space-y-2 rounded border bg-white p-4"><h3 class="font-semibold">{{ $batch->reference }}</h3>
-<p>Rider {{ $batch->rider_id }} · Facility {{ $batch->sorting_center_id }} · {{ $batch->created_at }} · {{ $batch->status }}</p>
+<p><strong>Rider:</strong> {{ $riderNames->get($batch->rider_id, 'Rider #'.$batch->rider_id) }} · <strong>Receiving branch:</strong> {{ $centerNames->get($batch->sorting_center_id, 'Facility #'.$batch->sorting_center_id) }}</p>
+<p>Submitted {{ $batch->created_at }} · <strong>{{ $batch->status === 'submitted' ? 'Awaiting receipt verification' : ucfirst($batch->status) }}</strong></p>
 <p>Expected ₱{{ App\Services\FinanceMoney::decimal($batch->expected_minor) }} · Submitted ₱{{ App\Services\FinanceMoney::decimal($batch->submitted_minor) }} · Verified {{ $batch->verified_minor === null ? 'Pending' : '₱'.App\Services\FinanceMoney::decimal($batch->verified_minor) }} · Difference {{ $batch->difference_minor === null ? 'Pending' : '₱'.App\Services\FinanceMoney::decimal($batch->difference_minor) }}</p>
-<p>Evidence: {{ $batch->receipt_reference }} · Receiver {{ $batch->verified_by_user_id ?? 'Pending' }} · {{ $batch->verified_at }}</p>
+<p>Evidence: {{ $batch->receipt_reference }} · Receiver {{ $receiverNames->get($batch->verified_by_user_id) ?: ($batch->verified_by_user_id ? 'User #'.$batch->verified_by_user_id : 'Awaiting verification') }} · {{ $batch->verified_at }}</p>
 @if(!$isRider && $actor->account_type !== 'admin' && !$batch->verified_at)
 <form method="POST" action="{{ route($isRider || $actor->account_type === 'admin' ? 'hybrid.verify' : 'logistics.hybrid.verify', $batch->id) }}">@csrf
 @foreach($items->get($batch->id, collect()) as $i => $item)
@@ -49,7 +85,7 @@
 @endif
 @if($batch->status === 'discrepancy')<p class="text-red-700">Under review. A shortage remains owed; overages are held for investigation and are not revenue. Original receipt records are retained.</p>@endif
 </article>
-@empty<p>No remittance batches.</p>@endforelse
+@empty<p class="cash-note">No branch cash handovers yet. Earlier single-order handovers are shown above.</p>@endforelse
 {{ $batches->links() }}</section>
 @if($isPartner)
 <section class="rounded bg-white p-4"><h2 class="text-xl font-semibold">Partner operating expenses</h2><p>Costs incurred are separate from actual payments. Personnel earnings are recorded in the compensation section; do not enter the same payroll again here.</p>
@@ -91,4 +127,6 @@
 @foreach($audit as $event)<article class="my-2 rounded border bg-white p-3"><p>{{ $event->created_at }} ? {{ $event->subject_type }} #{{ $event->subject_id }} ? {{ $event->action }} ? {{ $event->actor_type }} #{{ $event->actor_id }}</p><details><summary>Recorded evidence and changes</summary><pre class="overflow-x-auto whitespace-pre-wrap text-xs">{{ json_encode(json_decode($event->details), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre></details></article>@endforeach
 {{ $audit->links() }}</section>
 @endif
-</main></body></html>
+</div>
+@endif
+@endsection

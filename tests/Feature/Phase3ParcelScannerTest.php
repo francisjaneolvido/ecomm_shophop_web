@@ -44,6 +44,9 @@ class Phase3ParcelScannerTest extends TestCase
         Schema::create('parcel_scan_events', function (Blueprint $t) {
             $t->id(); $t->unsignedBigInteger('delivery_id');
             $t->unsignedBigInteger('sorting_center_id'); $t->unsignedBigInteger('operator_user_id');
+            $t->unsignedBigInteger('operator_staff_id')->nullable();
+            $t->unsignedBigInteger('operator_rider_id')->nullable();
+            $t->unsignedBigInteger('operator_linehaul_driver_id')->nullable();
             $t->unsignedBigInteger('parcel_transfer_id')->nullable();
             $t->string('event_type'); $t->timestamp('scanned_at'); $t->timestamps();
         });

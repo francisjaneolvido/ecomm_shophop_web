@@ -478,4 +478,60 @@ class RiderBatchWorkflowTest extends TestCase
             ->assertCreated()->assertJsonPath('data.route.status', 'in_progress');
     }
 
+    public function test_web_rider_receipt_preview_is_read_only_until_branch_confirms(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        $batch = $this->createBatch($n, [$order]);
+        $this->dispatch($n, $batch);
+        app(RiderCustodyScanService::class)->confirm($n['rider'], $order->tracking_code, RiderCustodyScanService::SELLER_PICKUP);
+        $fields = ['sorting_center_id' => $n['branch']->id, 'tracking_code' => $order->tracking_code];
+        $link = route('branch.scanner', ['mode' => 'rider', 'tracking' => $order->tracking_code]);
+        $this->actingAs($n['user'])->get(route('branch.dispatch.index'))->assertOk()
+            ->assertSee('Awaiting branch receipt')->assertSee('Receive parcel')->assertSee($link);
+        $this->get($link)->assertOk()->assertSee('Receive from rider')->assertSee('Receive from another branch')
+            ->assertSee('Send to another branch')->assertDontSee('Parcel exception');
+        $this->getJson(route('branch.scanner.api.parcel-preview', $fields))->assertOk()
+            ->assertJsonPath('data.parcel.event', 'pickup_received')->assertJsonPath('data.parcel.rider', $n['rider']->name);
+        $this->assertSame(Delivery::PICKED_UP, $order->delivery()->firstOrFail()->status);
+        $this->assertSame(0, DB::table('parcel_scan_events')->where('event_type', 'pickup_received')->count());
+        $this->postJson(route('branch.scanner.api.parcel-receive'), $fields)->assertOk()->assertJsonPath('data.event', 'pickup_received');
+        $this->assertSame(Delivery::AT_SORTING_CENTER, $order->delivery()->firstOrFail()->status);
+        $this->get(route('branch.dispatch.index'))->assertOk()->assertDontSee('Receive parcel');
+        $this->postJson(route('branch.scanner.api.parcel-receive'), $fields)->assertStatus(409);
+        $this->assertSame(1, DB::table('parcel_scan_events')->where('event_type', 'pickup_received')->count());
+    }
+
+    public function test_web_rider_receipt_rejects_uncollected_parcels_and_other_branches(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        $batch = $this->createBatch($n, [$order]);
+        $this->dispatch($n, $batch);
+        $fields = ['sorting_center_id' => $n['branch']->id, 'tracking_code' => $order->tracking_code];
+        $this->actingAs($n['user'])->getJson(route('branch.scanner.api.parcel-preview', $fields))->assertStatus(409);
+        $this->postJson(route('branch.scanner.api.parcel-receive'), $fields)->assertStatus(409);
+        app(RiderCustodyScanService::class)->confirm($n['rider'], $order->tracking_code, RiderCustodyScanService::SELLER_PICKUP);
+        $other = $this->network();
+        $this->actingAs($other['user'])->postJson(route('branch.scanner.api.parcel-receive'), $fields)->assertForbidden();
+        $this->assertSame(Delivery::PICKED_UP, $order->delivery()->firstOrFail()->status);
+        $this->assertSame(0, DB::table('parcel_scan_events')->where('event_type', 'pickup_received')->count());
+    }
+
+    public function test_missing_financial_setup_cannot_partially_receive_a_pickup(): void
+    {
+        $n = $this->network();
+        $order = $this->parcel($n);
+        $batch = $this->createBatch($n, [$order]);
+        $this->dispatch($n, $batch);
+        app(RiderCustodyScanService::class)->confirm($n['rider'], $order->tracking_code, RiderCustodyScanService::SELLER_PICKUP);
+        \Illuminate\Support\Facades\Schema::drop('partner_personnel_earnings');
+        \Illuminate\Support\Facades\Schema::drop('partner_compensation_policies');
+        $this->actingAs($n['user'])->postJson(route('branch.scanner.api.parcel-receive'),
+            ['sorting_center_id' => $n['branch']->id, 'tracking_code' => $order->tracking_code])
+            ->assertStatus(503)->assertJsonPath('message', 'Financial setup is incomplete. Apply the financial database update before confirming this handover.');
+        $this->assertSame(Delivery::PICKED_UP, $order->delivery()->firstOrFail()->status);
+        $this->assertSame(0, DB::table('parcel_scan_events')->where('event_type', 'pickup_received')->count());
+    }
+
 }

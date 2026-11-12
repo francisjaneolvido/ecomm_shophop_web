@@ -322,6 +322,7 @@ class MobileLogisticsScannerController extends Controller
             ->where('tracking_code', $parcel['tracking_code'])
             ->first();
         if ($delivery) {
+            $parcel['rider'] = $delivery->rider?->name;
             $parcel['route'] = $journeys->preview($delivery);
         }
         return response()->json(['success' => true, 'status' => 'ready',

@@ -32,10 +32,18 @@ class MobileRiderCodController extends Controller
         $batches = DB::table('cod_remittance_batches')->where('rider_id', $rider->id)
             ->where('logistics_partner_id', $rider->logistics_partner_id)->orderByDesc('id')->limit(100)->get();
         $items = DB::table('cod_remittance_items')->whereIn('batch_id', $batches->pluck('id'))->get()->groupBy('batch_id');
+        $facilityNames = SortingCenter::whereIn('id', $batches->pluck('sorting_center_id'))->pluck('name', 'id');
         $facilities = SortingCenter::where('logistics_partner_id', $rider->logistics_partner_id)
             ->where('status', 'active')->get(['id', 'name']);
         $pending = DB::table('cod_remittance_items as i')->join('cod_remittance_batches as b', 'i.batch_id', '=', 'b.id')
             ->where('b.rider_id', $rider->id)->where('b.logistics_partner_id', $rider->logistics_partner_id)->where('b.status', 'submitted')->pluck('i.cod_settlement_id');
+        $handoverDetails = DB::table('cod_remittance_items as i')
+            ->join('cod_remittance_batches as b', 'i.batch_id', '=', 'b.id')
+            ->leftJoin('sorting_centers as c', 'c.id', '=', 'b.sorting_center_id')
+            ->where('b.rider_id', $rider->id)->where('b.logistics_partner_id', $rider->logistics_partner_id)
+            ->whereIn('i.cod_settlement_id', $cash->pluck('id'))->orderByDesc('b.id')
+            ->get(['i.cod_settlement_id', 'c.name as receiving_facility', 'b.status as handover_status'])
+            ->unique('cod_settlement_id')->keyBy('cod_settlement_id');
 
         return response()->json(['success' => true, 'status' => 'ok', 'data' => [
             'summary' => [
@@ -48,7 +56,7 @@ class MobileRiderCodController extends Controller
                 'discrepancies' => (clone $query)->where('status', 'discrepancy')->count(),
             ],
             'facilities' => $facilities,
-            'batches' => $batches->map(fn ($batch) => [...(array) $batch, 'items' => $items->get($batch->id, collect())]),
+            'batches' => $batches->map(fn ($batch) => [...(array) $batch, 'receiving_facility' => $facilityNames->get($batch->sorting_center_id), 'items' => $items->get($batch->id, collect())]),
             'collections' => $cash->map(fn ($row) => [
                 'collection_id' => $row->id, 'delivery_id' => $row->delivery_id, 'order_id' => $row->order_id,
                 'expected_amount' => $row->expected_amount, 'amount' => $row->collected_amount,
@@ -56,6 +64,10 @@ class MobileRiderCodController extends Controller
                 'outstanding' => FinanceMoney::decimal(max(0, FinanceMoney::minor($row->collected_amount) - FinanceMoney::minor($row->received_amount))),
                 'status' => $row->status, 'collected_at' => $row->collected_at?->toIso8601String(),
                 'remitted_at' => $row->remitted_at?->toIso8601String(),
+                'receipt_verified' => $row->reconciled_at !== null,
+                'receiving_facility' => $handoverDetails->get($row->id)?->receiving_facility,
+                'handover_status' => $handoverDetails->get($row->id)?->handover_status
+                    ?? ($row->reconciled_at ? 'verified' : ($row->remitted_at ? 'submitted' : null)),
                 'can_remit' => in_array($row->status, ['collected', 'discrepancy'], true)
                     && ! $pending->contains($row->id)
                     && FinanceMoney::minor($row->collected_amount) > FinanceMoney::minor($row->received_amount),

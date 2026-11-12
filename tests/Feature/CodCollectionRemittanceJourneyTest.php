@@ -179,6 +179,50 @@ class CodCollectionRemittanceJourneyTest extends TestCase
         $this->assertDatabaseHas('cod_settlements', ['delivery_id' => $delivery->id, 'status' => 'collected']);
     }
 
+    public function test_single_order_handover_is_visible_in_workspace_without_fabricating_receipt(): void
+    {
+        [$order, $delivery, $rider, $operator] = $this->delivery();
+        $this->complete($delivery, $rider);
+        $this->post(route('rider.settlements.remit', $delivery))->assertRedirect();
+        $this->post(route('rider.logout'));
+        $this->actingAs($operator)->get(route('logistics.hybrid'))->assertOk()
+            ->assertSee('Order #'.$order->id)->assertSee($rider->name)
+            ->assertSee('Awaiting logistics receipt verification')->assertSee('Review cash receipt')
+            ->assertSee('Receiving branch and cashier were not recorded');
+        $this->assertDatabaseCount('cod_remittance_batches', 0);
+        $this->assertDatabaseHas('cod_settlements', ['delivery_id' => $delivery->id,
+            'status' => 'remitted', 'reconciled_at' => null]);
+
+        $other = $this->user('logistics');
+        $this->partner($other);
+        $this->actingAs($other)->get(route('logistics.hybrid'))->assertOk()
+            ->assertDontSee('Order #'.$order->id)->assertDontSee($rider->name);
+        $this->actingAs($operator)->post(route('logistics.settlements.reconcile', $delivery))->assertRedirect();
+        $this->get(route('logistics.hybrid'))->assertOk()->assertSee('Receipt verified');
+    }
+
+    public function test_assigned_branch_can_find_older_handover_but_cannot_claim_receipt_for_company(): void
+    {
+        [$order, $delivery, $rider] = $this->delivery();
+        $branch = $this->user('branch');
+        $center = \App\Models\Logistics\SortingCenter::create([
+            'user_id' => $branch->id, 'logistics_partner_id' => $rider->logistics_partner_id,
+            'name' => 'Assigned branch', 'code' => 'BR-DIRECT', 'type' => 'station_hub', 'status' => 'active',
+            'region' => 'Region IV-A', 'province' => 'Cavite', 'municipality' => 'Imus',
+            'barangay' => 'Test', 'street_no' => '1', 'unit_no' => '1',
+        ]);
+        $rider->update(['sorting_center_id' => $center->id]);
+        $this->complete($delivery, $rider);
+        $this->post(route('rider.settlements.remit', $delivery))->assertRedirect();
+        $this->post(route('rider.logout'));
+        $this->actingAs($branch)->get(route('logistics.hybrid'))->assertOk()
+            ->assertSee('Order #'.$order->id)->assertSee('Next step')->assertSee('Company review')
+            ->assertDontSee('Review cash receipt');
+        $this->post(route('logistics.settlements.reconcile', $delivery))->assertForbidden();
+        $this->actingAs($this->user('branch'))->get(route('logistics.hybrid'))->assertOk()
+            ->assertDontSee('Order #'.$order->id);
+    }
+
     private function complete(Delivery $delivery, Rider $rider): void
     {
         // A real HTTP completion establishes the prerequisite without direct settlement row writes.

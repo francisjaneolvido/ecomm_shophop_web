@@ -10,6 +10,7 @@ use App\Models\LogisticsPartner;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 class PartnerCompensationService
@@ -89,6 +90,10 @@ class PartnerCompensationService
 
     private function serviceEvent(int $partner, string $personnelType, int $personnel, string $type, string $key, $at, array $evidence): void
     {
+        abort_unless(Schema::hasTable('partner_compensation_policies') && Schema::hasTable('partner_personnel_earnings')
+            && Schema::hasTable('financial_audit_events'), 503,
+            'Financial setup is incomplete. Apply the financial database update before confirming this handover.');
+
         DB::transaction(function () use ($partner, $personnelType, $personnel, $type, $key, $at, $evidence) {
             LogisticsPartner::whereKey($partner)->lockForUpdate()->firstOrFail();
             $policy = DB::table('partner_compensation_policies')->where('logistics_partner_id', $partner)

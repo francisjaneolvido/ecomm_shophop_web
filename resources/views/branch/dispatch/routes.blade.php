@@ -1,3 +1,21 @@
+@if($routePrefix === 'branch.dispatch')
+@php
+    $awaitingReceipts = $batchData->where('status', 'in_progress')->flatMap(fn ($route) => collect($route['items'])
+        ->filter(fn ($item) => ($route['type'] === 'pickup' && $item['status'] === 'picked_up') || ($item['requires_branch_return'] ?? false))
+        ->map(fn ($item) => array_merge($item, ['rider_name' => $route['rider']])));
+@endphp
+@if($awaitingReceipts->isNotEmpty())
+<section class="ops-panel mb-4" aria-label="Awaiting branch receipt">
+    <div class="ops-panel-head"><div><h3>Awaiting branch receipt</h3><p class="ops-panel-note">The rider has the parcel. Receive it here when it is physically at this branch.</p></div></div>
+    @foreach($awaitingReceipts as $receipt)
+    <div class="flex flex-wrap items-center justify-between gap-3 border-t border-gray-border p-4">
+        <div><p class="text-sm font-semibold">{{ $receipt['tracking_code'] }}</p><p class="text-xs text-slate-500">From {{ $receipt['rider_name'] }} &middot; Awaiting branch receipt</p></div>
+        <a class="sh-btn" href="{{ route('branch.scanner', ['mode' => 'rider', 'tracking' => $receipt['tracking_code']]) }}">Receive parcel</a>
+    </div>
+    @endforeach
+</section>
+@endif
+@endif
 @foreach($batchData as $batchInfo)
 <article data-batch-id="{{ $batchInfo['id'] }}" class="ops-panel p-4 space-y-3">
     <div class="flex flex-wrap items-start justify-between gap-3">
@@ -24,7 +42,7 @@
                 @foreach($stopItems as $item)
                     <div class="flex flex-wrap justify-between gap-2 py-1 text-xs">
                         <span>{{ $item['tracking_code'] }} @if($item['cod_amount']!==null) &middot; COD PHP {{ number_format($item['cod_amount'],2) }} @endif</span>
-                        <span>{{ ucwords(str_replace('_',' ',$item['status'])) }} @if($item['requires_branch_return']??false) &middot; Awaiting Branch return scan @endif</span>
+                        <span>{{ $batchInfo['type'] === 'pickup' && $item['status'] === 'picked_up' ? 'Awaiting branch receipt' : ucwords(str_replace('_',' ',$item['status'])) }} @if($item['requires_branch_return']??false) &middot; Awaiting Branch return scan @endif</span>
                     </div>
                     @if($item['reason']??null)<p class="text-xs text-slate-500">{{ $item['reason'] }}</p>@endif
                 @endforeach
