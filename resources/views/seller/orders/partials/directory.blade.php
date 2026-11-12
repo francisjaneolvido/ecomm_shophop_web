@@ -1,6 +1,6 @@
 {{-- Shared Seller operations directory: scoped, filtered and paginated by OrderController. --}}
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/shophop-seller-order-directory.css') }}?v=20261104a">
+<link rel="stylesheet" href="{{ asset('css/shophop-seller-order-directory.css') }}?v=20261112-navy-pink-2">
 @endpush
 @php
     $routeName = 'seller.orders.' . $section;
@@ -242,5 +242,5 @@
     </dialog>
 </section>
 @push('scripts')
-<script defer src="{{ asset('js/shophop-seller-order-directory.js') }}?v=20261104a"></script>
+<script defer src="{{ asset('js/shophop-seller-order-directory.js') }}?v=20261112-navy-pink-2"></script>
 @endpush

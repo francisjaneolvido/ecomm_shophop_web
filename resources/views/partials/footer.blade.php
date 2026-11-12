@@ -9,8 +9,8 @@
         <div class="sh-shop-footer-main">
             <div class="sh-shop-footer-brand">
                 <a href="{{ $footerHome }}" class="sh-shop-footer-brand-link">
-                    <img src="{{ asset('images/logo.png') }}" width="34" height="34" alt="ShopHop logo">
-                    <span><strong>ShopHop</strong><small>HOP IN. SHOP MORE.</small></span>
+                    <img src="{{ asset('images/logo-bunny.png') }}" width="34" height="34" alt="ShopHop logo">
+                    <span><strong>Shop<span class="sh-brand-hop">Hop</span></strong><small>HOP IN. SHOP MORE.</small></span>
                 </a>
                 <p>Find everyday essentials, trending picks, and useful deals from shops in one marketplace.</p>
                 <span class="sh-shop-footer-tagline">Shop more, hop less.</span>
@@ -49,7 +49,7 @@
         </div>
         <div class="sh-shop-footer-bottom">
             <span>&copy; {{ date('Y') }} ShopHop. All rights reserved.</span>
-            <span><strong>ShopHop</strong> &nbsp;·&nbsp; Teal marketplace, everyday finds</span>
+            <span><strong>Shop<span class="sh-brand-hop">Hop</span></strong> &nbsp;·&nbsp; Your marketplace, everyday finds</span>
         </div>
     </div>
 </footer>

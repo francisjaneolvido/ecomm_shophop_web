@@ -1,8 +1,8 @@
 /* ShopHop unified admin/logistics/branch/hub/seller design; loaded last in the five layouts. */
-:root {--shm-navy:#0f1b3d;--shm-teal:#18a98e;--shm-mint:#d4f5ee;--shm-line:#e2e6ea;--shm-muted:#64748b;--shm-radius:8px;--shm-control:6px;--shm-dialog:10px}
+:root {--shm-navy:#10193C;--shm-teal:#EDA3AE;--shm-mint:#FCECEF;--shm-line:rgba(16,25,60,0.150);--shm-muted:#64748b;--shm-radius:8px;--shm-control:6px;--shm-dialog:10px}
 /* Root scroll fix: only the portal main content scrolls vertically. Sidebar scroll remains independent. */
 html:has(body.sh-management-ui){height:100%;overflow:hidden}
-body.sh-management-ui{height:100dvh;min-height:0;max-width:100%;overflow:hidden;font-family:'Poppins',ui-sans-serif,system-ui,sans-serif;font-size:13px;line-height:1.55;color:var(--shm-navy);background:#f3f5f7;-webkit-font-smoothing:antialiased}
+body.sh-management-ui{height:100dvh;min-height:0;max-width:100%;overflow:hidden;font-family:'Poppins',ui-sans-serif,system-ui,sans-serif;font-size:13px;line-height:1.55;color:var(--shm-navy);background:#FBF6EE;-webkit-font-smoothing:antialiased}
 body.sh-management-ui :is(button,input,select,textarea,table,dialog){font-family:inherit}
 body.sh-management-ui :is(#adminShell,#sellerShell,#logisticsShell,#branchShell){height:100dvh!important;min-height:0;max-height:100dvh;max-width:100vw;overflow:hidden}
 body.sh-management-ui :is(#adminShell,#sellerShell,#logisticsShell,#branchShell)>:is(div,main,aside){min-height:0;min-width:0}
@@ -20,7 +20,7 @@ body.sh-management-ui main.sh-management-main :is(.ops-subtitle,.sh-subtitle){fo
 body.sh-management-ui main.sh-management-main :is(p,small){overflow-wrap:break-word}
 /* Unified cards and panels. Avatars/badges remain intentionally circular. */
 body.sh-management-ui main.sh-management-main :is(div,section,article,form)[class~="rounded-2xl"],body.sh-management-ui main.sh-management-main :is(div,section,article,form)[class~="rounded-xl"],body.sh-management-ui main.sh-management-main :is(div,section,article,form)[class~="rounded-3xl"],body.sh-management-ui main.sh-management-main :is(.sh-surface,.sh-surface-soft,.sh-stat,.ops-panel,.admin-panel,.logistics-panel,.report-card,.sh-management-panel){border-radius:var(--shm-radius)}
-body.sh-management-ui main.sh-management-main :is(.sh-surface,.ops-panel,.admin-panel,.sh-management-panel){box-shadow:0 2px 12px rgba(15,27,61,.045)}
+body.sh-management-ui main.sh-management-main :is(.sh-surface,.ops-panel,.admin-panel,.sh-management-panel){box-shadow:0 2px 12px rgba(16,25,60,.045)}
 body.sh-management-ui main.sh-management-main :is(.sh-stat,.admin-kpi){min-width:0}
 body.sh-management-ui main.sh-management-main :is(.ops-header,.ops-panel-head,.admin-panel-header,.sh-management-panel-head){padding:14px 16px;gap:12px}
 body.sh-management-ui main.sh-management-main :is(.ops-filters,.admin-filter-bar,.ops-toolbar){gap:10px}
@@ -39,13 +39,13 @@ body.sh-management-ui main.sh-management-main table :is(th,td){font-family:inher
 body.sh-management-ui main.sh-management-main table thead th{background:#f4f6f8;color:#4e5e75;text-transform:uppercase;letter-spacing:.045em;font-size:10px;font-weight:700;padding:11px 13px;border-bottom:1px solid var(--shm-line)}
 body.sh-management-ui main.sh-management-main table tbody td{color:var(--shm-navy);font-size:12px;padding:12px 13px;border-bottom:1px solid #e8edf0}
 body.sh-management-ui main.sh-management-main table tbody tr:last-child td{border-bottom:0}
-body.sh-management-ui main.sh-management-main table tbody tr:hover{background:#f6fbfa}
+body.sh-management-ui main.sh-management-main table tbody tr:hover{background:#FCECEF}
 body.sh-management-ui main.sh-management-main table td .break-all{overflow-wrap:anywhere}
 body.sh-management-ui main.sh-management-main :is(.ops-badge,.admin-status,.sh-badge,.sh-management-status){font-size:10px;font-weight:700;white-space:nowrap}
-body.sh-management-ui main.sh-management-main :is(.ops-actions-menu,.sh-dropdown-menu){border-radius:8px;box-shadow:0 12px 30px rgba(15,27,61,.17)}
+body.sh-management-ui main.sh-management-main :is(.ops-actions-menu,.sh-dropdown-menu){border-radius:8px;box-shadow:0 12px 30px rgba(16,25,60,.17)}
 /* Admin-like dialog shape, header/body/footer; retain per-role validation and actions. */
-body.sh-management-ui :is(dialog.ops-modal,dialog.ops-dialog,dialog.admin-dialog,dialog.sh-modal){border-radius:var(--shm-dialog);max-width:calc(100vw - 24px);max-height:min(88dvh,850px);color:var(--shm-navy);box-shadow:0 24px 74px rgba(15,27,61,.22)}
-body.sh-management-ui :is(dialog.ops-modal,dialog.ops-dialog,dialog.admin-dialog,dialog.sh-modal)::backdrop{background:rgba(15,27,61,.54)}
+body.sh-management-ui :is(dialog.ops-modal,dialog.ops-dialog,dialog.admin-dialog,dialog.sh-modal){border-radius:var(--shm-dialog);max-width:calc(100vw - 24px);max-height:min(88dvh,850px);color:var(--shm-navy);box-shadow:0 24px 74px rgba(16,25,60,.22)}
+body.sh-management-ui :is(dialog.ops-modal,dialog.ops-dialog,dialog.admin-dialog,dialog.sh-modal)::backdrop{background:rgba(16,25,60,.54)}
 body.sh-management-ui :is(.ops-modal-head,.ops-dialog-head,.admin-dialog-header){padding:16px 18px;border-bottom:1px solid var(--shm-line)}
 body.sh-management-ui :is(.ops-modal-body,.ops-dialog-body,.admin-dialog-body){padding:16px 18px;overflow-y:auto;overscroll-behavior-y:contain;min-height:0}
 body.sh-management-ui :is(.ops-modal-footer,.ops-dialog-footer,.admin-dialog-footer){padding:12px 18px;background:#fff;border-top:1px solid var(--shm-line)}
@@ -56,12 +56,12 @@ body.sh-management-ui .ops-modal-body{max-height:calc(88dvh - 150px)}
 .sh-management-panel-head h2{font-size:15px;color:var(--shm-navy)}
 .sh-management-panel-head p{font-size:11px;color:var(--shm-muted);margin-top:2px}
 .sh-management-panel-foot{padding:11px 16px;border-top:1px solid var(--shm-line)}
-.sh-finance-summary{padding:16px;border:1px solid var(--shm-line);border-radius:var(--shm-radius);background:white;box-shadow:0 2px 12px rgba(15,27,61,.045);display:flex;flex-direction:column;gap:3px}
+.sh-finance-summary{padding:16px;border:1px solid var(--shm-line);border-radius:var(--shm-radius);background:white;box-shadow:0 2px 12px rgba(16,25,60,.045);display:flex;flex-direction:column;gap:3px}
 .sh-finance-summary p{color:#627087;font-size:11px;font-weight:600}
 .sh-finance-summary strong{color:var(--shm-navy);font-size:22px;line-height:1.35;letter-spacing:-.025em}
 .sh-finance-summary span{color:#69778b;font-size:11px;line-height:1.5}
 .sh-management-status{display:inline-flex;align-items:center;padding:4px 9px;border-radius:999px;color:#57647a;background:#f0f2f5}
-.sh-management-status-ok{color:#137c65;background:#e5f8f1}.sh-management-status-info{color:#265e91;background:#e8f1fb}.sh-management-status-warn{color:#965c00;background:#fff4de}
+.sh-management-status-ok{color:#166534;background:#EAF7EE}.sh-management-status-info{color:#265e91;background:#e8f1fb}.sh-management-status-warn{color:#965c00;background:#fff4de}
 /* Finance settings actions remain within the rate card. */
 #shMarketplaceRateForm .sh-rate-actions{border-radius:0 0 var(--shm-radius) var(--shm-radius)}
 #shMarketplaceRateForm fieldset{min-width:0}

@@ -1,0 +1,123 @@
+
+/* ShopHop brand: one light appearance shared by public pages and all consoles. */
+:root{
+ --sh-primary:#10193C;--sh-primary-hover:#26305A;--sh-accent:#EDA3AE;--sh-accent-hover:#E1909E;--sh-accent-soft:#FCECEF;
+ --sh-page:#FBF6EE;--sh-surface:#FFFFFF;--sh-surface-raised:#FBF6EE;--sh-surface-soft:#FFFAF6;
+ --sh-text:#10193C;--sh-muted:#6B6B7B;--sh-faint:#6B6B7B;--sh-border:rgba(16,25,60,.15);--sh-input:#FFFFFF;
+ --sh-overlay:rgba(16,25,60,.5);--sh-shadow:rgba(16,25,60,.12);
+ --sh-brand:var(--sh-accent);--sh-brand-strong:var(--sh-primary);--sh-brand-soft:var(--sh-accent-soft);--sh-on-primary:#FFFFFF;
+ --sh-success:#1F9D55;--sh-success-ink:#166534;--sh-success-soft:#EAF7EE;--sh-danger:#D93F4C;--sh-danger-ink:#A92F3A;--sh-warning:#F59E0B;
+ --color-navy:#10193C;--color-navy-light:#26305A;--color-teal:#EDA3AE;--color-teal-dark:#E1909E;--color-teal-light:#FCECEF;
+ --color-mint:#EDA3AE;--color-mint-dark:#E1909E;--color-gray-bg:#FBF6EE;--color-gray-border:rgba(16,25,60,.15);
+ color-scheme:only light;
+}
+html{color-scheme:only light}
+body{background:var(--sh-page)!important;color:var(--sh-text)}
+body.sh-management-ui{
+ --ui-ink:var(--sh-text);--ui-muted:var(--sh-muted);--ui-line:var(--sh-border);--ui-surface:#fff;
+ --ui-soft:var(--sh-surface-soft);--ui-raised:var(--sh-page);--ui-action:var(--sh-primary);--ui-action-hover:var(--sh-primary-hover);
+ --ui-accent:var(--sh-primary);--ui-accent-soft:var(--sh-accent-soft);
+}
+body.sh-management-ui main.sh-management-main{background:var(--sh-page)}
+.sh-brand-hop{color:var(--sh-accent-hover)!important}
+img[src*="images/logo-bunny.png"]{object-fit:contain}
+:is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar,.shophop-role-panel) img[src*="logo-bunny.png"]{background:#fff;border-radius:6px;padding:2px}
+
+:is(.text-teal,.text-teal-dark,.text-mint,.text-mint-dark){color:var(--sh-primary)}
+:is(.hover\:text-teal,.hover\:text-teal-dark,.hover\:text-mint,.hover\:text-mint-dark):hover{color:var(--sh-primary-hover)}
+/* Old utility names remain aliases while the underlying palette is centralized. */
+:is(button,a,summary)[class~="bg-teal"],:is(button,a,summary)[class~="bg-teal-dark"],
+:is(button,a,summary)[class~="bg-mint"],:is(button,a,summary)[class~="bg-mint-dark"]{
+ background:var(--sh-primary)!important;color:#fff!important;border-color:var(--sh-primary)
+}
+:is(button,a,summary)[class~="bg-teal"]:hover,:is(button,a,summary)[class~="bg-teal-dark"]:hover,
+:is(button,a,summary)[class~="bg-mint"]:hover,:is(button,a,summary)[class~="bg-mint-dark"]:hover{background:var(--sh-primary-hover)!important}
+:is(input,select,textarea){accent-color:var(--sh-primary)}
+:is(a,button,input,select,textarea,summary):focus-visible{outline-color:var(--sh-primary)}
+body.sh-management-ui :is(.sh-btn:not(.sh-btn-secondary,.sh-btn-ghost,.sh-btn-soft,.sh-btn-danger),.sh-btn-primary,.ops-button-primary,.admin-btn-primary,.admin-btn-teal,.ss-btn-primary,.ss-btn-teal,.so-button-primary,.inventory-btn-primary,.bc-primary){background:var(--sh-primary);border-color:var(--sh-primary);color:#fff!important}
+body.sh-management-ui :is(.sh-btn:not(.sh-btn-secondary,.sh-btn-ghost,.sh-btn-soft,.sh-btn-danger),.sh-btn-primary,.ops-button-primary,.admin-btn-primary,.admin-btn-teal,.ss-btn-primary,.ss-btn-teal,.so-button-primary,.inventory-btn-primary,.bc-primary):hover{background:var(--sh-primary-hover);border-color:var(--sh-primary-hover)}
+body.sh-management-ui :is(.sh-console-tabs,.ops-tabs,.rm-queues,.bc-tabs,.so-workflow-nav)>:is(a,button):is([aria-current=page],[aria-selected=true],.is-active){color:var(--sh-primary);border-bottom-color:var(--sh-primary);background:var(--sh-accent-soft)}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar):is(.sh-console-sidebar,.sh-logistics-sidebar){background:var(--sh-primary)!important;border-color:#303858}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar):is(.sh-console-sidebar,.sh-logistics-sidebar) .sidebar-nav-link{color:#E4E2EB}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar):is(.sh-console-sidebar,.sh-logistics-sidebar) .sidebar-nav-link:hover{background:var(--sh-primary-hover);color:#fff}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar):is(.sh-console-sidebar,.sh-logistics-sidebar) .sidebar-nav-link[aria-current=page]{background:var(--sh-accent)!important;color:var(--sh-primary)!important;box-shadow:inset 3px 0 var(--sh-accent-hover)}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar):is(.sh-console-sidebar,.sh-logistics-sidebar) .sidebar-nav-link[aria-current=page]>span.shrink-0{color:var(--sh-primary)}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar):is(.sh-console-sidebar,.sh-logistics-sidebar) .sidebar-tooltip{background:var(--sh-primary-hover);color:#fff}
+body.sh-management-ui :is(#adminSidebar,#sellerSidebar,#logisticsSidebar,#branchSidebar):is(.sh-console-sidebar,.sh-logistics-sidebar) .sidebar-nav-link:focus-visible{outline-color:var(--sh-accent)}
+.shophop-role-panel :is(.text-teal,.text-teal-dark,.text-mint,.text-mint-dark){color:var(--sh-accent)}
+.shophop-role-panel .text-white{color:#fff}
+.shophop-registration-form-panel{background:var(--sh-surface)}
+/* Status colors communicate business state independently of the brand accent. */
+body.sh-management-ui :is(.sh-badge-success,.admin-status-ok,.ss-pill-success,.so-status-success,.sh-management-status-ok,
+.ops-badge[data-status=active],.ops-badge[data-status=available],.ops-badge[data-status=verified],.ops-badge[data-status=approved]){
+ background:var(--sh-success-soft);color:var(--sh-success-ink)
+}
+body.sh-management-ui :is(.sh-badge-danger,.admin-status-danger,.so-status-danger){background:#FFF0F2;color:var(--sh-danger-ink)}
+body.sh-management-ui :is(.sh-badge-warning,.admin-status-warn,.so-status-warning,.ss-pill-warning){background:#FFF4DC;color:#855400}
+body.sh-management-ui :is(.sh-alert-success,.ss-message-success){background:var(--sh-success-soft);border-color:#B9DDC4;color:var(--sh-success-ink)}
+body.sh-management-ui .rider-management .rm-check-ok strong{color:var(--sh-success-ink)}
+body .lp-site-main{background:var(--sh-page)}
+body.lp-site{--lp-ink:var(--sh-primary);--lp-teal:var(--sh-accent);--lp-forest:var(--sh-primary);--lp-mint:var(--sh-accent-soft);--lp-sand:var(--sh-page)}
+.lp-home{--ink:var(--sh-primary);--teal:var(--sh-accent);--dark-teal:var(--sh-primary);--mint:var(--sh-accent-soft);--line:var(--sh-border);--light:var(--sh-page)}
+.lp-home .lp-hero{background:linear-gradient(115deg,#10193C 0%,#26305A 100%)}
+.lp-home .lp-h1 span,.lp-home .lp-hero .lp-eyebrow{color:var(--sh-accent)}
+.lp-home .lp-hero .lp-button-strong,.lp-header .lp-button-primary{background:var(--sh-accent);border-color:var(--sh-accent);color:var(--sh-primary)!important}
+.lp-home .lp-hero .lp-button-strong:hover,.lp-header .lp-button-primary:hover{background:var(--sh-accent-hover);border-color:var(--sh-accent-hover)}
+.lp-button-primary,.sh-logistics-form :is([data-wizard-next],[data-wizard-submit]){background:var(--sh-primary);color:#fff!important}
+.lp-button-primary:hover,.sh-logistics-form :is([data-wizard-next],[data-wizard-submit]):hover{background:var(--sh-primary-hover)}
+.lp-home .lp-section-alt{background:var(--sh-page)}
+.lp-header,.sh-shop-header{background:#fff;border-color:var(--sh-border)}
+.lp-eyebrow,.lp-brand small,.lp-header-links a:hover{color:var(--sh-primary)}
+.lp-eyebrow::before{background:var(--sh-accent)}
+.sh-shop-header,.sh-shop-footer{--sh-chrome-teal:var(--sh-accent);--sh-chrome-deep:var(--sh-primary);--sh-chrome-navy:var(--sh-primary);--sh-chrome-line:var(--sh-border);--sh-chrome-muted:var(--sh-muted)}
+.sh-shop-search button{background:var(--sh-accent);color:var(--sh-primary)}
+.sh-shop-search button:hover{background:var(--sh-accent-hover)}
+/* The public and role wordmarks share the pink Hop treatment. */
+.lp-brand .sh-brand-hop,.sh-shop-brand .sh-brand-hop{color:var(--sh-accent-hover)!important}
+
+.sh-shop-mobile-search button{background:var(--sh-accent);color:var(--sh-primary)}
+.sh-shop-mobile-search button:hover{background:var(--sh-accent-hover)}
+[class~="text-[7px]"],[class~="text-[8px]"],[class~="text-[8.5px]"],[class~="text-[9px]"]{font-size:.625rem!important}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto!important}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+:is(.sh-market,.sh-market-header){--shmp-surface:var(--sh-page);--shmp-border:var(--sh-border);--shmp-dark:var(--sh-primary);--shmp-teal:var(--sh-accent);--shmp-mint:var(--sh-accent-soft)}
+:is(.sh-market-top,.sh-top-section){background:var(--sh-page)}
+.sh-buyer-v3 :is(.shb-search button,.shb-mobile-search button){background:var(--sh-accent);color:var(--sh-primary)}
+.sh-buyer-v3 :is(.shb-search button,.shb-mobile-search button):hover{background:var(--sh-accent-hover)}
+
+/* Readable accents on navy hero panels and pink registration progress. */
+.lp-home .lp-hero :is(.lp-note,.lp-hero-board-footer){color:#E4E2EB}
+.lp-home .lp-hero :is(.lp-hero-chip,.lp-hero-node b,.lp-hero-board-footer b){color:var(--sh-accent)}
+:is(#buyer-registration-modal,#seller-registration-modal,#logistics-registration-modal) .step-circle-active{color:var(--sh-primary)!important}
+:is(#buyer-registration-modal,#seller-registration-modal,#logistics-registration-modal) [class~="peer-checked:bg-teal"]{color:var(--sh-primary)}
+:is(#buyer-registration-modal,#seller-registration-modal,#logistics-registration-modal) [class~="peer-checked:bg-teal"] svg{color:inherit}
+
+body.sh-management-ui main.sh-management-main :is(.text-teal,.text-teal-dark,.text-mint,.text-mint-dark){color:var(--sh-primary)!important}
+body.sh-management-ui main.sh-management-main [data-dashboard-widget=attention] h2{color:#fff}
+body.sh-management-ui main.sh-management-main [data-dashboard-widget=attention] [class~="text-teal"]{color:var(--sh-accent)!important}
+body.sh-management-ui main.sh-management-main [data-dashboard-widget=attention] [class*="text-white/"]{color:#E4E2EB}
+body.sh-management-ui main.sh-management-main [data-dashboard-widget=attention] [class~="bg-teal"]{color:var(--sh-primary)}
+.shophop-role-panel [class*="text-white/"]{color:#D7D4DE}
+.sh-step-tracker [data-step-circle][class~="bg-teal"]{color:var(--sh-primary)!important}
+
+
+/* Matching cream footers for the marketplace and Logistics public site. */
+.sh-shop-footer,.lp-footer{
+ background:var(--sh-page);color:var(--sh-text);border-top:1px solid var(--sh-border);
+ --sh-chrome-navy:var(--sh-primary);--sh-chrome-deep:var(--sh-primary);--sh-chrome-muted:var(--sh-muted);--sh-chrome-line:var(--sh-border);
+}
+.sh-shop-footer :is(.sh-shop-footer-brand-link,.sh-shop-footer-links h2,.sh-shop-footer-tagline,.sh-shop-footer-bottom strong),
+.lp-footer :is(.lp-brand,.lp-brand>span,.lp-footer-grid nav strong){color:var(--sh-primary)}
+.sh-shop-footer .sh-shop-footer-links a,.lp-footer .lp-footer-grid nav a{color:var(--sh-primary)}
+.sh-shop-footer :is(.sh-shop-footer-brand>p,.sh-shop-footer-links p,.sh-shop-footer-bottom),
+.lp-footer :is(.lp-footer-brand p,.lp-footer-bottom){color:var(--sh-muted)}
+.sh-shop-footer .sh-shop-footer-brand-link small,.lp-footer .lp-brand small{color:var(--sh-primary)}
+.sh-shop-footer .sh-shop-footer-bottom,.lp-footer .lp-footer-bottom{border-top-color:var(--sh-border)}
+.sh-shop-footer a:hover,.lp-footer a:hover{color:var(--sh-primary-hover)}
+.sh-shop-footer .sh-shop-footer-links a:hover,.lp-footer .lp-footer-grid nav a:hover{color:var(--sh-primary-hover);text-decoration:underline;text-decoration-color:var(--sh-accent-hover);text-underline-offset:3px}
+.sh-shop-footer a:focus-visible,.lp-footer a:focus-visible{outline:2px solid var(--sh-primary);outline-offset:4px}
+.sh-shop-footer img[src*="logo-bunny.png"],.lp-footer img[src*="logo-bunny.png"]{background:#FFFFFF;border-radius:5px;padding:2px}
+
+
+/* Product card prices use the existing ShopHop pink accent. */
+body :is(.sh-product-price,.sh-card-price,.shb-price){color:var(--sh-accent)!important}

@@ -8,7 +8,7 @@
     });
     document.addEventListener('submit', () => { submitting = true; });
     document.addEventListener('click', event => {
-        if (event.target.closest('[data-add-to-cart],#addToCartBtn,#buyNowBtn')) {
+        if (event.target.closest('[data-add-to-cart],#10193CToCartBtn,#buyNowBtn')) {
             submitting = true;
             setTimeout(() => { submitting = false; }, 5000);
         }

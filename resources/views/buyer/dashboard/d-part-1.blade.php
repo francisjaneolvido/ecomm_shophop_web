@@ -437,7 +437,7 @@
                         </a>
 
                         <div class="mt-2 flex flex-wrap items-center gap-1.5">
-                            <span class="text-[13px] sm:text-[14px] font-bold text-teal-dark">
+                            <span class="sh-card-price text-[13px] sm:text-[14px] font-bold text-teal-dark">
                                 ₱{{ number_format($product['price']) }}
                             </span>
 
@@ -756,7 +756,7 @@
                             </div>
 
                             <div class="mt-2 flex items-baseline gap-1.5">
-                                <span class="text-[12px] sm:text-[13px] font-bold text-teal-dark">
+                                <span class="sh-card-price text-[12px] sm:text-[13px] font-bold text-teal-dark">
                                     ₱{{ number_format($product['price']) }}
                                 </span>
 
@@ -872,7 +872,7 @@
 
                             <div class="mt-2 flex items-center justify-between gap-2">
                                 <div class="min-w-0">
-                                    <span class="text-[12px] sm:text-[13px] font-bold text-teal-dark">
+                                    <span class="sh-card-price text-[12px] sm:text-[13px] font-bold text-teal-dark">
                                         ₱{{ number_format($product['price']) }}
                                     </span>
 

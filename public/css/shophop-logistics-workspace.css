@@ -1,5 +1,5 @@
 /* ShopHop logistics operations + finance, Compact Rectangular • scoped to these five consoles */
-.sh-finance-ops { --finance-navy:#0F1B3D;--finance-teal:#18A98E; }
+.sh-finance-ops { --finance-navy:#10193C;--finance-teal:#EDA3AE; }
 .sh-finance-ops .sh-page-header {display:flex;align-items:start;justify-content:space-between;flex-wrap:wrap;gap:16px}
 .sh-finance-ops .sh-page-header>div:first-child{max-width:780px}
 .sh-finance-ops .ops-panel{background:#fff}
@@ -13,25 +13,25 @@
 .sh-finance-ops .ops-table td.ops-wrap{overflow-wrap:anywhere;max-width:230px}
 .sh-finance-ops .ops-money-value{font-size:clamp(14px,1.3vw,22px)!important;line-height:1.35;overflow-wrap:anywhere}
 .sh-finance-ops .ops-dialog{max-height:88vh;max-width:790px}
-.sh-finance-ops .ops-modal-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;background:#F6F8FA;padding:14px;border:1px solid #E2E6EA;border-radius:6px}
+.sh-finance-ops .ops-modal-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:11px;background:#FBF6EE;padding:14px;border:1px solid rgba(16,25,60,0.150);border-radius:6px}
 .sh-finance-ops .ops-modal-meta p{font-size:12px;line-height:1.6;overflow-wrap:anywhere;color:#526076}
-.sh-finance-ops .ops-modal-meta strong{color:#0F1B3D}
-.sh-finance-ops .ops-dialog-actions{display:flex;justify-content:flex-end;gap:9px;border-top:1px solid #E2E6EA;padding-top:14px;margin-top:14px}
+.sh-finance-ops .ops-modal-meta strong{color:#10193C}
+.sh-finance-ops .ops-dialog-actions{display:flex;justify-content:flex-end;gap:9px;border-top:1px solid rgba(16,25,60,0.150);padding-top:14px;margin-top:14px}
 .sh-finance-ops .ops-modal-section{margin-top:12px}
 .sh-finance-ops .ops-modal-section p{color:#526076;line-height:1.7}
-.sh-finance-ops .ops-detail-section{border:1px solid #E2E6EA;border-radius:6px;margin-top:12px;background:white}
-.sh-finance-ops .ops-detail-section summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:700;color:#0F1B3D}
-.sh-finance-ops .ops-detail-section[open] summary{border-bottom:1px solid #E2E6EA}
+.sh-finance-ops .ops-detail-section{border:1px solid rgba(16,25,60,0.150);border-radius:6px;margin-top:12px;background:white}
+.sh-finance-ops .ops-detail-section summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:700;color:#10193C}
+.sh-finance-ops .ops-detail-section[open] summary{border-bottom:1px solid rgba(16,25,60,0.150)}
 .sh-finance-ops .ops-inline-alert{line-height:1.65}
-.sh-finance-ops .ops-allocation-tile{padding:14px;border:1px solid #E2E6EA;border-radius:6px;background:#FBFCFD}
+.sh-finance-ops .ops-allocation-tile{padding:14px;border:1px solid rgba(16,25,60,0.150);border-radius:6px;background:#FBFCFD}
 .sh-finance-ops .ops-allocation-tile p{font-size:11px;color:#617083}
-.sh-finance-ops .ops-allocation-tile strong{display:block;margin-top:8px;font-size:16px;line-height:1.4;font-weight:800;font-variant-numeric:tabular-nums;color:#0F1B3D;overflow-wrap:anywhere}
-.sh-finance-ops .ops-status-cell{border:1px solid #E2E6EA;border-radius:6px;display:flex;align-items:center;gap:8px;justify-content:space-between;padding:12px;font-size:11px;color:#465871;background:#fff}
-.sh-finance-ops .ops-status-cell:hover{border-color:#18A98E;background:#f0faf7}
-.sh-finance-ops .ops-status-cell strong{font-variant-numeric:tabular-nums;color:#0F1B3D;font-size:15px}
+.sh-finance-ops .ops-allocation-tile strong{display:block;margin-top:8px;font-size:16px;line-height:1.4;font-weight:800;font-variant-numeric:tabular-nums;color:#10193C;overflow-wrap:anywhere}
+.sh-finance-ops .ops-status-cell{border:1px solid rgba(16,25,60,0.150);border-radius:6px;display:flex;align-items:center;gap:8px;justify-content:space-between;padding:12px;font-size:11px;color:#465871;background:#fff}
+.sh-finance-ops .ops-status-cell:hover{border-color:#EDA3AE;background:#FCECEF}
+.sh-finance-ops .ops-status-cell strong{font-variant-numeric:tabular-nums;color:#10193C;font-size:15px}
 .sh-finance-ops .ops-panel .ops-table-scroll{overflow:auto}
 .sh-finance-ops .ops-panel .ops-tabs{background:#fff}
-.sh-finance-ops .ops-table tr:focus-within{background:#f0faf7}
-.sh-finance-ops .ops-action:focus-visible,.sh-finance-ops .ops-tab:focus-visible{outline:2px solid #18A98E;outline-offset:2px}
+.sh-finance-ops .ops-table tr:focus-within{background:#FCECEF}
+.sh-finance-ops .ops-action:focus-visible,.sh-finance-ops .ops-tab:focus-visible{outline:2px solid #10193C;outline-offset:2px}
 @media(max-width:860px){.sh-finance-ops .ops-panel-head{align-items:stretch}.sh-finance-ops .ops-toolbar{width:100%;justify-content:flex-start}.sh-finance-ops .ops-toolbar label{flex:1;min-width:140px}.sh-finance-ops .ops-toolbar .sh-input,.sh-finance-ops .ops-toolbar .sh-select{width:100%;max-width:none}}
 @media(max-width:560px){.sh-finance-ops .ops-modal-meta{grid-template-columns:1fr}.sh-finance-ops .ops-dialog-actions{flex-direction:column}.sh-finance-ops .ops-dialog-actions .sh-btn,.sh-finance-ops .ops-dialog-actions .sh-btn-danger{width:100%}.sh-finance-ops .ops-tabs{padding-left:0}.sh-finance-ops .ops-tab{padding:10px 11px}}

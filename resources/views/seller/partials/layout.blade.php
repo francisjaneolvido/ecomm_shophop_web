@@ -3,7 +3,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    {{-- Apply the persisted theme before the seller shell paints. --}}
+    {{-- Apply the shared light appearance before the seller shell paints. --}}
     @include('partials.theme-head')
 
     <meta name="csrf-token" content="{{ csrf_token() }}">
@@ -29,22 +29,22 @@
                         | Shared with admin.layout so buyer/seller/admin surfaces
                         | all read as one product.
                         */
-                        navy: '#0F2C3F',
+                        navy: '#10193C',
                         'navy-light': '#173B52',
-                        'navy-soft': '#244B61',
+                        'navy-soft': '#26305A',
 
-                        teal: '#2ECFA6',
-                        'teal-dark': '#22B593',
-                        'teal-light': '#E9F8F4',
+                        teal: '#EDA3AE',
+                        'teal-dark': '#E1909E',
+                        'teal-light': '#FCECEF',
 
-                        mint: '#2ECFA6',
-                        'mint-dark': '#22B593',
+                        mint: '#EDA3AE',
+                        'mint-dark': '#E1909E',
 
                         sky: '#4AA8E0',
                         yellow: '#F7C948',
                         coral: '#FF7A59',
 
-                        'gray-bg': '#F4F7F8',
+                        'gray-bg': '#FCECEF',
                         'gray-border': '#E4EAEE',
                     },
 
@@ -53,8 +53,8 @@
                     },
 
                     boxShadow: {
-                        'soft': '0 10px 30px rgba(15, 44, 63, 0.08)',
-                        'panel': '0 18px 50px rgba(15, 44, 63, 0.12)',
+                        'soft': '0 10px 30px rgba(16,25,60, 0.08)',
+                        'panel': '0 18px 50px rgba(16,25,60, 0.12)',
                     },
                 }
             }
@@ -113,7 +113,7 @@
 
         .content-scrollbar {
             scrollbar-width: thin;
-            scrollbar-color: rgba(15, 44, 63, .16) transparent;
+            scrollbar-color: rgba(16,25,60, .16) transparent;
         }
 
         .content-scrollbar::-webkit-scrollbar {
@@ -122,7 +122,7 @@
         }
 
         .content-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(15, 44, 63, .14);
+            background: rgba(16,25,60, .14);
             border-radius: 999px;
         }
 
@@ -220,13 +220,14 @@
 
     @stack('styles')
     {{-- Shared required-field styling; no field schema changes. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261112-navy-pink-2">
     {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261112-navy-pink-2">
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
-    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
+    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261112-navy-pink-2">
+    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261112-navy-pink-2">
     @include('partials.console-assets')
+@include('partials.brand-assets')
 </head>
 
 
@@ -360,7 +361,7 @@
             >
                 <div class="w-9 h-9 flex items-center justify-center shrink-0">
                     <img
-                        src="{{ asset('images/logo.png') }}"
+                        src="{{ asset('images/logo-bunny.png') }}"
                         alt="ShopHop Logo"
                         class="w-9 h-9 object-contain"
                     >
@@ -370,7 +371,7 @@
                 <div class="sidebar-expanded-only min-w-0">
 
                     <p class="text-[15px] font-bold leading-tight tracking-tight text-white">
-                        Shop<span class="text-teal">Hop</span>
+                        Shop<span class="sh-brand-hop text-teal">Hop</span>
                     </p>
 
                     <p class="text-[8px] uppercase tracking-[0.18em] text-white/35 font-semibold mt-0.5">
@@ -696,7 +697,6 @@
 
             <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
 
-                @include('partials.theme-toggle')
 
                 {{-- The destination explains availability; it does not preview a live shop or offer Storefront management. --}}
                 <a
@@ -1734,8 +1734,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
 @stack('scripts')
 
-    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
-<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-modal2"></script>
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261112-navy-pink-2"></script>
+<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-navy-pink-2"></script>
 @include('partials.console-details')
 </body>
 </html>

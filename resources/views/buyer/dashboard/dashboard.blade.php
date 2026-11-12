@@ -132,7 +132,7 @@
 
     .buyer-promo-dot.is-active {
         width: 1.35rem;
-        background: #2ECFA6;
+        background: #EDA3AE;
     }
 
 
@@ -150,8 +150,8 @@
         width: 12px;
         height: 12px;
         border-radius: 999px;
-        background: #F4F7F8;
-        border: 1px solid rgba(46, 207, 166, .12);
+        background: #FCECEF;
+        border: 1px solid rgba(237,163,174, .12);
         transform: translateY(-50%);
     }
 

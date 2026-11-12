@@ -17,5 +17,5 @@
 @endsection
 
 @push('scripts')
-<script src="{{ asset('js/shophop-rider-batches.js') }}" defer></script>
+<script src="{{ asset('js/shophop-rider-batches.js') }}?v=20261112-navy-pink-2" defer></script>
 @endpush

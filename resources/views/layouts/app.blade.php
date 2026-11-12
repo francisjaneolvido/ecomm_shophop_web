@@ -11,10 +11,10 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    {{-- Load theme state before public content renders to avoid a light-theme flash. --}}
+    {{-- Load the shared light appearance before public content renders. --}}
     @include('partials.theme-head')
 
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-bunny.png') }}">
 
     <title>
         @yield('title', 'ShopHop — Hop In. Shop More.')
@@ -53,19 +53,20 @@
     {{-- Page-specific styles --}}
     @stack('styles')
 
-    <link rel="stylesheet" href="{{ asset('css/shophop-search-suggestions.css') }}?v=20261108">
+    <link rel="stylesheet" href="{{ asset('css/shophop-search-suggestions.css') }}?v=20261112-navy-pink-2">
 
     {{-- Shared required-field styling; no field schema changes. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261112-navy-pink-2">
     {{-- Unified Buyer Web marketplace surfaces; guest landing stays unchanged. --}}
     @if (request()->is('buyer/*') && ! request()->routeIs('buyer.dashboard'))
-        <link rel="stylesheet" href="{{ asset('css/shophop-buyer-marketplace-v3.css') }}?v=20261103-buyer-v3">
+        <link rel="stylesheet" href="{{ asset('css/shophop-buyer-marketplace-v3.css') }}?v=20261112-navy-pink-2">
     @endif
     {{-- Shared guest/Buyer chrome: one header and one compact footer. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-shopper-chrome-v4.css') }}?v=20261103-shopper-chrome-v4">
+    <link rel="stylesheet" href="{{ asset('css/shophop-shopper-chrome-v4.css') }}?v=20261112-navy-pink-2">
     {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
-    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261112-navy-pink-2">
+    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261112-navy-pink-2">
+@include('partials.brand-assets')
 </head>
 
 
@@ -148,7 +149,7 @@
          that JavaScript — including the event listeners that open each
          registration modal — is silently dropped and never reaches the
          page, even though the modal HTML itself is present. --}}
-    <script src="{{ asset('js/shophop-ph-address.js') }}"></script>
+    <script src="{{ asset('js/shophop-ph-address.js') }}?v=20261112-navy-pink-2"></script>
     @stack('scripts')
 
     {{-- If a route redirected here asking to auto-open a modal
@@ -181,12 +182,12 @@
 @endif
 
 
-    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261112-navy-pink-2"></script>
     @if(request()->routeIs('home', 'search.index', 'buyer.dashboard', 'buyer.category.*', 'buyer.product.show'))
         <span hidden data-catalog-revision-url="{{ route('catalog.revision') }}" data-catalog-revision="{{ app(\App\Http\Controllers\CatalogRevisionController::class)()->getData()->revision }}"></span>
-        <script src="{{ asset('js/shophop-catalog-refresh.js') }}" defer></script>
+        <script src="{{ asset('js/shophop-catalog-refresh.js') }}?v=20261112-navy-pink-2" defer></script>
     @endif
-    <script src="{{ asset('js/shophop-search-suggestions.js') }}?v=20261108" defer></script>
+    <script src="{{ asset('js/shophop-search-suggestions.js') }}?v=20261112-navy-pink-2" defer></script>
 </body>
 
 </html>

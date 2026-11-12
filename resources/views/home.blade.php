@@ -5,7 +5,7 @@
 
 @push('styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<link rel="stylesheet" href="{{ asset('css/shophop-marketplace-landing.css') }}?v=20261103-market-v4">
+<link rel="stylesheet" href="{{ asset('css/shophop-marketplace-landing.css') }}?v=20261112-navy-pink-2">
 @endpush
 
 @section('content')
@@ -16,5 +16,5 @@
 @endsection
 
 @push('scripts')
-<script defer src="{{ asset('js/shophop-marketplace-landing.js') }}?v=20261103-market-v4"></script>
+<script defer src="{{ asset('js/shophop-marketplace-landing.js') }}?v=20261112-navy-pink-2"></script>
 @endpush

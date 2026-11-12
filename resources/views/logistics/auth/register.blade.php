@@ -7,50 +7,50 @@
 @push('styles')
 <style>
   /* UI-only v6 polish: keep existing 7-step wizard, field names and JS actions intact. */
-  .sh-logistics-form { color:#0F1B3D; border:1px solid #DFE7EB; border-radius:24px; background:#fff; box-shadow:0 18px 44px rgba(15,27,61,.055); }
+  .sh-logistics-form { color:#10193C; border:1px solid rgba(16,25,60,0.150); border-radius:24px; background:#fff; box-shadow:0 18px 44px rgba(16,25,60,.055); }
   .sh-logistics-form input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
   .sh-logistics-form select, .sh-logistics-form textarea {
-    width:100%; max-width:100%; min-height:46px; border:1px solid #DCE5EB;
-    border-radius:13px; padding:11px 14px; color:#0F1B3D; background:#fff;
+    width:100%; max-width:100%; min-height:46px; border:1px solid rgba(16,25,60,0.150);
+    border-radius:13px; padding:11px 14px; color:#10193C; background:#fff;
     font:inherit; font-size:12px; line-height:1.5; transition:box-shadow .18s,border-color .18s;
   }
   .sh-logistics-form input::placeholder,.sh-logistics-form textarea::placeholder { color:#8A9AAA; }
   .sh-logistics-form input[data-otp-digit] { flex:1 1 0; width:0; min-width:0; padding:0; min-height:0; aspect-ratio:1; font-size:20px; text-align:center; font-weight:700; }
-  .sh-logistics-form :is(input:not([type="checkbox"]),select,textarea):focus-visible { outline:none; border-color:#18A98E; box-shadow:0 0 0 4px rgba(33,195,166,.13); }
+  .sh-logistics-form :is(input:not([type="checkbox"]),select,textarea):focus-visible { outline:none; border-color:#EDA3AE; box-shadow:0 0 0 4px rgba(237,163,174,.13); }
   .sh-logistics-form :is(input,select,textarea):disabled { opacity:.65; cursor:not-allowed; }
-  .sh-logistics-form :is(input[type="checkbox"],input[type="radio"]) { accent-color:#18A98E; }
+  .sh-logistics-form :is(input[type="checkbox"],input[type="radio"]) { accent-color:#EDA3AE; }
   .sh-logistics-form [data-step] { min-width:0; }
   .sh-logistics-form [data-step] > :first-child { margin-top:0; }
   .sh-logistics-form label { line-height:1.6; }
   .sh-logistics-form label.cursor-pointer { transition:border-color .2s,background-color .2s; }
-  .sh-logistics-form label.cursor-pointer:hover { border-color:rgba(24,169,142,.5); background-color:#F7FCFA; }
+  .sh-logistics-form label.cursor-pointer:hover { border-color:rgba(237,163,174,.5); background-color:#FCECEF; }
   .sh-logistics-form [data-step="7"] [data-review], .sh-logistics-form [data-review-address], .sh-logistics-form [data-review-coverage] { overflow-wrap:anywhere; text-align:right; }
   .sh-logistics-form :is([data-wizard-next],[data-wizard-submit]) {
-    min-height:44px; border:0; border-radius:13px; background:#19B99D; color:#fff;
-    box-shadow:0 10px 23px rgba(25,185,157,.16); font-weight:700; padding:.7rem 1.4rem;
+    min-height:44px; border:0; border-radius:13px; background:#10193C; color:#fff;
+    box-shadow:0 10px 23px rgba(237,163,174,.16); font-weight:700; padding:.7rem 1.4rem;
   }
-  .sh-logistics-form :is([data-wizard-next],[data-wizard-submit]):hover { background:#139D86; }
+  .sh-logistics-form :is([data-wizard-next],[data-wizard-submit]):hover { background:#10193C; }
   .sh-logistics-form [data-wizard-back] {
-    min-height:44px; border:1px solid #CBD8DF; border-radius:13px; color:#0F1B3D; background:#fff;
+    min-height:44px; border:1px solid #CBD8DF; border-radius:13px; color:#10193C; background:#fff;
     font-weight:700; padding:.7rem 1.4rem;
   }
-  .sh-logistics-form [data-wizard-back]:hover { background:#F3FAF8; color:#11806B; border-color:#A5DFD1; }
-  .sh-logistics-form :is([data-wizard-next],[data-wizard-submit],[data-wizard-back]):focus-visible { outline:2px solid #18A98E; outline-offset:3px; }
-  .sh-step-tracker { scrollbar-width:thin; scrollbar-color:#D4F5EE transparent; border-bottom:1px solid #EBEFF2; padding-bottom:20px; }
+  .sh-logistics-form [data-wizard-back]:hover { background:#FCECEF; color:#10193C; border-color:#EDA3AE; }
+  .sh-logistics-form :is([data-wizard-next],[data-wizard-submit],[data-wizard-back]):focus-visible { outline:2px solid #10193C; outline-offset:3px; }
+  .sh-step-tracker { scrollbar-width:thin; scrollbar-color:#FCECEF transparent; border-bottom:1px solid #EBEFF2; padding-bottom:20px; }
   .sh-step-tracker [data-step-label] { line-height:1.45; }
-  .sh-apply-intro { padding:clamp(29px,5vw,54px) 16px 26px; background:radial-gradient(ellipse at 80% 5%,rgba(33,195,166,.12),transparent 43%),#F5F8FA; }
+  .sh-apply-intro { padding:clamp(29px,5vw,54px) 16px 26px; background:radial-gradient(ellipse at 80% 5%,rgba(237,163,174,.12),transparent 43%),#FBF6EE; }
   .sh-apply-intro .wrap { margin-inline:auto; max-width:780px; text-align:center; }
-  .sh-apply-intro .eyebrow { color:#118F7D; letter-spacing:.16em; font-size:10px; font-weight:700; }
-  .sh-apply-intro h1 { margin:10px 0 12px; font-weight:800; font-size:clamp(25px,3vw,36px); letter-spacing:-.035em; line-height:1.24; color:#0F1B3D; }
+  .sh-apply-intro .eyebrow { color:#10193C; letter-spacing:.16em; font-size:10px; font-weight:700; }
+  .sh-apply-intro h1 { margin:10px 0 12px; font-weight:800; font-size:clamp(25px,3vw,36px); letter-spacing:-.035em; line-height:1.24; color:#10193C; }
   .sh-apply-intro .subtitle { color:#5E7187; font-size:13px; line-height:1.85; }
   .sh-apply-intro .tagline { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin-top:20px; }
-  .sh-apply-intro .tagline span { display:inline-flex; align-items:center; border-radius:999px; padding:7px 11px; background:#fff; color:#347164; border:1px solid #DFEAE8; font-size:10px; font-weight:700; }
-  .sh-apply-main { background:linear-gradient(180deg,#F5F8FA,#F9FBFC); }
-  .sh-apply-progress { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:17px; border:1px solid #E2EAF0; border-radius:16px; padding:11px 15px; background:#F8FAFB; }
-  .sh-apply-progress strong { color:#0F1B3D; font-size:12px; }
+  .sh-apply-intro .tagline span { display:inline-flex; align-items:center; border-radius:999px; padding:7px 11px; background:#fff; color:#10193C; border:1px solid #FCECEF; font-size:10px; font-weight:700; }
+  .sh-apply-main { background:linear-gradient(180deg,#FBF6EE,#F9FBFC); }
+  .sh-apply-progress { display:flex; align-items:center; justify-content:space-between; gap:15px; margin-bottom:17px; border:1px solid #E2EAF0; border-radius:16px; padding:11px 15px; background:#FFFAF6; }
+  .sh-apply-progress strong { color:#10193C; font-size:12px; }
   .sh-apply-progress span { color:#64808B; font-size:11px; }
   .sh-apply-progress-track { height:5px; margin-top:8px; overflow:hidden; border-radius:999px; background:#E2E7EB; }
-  .sh-apply-progress-bar { height:100%; width:14.28%; border-radius:inherit; background:#21C3A6; transition:width .2s; }
+  .sh-apply-progress-bar { height:100%; width:14.28%; border-radius:inherit; background:#EDA3AE; transition:width .2s; }
   @media (max-width:640px) {
     .sh-step-tracker { justify-content:flex-start; }
     .sh-step-tracker > div { min-width:80px; flex:0 0 auto; }

@@ -73,7 +73,7 @@
 
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/shophop-seller-inventory-v2.css') }}">
+<link rel="stylesheet" href="{{ asset('css/shophop-seller-inventory-v2.css') }}?v=20261112-navy-pink-2">
 @endpush
 <style>
     /* Click-to-copy affordance for SKU / voucher code */
@@ -105,15 +105,15 @@
     }
 
     .inventory-tab-active {
-        background: #0F2C3F;
+        background: #10193C;
         color: white;
-        border-color: #0F2C3F;
+        border-color: #10193C;
     }
 
     .inventory-section-tab-active {
-        color: #0F2C3F;
-        border-color: #2ECFA6;
-        background: #E9F8F4;
+        color: #10193C;
+        border-color: #EDA3AE;
+        background: #FCECEF;
     }
 
     .inventory-row[hidden] {

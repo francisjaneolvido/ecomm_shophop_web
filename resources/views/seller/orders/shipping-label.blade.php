@@ -6,28 +6,28 @@
     <title>ShopHop Waybill · {{ $order->tracking_code }}</title>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; background: #eef2f4; color: #0f2c3f; font-family: Arial, sans-serif; }
+        body { margin: 0; background: #eef2f4; color: #10193C; font-family: Arial, sans-serif; }
         .toolbar { max-width: 820px; margin: 20px auto 0; display: flex; gap: 10px; justify-content: flex-end; }
         .toolbar a,.toolbar button { border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 700; cursor: pointer; text-decoration: none; }
-        .toolbar a { background: white; color: #0f2c3f; border: 1px solid #d9e0e4; }
-        .toolbar button { background: #18bfa5; color: white; }
-        .label { width: 780px; min-height: 500px; margin: 12px auto 30px; background: white; border: 2px solid #0f2c3f; padding: 22px; }
-        .head { display: flex; align-items: start; justify-content: space-between; border-bottom: 2px solid #0f2c3f; padding-bottom: 14px; }
+        .toolbar a { background: white; color: #10193C; border: 1px solid #d9e0e4; }
+        .toolbar button { background: #10193C; color: white; }
+        .label { width: 780px; min-height: 500px; margin: 12px auto 30px; background: white; border: 2px solid #10193C; padding: 22px; }
+        .head { display: flex; align-items: start; justify-content: space-between; border-bottom: 2px solid #10193C; padding-bottom: 14px; }
         .brand { font-size: 25px; font-weight: 900; }
         .muted { color: #55707f; font-size: 12px; }
         .tracking { font-size: 24px; font-weight: 900; letter-spacing: 2px; text-align: right; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #0f2c3f; margin-top: 18px; }
-        .cell { min-height: 135px; padding: 14px; border-right: 1px solid #0f2c3f; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border: 1px solid #10193C; margin-top: 18px; }
+        .cell { min-height: 135px; padding: 14px; border-right: 1px solid #10193C; }
         .cell:last-child { border-right: 0; }
         .eyebrow { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: #55707f; text-transform: uppercase; }
         .name { margin-top: 7px; font-size: 17px; font-weight: 800; }
         .address { margin-top: 5px; font-size: 13px; line-height: 1.45; }
-        .meta { margin-top: 18px; display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid #0f2c3f; }
-        .meta > div { padding: 12px; border-right: 1px solid #0f2c3f; }
+        .meta { margin-top: 18px; display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid #10193C; }
+        .meta > div { padding: 12px; border-right: 1px solid #10193C; }
         .meta > div:last-child { border-right: 0; }
         .items { margin-top: 18px; width: 100%; border-collapse: collapse; font-size: 12px; }
         .items th,.items td { border: 1px solid #cdd7dc; padding: 8px; text-align: left; }
-        .parcel-qr { min-height: 145px; display:flex; align-items:center; gap:18px; padding: 14px; border: 1px solid #0f2c3f; margin-top: 18px; }
+        .parcel-qr { min-height: 145px; display:flex; align-items:center; gap:18px; padding: 14px; border: 1px solid #10193C; margin-top: 18px; }
         .parcel-qr #parcelQr { width:128px; height:128px; }
         .footer { margin-top: 16px; padding-top: 12px; border-top: 1px dashed #8296a1; font-size: 11px; color: #55707f; }
         @media print { body { background: white; } .toolbar { display:none; } .label { margin:0; width:100%; border:2px solid #000; } }

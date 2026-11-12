@@ -349,7 +349,7 @@
                                  data-voucher-products='@json($voucher['product_ids'])'>
 
                                 <div class="flex gap-2.5">
-                                    <div class="w-9 h-9 rounded-lg bg-[#EAF9F5] text-teal-dark flex items-center justify-center shrink-0">
+                                    <div class="w-9 h-9 rounded-lg bg-[#FCECEF] text-teal-dark flex items-center justify-center shrink-0">
                                         <x-lucide-ticket class="w-4 h-4" />
                                     </div>
 

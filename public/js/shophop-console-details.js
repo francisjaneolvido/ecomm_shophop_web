@@ -132,7 +132,6 @@
   frameReady(source,label){
    if(source!==frame?.contentWindow)return;
    clearTimeout(timeout);busy(false);error.hidden=true;frame.hidden=false;
-   frame.contentWindow.ShopHopTheme?.apply(document.documentElement.dataset.theme || 'light',false);
    if(label)title.textContent=label;
   },
   frameFailed(source){if(source===frame?.contentWindow)fail();},

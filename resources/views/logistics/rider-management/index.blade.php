@@ -183,10 +183,10 @@
 @endsection
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/shophop-rider-management.css') }}?v=20261112-activation">
+<link rel="stylesheet" href="{{ asset('css/shophop-rider-management.css') }}?v=20261112-navy-pink-2">
 @endpush
 
 @push('scripts')
-<script src="{{ asset('js/shophop-rider-management.js') }}?v=20261112-queues" defer></script>
-<script src="{{ asset('js/shophop-rider-activation.js') }}?v=20261112-activation" defer></script>
+<script src="{{ asset('js/shophop-rider-management.js') }}?v=20261112-navy-pink-2" defer></script>
+<script src="{{ asset('js/shophop-rider-activation.js') }}?v=20261112-navy-pink-2" defer></script>
 @endpush

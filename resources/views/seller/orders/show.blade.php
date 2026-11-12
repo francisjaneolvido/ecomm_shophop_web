@@ -2,7 +2,7 @@
 
 @section('title', 'Order Details')
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/shophop-seller-order-directory.css') }}?v=20261104a">
+<link rel="stylesheet" href="{{ asset('css/shophop-seller-order-directory.css') }}?v=20261112-navy-pink-2">
 @endpush
 
 @section('content')

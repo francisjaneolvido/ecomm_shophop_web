@@ -2,7 +2,7 @@
 @section('title', 'Help Center - ShopHop')
 @section('hideChrome', true)
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/shophop-buyer-discovery.css') }}?v=20261108">
+<link rel="stylesheet" href="{{ asset('css/shophop-buyer-discovery.css') }}?v=20261112-navy-pink-2">
 @endpush
 @section('content')
 @include('buyer.partials.navbar-buyer')
@@ -45,5 +45,5 @@
 @include('partials.footer')
 @endsection
 @push('scripts')
-<script src="{{ asset('js/shophop-buyer-discovery.js') }}?v=20261108" defer></script>
+<script src="{{ asset('js/shophop-buyer-discovery.js') }}?v=20261112-navy-pink-2" defer></script>
 @endpush

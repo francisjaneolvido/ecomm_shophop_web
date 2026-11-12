@@ -47,8 +47,8 @@
     <div class="sh-shop-shell sh-shop-main-shell">
         <div class="sh-shop-main-row">
             <a class="sh-shop-brand" href="{{ $shopperHome }}" aria-label="ShopHop Home">
-                <img src="{{ asset('images/logo.png') }}" alt="ShopHop logo" width="39" height="39">
-                <span class="sh-shop-brand-type"><strong>ShopHop</strong><small>HOP IN. SHOP MORE.</small></span>
+                <img src="{{ asset('images/logo-bunny.png') }}" alt="ShopHop logo" width="39" height="39">
+                <span class="sh-shop-brand-type"><strong>Shop<span class="sh-brand-hop">Hop</span></strong><small>HOP IN. SHOP MORE.</small></span>
             </a>
 
             <nav class="sh-shop-nav" aria-label="Main marketplace navigation">
@@ -100,7 +100,7 @@
                             <a href="{{ route('buyer.cart') }}"><x-lucide-shopping-cart /> My Cart</a>
                             <a href="{{ route('buyer.messages') }}"><x-lucide-message-circle /> Messages</a>
                             <a href="{{ route('buyer.help') }}"><x-lucide-circle-help /> Help Center</a>
-                            <div class="sh-shop-account-appearance">@include('partials.theme-toggle')</div>
+
                             <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit"><x-lucide-log-out /> Logout</button></form>
                         </div>
                     </div>

@@ -10,7 +10,7 @@
         content="width=device-width, initial-scale=1.0"
     >
 
-    {{-- Apply the persisted theme before the logistics shell paints. --}}
+    {{-- Apply the shared light appearance before the logistics shell paints. --}}
     @include('partials.theme-head')
 
     <meta
@@ -33,22 +33,22 @@
             theme: {
                 extend: {
                     colors: {
-                        navy: '#0F1B3D',
-                        'navy-light': '#1C3150',
-                        'navy-soft': '#244B61',
+                        navy: '#10193C',
+                        'navy-light': '#26305A',
+                        'navy-soft': '#26305A',
 
-                        teal: '#21C3A6',
-                        'teal-dark': '#18A98E',
-                        'teal-light': '#D4F5EE',
+                        teal: '#EDA3AE',
+                        'teal-dark': '#E1909E',
+                        'teal-light': '#FCECEF',
 
-                        mint: '#21C3A6',
-                        'mint-dark': '#18A98E',
+                        mint: '#EDA3AE',
+                        'mint-dark': '#E1909E',
 
                         sky: '#4AA8E0',
                         yellow: '#F7C948',
                         coral: '#FF7A59',
 
-                        'gray-bg': '#F3F5F7',
+                        'gray-bg': '#FBF6EE',
                         'gray-border': '#E2E6EA',
                     },
 
@@ -62,8 +62,8 @@
                     },
 
                     boxShadow: {
-                        soft: '0 10px 30px rgba(15, 44, 63, 0.08)',
-                        panel: '0 18px 50px rgba(15, 44, 63, 0.12)',
+                        soft: '0 10px 30px rgba(16,25,60, 0.08)',
+                        panel: '0 18px 50px rgba(16,25,60, 0.12)',
                     },
                 }
             }
@@ -124,7 +124,7 @@
 
         .content-scrollbar {
             scrollbar-width: thin;
-            scrollbar-color: rgba(15, 44, 63, .15) transparent;
+            scrollbar-color: rgba(16,25,60, .15) transparent;
         }
 
         .content-scrollbar::-webkit-scrollbar {
@@ -132,7 +132,7 @@
         }
 
         .content-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(15, 44, 63, .14);
+            background: rgba(16,25,60, .14);
             border-radius: 999px;
         }
 
@@ -242,7 +242,7 @@
         .logistics-profile-menu > summary::-webkit-details-marker { display: none; }
         .logistics-profile-menu > summary::marker { content: ''; }
         .logistics-console :is(button, a, input, select, textarea, summary):focus-visible {
-            outline: 2px solid #18A98E;
+            outline: 2px solid #10193C;
             outline-offset: 3px;
         }
         .logistics-console main :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
@@ -251,12 +251,12 @@
             background-color: #fff;
         }
         .logistics-console main :is(input, select, textarea):focus {
-            border-color: #18A98E;
-            box-shadow: 0 0 0 3px rgba(33, 195, 166, .12);
+            border-color: #EDA3AE;
+            box-shadow: 0 0 0 3px rgba(237,163,174, .12);
             outline: none;
         }
         .logistics-console main section[id], .logistics-console main article[id] { scroll-margin-top: 1rem; }
-        .logistics-console .logistics-panel { border: 1px solid #E2E6EA; border-radius: 1rem; background: #fff; }
+        .logistics-console .logistics-panel { border: 1px solid rgba(16,25,60,0.150); border-radius: 1rem; background: #fff; }
         @media (prefers-reduced-motion: reduce) {
             .logistics-console * { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
         }
@@ -266,48 +266,48 @@
     <style>
         /* v5 polish system: reusable buttons, cards, forms, tables, and confirmation modal */
         .sh-page-header { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:1rem; }
-        .sh-page-header .eyebrow { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.16em; color:#18A98E; }
-        .sh-page-header .title { margin-top:.25rem; font-size:1.75rem; line-height:1.15; font-weight:700; color:#0F1B3D; letter-spacing:-.02em; }
-        .sh-page-header .description { margin-top:.4rem; max-width:42rem; font-size:.875rem; line-height:1.7; color:rgba(15,27,61,.58); }
-        .sh-surface { border:1px solid #E2E6EA; border-radius:1.5rem; background:#fff; box-shadow:0 10px 30px rgba(15,44,63,.06); }
-        .sh-surface-soft { border:1px solid #E2E6EA; border-radius:1.25rem; background:#F8FAFB; }
+        .sh-page-header .eyebrow { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.16em; color:#10193C; }
+        .sh-page-header .title { margin-top:.25rem; font-size:1.75rem; line-height:1.15; font-weight:700; color:#10193C; letter-spacing:-.02em; }
+        .sh-page-header .description { margin-top:.4rem; max-width:42rem; font-size:.875rem; line-height:1.7; color:rgba(16,25,60,.58); }
+        .sh-surface { border:1px solid rgba(16,25,60,0.150); border-radius:1.5rem; background:#fff; box-shadow:0 10px 30px rgba(16,25,60,.06); }
+        .sh-surface-soft { border:1px solid rgba(16,25,60,0.150); border-radius:1.25rem; background:#FFFAF6; }
         .sh-card-pad { padding:1.125rem; }
         @media (min-width: 640px){ .sh-card-pad { padding:1.375rem; } }
-        .sh-stat { border:1px solid #E2E6EA; border-radius:1.25rem; background:#fff; padding:1rem; box-shadow:0 8px 20px rgba(15,44,63,.05); }
-        .sh-stat-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:rgba(15,27,61,.42); }
-        .sh-stat-value { margin-top:.35rem; font-size:1.7rem; font-weight:700; line-height:1; color:#0F1B3D; }
-        .sh-stat-note { margin-top:.35rem; font-size:.72rem; color:rgba(15,27,61,.5); }
-        .sh-kicker { font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#18A98E; }
-        .sh-title-sm { font-size:.95rem; font-weight:700; color:#0F1B3D; }
-        .sh-text-muted { color:rgba(15,27,61,.55); }
-        .sh-divider { border-color:#E2E6EA; }
+        .sh-stat { border:1px solid rgba(16,25,60,0.150); border-radius:1.25rem; background:#fff; padding:1rem; box-shadow:0 8px 20px rgba(16,25,60,.05); }
+        .sh-stat-label { font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; font-weight:700; color:rgba(16,25,60,.42); }
+        .sh-stat-value { margin-top:.35rem; font-size:1.7rem; font-weight:700; line-height:1; color:#10193C; }
+        .sh-stat-note { margin-top:.35rem; font-size:.72rem; color:rgba(16,25,60,.5); }
+        .sh-kicker { font-size:.7rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:#10193C; }
+        .sh-title-sm { font-size:.95rem; font-weight:700; color:#10193C; }
+        .sh-text-muted { color:rgba(16,25,60,.55); }
+        .sh-divider { border-color:rgba(16,25,60,0.150); }
         .sh-btn, .sh-btn-secondary, .sh-btn-ghost, .sh-btn-danger, .sh-btn-soft {
             min-height:2.6rem; display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
             border-radius:999px; padding:.68rem 1rem; font-size:.78rem; font-weight:700; transition:all .18s ease;
             border:1px solid transparent; text-decoration:none;
         }
-        .sh-btn { background:#0F1B3D; color:#fff; box-shadow:0 10px 25px rgba(15,27,61,.12); }
-        .sh-btn:hover { background:#18A98E; transform:translateY(-1px); }
-        .sh-btn-secondary { background:#D4F5EE; color:#11806B; }
-        .sh-btn-secondary:hover { background:#c4efe6; transform:translateY(-1px); }
-        .sh-btn-ghost { background:#fff; color:#0F1B3D; border-color:#DCE2E7; }
-        .sh-btn-ghost:hover { border-color:rgba(24,169,142,.35); color:#11806B; background:#F7FBFA; }
-        .sh-btn-soft { background:#F3F5F7; color:#0F1B3D; border-color:#E2E6EA; }
-        .sh-btn-soft:hover { background:#EAF8F4; color:#11806B; }
+        .sh-btn { background:#10193C; color:#fff; box-shadow:0 10px 25px rgba(16,25,60,.12); }
+        .sh-btn:hover { background:#10193C; transform:translateY(-1px); }
+        .sh-btn-secondary { background:#FCECEF; color:#10193C; }
+        .sh-btn-secondary:hover { background:#FCECEF; transform:translateY(-1px); }
+        .sh-btn-ghost { background:#fff; color:#10193C; border-color:#DCE2E7; }
+        .sh-btn-ghost:hover { border-color:rgba(237,163,174,.35); color:#10193C; background:#FCECEF; }
+        .sh-btn-soft { background:#FBF6EE; color:#10193C; border-color:rgba(16,25,60,0.150); }
+        .sh-btn-soft:hover { background:#FCECEF; color:#10193C; }
         .sh-btn-danger { background:#fff; color:#C24141; border-color:#F3CACA; }
         .sh-btn-danger:hover { background:#FEF2F2; }
         .sh-input, .sh-select, .sh-textarea {
-            width:100%; border-radius:1rem; border:1px solid #D8DEE4; background:#fff; color:#0F1B3D;
-            padding:.7rem .9rem; font-size:.9rem; line-height:1.4; box-shadow: inset 0 1px 2px rgba(15,27,61,.02);
+            width:100%; border-radius:1rem; border:1px solid rgba(16,25,60,0.150); background:#fff; color:#10193C;
+            padding:.7rem .9rem; font-size:.9rem; line-height:1.4; box-shadow: inset 0 1px 2px rgba(16,25,60,.02);
         }
-        .sh-input::placeholder, .sh-textarea::placeholder { color:rgba(15,27,61,.33); }
+        .sh-input::placeholder, .sh-textarea::placeholder { color:rgba(16,25,60,.33); }
         .sh-select, .sh-input, .sh-textarea { transition:border-color .16s ease, box-shadow .16s ease, background-color .16s ease; }
         .sh-field { display:grid; gap:.42rem; }
-        .sh-label { font-size:.73rem; font-weight:700; color:#0F1B3D; }
-        .sh-help { font-size:.7rem; color:rgba(15,27,61,.45); }
+        .sh-label { font-size:.73rem; font-weight:700; color:#10193C; }
+        .sh-help { font-size:.7rem; color:rgba(16,25,60,.45); }
         .sh-badge { display:inline-flex; align-items:center; gap:.35rem; border-radius:999px; padding:.38rem .72rem; font-size:.66rem; font-weight:700; }
         .sh-badge-info { background:#EDF7FF; color:#2664A9; }
-        .sh-badge-success { background:#E9FBF6; color:#11806B; }
+        .sh-badge-success { background:#EAF7EE; color:#166534; }
         .sh-badge-warning { background:#FFF6DD; color:#A46700; }
         .sh-badge-danger { background:#FEF2F2; color:#B42318; }
         .sh-badge-neutral { background:#F2F4F7; color:#475467; }
@@ -315,41 +315,42 @@
         .sh-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; }
         .sh-grid-2 { display:grid; gap:1rem; grid-template-columns:repeat(1,minmax(0,1fr)); }
         @media (min-width: 1024px){ .sh-grid-2 { grid-template-columns:repeat(2,minmax(0,1fr)); } }
-        .sh-empty { border:1px dashed #D8DEE4; border-radius:1.25rem; background:#fff; padding:2rem 1.25rem; text-align:center; }
+        .sh-empty { border:1px dashed rgba(16,25,60,0.150); border-radius:1.25rem; background:#fff; padding:2rem 1.25rem; text-align:center; }
         .sh-table-wrap { overflow-x:auto; }
         .sh-table { width:100%; min-width:720px; border-collapse:separate; border-spacing:0; }
-        .sh-table thead th { background:#F7F9FA; padding:.9rem 1rem; font-size:.67rem; font-weight:700; color:rgba(15,27,61,.45); text-transform:uppercase; letter-spacing:.12em; text-align:left; border-bottom:1px solid #E2E6EA; }
-        .sh-table tbody td { padding:1rem; font-size:.82rem; color:#0F1B3D; border-bottom:1px solid rgba(226,230,234,.8); vertical-align:top; }
+        .sh-table thead th { background:#F7F9FA; padding:.9rem 1rem; font-size:.67rem; font-weight:700; color:rgba(16,25,60,.45); text-transform:uppercase; letter-spacing:.12em; text-align:left; border-bottom:1px solid rgba(16,25,60,0.150); }
+        .sh-table tbody td { padding:1rem; font-size:.82rem; color:#10193C; border-bottom:1px solid rgba(226,230,234,.8); vertical-align:top; }
         .sh-table tbody tr:hover td { background:#FBFCFD; }
         .sh-alert-success, .sh-alert-error { border-radius:1rem; padding:.95rem 1rem; font-size:.82rem; border:1px solid transparent; }
-        .sh-alert-success { background:#EAFBF5; color:#0F7B61; border-color:#B9EEDB; }
+        .sh-alert-success { background:#EAF7EE; color:#166534; border-color:#EAF7EE; }
         .sh-alert-error { background:#FEF2F2; color:#B42318; border-color:#F6C4C4; }
         .sh-summary { list-style:none; cursor:pointer; }
         .sh-summary::-webkit-details-marker { display:none; }
         #logisticsConfirmModal[hidden] { display:none !important; }
-        .sh-modal-backdrop { position:fixed; inset:0; background:rgba(15,27,61,.55); backdrop-filter: blur(3px); }
-        .sh-modal-card { position:relative; width:min(100%, 29rem); border-radius:1.5rem; background:#fff; border:1px solid #E2E6EA; box-shadow:0 30px 80px rgba(15,27,61,.24); overflow:hidden; }
-        .sh-modal-head { padding:1.1rem 1.25rem; border-bottom:1px solid #E2E6EA; }
+        .sh-modal-backdrop { position:fixed; inset:0; background:rgba(16,25,60,.55); backdrop-filter: blur(3px); }
+        .sh-modal-card { position:relative; width:min(100%, 29rem); border-radius:1.5rem; background:#fff; border:1px solid rgba(16,25,60,0.150); box-shadow:0 30px 80px rgba(16,25,60,.24); overflow:hidden; }
+        .sh-modal-head { padding:1.1rem 1.25rem; border-bottom:1px solid rgba(16,25,60,0.150); }
         .sh-modal-body { padding:1rem 1.25rem; }
         .sh-modal-actions { padding:1rem 1.25rem 1.25rem; display:flex; justify-content:flex-end; gap:.65rem; }
     </style>
 
     {{-- Phase 1+2: Partner dashboard, compact navigation, shared form / modal system. --}}
-    <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase12.css') }}?v=20261026">
+    <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase12.css') }}?v=20261112-navy-pink-2">
     {{-- Phase 3–5: shared compact logistics workspaces (Partner / Hub / Branch). --}}
-    <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase345.css') }}?v=20261027">
+    <link rel="stylesheet" href="{{ asset('css/logistics-ux-phase345.css') }}?v=20261112-navy-pink-2">
     {{-- Shared Table-first logistics directory assets: Province Hubs, Branches, Riders, Fleet, Routes, Demo Network. --}}
-    <link rel="stylesheet" href="{{ asset('css/logistics-directory-v1.css') }}?v=20261104-ui-repair-2">
+    <link rel="stylesheet" href="{{ asset('css/logistics-directory-v1.css') }}?v=20261112-navy-pink-2">
     @stack('styles')
 
     {{-- Shared required-field styling; no field schema changes. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261112-navy-pink-2">
     {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261112-navy-pink-2">
     {{-- Unified management design system: loaded last to prevent styles silently disappearing. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261104-unified2">
-    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261107b">
+    <link rel="stylesheet" href="{{ asset('css/shophop-management-unified.css') }}?v=20261112-navy-pink-2">
+    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261112-navy-pink-2">
     @include('partials.console-assets')
+@include('partials.brand-assets')
 </head>
 
 
@@ -526,7 +527,7 @@
                            shrink-0"
                 >
                     <img
-                        src="{{ asset('images/logo.png') }}"
+                        src="{{ asset('images/logo-bunny.png') }}"
                         alt="ShopHop Logo"
                         class="w-9 h-9 object-contain"
                     >
@@ -542,7 +543,7 @@
                                tracking-tight
                                text-white"
                     >
-                        Shop<span class="text-teal">Hop</span>
+                        Shop<span class="sh-brand-hop text-teal">Hop</span>
                     </p>
 
                     <p
@@ -1012,7 +1013,6 @@
                        gap-2"
             >
 
-                @include('partials.theme-toggle')
 
                 {{-- Website --}}
                 
@@ -1866,14 +1866,14 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-<script src="{{ asset('js/shophop-ph-address.js') }}"></script>
-    <script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261027"></script>
+<script src="{{ asset('js/shophop-ph-address.js') }}?v=20261112-navy-pink-2"></script>
+    <script defer src="{{ asset('js/logistics-ux-phase345.js') }}?v=20261112-navy-pink-2"></script>
 @stack('scripts')
     {{-- Required for searchable directories, Actions dropdowns, and Add/Edit modals. --}}
-    <script defer src="{{ asset('js/logistics-directory-v1.js') }}?v=20261112-console"></script>
+    <script defer src="{{ asset('js/logistics-directory-v1.js') }}?v=20261112-navy-pink-2"></script>
 
-    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
-<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-modal2"></script>
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261112-navy-pink-2"></script>
+<script defer src="{{ asset('js/shophop-operations-table.js') }}?v=20261112-navy-pink-2"></script>
 @include('partials.console-details')
 </body>
 

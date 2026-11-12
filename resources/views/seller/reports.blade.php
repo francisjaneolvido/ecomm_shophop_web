@@ -65,9 +65,9 @@
     }
 
     .report-preset-active {
-        background: #0F2C3F;
+        background: #10193C;
         color: #ffffff;
-        border-color: #0F2C3F;
+        border-color: #10193C;
     }
 
     @media print {

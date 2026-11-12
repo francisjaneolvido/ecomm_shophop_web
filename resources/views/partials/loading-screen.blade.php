@@ -42,7 +42,7 @@
         <div class="sh-loader__impact" aria-hidden="true"></div>
 
         <img
-            src="{{ asset('images/logo.png') }}"
+            src="{{ asset('images/logo-bunny.png') }}"
             alt=""
             aria-hidden="true"
             class="sh-loader__mascot"
@@ -74,9 +74,9 @@
         --sh-navy: #0B1B33;
         --sh-navy-light: #16294B;
         --sh-navy-deep: #071322;
-        --sh-teal: #12938D;
-        --sh-teal-bright: #2FD9C8;
-        --sh-teal-dark: #0A5F5A;
+        --sh-teal: #EDA3AE;
+        --sh-teal-bright: #EDA3AE;
+        --sh-teal-dark: #10193C;
         --sh-mist: #C9DCE6;
 
         position: fixed;
@@ -208,7 +208,7 @@
         width: 128px;
         height: auto;
         transform-origin: 50% 85%;
-        filter: drop-shadow(0 6px 16px rgba(47, 217, 200, .35));
+        filter: drop-shadow(0 6px 16px rgba(237,163,174, .35));
         animation: sh-hop 1.2s cubic-bezier(.42, 0, .58, 1) infinite;
     }
 

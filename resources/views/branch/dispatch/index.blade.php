@@ -1,7 +1,7 @@
 @extends('branch.layout.app')
 @section('title','Rider Dispatch')
 @section('content')
-<style>#dispatchScheduleFields[hidden],#dispatchCapacityNotice[hidden]{display:none!important}#dispatchAssignModal,#dispatchCapacityModal{width:min(680px,calc(100vw - 24px));padding:0;overflow-y:auto}#dispatchAssignModal .ops-dialog-foot,#dispatchCapacityModal .ops-dialog-foot{display:flex;justify-content:flex-end;gap:12px;padding:16px 18px;border-top:1px solid #E2E6EA}</style>
+<style>#dispatchScheduleFields[hidden],#dispatchCapacityNotice[hidden]{display:none!important}#dispatchAssignModal,#dispatchCapacityModal{width:min(680px,calc(100vw - 24px));padding:0;overflow-y:auto}#dispatchAssignModal .ops-dialog-foot,#dispatchCapacityModal .ops-dialog-foot{display:flex;justify-content:flex-end;gap:12px;padding:16px 18px;border-top:1px solid rgba(16,25,60,0.150)}</style>
 <div class="space-y-5">
     <header class="sh-page-header">
         <div><p class="eyebrow">{{ $center->name }}</p><h1 class="title">Rider Dispatch</h1><p class="description">Choose parcels, select an eligible rider, and assign the trip from this page.</p></div>
@@ -82,6 +82,6 @@
 <script type="application/json" id="dispatchRiderData">{!! json_encode($riderDetails->values(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}</script>
 @endsection
 @push('scripts')
-<script src="{{ asset('js/shophop-rider-dispatch.js') }}" defer></script>
-<script src="{{ asset('js/shophop-rider-batches.js') }}" defer></script>
+<script src="{{ asset('js/shophop-rider-dispatch.js') }}?v=20261112-navy-pink-2" defer></script>
+<script src="{{ asset('js/shophop-rider-batches.js') }}?v=20261112-navy-pink-2" defer></script>
 @endpush

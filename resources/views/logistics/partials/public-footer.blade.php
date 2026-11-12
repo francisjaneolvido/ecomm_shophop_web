@@ -2,8 +2,8 @@
     <div class="lp-wrap lp-footer-grid">
         <div class="lp-footer-brand">
             <a href="{{ route('logistics.home') }}" class="lp-brand" aria-label="ShopHop Logistics home">
-                <img src="{{ asset('images/logo.png') }}" alt="ShopHop logo" width="38" height="38">
-                <span>ShopHop<small>LOGISTICS</small></span>
+                <img src="{{ asset('images/logo-bunny.png') }}" alt="ShopHop logo" width="38" height="38">
+                <span>Shop<span class="sh-brand-hop">Hop</span><small>LOGISTICS</small></span>
             </a>
             <p>One connected platform for partner onboarding, parcel handling and delivery coordination.</p>
         </div>
@@ -20,7 +20,7 @@
             <a href="{{ route('logistics.terms') }}">Partner terms</a>
         </nav>
         <nav aria-label="ShopHop Links">
-            <strong>ShopHop</strong>
+            <strong>Shop<span class="sh-brand-hop">Hop</span></strong>
             <a href="{{ route('home') }}">Marketplace ↗</a>
             <a href="{{ route('logistics.home') }}#faq">Frequently asked questions</a>
         </nav>

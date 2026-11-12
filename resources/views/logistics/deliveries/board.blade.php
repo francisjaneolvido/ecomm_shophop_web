@@ -157,7 +157,7 @@
 </div>
 @endsection
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261104-bh">
-<link rel="stylesheet" href="{{ asset('css/shophop-logistics-workspace.css') }}?v=20261104-finance">
+<link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261112-navy-pink-2">
+<link rel="stylesheet" href="{{ asset('css/shophop-logistics-workspace.css') }}?v=20261112-navy-pink-2">
 @endpush
 @push('scripts')@endpush

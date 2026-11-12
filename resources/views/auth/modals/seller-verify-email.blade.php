@@ -82,7 +82,7 @@
                     <div class="flex items-center gap-3">
 
                         <img
-                            src="{{ asset('images/logo.png') }}"
+                            src="{{ asset('images/logo-bunny.png') }}"
                             alt="ShopHop"
                             class="w-12 h-12 object-contain"
                         >
@@ -351,7 +351,7 @@
                     >
 
                         <img
-                            src="{{ asset('images/logo.png') }}"
+                            src="{{ asset('images/logo-bunny.png') }}"
                             alt="ShopHop"
                             class="w-9 h-9 object-contain"
                         >

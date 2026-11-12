@@ -1,7 +1,7 @@
 /* Buyer Account Settings uses ShopHop's shared shopper shell and compact controls. */
 .shb-profile-page.settings-shell {
-    background: var(--shui-bg, #f3f5f7);
-    color: var(--shui-navy, #0f1b3d);
+    background: var(--shui-bg, #FBF6EE);
+    color: var(--shui-navy, #10193C);
     font-size: 13px;
     line-height: 1.6;
 }
@@ -15,7 +15,7 @@
 }
 .shb-profile-page .settings-eyebrow {
     margin: 0 0 4px;
-    color: var(--shb-deep, #078d83);
+    color: var(--shb-deep, #10193C);
     font-size: 10px;
     font-weight: 700;
     letter-spacing: .13em;
@@ -29,7 +29,7 @@
 }
 .shb-profile-page .settings-intro {
     margin-top: 6px;
-    color: var(--shb-muted, #697b90);
+    color: var(--shb-muted, #6B6B7B);
     font-size: 12px;
 }
 .shb-profile-page .settings-header-actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -40,16 +40,16 @@
     gap: 7px;
     min-height: 36px;
     padding: 8px 12px;
-    border: 1px solid var(--shui-border, #e2e6ea);
+    border: 1px solid var(--shui-border, rgba(16,25,60,0.150));
     border-radius: var(--shui-control-radius, 6px);
     font-size: 11px;
     font-weight: 600;
     text-decoration: none;
 }
-.shb-profile-page .settings-primary-action { background: var(--shb-teal, #12b4a1); color: white; border-color: transparent !important; }
-.shb-profile-page .settings-primary-action:hover { background: var(--shb-deep, #078d83); }
-.shb-profile-page .settings-secondary-action { background: white; color: var(--shui-navy, #0f1b3d); }
-.shb-profile-page .settings-secondary-action:hover { background: var(--shb-soft, #def7f1); }
+.shb-profile-page .settings-primary-action { background: #10193C; color: #FFFFFF; border-color: transparent !important; }
+.shb-profile-page .settings-primary-action:hover { background: var(--shb-deep, #26305A); }
+.shb-profile-page .settings-secondary-action { background: white; color: var(--shui-navy, #10193C); }
+.shb-profile-page .settings-secondary-action:hover { background: var(--shb-soft, #FCECEF); }
 .shb-profile-page .settings-layout { grid-template-columns: minmax(0, 1fr); gap: 20px; }
 .shb-profile-page .settings-layout > * { min-width: 0; }
 .shb-profile-page .settings-panel > .bg-white { padding: 24px; }
@@ -72,16 +72,16 @@
     text-align: left;
     border-radius: var(--shui-control-radius, 6px);
 }
-.shb-profile-page .settings-tab-btn[aria-pressed="true"] { color: white; background: var(--shb-teal, #12b4a1); }
-.shb-profile-page .settings-tab-btn[aria-pressed="false"] { color: var(--shb-muted, #697b90); background: transparent; }
-.shb-profile-page .settings-tab-btn[aria-pressed="false"]:hover { color: var(--shb-deep, #078d83); background: var(--shb-soft, #def7f1); }
+.shb-profile-page .settings-tab-btn[aria-pressed="true"] { color: #10193C; background: var(--shb-teal, #10193C); }
+.shb-profile-page .settings-tab-btn[aria-pressed="false"] { color: var(--shb-muted, #6B6B7B); background: transparent; }
+.shb-profile-page .settings-tab-btn[aria-pressed="false"]:hover { color: var(--shb-deep, #10193C); background: var(--shb-soft, #FCECEF); }
 .shb-profile-page .settings-panel :is(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea),
 #addressModal :is(input:not([type="hidden"]), select, textarea) {
     min-width: 0;
     min-height: 40px;
     padding: 9px 12px;
     border-radius: var(--shui-control-radius, 6px);
-    border-color: var(--shui-border, #e2e6ea);
+    border-color: var(--shui-border, rgba(16,25,60,0.150));
     font-size: 12px;
     line-height: 1.5;
 }
@@ -90,7 +90,7 @@
 .shb-profile-page .settings-panel button { min-height: 36px; font-size: 12px; font-weight: 600; }
 .shb-profile-page .settings-sidebar-scroll { scrollbar-width: thin; }
 .shb-profile-page :is(button, a, input, select, textarea):focus-visible {
-    outline: 2px solid var(--shb-teal, #12b4a1);
+    outline: 2px solid var(--shb-teal, #10193C);
     outline-offset: 2px;
 }
 @media (min-width: 1024px) {

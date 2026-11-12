@@ -15,7 +15,6 @@
                     These links render the repository's real Blade interfaces with their existing demo data. They do not authenticate an account or bypass production middleware.
                 </p>
             </div>
-            @include('partials.theme-toggle')
         </header>
 
         @php

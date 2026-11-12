@@ -214,7 +214,7 @@ OPTIONAL / NON-BLOCKING:
                     <div class="lg:hidden flex items-center gap-3 mb-5">
 
                         <img
-                            src="{{ asset('images/logo.png') }}"
+                            src="{{ asset('images/logo-bunny.png') }}"
                             alt="ShopHop"
                             class="w-10 h-10 object-contain"
                         >

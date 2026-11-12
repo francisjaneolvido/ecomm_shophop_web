@@ -10,7 +10,7 @@
 --}}
 @section('hideChrome', true)
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/shophop-buyer-discovery.css') }}?v=20261108">
+<link rel="stylesheet" href="{{ asset('css/shophop-buyer-discovery.css') }}?v=20261112-navy-pink-2">
 @endpush
 
 
@@ -298,7 +298,7 @@
                                     </a>
                                 </h3>
 
-                                <p class="text-[12.5px] font-bold text-teal-dark mt-0.5">
+                                <p class="sh-card-price text-[12.5px] font-bold text-teal-dark mt-0.5">
                                     ₱{{ number_format($product['price']) }}
                                 </p>
 

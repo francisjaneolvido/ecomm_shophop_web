@@ -150,7 +150,7 @@
 
     #adminDashboard .dashboard-scrollbar {
         scrollbar-width: thin;
-        scrollbar-color: rgba(15, 27, 61, .18) transparent;
+        scrollbar-color: rgba(16,25,60, .18) transparent;
     }
 
     #adminDashboard .dashboard-scrollbar::-webkit-scrollbar {
@@ -159,7 +159,7 @@
     }
 
     #adminDashboard .dashboard-scrollbar::-webkit-scrollbar-thumb {
-        background: rgba(15, 27, 61, .16);
+        background: rgba(16,25,60, .16);
         border-radius: 999px;
     }
 

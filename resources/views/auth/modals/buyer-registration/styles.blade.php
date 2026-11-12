@@ -27,7 +27,7 @@
 
     #buyer-registration-modal .step-circle.step-circle-active {
         transform: scale(1.08);
-        box-shadow: 0 0 0 5px rgba(20, 184, 166, 0.15);
+        box-shadow: 0 0 0 5px rgba(237,163,174, 0.15);
     }
 
     #buyer-registration-modal .step-check {

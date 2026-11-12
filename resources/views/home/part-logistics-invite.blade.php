@@ -1,7 +1,7 @@
 {{-- Low-priority invitation immediately before marketplace footer; shopping content comes first. --}}
 <section aria-labelledby="sh-logistics-invite-title" class="bg-[#f3f6f8] border-t border-gray-border/70 py-7 sm:py-9">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="rounded-2xl border border-[#d9e7e9] bg-white p-5 sm:px-7 sm:py-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
+        <div class="rounded-2xl border border-[#FCECEF] bg-white p-5 sm:px-7 sm:py-6 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
             <div class="flex gap-3 sm:gap-4 items-start min-w-0">
                 <div aria-hidden="true" class="h-10 w-10 shrink-0 flex items-center justify-center bg-teal-light text-teal-dark rounded-xl">
                     <x-lucide-truck class="w-5 h-5" />

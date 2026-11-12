@@ -176,7 +176,7 @@
 <section id="vouchers" class="scroll-mt-20 bg-gray-bg py-5 sm:py-6 border-b border-gray-border/70">
     <div class="max-w-310 mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#E9F8F4] via-white to-[#EEF8FC] border border-teal/10 p-4 sm:p-5 buyer-reveal">
+        <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#FCECEF] via-white to-[#EEF8FC] border border-teal/10 p-4 sm:p-5 buyer-reveal">
 
             <div class="pointer-events-none absolute -right-20 -top-24 w-56 h-56 rounded-full bg-teal/10 blur-2xl"></div>
 
@@ -347,7 +347,7 @@
                             </div>
 
                             <div class="mt-2 flex items-baseline gap-1.5">
-                                <span class="text-[12px] sm:text-[13px] font-bold text-teal-dark">
+                                <span class="sh-card-price text-[12px] sm:text-[13px] font-bold text-teal-dark">
                                     ₱{{ number_format($product['price']) }}
                                 </span>
 
@@ -462,7 +462,7 @@
                             </div>
 
                             <div class="mt-2 flex items-center justify-between gap-2">
-                                <span class="text-[12px] sm:text-[13px] font-bold text-navy">
+                                <span class="sh-card-price text-[12px] sm:text-[13px] font-bold text-navy">
                                     ₱{{ number_format($product['price']) }}
                                 </span>
 
@@ -554,7 +554,7 @@
 
                         <div class="mt-2 flex items-end justify-between gap-2">
                             <div>
-                                <p class="text-[12px] sm:text-[13px] font-bold text-teal-dark">
+                                <p class="sh-card-price text-[12px] sm:text-[13px] font-bold text-teal-dark">
                                     ₱{{ number_format($product['price']) }}
                                 </p>
 

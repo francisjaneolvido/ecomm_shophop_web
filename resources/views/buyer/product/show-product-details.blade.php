@@ -178,7 +178,7 @@
                     </div>
 
                     {{-- PRICE --}}
-                    <div class="mt-3 bg-[#EAF9F5] border border-teal/10 rounded-xl px-3.5 sm:px-4 py-3">
+                    <div class="mt-3 bg-[#FCECEF] border border-teal/10 rounded-xl px-3.5 sm:px-4 py-3">
                         <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
                             <span id="productPriceDisplay" class="text-[24px] sm:text-[27px] font-bold leading-none text-teal-dark">₱{{ number_format($product['price']) }}</span>
                             @if (! empty($product['original_price']))
@@ -427,7 +427,7 @@
             </div>
 
             @if ($product['reviews'] > 0)
-                <div class="mt-3 rounded-xl bg-[#EAF9F5] border border-teal/10 p-3.5 sm:p-4">
+                <div class="mt-3 rounded-xl bg-[#FCECEF] border border-teal/10 p-3.5 sm:p-4">
                     <div class="grid md:grid-cols-[135px_210px_1fr] gap-4 items-center">
                         <div class="text-center md:text-left">
                             <div class="flex items-end justify-center md:justify-start gap-1">
@@ -586,7 +586,7 @@
 </section>
 
 {{-- MOBILE PURCHASE BAR --}}
-<div class="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t border-gray-border px-3 py-2 shadow-[0_-8px_24px_rgba(15,27,61,.08)]">
+<div class="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t border-gray-border px-3 py-2 shadow-[0_-8px_24px_rgba(16,25,60,.08)]">
     <div class="max-w-310 mx-auto grid grid-cols-[auto_1fr_1fr] gap-2">
         <button type="button" data-product-id="{{ $product['id'] }}" @if (auth()->check() && auth()->user()->account_type === 'buyer') data-wishlist-unavailable disabled title="Manage My Likes" @else data-login-required title="Sign in to save this product" @endif class="wishlist-toggle w-10 h-10 rounded-lg border border-gray-border flex items-center justify-center text-navy/45 {{ auth()->check() && auth()->user()->account_type === 'buyer' ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:text-teal-dark' }}" aria-label="Save to My Likes or sign in">
             <x-lucide-heart class="w-4 h-4" />

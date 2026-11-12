@@ -53,3 +53,7 @@ All five console shells include the shared native Details dialog. Add `data-cons
 For an existing inline record form, give it a stable ID, `data-console-inline-detail`, and `data-console-detail-title`; point a button's `data-console-details` at that ID. The live form is moved and restored, so input state, listeners and unique IDs are preserved. `data-console-auto-open` restores selected riders and validation errors. Read-only templates may keep the existing `data-ops-template` native modal.
 
 Details support Escape, explicit close controls, return focus, contained scrolling, light/dark themes and narrow screens. Approval, activation, dispute and order actions retain their original server routes and authorization.
+
+## Current brand appearance
+
+The current console palette is navy/pink/cream with one light appearance. See [brand-palette.md](brand-palette.md). Earlier dark-mode review notes describe the previous implementation; the controls and conditional styles have been removed.

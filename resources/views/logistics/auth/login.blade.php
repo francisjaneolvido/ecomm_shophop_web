@@ -4,49 +4,49 @@
 
 @push('styles')
 <style>
-    .sh-auth-shell { min-height:calc(100vh - 133px); padding:clamp(36px,5vw,70px) 20px; display:flex; justify-content:center; align-items:center; background:radial-gradient(ellipse at 12% 8%,#def9f3 0%,transparent 44%),linear-gradient(135deg,#F9FCFD,#F1F6F8); }
+    .sh-auth-shell { min-height:calc(100vh - 133px); padding:clamp(36px,5vw,70px) 20px; display:flex; justify-content:center; align-items:center; background:radial-gradient(ellipse at 12% 8%,#FCECEF 0%,transparent 44%),linear-gradient(135deg,#FCECEF,#F1F6F8); }
     .sh-auth-grid { display:grid; grid-template-columns:minmax(0,1fr); gap:24px; width:min(100%,980px); align-items:stretch; }
-    .sh-auth-card,.sh-auth-intro { border:1px solid #E1E9ED; border-radius:24px; background:#fff; box-shadow:0 18px 55px rgba(15,27,61,.08); }
+    .sh-auth-card,.sh-auth-intro { border:1px solid #E1E9ED; border-radius:24px; background:#fff; box-shadow:0 18px 55px rgba(16,25,60,.08); }
     .sh-auth-card { padding:clamp(24px,4vw,42px); }
-    .sh-auth-intro { padding:clamp(25px,4vw,42px); overflow:hidden; background:linear-gradient(140deg,#102747 4%,#0B625E 95%); color:#fff; display:none; }
-    .sh-auth-brand { display:inline-flex; align-items:center; gap:12px; color:#0F1B3D; text-decoration:none; }
+    .sh-auth-intro { padding:clamp(25px,4vw,42px); overflow:hidden; background:linear-gradient(140deg,#10193C 4%,#26305A 95%); color:#fff; display:none; }
+    .sh-auth-brand { display:inline-flex; align-items:center; gap:12px; color:#10193C; text-decoration:none; }
     .sh-auth-brand img { width:42px; height:42px; object-fit:contain; }
     .sh-auth-brand strong { display:block; font-size:15px; font-weight:800; line-height:1.2; }
-    .sh-auth-brand small { display:block; margin-top:4px; font-size:9px; font-weight:700; letter-spacing:.17em; color:#118F80; }
+    .sh-auth-brand small { display:block; margin-top:4px; font-size:9px; font-weight:700; letter-spacing:.17em; color:#10193C; }
     .sh-auth-head { margin-top:24px; }
-    .sh-auth-head h1 { margin:0; color:#0F1B3D; font-size:clamp(23px,3.3vw,29px); line-height:1.2; letter-spacing:-.03em; font-weight:800; }
+    .sh-auth-head h1 { margin:0; color:#10193C; font-size:clamp(23px,3.3vw,29px); line-height:1.2; letter-spacing:-.03em; font-weight:800; }
     .sh-auth-head p { margin:10px 0 0; max-width:31rem; font-size:12px; line-height:1.75; color:#64758B; }
     .sh-auth-field { display:block; margin-top:18px; }
     .sh-auth-label { display:block; margin-bottom:8px; font-size:12px; font-weight:700; color:#152748; }
-    .sh-auth-input { width:100%; min-height:46px; padding:11px 14px; border:1px solid #DCE5EB; border-radius:12px; background:#fff; color:#152748; font:inherit; font-size:13px; outline:none; transition:border-color .2s,box-shadow .2s; }
-    .sh-auth-input:focus { border-color:#21C3A6; box-shadow:0 0 0 4px rgba(33,195,166,.13); }
+    .sh-auth-input { width:100%; min-height:46px; padding:11px 14px; border:1px solid rgba(16,25,60,0.150); border-radius:12px; background:#fff; color:#152748; font:inherit; font-size:13px; outline:none; transition:border-color .2s,box-shadow .2s; }
+    .sh-auth-input:focus { border-color:#EDA3AE; box-shadow:0 0 0 4px rgba(237,163,174,.13); }
     .sh-auth-password-wrap { position:relative; }
     .sh-auth-password-wrap .sh-auth-input { padding-right:80px; }
     .sh-auth-show-password { position:absolute; right:8px; top:50%; transform:translateY(-50%); border:0; border-radius:8px; padding:7px 9px; color:#486176; background:transparent; font:inherit; font-size:11px; font-weight:700; cursor:pointer; }
-    .sh-auth-show-password:hover { background:#F3F8F7; color:#128F7C; }
+    .sh-auth-show-password:hover { background:#FCECEF; color:#10193C; }
     .sh-auth-remember { display:flex; align-items:center; gap:8px; margin:16px 0 20px; color:#526982; font-size:11px; cursor:pointer; }
-    .sh-auth-remember input { width:15px; height:15px; accent-color:#18A98E; }
-    .sh-auth-primary { display:flex; align-items:center; justify-content:center; gap:10px; min-height:46px; width:100%; border:0; border-radius:12px; background:#18B99C; color:#fff; font:inherit; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 9px 18px rgba(24,185,156,.17); transition:background .2s,transform .2s; }
-    .sh-auth-primary:hover { background:#119C86; transform:translateY(-1px); }
+    .sh-auth-remember input { width:15px; height:15px; accent-color:#EDA3AE; }
+    .sh-auth-primary { display:flex; align-items:center; justify-content:center; gap:10px; min-height:46px; width:100%; border:0; border-radius:12px; background:#10193C; color:#FFFFFF; font:inherit; font-size:13px; font-weight:700; cursor:pointer; box-shadow:0 9px 18px rgba(237,163,174,.17); transition:background .2s,transform .2s; }
+    .sh-auth-primary:hover { background:#EDA3AE; transform:translateY(-1px); }
     .sh-auth-primary:disabled { opacity:.7; cursor:wait; }
     .sh-auth-separator { display:flex; align-items:center; gap:13px; margin:21px 0; color:#8B9AAA; font-size:11px; }
     .sh-auth-separator:before,.sh-auth-separator:after { content:""; flex:1; height:1px; background:#E4E9ED; }
-    .sh-auth-google { display:flex; align-items:center; justify-content:center; gap:11px; width:100%; min-height:46px; padding:12px 14px; border:1px solid #DCE5EB; border-radius:12px; background:#fff; text-decoration:none; color:#1B304B; font:inherit; font-size:12px; font-weight:700; transition:background .2s,border-color .2s; }
-    .sh-auth-google:hover { border-color:#91DACB; background:#F5FCFA; }
+    .sh-auth-google { display:flex; align-items:center; justify-content:center; gap:11px; width:100%; min-height:46px; padding:12px 14px; border:1px solid rgba(16,25,60,0.150); border-radius:12px; background:#fff; text-decoration:none; color:#1B304B; font:inherit; font-size:12px; font-weight:700; transition:background .2s,border-color .2s; }
+    .sh-auth-google:hover { border-color:#EDA3AE; background:#FCECEF; }
     .sh-auth-google svg { width:18px; height:18px; flex:none; }
     .sh-auth-notice { margin-top:18px; border:1px solid; border-radius:12px; padding:12px 14px; font-size:12px; line-height:1.7; }
     .sh-auth-notice.warning { background:#FFF9EA; border-color:#F3DDB3; color:#795B26; }
     .sh-auth-notice.error { background:#FFF5F5; border-color:#F5CECE; color:#953B3B; }
     .sh-auth-bottom { margin:22px 0 0; text-align:center; color:#607188; font-size:11px; line-height:1.9; }
-    .sh-auth-bottom a { color:#128F7C; font-weight:700; text-decoration:none; }
+    .sh-auth-bottom a { color:#10193C; font-weight:700; text-decoration:none; }
     .sh-auth-bottom a:hover { text-decoration:underline; }
     .sh-auth-small-note { margin:13px 0 0; text-align:center; color:#7D8EA0; font-size:10px; line-height:1.7; }
     .sh-auth-intro h2 { margin:25px 0 0; font-size:clamp(23px,2.4vw,32px); line-height:1.3; font-weight:800; letter-spacing:-.035em; }
-    .sh-auth-intro .eyebrow { display:inline-flex; border:1px solid rgba(167,248,231,.25); background:rgba(167,248,231,.09); color:#AEFFE9; padding:8px 12px; font-size:10px; font-weight:700; letter-spacing:.1em; border-radius:999px; }
-    .sh-auth-intro p { margin:14px 0 0; color:#CFE7EC; font-size:12px; line-height:1.9; }
+    .sh-auth-intro .eyebrow { display:inline-flex; border:1px solid rgba(252,236,239,.25); background:rgba(252,236,239,.09); color:#FCECEF; padding:8px 12px; font-size:10px; font-weight:700; letter-spacing:.1em; border-radius:999px; }
+    .sh-auth-intro p { margin:14px 0 0; color:#FCECEF; font-size:12px; line-height:1.9; }
     .sh-auth-intro ul { padding:0; margin:30px 0 0; list-style:none; display:grid; gap:14px; }
-    .sh-auth-intro li { display:flex; align-items:flex-start; gap:11px; color:#E9F6F7; font-size:12px; line-height:1.6; }
-    .sh-auth-intro .step { display:flex; align-items:center; justify-content:center; width:29px; height:29px; flex:none; border-radius:9px; background:rgba(116,235,207,.17); color:#A7FFE7; font-size:11px; font-weight:700; }
+    .sh-auth-intro li { display:flex; align-items:flex-start; gap:11px; color:#FCECEF; font-size:12px; line-height:1.6; }
+    .sh-auth-intro .step { display:flex; align-items:center; justify-content:center; width:29px; height:29px; flex:none; border-radius:9px; background:rgba(237,163,174,.17); color:#FCECEF; font-size:11px; font-weight:700; }
     @media (min-width:840px) { .sh-auth-grid { grid-template-columns:minmax(0,1.07fr) minmax(0,.93fr); } .sh-auth-intro { display:block; } }
     @media (prefers-reduced-motion:reduce) { .sh-auth-primary, .sh-auth-google { transition:none; } }
 </style>
@@ -57,8 +57,8 @@
     <div class="sh-auth-grid">
         <div class="sh-auth-card">
             <a class="sh-auth-brand" href="{{ route('logistics.home') }}" aria-label="ShopHop Logistics homepage">
-                <img src="{{ asset('images/logo.png') }}" alt="ShopHop logo">
-                <span><strong>ShopHop</strong><small>LOGISTICS PARTNERS</small></span>
+                <img src="{{ asset('images/logo-bunny.png') }}" alt="ShopHop logo">
+                <span><strong>Shop<span class="sh-brand-hop">Hop</span></strong><small>LOGISTICS PARTNERS</small></span>
             </a>
             <div class="sh-auth-head">
                 <h1>Welcome back</h1>

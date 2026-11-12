@@ -173,7 +173,7 @@
 
 
         {{-- Report explanation --}}
-        <div class="flex items-start gap-2 bg-[#EAF9F5] border border-teal/10 rounded-xl px-3 py-2.5 mb-3">
+        <div class="flex items-start gap-2 bg-[#FCECEF] border border-teal/10 rounded-xl px-3 py-2.5 mb-3">
 
             <x-lucide-info class="w-3.5 h-3.5 text-teal-dark shrink-0 mt-0.5" />
 
@@ -391,7 +391,7 @@
                     <div
                         class="order-status-note flex items-start gap-2 px-4 py-3
                                {{ $order['status'] === 'completed'
-                                    ? 'bg-[#EAF9F5]'
+                                    ? 'bg-[#FCECEF]'
                                     : 'bg-gray-bg/55' }}
                                border-t border-gray-border/70"
                     >

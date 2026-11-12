@@ -7,7 +7,7 @@
 
     Redesign notes: the feature list is now a connected "hop path"
     (dashed line threading through each icon node) instead of plain
-    divided rows — a small nod to the brand name — and the eyebrow
+    divided rows â€” a small nod to the brand name â€” and the eyebrow
     badge now matches the pill treatment used on the main site's hero.
 --}}
 
@@ -37,14 +37,14 @@
         <div class="role-panel-enter role-panel-enter-1">
             <div class="flex items-center gap-3">
                 <img
-                    src="{{ asset('images/logo.png') }}"
+                    src="{{ asset('images/logo-bunny.png') }}"
                     alt="ShopHop"
                     class="h-11 w-11 shrink-0 object-contain"
                 >
 
                 <div class="min-w-0">
                     <p class="text-[15px] font-extrabold leading-none tracking-[-0.02em] text-white">
-                        ShopHop
+                        Shop<span class="sh-brand-hop">Hop</span>
                     </p>
                     <p class="mt-1.5 text-[6.5px] font-bold tracking-[0.24em] text-teal">
                         HOP IN. SHOP MORE.
@@ -124,7 +124,7 @@
                     @foreach ($stats as $stat)
                         <div class="min-w-0">
                             <p class="text-[14px] font-extrabold leading-none tracking-[-0.02em] text-white">
-                                {{ $stat['value'] }}@if (!empty($stat['star']))<span class="text-[10px] text-teal">★</span>@endif
+                                {{ $stat['value'] }}@if (!empty($stat['star']))<span class="text-[10px] text-teal">â˜…</span>@endif
                             </p>
                             <p class="mt-1.5 truncate text-[7px] font-semibold uppercase tracking-widest text-white/30">
                                 {{ $stat['label'] }}
@@ -214,7 +214,7 @@
             /* Only the right-hand form area scrolls on desktop. */
             .shophop-registration-scroll {
                 scrollbar-width: thin;
-                scrollbar-color: rgba(15, 118, 110, .24) transparent;
+                scrollbar-color: rgba(237,163,174, .24) transparent;
             }
 
             .shophop-registration-scroll::-webkit-scrollbar {
@@ -226,12 +226,12 @@
             }
 
             .shophop-registration-scroll::-webkit-scrollbar-thumb {
-                background: rgba(15, 118, 110, .20);
+                background: rgba(38,48,90, .20);
                 border-radius: 999px;
             }
 
             .shophop-registration-scroll::-webkit-scrollbar-thumb:hover {
-                background: rgba(15, 118, 110, .34);
+                background: rgba(38,48,90, .34);
             }
 
             @media (prefers-reduced-motion: reduce) {

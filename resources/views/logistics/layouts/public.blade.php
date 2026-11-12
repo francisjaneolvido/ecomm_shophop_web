@@ -9,16 +9,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo-bunny.png') }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         /* Shared public Logistics theme. No Vite rebuild needed for this stylesheet. */
-        :root { --lp-ink:#0F1B3D; --lp-teal:#21C3A6; --lp-forest:#18A98E; --lp-mint:#D4F5EE; --lp-sand:#F3F5F7; }
+        :root { --lp-ink:#10193C; --lp-teal:#EDA3AE; --lp-forest:#10193C; --lp-mint:#FCECEF; --lp-sand:#FBF6EE; }
         *,*::before,*::after { box-sizing:border-box; }
         html { scroll-behavior:smooth; }
         body.lp-site { margin:0; color:var(--lp-ink); background:#fff; font-family:'Poppins',sans-serif; font-size:13px; }
         .lp-wrap { width:min(calc(100% - clamp(32px,7.5vw,144px)),1500px); margin-inline:auto; }
-        .lp-header { position:sticky; top:0; z-index:70; background:rgba(255,255,255,.97); border-bottom:1px solid #E2E6EA; backdrop-filter:blur(14px); }
+        .lp-header { position:sticky; top:0; z-index:70; background:rgba(255,255,255,.97); border-bottom:1px solid rgba(16,25,60,0.150); backdrop-filter:blur(14px); }
         .lp-header-inner { min-height:60px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
         .lp-brand { display:flex; align-items:center; gap:8px; color:var(--lp-ink); text-decoration:none; font-weight:800; letter-spacing:-.025em; font-size:15px; line-height:1.04; }
         .lp-brand img { width:36px; height:36px; object-fit:contain; flex:none; }
@@ -28,23 +28,23 @@
         .lp-header-links a:hover,.lp-footer a:hover { color:var(--lp-forest); }
         .lp-button { display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 18px;border:1px solid transparent;border-radius:12px;text-decoration:none;text-align:center;font-family:inherit;font-size:12px;font-weight:700;line-height:1.3;transition:background .15s,transform .15s,box-shadow .15s; cursor:pointer; }
         .lp-button:hover { transform:translateY(-1px); }
-        .lp-button-primary { color:#fff!important;background:#21C3A6;box-shadow:0 7px 18px #21C3A625; }
-        .lp-button-primary:hover { background:#18A98E; }
-        .lp-button-light { color:#0F1B3D!important;background:#fff; }
+        .lp-button-primary { color:#fff!important;background:#10193C;box-shadow:0 7px 18px #EDA3AE25; }
+        .lp-button-primary:hover { background:#10193C; }
+        .lp-button-light { color:#10193C!important;background:#fff; }
         .lp-button-outline { background:transparent;color:#fff!important;border-color:#ffffff80; }
         .lp-button-ink { background:var(--lp-ink);color:#fff!important; }
         .lp-button-pill { border-radius:999px; }
-        .lp-footer { background:#0F1B3D;color:#d9e8ef; padding:27px 0; margin-top:auto; }
+        .lp-footer { background:#10193C;color:#d9e8ef; padding:27px 0; margin-top:auto; }
         .lp-footer-inner {display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;font-size:11px;line-height:1.7;}
         .lp-footer a {color:#d9e8ef;text-decoration:none;}
         .lp-footer-nav {display:flex;gap:20px;flex-wrap:wrap;}
         .lp-site-main {flex:1; min-width:0;}
-        .lp-form-control {width:100%;min-height:41px;border:1px solid #E2E6EA;border-radius:12px;padding:10px 13px;font:inherit;font-size:12px;background:#fff;color:#0F1B3D;outline:none;transition:border-color .15s,box-shadow .15s;}
-        .lp-form-control:focus {border-color:#21C3A6;box-shadow:0 0 0 3px #21C3A621;}
+        .lp-form-control {width:100%;min-height:41px;border:1px solid rgba(16,25,60,0.150);border-radius:12px;padding:10px 13px;font:inherit;font-size:12px;background:#fff;color:#10193C;outline:none;transition:border-color .15s,box-shadow .15s;}
+        .lp-form-control:focus {border-color:#EDA3AE;box-shadow:0 0 0 3px #EDA3AE21;}
         .lp-form-label {display:block;font-size:11px;font-weight:600;color:var(--lp-ink);margin:0 0 7px;}
 
         /* V2 public chrome: shared across landing, application and sign-in pages. */
-        .lp-header-utility {background:linear-gradient(100deg,#0f6c69,#16aa94);color:#fff;}
+        .lp-header-utility {background:#10193C;color:#FFFFFF;}
         .lp-header-utility-inner {display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:30px;font-size:9.5px;letter-spacing:.015em;font-weight:600;}
         .lp-header-utility-inner a {color:white;text-decoration:none;font-weight:700;}
         .lp-utility-links {display:flex;gap:16px;}
@@ -52,19 +52,19 @@
         .lp-header-inner {min-height:66px;}
         .lp-header-links {gap:8px 22px;}
         .lp-header-links a:not(.lp-button) {font-size:11px;}
-        .lp-header-apply {border-radius:7px;background:#13b3a0;min-height:37px;padding:10px 15px;font-size:11px!important;}
-        .lp-header-apply:hover {background:#0c9184;}
+        .lp-header-apply {border-radius:7px;background:#EDA3AE;min-height:37px;padding:10px 15px;font-size:11px!important;}
+        .lp-header-apply:hover {background:#26305A;}
         .lp-brand img {width:40px;height:40px;}
         .lp-brand small {font-size:7px;}
-        .lp-footer {padding:30px 0 17px;border-top:1px solid #e1e8eb;background:#f6f8f8;color:#0f1b3d;}
+        .lp-footer {padding:30px 0 17px;border-top:1px solid #e1e8eb;background:#FBF6EE;color:#10193C;}
         .lp-footer .lp-brand {display:inline-flex;}
         .lp-footer-grid {display:grid;grid-template-columns:1.6fr repeat(3,1fr);gap:36px;padding-bottom:27px;}
-        .lp-footer-brand p {max-width:315px;color:#607487;font-size:11px;line-height:1.75;margin:13px 0 0;}
+        .lp-footer-brand p {max-width:315px;color:#6B6B7B;font-size:11px;line-height:1.75;margin:13px 0 0;}
         .lp-footer-grid nav {display:flex;flex-direction:column;align-items:flex-start;gap:10px;}
         .lp-footer-grid nav strong {font-size:11.5px;font-weight:800;margin-bottom:5px;}
-        .lp-footer-grid nav a {font-size:10.5px;color:#5d7080;line-height:1.55;text-decoration:none;}
-        .lp-footer-grid nav a:hover {color:#098e81;}
-        .lp-footer-bottom {display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding-top:15px;border-top:1px solid #dde6e9;color:#8796a4;font-size:10px;}
+        .lp-footer-grid nav a {font-size:10.5px;color:#6B6B7B;line-height:1.55;text-decoration:none;}
+        .lp-footer-grid nav a:hover {color:#10193C;}
+        .lp-footer-bottom {display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding-top:15px;border-top:1px solid #FCECEF;color:#8796a4;font-size:10px;}
         @media (max-width:900px) {.lp-header-links{gap:12px;}.lp-footer-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.lp-header-links .lp-optional{display:none;}}
         @media (max-width:600px) {
             .lp-header .lp-wrap,.lp-footer .lp-wrap{width:calc(100% - 30px);}
@@ -83,16 +83,18 @@
     </style>
     @stack('styles')
     {{-- Shared required-field styling; no field schema changes. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261027a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-required-hubs.css') }}?v=20261112-navy-pink-2">
     {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
-    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261104-a">
+    <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261112-navy-pink-2">
+@include('partials.theme-head')
+@include('partials.brand-assets')
 </head>
 <body class="lp-site" style="min-height:100vh;display:flex;flex-direction:column">
     @include('logistics.partials.public-header')
     <main class="lp-site-main" id="main-content">@yield('content')</main>
     @include('logistics.partials.public-footer')
-    <script src="{{ asset('js/shophop-ph-address.js') }}"></script>
+    <script src="{{ asset('js/shophop-ph-address.js') }}?v=20261112-navy-pink-2"></script>
     @stack('scripts')
-    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261027a"></script>
+    <script src="{{ asset('js/shophop-required-fields.js') }}?v=20261112-navy-pink-2"></script>
 </body>
 </html>

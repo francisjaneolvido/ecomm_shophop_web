@@ -1299,7 +1299,7 @@ module.exports = QRCode;
       }
     }
     path.setAttribute("d", data.join(""));
-    path.setAttribute("fill", "#0f1b3d");
+    path.setAttribute("fill", "#10193C");
     svg.appendChild(path);
     element.replaceChildren(svg);
     return svg;

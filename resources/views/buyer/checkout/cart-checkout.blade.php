@@ -16,7 +16,7 @@
         margin-inline: auto !important;
     }
 
-    .shb-checkout-page { background: #f5f8fa; }
+    .shb-checkout-page { background: #FBF6EE; }
 
     .shb-checkout-page #checkoutForm {
         display: grid;
@@ -43,7 +43,7 @@
     .shb-checkout-page .shb-checkout-main > section,
     .shb-checkout-page .shb-checkout-summary > section {
         border-color: #e0e9ec;
-        box-shadow: 0 2px 9px rgba(16, 39, 71, .035);
+        box-shadow: 0 2px 9px rgba(16,25,60, .035);
     }
 
     .shb-checkout-page .checkout-shop-group .checkout-item {
@@ -57,8 +57,8 @@
 
     .shb-checkout-page .shipping-option:has(input:checked),
     .shb-checkout-page label:has(input[name^="logistics_partner"]:checked) {
-        border-color: #11ad9a;
-        background: #eefbf7;
+        border-color: #EDA3AE;
+        background: #FCECEF;
     }
 
     .shb-checkout-page .shb-checkout-summary #summaryTotal {
@@ -69,12 +69,12 @@
 
     .shb-checkout-page #placeOrderBtn,
     .shb-checkout-page #mobilePlaceOrderBtn {
-        background-color: #11ad9a;
+        background-color: #EDA3AE;
     }
 
     .shb-checkout-page #placeOrderBtn:hover:not(:disabled),
     .shb-checkout-page #mobilePlaceOrderBtn:hover:not(:disabled) {
-        background-color: #0b847b;
+        background-color: #26305A;
     }
 
     .shb-checkout-page #placeOrderBtn:disabled,
@@ -243,7 +243,7 @@
                         </div>
 
                         <a
-                            href="{{ route('buyer.profile') }}#address"
+                            href="{{ route('buyer.profile') }}#10193Cress"
                             class="h-7 px-2.5 rounded-lg bg-gray-bg hover:bg-teal-light
                                    text-[9px] font-semibold text-navy/55 hover:text-teal-dark transition
                                    flex items-center"
@@ -257,7 +257,7 @@
 
                         <div class="flex items-start gap-3">
 
-                            <span class="w-8 h-8 rounded-full bg-[#EAF9F5] text-teal-dark flex items-center justify-center shrink-0">
+                            <span class="w-8 h-8 rounded-full bg-[#FCECEF] text-teal-dark flex items-center justify-center shrink-0">
                                 <x-lucide-house class="w-3.5 h-3.5" />
                             </span>
 
@@ -266,7 +266,7 @@
                                 @if (empty($address['line']))
                                     <p class="text-[10.5px] text-red-500">
                                         No delivery address on file. Please
-                                        <a href="{{ route('buyer.profile') }}#address" class="underline font-semibold">add one</a>
+                                        <a href="{{ route('buyer.profile') }}#10193Cress" class="underline font-semibold">add one</a>
                                         before placing an order.
                                     </p>
                                 @else

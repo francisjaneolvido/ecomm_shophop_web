@@ -3,7 +3,7 @@
     <div class="help-shortcuts">
         <a href="{{ auth()->user()?->account_type === 'buyer' ? route('buyer.orders') : route('login') }}"><x-lucide-package /><strong>My Orders</strong><span>Order status and delivery</span><x-lucide-arrow-up-right /></a>
         <a href="{{ auth()->user()?->account_type === 'buyer' ? route('buyer.messages') : route('login') }}"><x-lucide-message-circle /><strong>Messages</strong><span>Talk to your seller</span><x-lucide-arrow-up-right /></a>
-        <a href="{{ auth()->user()?->account_type === 'buyer' ? route('buyer.profile').'#address' : route('login') }}"><x-lucide-map-pin /><strong>Address Book</strong><span>Update delivery details</span><x-lucide-arrow-up-right /></a>
+        <a href="{{ auth()->user()?->account_type === 'buyer' ? route('buyer.profile').'#10193Cress' : route('login') }}"><x-lucide-map-pin /><strong>Address Book</strong><span>Update delivery details</span><x-lucide-arrow-up-right /></a>
     </div>
     <div class="help-section-heading"><h3>Frequently asked questions</h3></div>
     <label class="discovery-filter help-search"><x-lucide-search /><span class="sr-only">Search help articles</span><input type="search" data-help-search placeholder="Search orders, delivery, payments..." maxlength="100"></label>

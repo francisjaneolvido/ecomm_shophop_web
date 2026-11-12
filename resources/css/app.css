@@ -7,14 +7,18 @@
 
 @theme {
     /* Brand Colors */
-    --color-navy: #0F1B3D;
+    --color-pink: #EDA3AE;
+    --color-pink-hover: #E1909E;
+    --color-cream: #FBF6EE;
+    --color-navy-hover: #26305A;
+    --color-navy: #10193C;
 
-    --color-teal: #21C3A6;
-    --color-teal-dark: #18A98E;
-    --color-teal-light: #D4F5EE;
+    --color-teal: #EDA3AE;
+    --color-teal-dark: #E1909E;
+    --color-teal-light: #FCECEF;
 
-    --color-gray-bg: #F3F5F7;
-    --color-gray-border: #E2E6EA;
+    --color-gray-bg: #FBF6EE;
+    --color-gray-border: rgba(16,25,60,0.150);
 
     /* Typography */
     --font-sans: 'Poppins', sans-serif;
@@ -54,16 +58,6 @@ body {
 }
 
 /* These legacy utility combinations need semantic surfaces outside the default light theme. */
-html:not([data-theme="light"]) .glass-panel {
-    background: color-mix(in srgb, var(--sh-surface) 82%, transparent);
-    border-color: var(--sh-border);
-}
-
-html:not([data-theme="light"]) .mesh-teal-navy {
-    background:
-        radial-gradient(120% 140% at 0% 0%, rgba(33, 195, 166, .13) 0%, transparent 55%),
-        var(--sh-page);
-}
 
 
 /* ================================
@@ -505,13 +499,13 @@ img {
 
 .mesh-teal-navy {
     background:
-        radial-gradient(120% 140% at 0% 0%, rgba(33, 195, 166, .16) 0%, transparent 55%),
-        radial-gradient(120% 140% at 100% 100%, rgba(15, 27, 61, .10) 0%, transparent 55%),
+        radial-gradient(120% 140% at 0% 0%, rgba(237,163,174, .16) 0%, transparent 55%),
+        radial-gradient(120% 140% at 100% 100%, rgba(16,25,60, .10) 0%, transparent 55%),
         var(--color-gray-bg);
 }
 
 .photo-scrim-b {
-    background: linear-gradient(to top, rgba(15, 27, 61, .82) 0%, rgba(15, 27, 61, .22) 55%, transparent 100%);
+    background: linear-gradient(to top, rgba(16,25,60, .82) 0%, rgba(16,25,60, .22) 55%, transparent 100%);
 }
 
 

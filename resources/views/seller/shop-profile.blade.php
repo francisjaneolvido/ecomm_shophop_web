@@ -1,6 +1,6 @@
 @extends('seller.partials.layout')
 @section('title', 'Shop Profile')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/shophop-seller-workspace.css') }}?v=1">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/shophop-seller-workspace.css') }}?v=20261112-navy-pink-2">@endpush
 @section('content')
 <div id="sellerShopProfile" class="ss-workspace">
     <header class="ss-page-head"><div><p class="ss-eyebrow">SELLER / SHOP PROFILE</p><h1>Shop Profile</h1><p>Registered shop details, status, and shortcuts to supported settings.</p></div><a class="ss-btn ss-btn-primary" href="{{ route('seller.account') }}">Edit Contact Profile</a></header>

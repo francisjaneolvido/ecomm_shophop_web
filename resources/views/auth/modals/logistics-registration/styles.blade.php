@@ -23,7 +23,7 @@
 
     #logistics-registration-modal .step-circle.step-circle-active {
         transform: scale(1.08);
-        box-shadow: 0 0 0 5px rgba(20, 184, 166, 0.15);
+        box-shadow: 0 0 0 5px rgba(237,163,174, 0.15);
     }
 
     #logistics-registration-modal .step-check {
@@ -73,9 +73,9 @@
         to   { opacity: 1; transform: translateY(0); }
     }
 
-    #logistics-terms-scroll { scrollbar-width: thin; scrollbar-color: #99cfc9 transparent; }
+    #logistics-terms-scroll { scrollbar-width: thin; scrollbar-color: #EDA3AE transparent; }
     #logistics-terms-scroll::-webkit-scrollbar { width: 6px; }
-    #logistics-terms-scroll::-webkit-scrollbar-thumb { background-color: #99cfc9; border-radius: 999px; }
+    #logistics-terms-scroll::-webkit-scrollbar-thumb { background-color: #EDA3AE; border-radius: 999px; }
     #logistics-terms-scroll-wrap.terms-at-bottom #logistics-terms-scroll-fade { opacity: 0; }
 </style>
 @endpush

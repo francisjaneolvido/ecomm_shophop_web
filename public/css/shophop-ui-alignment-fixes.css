@@ -5,20 +5,20 @@
 .shb-likes-page > .sh-shop-shell { max-width:1440px; }
 /* Modern, legible pagination across Admin, Seller, Logistics and Buyer tables. */
 nav[role="navigation"] a[aria-label*="pagination"],
-nav[role="navigation"] a[aria-label*="Pagination"] { color:#12314b; }
+nav[role="navigation"] a[aria-label*="Pagination"] { color:#10193C; }
 nav[role="navigation"] [aria-current="page"] > span,
-nav[role="navigation"] [aria-current="page"] > a { background:#0cae9b!important; border-color:#0cae9b!important; color:#fff!important; }
-nav[role="navigation"] a:not([aria-current]):hover { background:#e6f8f4!important; color:#087f75!important; }
+nav[role="navigation"] [aria-current="page"] > a { background:#EDA3AE!important; border-color:#EDA3AE!important; color:#10193C!important; }
+nav[role="navigation"] a:not([aria-current]):hover { background:#FCECEF!important; color:#10193C!important; }
 /* Laravel/Tailwind paginator numeric buttons: override inherited dark fills. */
-nav[role="navigation"] span[aria-label="Pagination Navigation"] { color:#12314b; }
+nav[role="navigation"] span[aria-label="Pagination Navigation"] { color:#10193C; }
 nav[role="navigation"] a, nav[role="navigation"] span { transition:background-color .15s ease,color .15s ease; }
 nav[role="navigation"] a.bg-navy, nav[role="navigation"] span.bg-navy,
-nav[role="navigation"] a.bg-gray-800, nav[role="navigation"] span.bg-gray-800 { background:#e8f7f4!important; color:#0b746d!important; }
+nav[role="navigation"] a.bg-gray-800, nav[role="navigation"] span.bg-gray-800 { background:#FCECEF!important; color:#10193C!important; }
 /* Preserve the Save button's conditional visibility in the Actions column. */
 .inventory-stock-save[hidden] { display:none!important; }
 @media(max-width:640px) { .sh-shop-shell { padding-inline:16px; } }
 
 /* Page-number groups in admin lists (avoid black/dark pagination bars). */
 nav[role="navigation"] .bg-gray-900, nav[role="navigation"] .bg-slate-900,
-nav[role="navigation"] .bg-navy-light { background:#f7fafb!important; color:#16334c!important; }
-nav[role="navigation"] [aria-current="page"] { background:#0cae9b!important; color:white!important; }
+nav[role="navigation"] .bg-navy-light { background:#FCECEF!important; color:#16334c!important; }
+nav[role="navigation"] [aria-current="page"] { background:#EDA3AE!important; color:#10193C!important; }

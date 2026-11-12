@@ -3,15 +3,15 @@
    Loaded last in each ShopHop web layout to keep all portals consistent.
 */
 :root {
-  --shui-navy:#0F1B3D; --shui-teal:#18A98E; --shui-mint:#D4F5EE;
-  --shui-border:#E2E6EA; --shui-bg:#F3F5F7;
+  --shui-navy:#10193C; --shui-teal:#EDA3AE; --shui-mint:#FCECEF;
+  --shui-border:rgba(16,25,60,0.150); --shui-bg:#FBF6EE;
   --shui-control-radius:6px; --shui-card-radius:8px; --shui-dialog-radius:10px;
-  --shui-focus:0 0 0 3px rgba(33,195,166,.16);
+  --shui-focus:0 0 0 3px rgba(237,163,174,.16);
 }
 /* Authentication and buyer/seller/logistics registration: one consistent language */
 #login-modal [role="dialog"],
 #account-type-modal [role="dialog"],
-.shophop-registration-dialog { border-radius:var(--shui-dialog-radius) !important; box-shadow:0 16px 38px rgba(15,27,61,.13) !important; }
+.shophop-registration-dialog { border-radius:var(--shui-dialog-radius) !important; box-shadow:0 16px 38px rgba(16,25,60,.13) !important; }
 #login-modal :is(input:not([type="checkbox"]),select,textarea),
 #account-type-modal :is(input:not([type="checkbox"]),select,textarea),
 :is(#buyer-registration-modal,#seller-registration-modal,#logistics-registration-modal) :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
@@ -40,10 +40,10 @@
 /* Logistics public forms: 7-step application and sign-in */
 .lp-site :is(.lp-button,.lp-form-control,.lp-header-apply) { border-radius:var(--shui-control-radius); }
 .lp-site .lp-button-pill { border-radius:var(--shui-control-radius); }
-.lp-site :is(.sh-auth-card,.sh-auth-intro) { border-radius:var(--shui-dialog-radius); box-shadow:0 12px 32px rgba(15,27,61,.07); }
+.lp-site :is(.sh-auth-card,.sh-auth-intro) { border-radius:var(--shui-dialog-radius); box-shadow:0 12px 32px rgba(16,25,60,.07); }
 .lp-site :is(.sh-auth-input,.sh-auth-primary,.sh-auth-google,.sh-auth-show-password) { border-radius:var(--shui-control-radius); }
 .lp-site :is(.sh-auth-notice,.sh-auth-intro .step,.sh-auth-intro .eyebrow) { border-radius:var(--shui-card-radius); }
-.lp-site .sh-logistics-form { border-radius:var(--shui-dialog-radius); box-shadow:0 12px 34px rgba(15,27,61,.06); }
+.lp-site .sh-logistics-form { border-radius:var(--shui-dialog-radius); box-shadow:0 12px 34px rgba(16,25,60,.06); }
 .lp-site .sh-logistics-form :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) { border-radius:var(--shui-control-radius); }
 .lp-site .sh-logistics-form :is([data-wizard-back],[data-wizard-next],[data-wizard-submit]) { border-radius:var(--shui-control-radius); box-shadow:none; }
 .lp-site :is(.sh-apply-progress,.sh-apply-intro .tagline span) { border-radius:var(--shui-card-radius); }
@@ -53,7 +53,7 @@
 :is(.logistics-console,.branch-console) :is(.sh-alert-success,.sh-alert-error),
 #sellerShell :is(.sh-surface,.sh-surface-soft,.sh-stat,.logistics-panel,.sh-modal-card) {
   border-radius:var(--shui-card-radius);
-  box-shadow:0 3px 12px rgba(15,27,61,.035);
+  box-shadow:0 3px 12px rgba(16,25,60,.035);
 }
 :is(.logistics-console,.branch-console) :is(.sh-btn,.sh-input,.sh-select,.sh-textarea),
 #sellerShell :is(.sh-btn,.sh-input,.sh-select,.sh-textarea) { border-radius:var(--shui-control-radius); }
@@ -67,8 +67,8 @@
 :is(.logistics-console,.branch-console) :is(input,select,textarea):focus-visible,
 #sellerShell :is(input,select,textarea):focus-visible { outline:2px solid var(--shui-teal); outline-offset:1px; }
 /* Marketplace category cards: wrap full category names and keep cards aligned. */
-.shb-categories-page .shb-category-tile { border-radius:var(--shui-card-radius); box-shadow:0 1px 4px rgba(15,27,61,.03); }
-.shb-categories-page .shb-category-tile:hover { box-shadow:0 6px 18px rgba(15,27,61,.07); }
+.shb-categories-page .shb-category-tile { border-radius:var(--shui-card-radius); box-shadow:0 1px 4px rgba(16,25,60,.03); }
+.shb-categories-page .shb-category-tile:hover { box-shadow:0 6px 18px rgba(16,25,60,.07); }
 .shb-categories-page .shb-category-tile h2 { overflow:visible; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-clamp:2; text-overflow:ellipsis; overflow:hidden; white-space:normal; overflow-wrap:anywhere; min-height:2.5em; }
 .shb-categories-page :is(input,button) { border-radius:var(--shui-control-radius); }
 .shb-categories-page .shb-category-tile a:focus-visible { outline:2px solid var(--shui-teal); outline-offset:-2px; }

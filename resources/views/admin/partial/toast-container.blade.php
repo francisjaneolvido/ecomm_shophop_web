@@ -134,9 +134,9 @@
     /* Types — tugma sa role/status badge colors ng ShopHop */
 
     .toast-success {
-        --content-color: #059669;
-        background-color: #ecfdf5;
-        border-color: rgba(5, 150, 105, 0.15);
+        --content-color: #166534;
+        background-color: #EAF7EE;
+        border-color: rgba(22,101,52, 0.15);
     }
 
     .toast-error {

@@ -1,6 +1,6 @@
 @extends('seller.partials.layout')
 @section('title', 'Vouchers & Promotions')
-@push('styles')<link rel="stylesheet" href="{{ asset('css/shophop-seller-workspace.css') }}?v=1">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/shophop-seller-workspace.css') }}?v=20261112-navy-pink-2">@endpush
 @section('content')
 <div class="ss-workspace" id="sellerPromotions">
     <header class="ss-page-head">
@@ -95,5 +95,5 @@
 @endsection
 @push('scripts')
 <script>window.ShopHopPromotionsConfig = { searchUrl: @json(route('seller.promotions.products')), hasErrors: @json($errors->any()), oldProductIds: @json(old('product_ids', [])) };</script>
-<script src="{{ asset('js/shophop-seller-promotions.js') }}?v=1" defer></script>
+<script src="{{ asset('js/shophop-seller-promotions.js') }}?v=20261112-navy-pink-2" defer></script>
 @endpush

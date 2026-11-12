@@ -160,7 +160,7 @@
                         <div class="lg:hidden inline-flex items-center gap-3 mb-6 rounded-2xl border border-gray-border/70 bg-white px-3 py-2 shadow-sm">
 
                             <img
-                                src="{{ asset('images/logo.png') }}"
+                                src="{{ asset('images/logo-bunny.png') }}"
                                 alt="ShopHop"
                                 class="w-8 h-8 object-contain"
                             >

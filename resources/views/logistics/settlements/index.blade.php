@@ -117,4 +117,4 @@
     <dialog class="ops-dialog" id="opsRecordDialog" aria-labelledby="opsRecordTitle"><div class="ops-dialog-head"><div><h2 class="ops-dialog-title" id="opsRecordTitle">COD details</h2><p class="ops-panel-note" id="opsRecordHint"></p></div><button class="ops-action" type="button" data-ops-close aria-label="Close">✕</button></div><div class="ops-dialog-body space-y-4" data-ops-record-content></div><div class="ops-dialog-foot"><button class="sh-btn-ghost" type="button" data-ops-close>Close</button></div></dialog>
 </div>
 @endsection
-@push('styles')<link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261104-bh"><link rel="stylesheet" href="{{ asset('css/shophop-logistics-workspace.css') }}?v=20261104-finance">@endpush
+@push('styles')<link rel="stylesheet" href="{{ asset('css/shophop-operations-table.css') }}?v=20261112-navy-pink-2"><link rel="stylesheet" href="{{ asset('css/shophop-logistics-workspace.css') }}?v=20261112-navy-pink-2">@endpush

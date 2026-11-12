@@ -10,4 +10,4 @@
     <div class="sh-details-content"></div>
     <footer class="sh-details-footer"><button type="button" class="sh-btn-soft" data-console-details-close>Close</button></footer>
 </dialog>
-<script defer src="{{ asset('js/shophop-console-details.js') }}?v=20261112-modal3"></script>
+<script defer src="{{ asset('js/shophop-console-details.js') }}?v=20261112-navy-pink-2"></script>
