@@ -18,14 +18,30 @@ class Review extends Model
         'variant_label',
         'comment',
         'image_path',
+        'media',
         'helpful_count',
     ];
 
     protected $casts = [
         'seller_replied_at' => 'datetime',
         'rating' => 'integer',
+        'media' => 'array',
         'helpful_count' => 'integer',
     ];
+
+    /** Public review attachments; old single-photo reviews remain readable. */
+    public function publicMedia(): array
+    {
+        $media = collect($this->media ?? [])->filter(fn ($entry) => is_array($entry)
+            && in_array($entry['type'] ?? '', ['image', 'video'], true)
+            && is_string($entry['path'] ?? null) && str_starts_with($entry['path'], 'reviews/'))
+            ->map(fn ($entry) => ['type' => $entry['type'], 'url' => asset('storage/'.$entry['path'])])->values()->all();
+        if ($media === [] && $this->image_path) {
+            $media[] = ['type' => 'image', 'url' => asset('storage/'.ltrim($this->image_path, '/'))];
+        }
+
+        return $media;
+    }
 
     public function product(): BelongsTo
     {

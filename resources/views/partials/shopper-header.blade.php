@@ -53,12 +53,11 @@
 
             <nav class="sh-shop-nav" aria-label="Main marketplace navigation">
                 <a class="{{ request()->routeIs('home', 'buyer.dashboard') ? 'is-active' : '' }}" href="{{ $shopperHome }}">Home</a>
-                <a class="{{ request()->routeIs('buyer.category.*') ? 'is-active' : '' }}" href="{{ route('buyer.category.index') }}">Categories</a>
                 <a href="{{ $shopperHome }}#deals">Flash Deals</a>
                 <a href="{{ $shopperHome }}#new-arrivals">Top Products</a>
             </nav>
 
-            <form class="sh-shop-search" action="{{ route('search.index') }}" method="GET" role="search" data-search-suggestions data-suggestions-url="{{ route('search.suggestions') }}" data-categories-url="{{ route('buyer.category.index') }}">
+            <form class="sh-shop-search" action="{{ route('search.index') }}" method="GET" role="search" data-search-suggestions data-suggestions-url="{{ route('search.suggestions') }}">
                 <x-lucide-search class="sh-shop-search-icon" />
                 <label class="sr-only" for="sh-shop-search-desktop">Search products</label>
                 <input id="sh-shop-search-desktop" name="search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sh-shop-search-desktop-suggestions" maxlength="100" value="{{ request('search') }}" placeholder="Search products" autocomplete="off">
@@ -113,7 +112,7 @@
         </div>
 
         <div class="sh-shop-mobile-search">
-            <form action="{{ route('search.index') }}" method="GET" role="search" data-search-suggestions data-suggestions-url="{{ route('search.suggestions') }}" data-categories-url="{{ route('buyer.category.index') }}">
+            <form action="{{ route('search.index') }}" method="GET" role="search" data-search-suggestions data-suggestions-url="{{ route('search.suggestions') }}">
                 <x-lucide-search class="sh-shop-search-icon" />
                 <label class="sr-only" for="sh-shop-search-mobile">Search products</label>
                 <input id="sh-shop-search-mobile" name="search" type="search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sh-shop-search-mobile-suggestions" autocomplete="off" maxlength="100" value="{{ request('search') }}" placeholder="Search products">
@@ -123,7 +122,6 @@
 
         <nav id="sh-shop-mobile-nav" class="sh-shop-mobile-nav" aria-label="Mobile marketplace navigation" hidden>
             <a href="{{ $shopperHome }}">Home</a>
-            <a href="{{ route('buyer.category.index') }}">Categories</a>
             <a href="{{ $shopperHome }}#deals">Flash Deals</a>
             <a href="{{ $shopperHome }}#new-arrivals">Top Products</a>
             <a href="{{ $shopperIsBuyer ? route('buyer.likes') : route('login') }}" @unless ($shopperIsBuyer) data-login-required @endunless>My Likes</a>

@@ -18,7 +18,6 @@
 
             <nav class="sh-shop-footer-links" aria-label="Explore ShopHop">
                 <h2>Explore</h2>
-                <a href="{{ route('buyer.category.index') }}">Categories</a>
                 <a href="{{ $footerHome }}#deals">Flash Deals</a>
                 <a href="{{ $footerHome }}#new-arrivals">Top Products</a>
                 <a href="{{ $footerHome }}#trending">Daily Discover</a>

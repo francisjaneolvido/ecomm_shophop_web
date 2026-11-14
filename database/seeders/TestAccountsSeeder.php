@@ -61,7 +61,7 @@ class TestAccountsSeeder extends Seeder
             ]
         );
 
-        // ----- Test Seller -----
+        // ----- Test Seller (Canlubang, Calamba, Laguna) -----
         $sellerUser = User::firstOrCreate(
             ['email' => 'test.seller@example.com'],
             [
@@ -76,7 +76,8 @@ class TestAccountsSeeder extends Seeder
             throw new \RuntimeException('Cannot seed seller account: email belongs to another role.');
         }
 
-        Seller::firstOrCreate(
+        // updateOrCreate para ma-update din yung address kahit existing na yung seller row
+        Seller::updateOrCreate(
             ['user_id' => $sellerUser->id],
             [
                 'first_name' => 'Test',
@@ -86,13 +87,14 @@ class TestAccountsSeeder extends Seeder
                 'contact_no' => '09179876543',
                 'birthday' => '1995-05-15',
 
-                'province_code' => '0000000000',
-                'province_name' => 'Test Province',
-                'municipality_code' => '0000000000',
-                'municipality_name' => 'Test Municipality',
-                'barangay_code' => '0000000000',
-                'barangay_name' => 'Test Barangay',
-                'street_address' => '456 Test Avenue',
+                // TODO: i-verify ang codes sa PSGC source na gamit ng registration form
+                'province_code' => '0434000000',
+                'province_name' => 'Laguna',
+                'municipality_code' => '0434040000',
+                'municipality_name' => 'City of Calamba',
+                'barangay_code' => '0434040000', // TODO: palitan ng actual PSGC code ng Canlubang
+                'barangay_name' => 'Canlubang',
+                'street_address' => '456 National Highway',
 
                 'business_name' => 'Test Shop',
                 'business_category' => 'General Merchandise',

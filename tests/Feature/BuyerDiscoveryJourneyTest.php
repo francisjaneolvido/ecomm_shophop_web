@@ -44,22 +44,32 @@ class BuyerDiscoveryJourneyTest extends TestCase
         $this->getJson('/search/suggestions?q[]=lamp')->assertUnprocessable();
     }
 
-    public function test_category_counts_and_subcategory_links_use_the_available_catalogue(): void
+    public function test_removed_category_directory_redirects_and_filtered_product_browsing_remains(): void
     {
         $seller = $this->seller();
-        $product = $this->product($seller, ['name'=>'Available desk lamp']);
-        $this->product($seller, ['compliance_status'=>'pending_review']);
-        $this->product($seller, ['stock'=>0]);
-        $this->get('/buyer/categories')->assertOk()->assertViewHas('categoryCounts', ['Home and Garden'=>1])
-            ->assertSee('Browse Categories')->assertSee('1 available product')
-            ->assertSee(route('buyer.category.show', ['category'=>'home-and-garden', 'sub'=>'furniture-decor']), false);
-        $this->get('/buyer/category/home-and-garden?sub=furniture-decor')->assertOk()->assertSee($product->name);
+        $product = $this->product($seller, ['name' => 'Available desk lamp']);
+        $this->product($seller, ['compliance_status' => 'pending_review']);
+        $this->product($seller, ['stock' => 0]);
+        $this->get('/buyer/categories')->assertStatus(301)->assertRedirect(route('search.index'));
+        $this->get('/buyer/category/home-and-garden?sub=furniture-decor')->assertOk()->assertSee($product->name)
+            ->assertDontSee(route('buyer.category.index'), false);
+        $this->assertCount(14, config('shophop_categories'));
+    }
+
+    public function test_storefront_and_search_have_no_removed_directory_links(): void
+    {
+        $this->product($this->seller());
+        foreach (['/', '/search', '/help'] as $url) {
+            $this->get($url)->assertOk()->assertDontSee(route('buyer.category.index'), false)
+                ->assertDontSee('Browse Categories')->assertDontSee('Browse categories');
+        }
+        $this->assertFalse(view()->exists('buyer.category.index'));
     }
 
     public function test_help_center_has_real_answers_and_working_navigation_for_guests_and_buyers(): void
     {
         $this->get('/help')->assertOk()->assertSee('Frequently asked questions')->assertSee('Where can I check my order status?')
-            ->assertSee('Sign in as a buyer to submit a request')->assertSee(route('buyer.category.index'), false);
+            ->assertSee('Sign in as a buyer to submit a request')->assertSee(route('search.index'), false);
         $this->actingAs($this->buyer())->get('/buyer/profile')->assertOk()->assertSee('How can we help?')
             ->assertSee(route('buyer.help'), false)->assertDontSee('Buyer Orders is a frontend preview.');
         $this->get('/buyer/help')->assertOk()->assertSee('Submit support request')->assertSee('Your Support Requests');

@@ -127,15 +127,15 @@ body.sh-buyer-v3 .hover\:bg-teal-dark:hover { background-color: var(--shb-deep);
 
 /* Unified page styling: compact spacing, restrained borders, and stronger readable prices. */
 body.sh-buyer-v3 main > section[class*="bg-gray-bg"] { padding-top:22px; padding-bottom:30px; }
-body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-categories-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) {
+body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) {
   --shb-card-border:rgba(16,25,60,0.150);
   color:var(--shb-text);
 }
-body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-categories-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(.rounded-2xl, .rounded-xl, .rounded-3xl) { border-radius:var(--shb-r-md); }
-body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-categories-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(.shadow-sm, .shadow-md, .shadow-lg) { box-shadow:0 2px 8px rgba(16,25,60,.035); }
-body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-categories-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) .border-gray-border { border-color:var(--shb-line); }
-body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-categories-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(input:not([type=checkbox]):not([type=radio]), select, textarea) { border-radius:var(--shb-r-sm); }
-body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-categories-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(button, a) { transition-duration:140ms; }
+body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(.rounded-2xl, .rounded-xl, .rounded-3xl) { border-radius:var(--shb-r-md); }
+body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(.shadow-sm, .shadow-md, .shadow-lg) { box-shadow:0 2px 8px rgba(16,25,60,.035); }
+body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) .border-gray-border { border-color:var(--shb-line); }
+body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(input:not([type=checkbox]):not([type=radio]), select, textarea) { border-radius:var(--shb-r-sm); }
+body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page, .shb-category-page, .shb-checkout-page, .shb-orders-page, .shb-profile-page, .shb-messages-page, .shb-store-page) :where(button, a) { transition-duration:140ms; }
 
 /* My Likes: same 1:1 square cards as the new public marketplace. */
 .sh-buyer-v3 .shb-likes-page { background:var(--shb-bg); }
@@ -176,11 +176,10 @@ body.sh-buyer-v3 main :where(.shb-likes-page, .shb-cart-page, .shb-product-page,
 .sh-buyer-v3 .shb-product-page #selectedVariantSummary { border-radius:var(--shb-r-sm); }
 .sh-buyer-v3 .shb-product-page .aspect-4\/3 { aspect-ratio:1/1; }
 
-/* Category index + browse: uniform 1:1 media and card proportions. */
-.sh-buyer-v3 .shb-categories-page, .sh-buyer-v3 .shb-category-page { background:var(--shb-bg); }
-.sh-buyer-v3 .shb-categories-page .category-card, .sh-buyer-v3 .shb-category-page .buyer-card { border-radius:var(--shb-r-sm); border:1px solid var(--shb-line); overflow:hidden; background:white; }
-.sh-buyer-v3 .shb-categories-page .category-card:hover, .sh-buyer-v3 .shb-category-page .buyer-card:hover { border-color:var(--shb-teal); transform:translateY(-2px); box-shadow:0 10px 20px rgba(16,25,60,.06); }
-.sh-buyer-v3 .shb-categories-page h1 { font-size:26px; line-height:1.2; }
+/* Category product listing: uniform 1:1 media and card proportions. */
+.sh-buyer-v3 .shb-category-page { background:var(--shb-bg); }
+.sh-buyer-v3 .shb-category-page .buyer-card { border-radius:var(--shb-r-sm); border:1px solid var(--shb-line); overflow:hidden; background:white; }
+.sh-buyer-v3 .shb-category-page .buyer-card:hover { border-color:var(--shb-teal); transform:translateY(-2px); box-shadow:0 10px 20px rgba(16,25,60,.06); }
 .sh-buyer-v3 .shb-category-page .buyer-card [class*="aspect-4/3"], .sh-buyer-v3 .shb-category-page .buyer-card .aspect-4\/3 { aspect-ratio:1/1; }
 .sh-buyer-v3 .shb-category-page .buyer-card img { object-fit:cover; }
 .sh-buyer-v3 .shb-category-page aside > div { border-radius:var(--shb-r-md); }

@@ -472,7 +472,7 @@
 
                 <div class="divide-y divide-gray-border/80 mt-1">
                     @foreach ($reviews as $review)
-                        <article class="review-item py-4" data-review-rating="{{ $review['rating'] }}" data-review-media="{{ $review['image'] ? '1' : '0' }}">
+                        <article class="review-item py-4" data-review-rating="{{ $review['rating'] }}" data-review-media="{{ !empty($review['media']) ? '1' : '0' }}">
                             <div class="flex gap-2.5">
                                 <div class="w-8 h-8 rounded-full bg-gray-bg flex items-center justify-center text-[9px] font-bold text-navy/45 shrink-0">
                                     {{ mb_substr($review['name'], 0, 1) }}
@@ -498,10 +498,19 @@
                                     @if (!empty($review['seller_reply']))
                                         <p class="mt-3 rounded-lg bg-teal/10 p-3 text-sm whitespace-pre-wrap">Seller reply: {{ $review['seller_reply'] }}</p>
                                     @endif
-                                    @if ($review['image'])
-                                        <button class="mt-2.5 w-16 h-16 rounded-lg overflow-hidden border border-gray-border hover:border-teal/40 transition">
-                                            <img src="{{ $review['image'] }}" alt="Review photo" class="w-full h-full object-cover">
-                                        </button>
+                                    @if (!empty($review['media']))
+                                        <div class="flex flex-wrap gap-2 mt-3">
+                                            @foreach ($review['media'] as $attachment)
+                                                @if ($attachment['type'] === 'video')
+                                                    <video src="{{ $attachment['url'] }}" controls playsinline preload="none" aria-label="Review video"
+                                                        class="w-40 h-28 rounded-lg bg-navy object-contain"></video>
+                                                @else
+                                                    <a href="{{ $attachment['url'] }}" target="_blank" rel="noopener noreferrer" class="block w-20 h-20 rounded-lg overflow-hidden border border-gray-border">
+                                                        <img src="{{ $attachment['url'] }}" alt="Buyer review photo" loading="lazy" class="w-full h-full object-cover">
+                                                    </a>
+                                                @endif
+                                            @endforeach
+                                        </div>
                                     @endif
 
                                     <div class="flex items-center gap-4 mt-3 text-[9px] text-navy/35">

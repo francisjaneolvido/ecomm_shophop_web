@@ -414,7 +414,7 @@
                     {{-- =================================================
                         COMPACT PROGRESS
                     ================================================== --}}
-                    <div class="px-4 py-3.5 border-t border-gray-border/70">
+                    <div class="px-4 py-3.5 border-t border-gray-border/70 overflow-x-auto">
 
                         <div class="flex items-center justify-between gap-3 mb-3">
 
@@ -454,19 +454,19 @@
 
 
                         <div
-                            class="grid"
+                            class="grid min-w-[390px]"
                             style="grid-template-columns: repeat({{ count($order['progress']) }}, minmax(0, 1fr));"
                         >
 
                             @foreach ($order['progress'] as $step)
 
-                                <div class="relative text-center">
+                                <div class="relative text-center" @if ($step['active']) aria-current="step" @endif>
 
                                     @if (! $loop->last)
 
                                         <div
                                             class="absolute left-1/2 top-3 w-full h-0.5
-                                                   {{ $step['done']
+                                                   {{ $step['done'] && ! $step['active']
                                                         ? 'bg-teal'
                                                         : 'bg-gray-border' }}"
                                         ></div>
@@ -475,7 +475,7 @@
 
 
                                     <span
-                                        class="relative z-10 mx-auto w-6 h-6 rounded-full
+                                        class="{{ $step['active'] ? 'ring-4 ring-teal/20' : '' }} relative z-10 mx-auto w-6 h-6 rounded-full
                                                flex items-center justify-center border
                                                {{ $step['done']
                                                     ? 'bg-teal border-teal text-white'
@@ -538,162 +538,7 @@
 
                         <div class="grid lg:grid-cols-[minmax(0,1fr)_310px] gap-0">
 
-                                    {{-- Only the recorded placement event is available; courier history is not persisted. --}}
-                            <div class="p-4 lg:border-r border-gray-border/80">
-
-                                <div class="flex items-center justify-between gap-3 mb-4">
-
-                                    <div>
-
-                                        <p class="text-[13px] font-bold text-navy">
-
-                                            Order History
-
-                                        </p>
-
-
-                                        <p class="text-[10px] text-navy/45 mt-1">
-
-                                            Recorded events for this order.
-
-                                        </p>
-
-                                    </div>
-
-
-                                    @if ($order['tracking_no'])
-
-                                        <button
-                                            type="button"
-                                            class="copy-tracking-btn h-7 px-2.5 rounded-lg
-                                                   border border-gray-border bg-white
-                                                   text-[8.5px] font-semibold text-navy/45
-                                                   hover:border-teal/40 hover:text-teal-dark transition"
-                                            data-copy-tracking="{{ $order['tracking_no'] }}"
-                                        >
-
-                                            Copy Tracking No.
-
-                                        </button>
-
-                                    @endif
-
-                                </div>
-
-
-                                <div class="relative">
-
-                                    @foreach ($order['tracking_events'] as $event)
-
-                                        <div class="relative flex gap-3 pb-5 last:pb-0">
-
-                                            @if (! $loop->last)
-
-                                                <div class="absolute left-2.75 top-6 bottom-0 w-px bg-gray-border"></div>
-
-                                            @endif
-
-
-                                            <span
-                                                class="relative z-10 w-6 h-6 rounded-full border shrink-0
-                                                       flex items-center justify-center
-                                                       {{ $event['type'] === 'current'
-                                                            ? 'bg-teal border-teal text-white ring-4 ring-teal/10'
-                                                            : ($event['type'] === 'delivered'
-                                                                ? 'bg-teal border-teal text-white'
-                                                                : ($event['type'] === 'cancelled'
-                                                                    ? 'bg-red-50 border-red-200 text-red-500'
-                                                                    : 'bg-white border-gray-border text-teal-dark')) }}"
-                                            >
-
-                                                @if ($event['type'] === 'current')
-
-                                                    <x-lucide-truck class="w-2.5 h-2.5" />
-
-                                                @elseif ($event['type'] === 'delivered')
-
-                                                    <x-lucide-check class="w-2.5 h-2.5" />
-
-                                                @elseif ($event['type'] === 'cancelled')
-
-                                                    <x-lucide-x class="w-2.5 h-2.5" />
-
-                                                @else
-
-                                                    <x-lucide-package class="w-2.5 h-2.5" />
-
-                                                @endif
-
-                                            </span>
-
-
-                                            <div class="min-w-0 flex-1">
-
-                                                <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1.5">
-
-                                                    <div>
-
-                                                        <p
-                                                            class="text-[11.5px] font-semibold
-                                                                   {{ in_array($event['type'], ['current', 'delivered'])
-                                                                        ? 'text-teal-dark'
-                                                                        : ($event['type'] === 'cancelled'
-                                                                            ? 'text-red-500'
-                                                                            : 'text-navy') }}"
-                                                        >
-
-                                                            {{ $event['title'] }}
-
-                                                        </p>
-
-
-                                                        <p class="text-[10.5px] leading-relaxed text-navy/50 mt-1">
-
-                                                            {{ $event['description'] }}
-
-                                                        </p>
-
-
-                                                        <div class="flex items-center gap-1 mt-1.5 text-[9.5px] text-navy/40">
-
-                                                            <x-lucide-map-pin class="w-2.5 h-2.5" />
-
-                                                            {{ $event['location'] }}
-
-                                                        </div>
-
-                                                    </div>
-
-
-                                                    <div class="sm:text-right shrink-0">
-
-                                                        <p class="text-[10px] font-medium text-navy/50">
-
-                                                            {{ $event['date'] }}
-
-                                                        </p>
-
-
-                                                        <p class="text-[9px] text-navy/40 mt-0.5">
-
-                                                            {{ $event['time'] }}
-
-                                                        </p>
-
-                                                    </div>
-
-                                                </div>
-
-                                            </div>
-
-                                        </div>
-
-                                    @endforeach
-
-                                </div>
-
-                            </div>
-
+                            @include('buyer.orders.partials.parcel-journey', ['order' => $order])
 
                             {{-- Courier / rider / proof --}}
                             <aside class="p-4 bg-white/75">
@@ -771,87 +616,30 @@
                                 </div>
 
 
-                                {{-- Rider --}}
+                                <div class="mt-4 pt-4 border-t border-gray-border text-xs text-navy/70">
+                                    <p class="font-semibold text-navy">{{ $order['delivery_status_label'] }}</p>
+                                    @if ($order['delivered_at'])
+                                        <p class="mt-1">Delivered: {{ $order['delivered_at'] }}</p>
+                                    @endif
+                                </div>
+                                {{-- Only the final delivery handler is labelled Delivery Rider. --}}
                                 @if ($order['rider'])
-
                                     <div class="mt-4 pt-4 border-t border-gray-border">
-
-                                        <div class="flex items-center justify-between gap-2">
-
-                                            <p class="text-[10px] font-bold uppercase tracking-[0.08em] text-teal-dark">
-
-                                                Delivery Rider
-
-                                            </p>
-
-
-                                            <span class="text-[8.5px] font-semibold text-teal-dark bg-teal-light px-1.5 py-0.5 rounded">
-
-                                                {{ $order['rider']['status'] }}
-
-                                            </span>
-
-                                        </div>
-
-
+                                        <p class="text-[10px] font-bold uppercase tracking-[0.08em] text-teal-dark">Delivery Rider</p>
                                         <div class="mt-3 flex items-start gap-3">
-
                                             <span class="w-10 h-10 rounded-full bg-navy text-white flex items-center justify-center shrink-0">
-
                                                 <x-lucide-user class="w-4 h-4" />
-
                                             </span>
-
-
                                             <div class="min-w-0 flex-1">
-
-                                                <p class="text-[12px] font-bold text-navy">
-
-                                                    {{ $order['rider']['name'] }}
-
-                                                </p>
-
-
-                                                <p class="text-[9.5px] text-navy/45 mt-0.5">
-
-                                                    {{ $order['rider']['vehicle'] }}
-                                                    · {{ $order['rider']['plate'] }}
-
-                                                </p>
-
-
-                                                <div class="flex items-center gap-1 mt-1.5 text-[9.5px] text-navy/50">
-
-                                                    <x-lucide-phone class="w-2.5 h-2.5" />
-
-                                                    {{ $order['rider']['phone'] }}
-
-                                                </div>
-
+                                                <p class="text-xs font-bold text-navy">{{ $order['rider']['name'] }}</p>
+                                                <p class="text-xs text-navy/60 mt-1">{{ $order['rider']['vehicle'] }}</p>
+                                                <p class="text-xs text-teal-dark mt-1">{{ $order['rider']['status'] }}</p>
                                             </div>
-
                                         </div>
-
-
-                                        @if ($order['status'] === 'to-receive')
-
-                                            <button
-                                                type="button"
-                                                class="w-full h-8 mt-3 rounded-lg border border-teal
-                                                       text-[8.5px] font-semibold text-teal-dark
-                                                       hover:bg-teal-light transition"
-                                            >
-
-                                                Contact Rider
-
-                                            </button>
-
-                                        @endif
-
                                     </div>
-
+                                @else
+                                    <p class="mt-4 text-xs text-navy/60">No final delivery Rider recorded for the current stage.</p>
                                 @endif
-
 
                                 {{-- Proof of delivery --}}
                                 @if ($order['delivery_proof'])
@@ -1540,9 +1328,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 } catch (error) {
 
-                    showToast(
-                        trackingNumber
-                    );
+                    const input = document.createElement('textarea');
+                    input.value = trackingNumber;
+                    input.setAttribute('readonly', '');
+                    input.style.position = 'fixed';
+                    input.style.opacity = '0';
+                    document.body.appendChild(input);
+                    input.select();
+                    let copied = false;
+                    try { copied = document.execCommand('copy'); } finally { input.remove(); button.focus(); }
+                    showToast(copied ? 'Tracking number copied.' : 'Copy unavailable. Tracking number: ' + trackingNumber);
                 }
             });
         });

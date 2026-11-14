@@ -23,7 +23,6 @@
                 <h2 id="sh-flash-title"><x-lucide-zap aria-hidden="true" /> Flash Deals</h2>
                 <p>Products with discounts currently set by ShopHop sellers.</p>
             </div>
-            <a href="{{ route('buyer.category.index') }}" class="sh-section-more">Browse Categories <x-lucide-chevron-right aria-hidden="true" /></a>
         </div>
         @if ($flashDealProducts->isNotEmpty())
             <div class="sh-products-grid sh-flash-grid">
@@ -72,7 +71,6 @@
                 <h2 id="sh-discover-title"><x-lucide-sparkles aria-hidden="true" /> Daily Discover</h2>
                 <p>Explore the newest approved, available products across ShopHop.</p>
             </div>
-            <a href="{{ route('buyer.category.index') }}" class="sh-section-more">All Categories <x-lucide-chevron-right aria-hidden="true" /></a>
         </div>
         @if ($discoverProducts->isNotEmpty())
             <div class="sh-products-grid sh-discover-grid">

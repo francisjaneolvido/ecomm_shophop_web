@@ -2,7 +2,7 @@
 @php
     $heroSlides = collect(config('shophop_marketplace.banners', []))->map(function ($slide) {
         $slide['link'] = match ($slide['target']) {
-            'categories' => route('buyer.category.index'),
+            'categories' => route('search.index'),
             'deals' => route('home').'#deals',
             default => route('home').'#trending',
         };
@@ -23,7 +23,7 @@
                             <span class="sh-banner-eyebrow">{{ $slide['eyebrow'] }}</span>
                             <h1>{{ $slide['heading'] }}</h1>
                             <p>{{ $slide['description'] }}</p>
-                            <a class="sh-banner-cta" href="{{ $slide['link'] }}">{{ $slide['link_label'] }} <x-lucide-arrow-right aria-hidden="true" /></a>
+                            <a class="sh-banner-cta" href="{{ $slide['link'] }}">{{ $slide['target'] === 'categories' ? 'Shop now' : $slide['link_label'] }} <x-lucide-arrow-right aria-hidden="true" /></a>
                         </div>
                     </div>
                 @endforeach

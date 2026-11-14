@@ -81,12 +81,21 @@ class CartItem extends Model
             return 'Standard';
         }
 
-        $attributes = $this->variant->attributes ?? [];
-
-        if (is_array($attributes) && count($attributes) > 0) {
-            return implode(', ', array_values($attributes));
+        // Both models inherit Model::$attributes. Read the JSON column explicitly,
+        // rather than accidentally displaying the variant's entire database row.
+        $attributes = $this->variant->getAttribute('attributes');
+        $choices = [];
+        $internal = ['id', 'product_id', 'product_variant_id', 'sku', 'price', 'weight_kg',
+            'stock', 'status', 'created_at', 'updated_at', 'deleted_at'];
+        foreach (is_array($attributes) ? $attributes : [] as $key => $value) {
+            if (in_array(strtolower((string) $key), $internal, true) ||
+                (! is_string($value) && ! is_numeric($value)) || trim((string) $value) === '') {
+                continue;
+            }
+            $label = is_int($key) ? '' : ucfirst(str_replace(['_', '-'], ' ', $key)).': ';
+            $choices[] = $label.trim((string) $value);
         }
 
-        return $this->variant->name ?? 'Standard';
+        return $choices ? implode(' · ', $choices) : ($this->variant->name ?: 'Standard');
     }
 }

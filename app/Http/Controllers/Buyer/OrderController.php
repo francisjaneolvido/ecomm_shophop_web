@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Buyer;
 
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Order\Order;
+use App\Services\BuyerParcelJourney;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
 
 class OrderController extends Controller
 {
-    public function index()
+    public function index(BuyerParcelJourney $journey)
     {
         $buyer = Auth::user()->buyer;
 
@@ -22,8 +23,9 @@ class OrderController extends Controller
             ->latest()
             ->get();
 
-        $orders = $realOrders->map(function (Order $order) {
-            return $this->mapOrder($order);
+        $journey->load($realOrders);
+        $orders = $realOrders->map(function (Order $order) use ($journey) {
+            return $this->mapOrder($order, $journey);
         });
 
         // Seller preparation remains in the Buyer's To Ship group while its exact persisted label stays visible.
@@ -42,10 +44,16 @@ class OrderController extends Controller
         ]);
     }
 
-    /** Map persisted order facts into the card; fulfillment and reporting have no backend records yet. */
-    private function mapOrder(Order $order): array
+    /** Map Buyer-owned order and parcel facts without altering fulfillment. */
+    private function mapOrder(Order $order, BuyerParcelJourney $journey): array
     {
         $displayId = 'SHP-' . str_pad((string) $order->id, 6, '0', STR_PAD_LEFT);
+
+        $delivery = $order->delivery;
+        // The current final-delivery handler differs from pickup and transit handlers.
+        $rider = in_array($delivery?->status, ['delivery_assigned', 'out_for_delivery', 'delivery_failed'], true)
+            ? $delivery?->rider
+            : ($delivery?->status === 'delivered' ? $delivery->deliveredRider : null);
 
         return [
             'id' => $displayId,
@@ -60,7 +68,7 @@ class OrderController extends Controller
             'shop_slug' => $order->seller_id,
             'shop_preferred' => false,
 
-            'placed_at' => $order->created_at->format('M j, Y · g:i A'),
+            'placed_at' => BuyerParcelJourney::displayTime($order->getRawOriginal('created_at')),
             'payment' => $this->paymentLabel($order),
             // Kept as null so existing views reading this key do not break; there is no payment page anymore.
             'payment_url' => null,
@@ -69,15 +77,17 @@ class OrderController extends Controller
             // Only assigned Rider name and vehicle are exposed; no contact, plate, or ETA is inferred.
             'tracking_no' => $order->delivery?->tracking_code,
             'delivery_status' => $order->delivery?->status,
+            'delivery_status_label' => $delivery?->statusLabel() ?? 'Awaiting logistics assignment',
+            'delivered_at' => $delivery?->getRawOriginal('delivered_at')
+                ? BuyerParcelJourney::displayTime($delivery->getRawOriginal('delivered_at')) : null,
             'can_confirm_receipt' => $order->status === Order::STATUS_TO_RECEIVE
                 && $order->delivery?->status === \App\Models\Logistics\Delivery::DELIVERED,
             'courier' => $order->delivery?->partner?->company_name,
             'estimated_delivery' => 'Delivery estimate unavailable',
-            'rider' => $order->delivery?->rider ? [
-                'name' => $order->delivery->rider->name,
-                'vehicle' => $order->delivery->rider->vehicle_type,
-                'plate' => 'Unavailable', 'phone' => 'Unavailable',
-                'status' => ucfirst(str_replace('_', ' ', $order->delivery->status)),
+            'rider' => $rider ? [
+                'name' => $rider->name,
+                'vehicle' => $rider->vehicle_type,
+                'status' => $delivery->statusLabel(),
             ] : null,
 
             'total' => (float) $order->total_amount,
@@ -97,14 +107,13 @@ class OrderController extends Controller
                 ];
             })->values()->all(),
 
-            'progress' => $order->progressSteps(),
+            'progress' => $journey->progress($order),
 
-            // Only order creation has an observed timestamp; tracking, proof, and reporting remain unavailable.
-            'tracking_events' => $this->trackingEvents($order),
+            'tracking_events' => $journey->events($order),
             // Private proof URLs work only for this Order's Buyer after server-side authorization.
             'delivery_proof' => $order->delivery?->proof_path ? [
                 'photo' => route('delivery.proof', $order->delivery),
-                'delivered_at' => $order->delivery->delivered_at?->format('M j, Y g:i A'),
+                'delivered_at' => BuyerParcelJourney::displayTime($delivery->getRawOriginal('delivered_at')),
                 'uploaded_by' => $order->delivery->deliveredRider?->name ?? 'Rider',
                 'received_by' => $order->status === Order::STATUS_COMPLETED
                     ? ($order->delivery_name ?: 'Buyer confirmed')
@@ -141,58 +150,13 @@ class OrderController extends Controller
         });
     }
 
-    private function trackingEvents(Order $order): array
-    {
-        $events = [[
-            'type' => 'done',
-            'title' => 'Order placed',
-            'description' => 'Your order was created successfully.',
-            'location' => 'ShopHop',
-            'date' => $order->created_at->format('M j, Y'),
-            'time' => $order->created_at->format('g:i A'),
-        ]];
-
-        $delivery = $order->delivery;
-        if (! $delivery) {
-            return $events;
-        }
-
-        $milestones = [
-            ['at' => $delivery->assigned_at, 'title' => 'Pickup Rider assigned', 'description' => 'Logistics assigned a Rider to collect the parcel.'],
-            ['at' => $delivery->picked_up_at, 'title' => 'Picked up from Seller', 'description' => 'The parcel was collected for transfer to the sorting center.'],
-            ['at' => $delivery->at_sorting_center_at, 'title' => 'At sorting center', 'description' => 'The parcel was scanned and received by Logistics.'],
-            ['at' => $delivery->sorted_at, 'title' => 'Sorted', 'description' => 'The parcel was sorted according to its destination area.'],
-            ['at' => $delivery->delivery_assigned_at, 'title' => 'Delivery Rider assigned', 'description' => 'A Rider was assigned for final delivery.'],
-            ['at' => $delivery->out_for_delivery_at, 'title' => 'Out for delivery', 'description' => 'The parcel is on the way to the delivery address.'],
-            ['at' => $delivery->delivered_at, 'title' => 'Delivered', 'description' => 'The Rider submitted delivery proof. Confirm receipt to complete the order.'],
-            ['at' => $delivery->delivery_failed_at, 'title' => 'Delivery failed', 'description' => $delivery->failure_reason ?: 'A delivery attempt was unsuccessful.'],
-            ['at' => $delivery->returned_at, 'title' => 'Returned', 'description' => 'The parcel was marked for return to the Seller.'],
-        ];
-
-        foreach ($milestones as $milestone) {
-            if (! $milestone['at']) {
-                continue;
-            }
-            $events[] = [
-                'type' => 'done',
-                'title' => $milestone['title'],
-                'description' => $milestone['description'],
-                'location' => 'ShopHop Logistics',
-                'date' => $milestone['at']->format('M j, Y'),
-                'time' => $milestone['at']->format('g:i A'),
-            ];
-        }
-
-        return $events;
-    }
-
     private function paymentLabel(Order $order): string
     {
         if ($order->payment_method === 'cod') {
             // Buyer sees only recorded collection, never internal remittance or inferred legacy payment.
             if ($order->codSettlement) {
                 return 'Cash on Delivery · ₱'.number_format((float) $order->codSettlement->collected_amount, 2)
-                    .' collected '.$order->codSettlement->collected_at->format('M j, Y g:i A');
+                    .' collected '.BuyerParcelJourney::displayTime($order->codSettlement->getRawOriginal('collected_at'));
             }
             if ($order->status === Order::STATUS_COMPLETED) {
                 return 'Cash on Delivery · collection not recorded';

@@ -33,10 +33,8 @@ Route::prefix('buyer')
     ->name('buyer.')
     ->group(function () {
 
-        Route::get('/categories', [
-            BuyerCategoryController::class,
-            'index',
-        ])->name('category.index');
+        // Keep old bookmarks safe without retaining a category-directory page.
+        Route::redirect('/categories', '/search', 301)->name('category.index');
 
         Route::get('/category/{category}', [
             BuyerCategoryController::class,

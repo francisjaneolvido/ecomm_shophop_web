@@ -1,23 +1,4 @@
 (() => {
-    const input = document.querySelector('[data-category-filter]');
-    if (input) {
-        const cards = [...document.querySelectorAll('[data-category-card]')];
-        const clear = document.querySelector('[data-category-clear]');
-        const counter = document.querySelector('[data-category-count]');
-        const empty = document.querySelector('[data-category-empty]');
-        function filter() {
-            const term = input.value.trim().toLocaleLowerCase();
-            let count = 0;
-            cards.forEach(card => { card.hidden = !card.dataset.categoryName.includes(term); if (!card.hidden) count++; });
-            clear.hidden = !input.value;
-            empty.hidden = count !== 0;
-            counter.textContent = `${count} ${count === 1 ? 'category' : 'categories'}${term ? ' found' : ''}`;
-        }
-        function reset() { input.value = ''; filter(); input.focus(); }
-        input.addEventListener('input', filter);
-        clear.addEventListener('click', reset);
-        document.querySelector('[data-category-reset]')?.addEventListener('click', reset);
-    }
     document.querySelectorAll('[data-help-center]').forEach(root => {
         const search = root.querySelector('[data-help-search]');
         const buttons = [...root.querySelectorAll('[data-help-topic]')];

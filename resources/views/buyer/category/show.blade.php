@@ -41,7 +41,7 @@
     ];
 
     $breadcrumbs ??= [
-        ['label' => 'All Categories', 'url' => \Illuminate\Support\Facades\Route::has('buyer.category.index') ? route('buyer.category.index') : '#'],
+        ['label' => 'Shop', 'url' => route('search.index')],
         ['label' => $activeCategory['name'], 'url' => null],
     ];
 
@@ -123,7 +123,7 @@
                         <span class="w-6 h-6 rounded-md bg-teal-light flex items-center justify-center shrink-0">
                             <x-lucide-list class="w-3.5 h-3.5 text-teal-dark" />
                         </span>
-                        <p class="text-[12px] leading-none font-bold text-navy whitespace-nowrap">All Categories</p>
+                        <p class="text-[12px] leading-none font-bold text-navy whitespace-nowrap">Subcategories</p>
                     </div>
 
                     <nav class="py-1.5">

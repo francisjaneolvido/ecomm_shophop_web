@@ -7,7 +7,7 @@
 @section('content')
 @include('buyer.partials.navbar-buyer')
 <section class="discovery-page help-page"><div class="sh-shop-shell">
-    <header class="discovery-header"><div><p class="discovery-eyebrow">Shopping support</p><h1 class="discovery-title">Help Center</h1><p class="discovery-description">Quick answers and a place to follow up on your concerns.</p></div><a class="discovery-secondary" href="{{ route('buyer.category.index') }}">Continue shopping <x-lucide-arrow-right /></a></header>
+    <header class="discovery-header"><div><p class="discovery-eyebrow">Shopping support</p><h1 class="discovery-title">Help Center</h1><p class="discovery-description">Quick answers and a place to follow up on your concerns.</p></div><a class="discovery-secondary" href="{{ route('search.index') }}">Continue shopping <x-lucide-arrow-right /></a></header>
     @if(session('help_status'))<p class="help-success" role="status">{{ session('help_status') }}</p>@endif
     <div class="help-layout">
         <div class="help-surface">@include('buyer.help.content')</div>

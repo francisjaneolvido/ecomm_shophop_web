@@ -74,8 +74,7 @@ Route::get('/create-account', function () {
 | I-import ulit kapag nagawa na.
 */
 
-// Route::get('/categories', [CategoryController::class, 'index'])
-//     ->name('categories.index');
+Route::redirect('/categories', '/search', 301);
 
 // Route::get('/categories/{category}', [CategoryController::class, 'show'])
 //     ->name('categories.show');

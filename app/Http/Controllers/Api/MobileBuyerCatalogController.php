@@ -269,6 +269,7 @@ class MobileBuyerCatalogController extends Controller
                     'date' => optional($review->created_at)->toDateString(),
                     'comment' => $review->comment,
                     'seller_reply' => $review->seller_reply,
+                    'media' => $review->publicMedia(),
                     'image' => $review->image_path
                         ? $this->productImageUrl($review->image_path)
                         : null,

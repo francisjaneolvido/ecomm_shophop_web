@@ -58,7 +58,7 @@ if (app()->environment('local')) {
 
             Route::prefix('preview')->name('preview.')->group(function () {
                 // TEST routing: use real Blade surfaces with local representative defaults.
-                Route::view('/buyer/categories', 'buyer.category.index')->name('buyer.categories');
+                Route::redirect('/buyer/categories', '/search', 301)->name('buyer.categories');
                 Route::view('/buyer/cart', 'buyer.cart.cart')->name('buyer.cart');
                 Route::view('/buyer/checkout', 'buyer.checkout.cart-checkout')->name('buyer.checkout');
                 Route::view('/buyer/orders', 'buyer.orders.index')->name('buyer.orders');

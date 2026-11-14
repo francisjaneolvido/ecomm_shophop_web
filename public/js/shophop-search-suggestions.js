@@ -64,9 +64,9 @@
                 group(query ? 'Matching categories' : 'Explore categories', categories);
                 group(query ? 'Matching products' : 'Recently added products', products, true);
                 if (!options.length) { const note = document.createElement('p'); note.className = 'sh-suggestions-note'; note.textContent = 'No matching suggestions. Try another term or view all search results.'; list.append(note); }
-                const allUrl = new URL(query ? form.action : form.dataset.categoriesUrl, location.href);
+                const allUrl = new URL(form.action, location.href);
                 if (query) allUrl.searchParams.set('search', query);
-                const footer = option(list, {name: query ? `View all results for "${query}"` : 'Browse all categories', url: allUrl.href});
+                const footer = option(list, {name: query ? `View all results for "${query}"` : 'Search products', url: allUrl.href});
                 footer?.classList.add('sh-suggestions-footer');
                 panel.hidden = false; input.setAttribute('aria-expanded', 'true');
             } catch (error) { if (requestId === version) close(false); }

@@ -139,8 +139,6 @@
                         // TEST has no dashboard preview route; keep its navigation on a renderable local preview.
                         '/': @json(route('dev.preview.buyer.messages')),
                         '/buyer/dashboard': @json(route('dev.preview.buyer.messages')),
-                        '/buyer/categories': @json(route('dev.preview.buyer.categories')),
-                        '/buyer/category': @json(route('dev.preview.buyer.categories')),
                         '/buyer/cart/checkout': @json(route('dev.preview.buyer.checkout')),
                         '/buyer/cart': @json(route('dev.preview.buyer.cart')),
                         '/buyer/orders': @json(route('dev.preview.buyer.orders')),

@@ -5,28 +5,10 @@ namespace App\Http\Controllers\Buyer;
 use App\Http\Controllers\Controller;
 use App\Models\Seller\Manage_inventory\Product;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
-    /**
-     * "All Categories" landing page — simple index of every main category.
-     * Used by the breadcrumb's "All Categories" link.
-     */
-    public function index()
-    {
-        $categoryCounts = \Illuminate\Support\Facades\Schema::hasTable('products')
-            ? Product::query()->publiclyDiscoverable()->selectRaw('category, COUNT(*) AS available_count')
-                ->groupBy('category')->pluck('available_count', 'category')->all()
-            : [];
-
-        return view('buyer.category.index', [
-            'categoryTree' => config('shophop_categories', []),
-            'categoryCounts' => $categoryCounts,
-        ]);
-    }
-
     /**
      * Category browse page — sidebar (categories + filters) + product grid.
      * Route: GET /buyer/category/{category}
@@ -61,7 +43,7 @@ class CategoryController extends Controller
             ->all();
 
         $breadcrumbs = [
-            ['label' => 'All Categories', 'url' => Route::has('buyer.category.index') ? route('buyer.category.index') : '#'],
+            ['label' => 'Shop', 'url' => route('search.index')],
             ['label' => $activeCategory['name'], 'url' => null],
         ];
 

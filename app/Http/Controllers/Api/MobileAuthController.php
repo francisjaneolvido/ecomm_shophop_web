@@ -366,6 +366,10 @@ class MobileAuthController extends Controller
         }
 
         return [
+            ...($user->account_type === 'buyer' ? [
+                'first_name' => $user->buyer?->first_name,
+                'last_name' => $user->buyer?->last_name,
+            ] : []),
             'email' => $user->email,
             'company_name' => $user->account_type === 'logistics' ? $user->logisticsPartner?->company_name : null,
             'account_type' => $user->account_type,

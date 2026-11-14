@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\MobileAuthController;
+use App\Http\Controllers\Api\MobileShopChatController;
 use App\Http\Controllers\Api\MobileBuyerAddressController;
+use App\Http\Controllers\Api\MobileBuyerAccountController;
 use App\Http\Controllers\Api\MobileBuyerAuthController;
 use App\Http\Controllers\Api\MobileBuyerCartController;
 use App\Http\Controllers\Api\MobileBuyerCatalogController;
@@ -81,6 +83,12 @@ Route::prefix('mobile')->group(function () {
     });
 
     Route::middleware('auth:sanctum')->group(function () {
+        Route::prefix('chat')->group(function () {
+            Route::get('/conversations', [MobileShopChatController::class, 'conversations'])->middleware('throttle:120,1');
+            Route::post('/open', [MobileShopChatController::class, 'open'])->middleware('throttle:30,1');
+            Route::get('/{chat}/messages', [MobileShopChatController::class, 'messages'])->whereNumber('chat')->middleware('throttle:120,1');
+            Route::post('/{chat}/send', [MobileShopChatController::class, 'send'])->whereNumber('chat')->middleware('throttle:30,1');
+        });
         Route::get(
             '/me',
             [MobileAuthController::class, 'me']
@@ -179,6 +187,9 @@ Route::prefix('mobile')->group(function () {
 
         Route::prefix('buyer')->group(function () {
             Route::get('/address', [MobileBuyerAddressController::class, 'show']);
+            Route::get('/profile', [MobileBuyerAccountController::class, 'show']);
+            Route::patch('/profile', [MobileBuyerAccountController::class, 'update'])->middleware('throttle:20,1');
+            Route::patch('/password', [MobileBuyerAccountController::class, 'password'])->middleware('throttle:6,1');
             Route::patch('/address', [MobileBuyerAddressController::class, 'update']);
 
             Route::get(
@@ -269,6 +280,8 @@ Route::prefix('mobile')->group(function () {
             );
 
             Route::get('/orders', [MobileBuyerOrderController::class, 'index']);
+            Route::post('/orders/{order}/items/{item}/review', [MobileBuyerOrderController::class, 'rateItem'])
+                ->whereNumber('order')->whereNumber('item')->middleware('throttle:30,1');
             Route::post('/orders/{order}/confirm-receipt', [MobileBuyerOrderController::class, 'confirmReceipt'])->whereNumber('order');
 
         });
