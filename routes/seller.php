@@ -214,6 +214,7 @@ Route::prefix('seller')
             // Core profile changes persist through CSRF-protected HTTP; no client-supplied Seller ID is accepted.
             Route::get('/account', [AccountController::class, 'show'])->name('account');
             Route::get('/shop-profile', [AccountController::class, 'shopProfile'])->name('shop-profile');
+            Route::patch('/shop-profile/logo', [AccountController::class, 'updateShopLogo'])->name('shop-profile.logo');
             Route::patch('/account', [AccountController::class, 'update'])->name('account.update');
             Route::patch('/account/password', [AccountController::class, 'password'])->middleware('throttle:6,1')->name('account.password');
 

@@ -37,11 +37,15 @@ Route::prefix('admin')
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])
             ->name('dashboard');
 
-        // Seller Compliance: review ng products bago makita ng buyers.
+        // Product review has its own URL. Keep previous links working for existing dashboards.
+        Route::get('/product-compliance', [ProductComplianceController::class, 'index'])->name('product-compliance.index');
+        Route::get('/product-compliance/{product}', [ProductComplianceController::class, 'show'])->name('compliance.show');
+        Route::patch('/product-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])->name('compliance.approve');
+        Route::patch('/product-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])->name('compliance.reject');
         Route::get('/seller-compliance', [ProductComplianceController::class, 'index'])->name('compliance');
-        Route::get('/seller-compliance/{product}', [ProductComplianceController::class, 'show'])->name('compliance.show');
-        Route::patch('/seller-compliance/{product}/approve', [ProductComplianceController::class, 'approve'])->name('compliance.approve');
-        Route::patch('/seller-compliance/{product}/reject', [ProductComplianceController::class, 'reject'])->name('compliance.reject');
+        Route::get('/seller-compliance/{product}', [ProductComplianceController::class, 'show']);
+        Route::patch('/seller-compliance/{product}/approve', [ProductComplianceController::class, 'approve']);
+        Route::patch('/seller-compliance/{product}/reject', [ProductComplianceController::class, 'reject']);
 
         Route::get('/registration', [AdminRegistrationController::class, 'index'])
             ->name('registrations');

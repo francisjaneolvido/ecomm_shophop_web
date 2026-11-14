@@ -108,6 +108,7 @@ Route::prefix('mobile')->group(function () {
             Route::get('/inventory', [MobileSellerWorkspaceController::class, 'inventory']);
             Route::get('/reports', [MobileSellerWorkspaceController::class, 'reports']);
             Route::get('/profile', [MobileSellerWorkspaceController::class, 'profile']);
+            Route::post('/profile/logo', [MobileSellerWorkspaceController::class, 'updateLogo'])->middleware('throttle:12,1');
             Route::patch('/profile', [MobileSellerWorkspaceController::class, 'updateProfile']);
             Route::patch('/password', [MobileSellerWorkspaceController::class, 'password'])->middleware('throttle:6,1');
             Route::get('/feedback', [MobileSellerWorkspaceController::class, 'feedback']);
@@ -211,6 +212,8 @@ Route::prefix('mobile')->group(function () {
                 '/products/{product}',
                 [MobileBuyerCatalogController::class, 'show']
             )->whereNumber('product');
+
+            Route::get('/shops/{seller}', [MobileBuyerCatalogController::class, 'shop'])->whereNumber('seller');
 
             Route::get(
                 '/likes',

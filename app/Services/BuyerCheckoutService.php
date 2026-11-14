@@ -14,6 +14,7 @@ use App\Models\Seller\Manage_inventory\Voucher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -54,7 +55,7 @@ class BuyerCheckoutService
             ->unique()
             ->values();
 
-        $itemsQuery = CartItem::with(['product.seller', 'variant'])
+        $itemsQuery = CartItem::with(['product.seller', 'variant.image'])
             ->where('buyer_id', $buyer->id);
 
         if ($selectedIds->isNotEmpty()) {
@@ -495,13 +496,18 @@ class BuyerCheckoutService
                         ]);
                     }
 
-                    OrderItem::create([
+                    $orderItemData = [
                         'order_id' => $order->id,
                         'product_id' => $item->product_id,
                         'product_variant_id' => $item->product_variant_id,
                         'quantity' => $item->quantity,
                         'price' => $item->unitPrice(),
-                    ]);
+                    ];
+                    if (Schema::hasColumn('order_items', 'variant_label')) {
+                        $orderItemData['variant_label'] = $item->variantLabel();
+                        $orderItemData['variant_image_path'] = $item->variant?->image?->image_path;
+                    }
+                    OrderItem::create($orderItemData);
                 }
             }
 
@@ -652,8 +658,8 @@ class BuyerCheckoutService
                         'product_id' => (int) $item->product_id,
                         'variant_id' => $item->product_variant_id ? (int) $item->product_variant_id : null,
                         'name' => $item->product->name,
-                        'image' => $item->product->image
-                            ? Storage::url($item->product->image)
+                        'image' => ($item->variant?->image?->image_path ?? $item->product->image)
+                            ? Storage::url($item->variant?->image?->image_path ?? $item->product->image)
                             : asset('images/products/placeholder.png'),
                         'variant' => $item->variantLabel(),
                         'price' => round((float) $item->unitPrice(), 2),

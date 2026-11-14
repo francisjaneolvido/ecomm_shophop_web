@@ -23,6 +23,13 @@
                 <h2 id="sh-flash-title"><x-lucide-zap aria-hidden="true" /> Flash Deals</h2>
                 <p>Products with discounts currently set by ShopHop sellers.</p>
             </div>
+            @php $nextDealEnd = $flashDealProducts->pluck('deal_ends_at')->filter()->sort()->first(); @endphp
+            @if ($nextDealEnd)
+                <div class="sh-deal-clock" aria-label="Next timed deal ending">
+                    <span>Next deal ends in</span>
+                    <strong data-deal-countdown data-deal-end="{{ $nextDealEnd->toIso8601String() }}">--:--:--</strong>
+                </div>
+            @endif
         </div>
         @if ($flashDealProducts->isNotEmpty())
             <div class="sh-products-grid sh-flash-grid">
@@ -36,6 +43,43 @@
                 <div><strong>No seller discounts listed yet</strong><p>Check Daily Discover for approved, in-stock products while sellers update their offers.</p></div>
                 <a href="#trending">Daily Discover <x-lucide-arrow-right aria-hidden="true" /></a>
             </div>
+        @endif
+    </div>
+</section>
+
+<section id="watch-shop" class="sh-market-section sh-watch-section" aria-labelledby="sh-watch-title">
+    <div class="sh-market-width">
+        <div class="sh-section-heading">
+            <div>
+                <h2 id="sh-watch-title"><x-lucide-play-circle aria-hidden="true" /> Watch &amp; Shop</h2>
+                <p>See actual products in seller-uploaded videos.</p>
+            </div>
+        </div>
+        @if ($videoProducts->isNotEmpty())
+        <div class="sh-watch-track">
+            @foreach ($videoProducts as $product)
+                @php
+                    $watchPrice = round((float) $product->price * (1 - (int) $product->discount / 100), 2);
+                    $watchUrl = route('buyer.product.show', ['product' => $product->id]);
+                @endphp
+                <article class="sh-watch-card">
+                    <video class="sh-watch-video" data-shop-video data-video-src="{{ $product->video_url }}" muted playsinline loop preload="none"
+                        poster="{{ $landingProductImageUrl($product->image) }}" aria-label="Video of {{ $product->name }}"></video>
+                    <a href="{{ $watchUrl }}" class="sh-watch-info">
+                        <span class="sh-watch-kicker">WATCH &amp; SHOP</span>
+                        <strong>{{ $product->name }}</strong>
+                        <span>₱{{ number_format($watchPrice, 2) }} <x-lucide-arrow-up-right aria-hidden="true" /></span>
+                    </a>
+                    <button type="button" class="sh-watch-sound" data-video-sound aria-label="Unmute {{ $product->name }} video" aria-pressed="false">Sound off</button>
+                </article>
+            @endforeach
+        </div>
+        @else
+        <div class="sh-watch-empty">
+            <span class="sh-watch-empty-icon"><x-lucide-play aria-hidden="true" /></span>
+            <div><strong>Product videos are coming</strong><p>Seller-uploaded videos will appear here after their products are approved.</p></div>
+            <a href="#trending">Explore products <x-lucide-arrow-right aria-hidden="true" /></a>
+        </div>
         @endif
     </div>
 </section>

@@ -13,7 +13,7 @@
 }
 
 .sh-market { background: var(--shmp-surface); color: var(--shmp-dark); padding-bottom: 30px; }
-.sh-market-width { max-width: 1232px; margin: 0 auto; padding: 0 16px; }
+.sh-market-width { width:100%; max-width:1760px; margin:0 auto; padding:0 clamp(14px,2.2vw,36px); box-sizing:border-box; }
 .sh-market svg,
 .sh-market-header svg { width: 17px; height: 17px; stroke-width: 1.85; }
 
@@ -202,6 +202,29 @@
 }
 
 /* Homepage-only streamlined footer. */
+.sh-deal-clock { display:flex; align-items:center; gap:10px; color:#10193C; font-size:11px; font-weight:600; }
+.sh-deal-clock strong { display:inline-block; padding:7px 10px; border-radius:5px; background:#10193C; color:#fff; font:700 15px/1.1 ui-monospace,monospace; letter-spacing:.04em; }
+.sh-card-clock { position:absolute; right:6px; bottom:6px; z-index:2; padding:4px 6px; border-radius:3px; background:#10193C; color:#fff; font:700 10px ui-monospace,monospace; }
+.sh-watch-section { background:linear-gradient(135deg,#FCECEF 0%,#FBF6EE 100%); }
+.sh-watch-track { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(175px,210px); gap:12px; overflow-x:auto; scroll-snap-type:x mandatory; padding:3px 1px 12px; }
+.sh-watch-card { position:relative; min-width:0; overflow:hidden; aspect-ratio:3/4; border-radius:12px; background:#10193C; scroll-snap-align:start; box-shadow:0 7px 22px #10193C20; }
+.sh-watch-video { display:block; width:100%; height:100%; object-fit:cover; cursor:pointer; }
+.sh-watch-info { position:absolute; inset:auto 0 0; display:grid; gap:5px; padding:45px 12px 12px; background:linear-gradient(transparent,#10193CEB); color:#fff; text-decoration:none; }
+.sh-watch-info strong { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; overflow:hidden; font-size:14px; line-height:1.3; }
+.sh-watch-info > span:last-child { display:flex; align-items:center; justify-content:space-between; color:#FFD6DE; font-size:15px; font-weight:700; }
+.sh-watch-info svg { width:17px; height:17px; }
+.sh-watch-kicker { color:#FFD6DE; font-size:9px; font-weight:800; letter-spacing:.13em; }
+.sh-watch-sound { position:absolute; right:9px; top:9px; z-index:2; padding:5px 8px; border:1px solid #ffffff78; border-radius:20px; background:#10193CB8; color:#fff; font-size:10px; font-weight:600; font-family:inherit; cursor:pointer; }
+.sh-watch-empty { display:flex; align-items:center; gap:15px; min-height:130px; padding:22px; border:1px solid #EDA3AE; border-radius:12px; background:#fff; color:#10193C; }
+.sh-watch-empty-icon { flex:none; display:grid; place-items:center; width:66px; height:66px; border-radius:50%; background:#FCECEF; color:#D9406B; }
+.sh-watch-empty-icon svg { width:26px; height:26px; fill:#D9406B; }
+.sh-watch-empty strong { font-size:17px; }
+.sh-watch-empty p { margin:4px 0 0; color:#647084; font-size:11px; }
+.sh-watch-empty a { display:flex; align-items:center; gap:5px; margin-left:auto; color:#10193C; font-size:11px; font-weight:700; white-space:nowrap; }
+.sh-watch-empty a svg { width:15px; height:15px; }
+@media (max-width:640px) { .sh-deal-clock { width:100%; justify-content:space-between; } .sh-watch-track { grid-auto-columns:minmax(150px,45vw); } }
+@media (max-width:640px) { .sh-watch-empty { flex-wrap:wrap; padding:15px; } .sh-watch-empty-icon { width:46px; height:46px; } .sh-watch-empty a { margin-left:61px; } }
+
 .sh-market-footer { background: #f5f7f7; border-top: 1px solid #e4e8ea; color: #10193C; font-family: Poppins, system-ui, sans-serif; }
 .sh-market-footer-inner { padding-top: 25px; padding-bottom: 22px; }
 .sh-market-footer-brand > a { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; text-decoration: none; color: #10193C; }

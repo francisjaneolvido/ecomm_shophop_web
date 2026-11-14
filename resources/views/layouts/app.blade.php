@@ -5,6 +5,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <meta
         name="viewport"
@@ -65,7 +66,7 @@
     <link rel="stylesheet" href="{{ asset('css/shophop-shopper-chrome-v4.css') }}?v=20261112-navy-pink-2">
     {{-- ShopHop UI Option A: compact rectangular components across all portals. --}}
     <link rel="stylesheet" href="{{ asset('css/shophop-compact-ui.css') }}?v=20261112-navy-pink-2">
-    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261112-navy-pink-2">
+    <link rel="stylesheet" href="{{ asset('css/shophop-ui-alignment-fixes.css') }}?v=20261114-buyer-width-1">
 @include('partials.brand-assets')
 </head>
 

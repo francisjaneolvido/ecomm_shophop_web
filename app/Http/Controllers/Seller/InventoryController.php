@@ -13,9 +13,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Illuminate\Validation\ValidationException;
+use Carbon\CarbonImmutable;
 
 class InventoryController extends Controller
 {
@@ -57,7 +60,7 @@ class InventoryController extends Controller
         $filterCategories = (clone $base)->whereNotNull('subcategory')
             ->where('subcategory', '!=', '')->distinct()->orderBy('subcategory')->pluck('subcategory')->all();
 
-        $query = (clone $base)->with(['images', 'variants']);
+        $query = (clone $base)->with(['images', 'variants.image']);
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', '%'.$search.'%')
@@ -137,6 +140,7 @@ class InventoryController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'weight_kg' => ['required', 'numeric', 'min:0.05', 'max:500'],
             'discount' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'deal_ends_at' => ['nullable', 'date'],
             'stock' => ['nullable', 'integer', 'min:0'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
             'description' => ['nullable', 'string'],
@@ -152,9 +156,11 @@ class InventoryController extends Controller
             'media_first' => ['nullable', Rule::in(['image', 'video'])],
             'media_sequence' => ['nullable', 'json', 'max:3000'],
 
-            'variants' => ['nullable', 'array'],
+            'variants' => ['nullable', 'array', 'max:50'],
             'variants.*.id' => ['nullable', 'integer'],
             'variants.*.name' => ['required_with:variants', 'string', 'max:255'],
+            'variants.*.attributes' => ['nullable', 'json', 'max:500'],
+            'variants.*.image_ref' => ['nullable', 'string', 'max:40'],
             'variants.*.sku' => ['nullable', 'string', 'max:100'],
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
             'variants.*.weight_kg' => ['nullable', 'numeric', 'min:0.05', 'max:500'],
@@ -168,12 +174,19 @@ class InventoryController extends Controller
 
         $hasVariants = $request->boolean('has_variants');
         $variantsInput = collect($request->input('variants', []));
+        $this->validateVariants($product, $hasVariants, $variantsInput, $request);
 
         $stock = $hasVariants
             ? $variantsInput
                 ->filter(fn ($variant) => ($variant['status'] ?? 'active') === 'active')
                 ->sum(fn ($variant) => (int) ($variant['stock'] ?? 0))
             : (int) ($validated['stock'] ?? 0);
+
+        $dealEndsAt = filled($validated['deal_ends_at'] ?? null)
+            ? CarbonImmutable::parse($validated['deal_ends_at'], 'Asia/Manila')->utc() : null;
+        if ($dealEndsAt && ($dealEndsAt->isPast() || (int) ($validated['discount'] ?? 0) <= 0)) {
+            throw ValidationException::withMessages(['deal_ends_at' => 'Set a future deal end time and a discount above 0%.']);
+        }
 
         $payload = [
             // Full content submissions invalidate old review identity and rejection history, including approved edits.
@@ -191,6 +204,7 @@ class InventoryController extends Controller
             'price' => $validated['price'],
             'weight_kg' => $validated['weight_kg'],
             'discount' => $validated['discount'] ?? 0,
+            'deal_ends_at' => $dealEndsAt,
             'stock' => $stock,
             'low_stock_threshold' => $validated['low_stock_threshold'] ?? null,
             'description' => $validated['description'] ?? null,
@@ -219,7 +233,7 @@ class InventoryController extends Controller
                     ? ['video'] : []);
             }
             $product->saveMediaSequence($sequence, $newImageIds);
-            $this->syncVariants($product, $hasVariants ? $variantsInput : collect());
+            $this->syncVariants($product, $hasVariants ? $variantsInput : collect(), $newImageIds);
         });
 
         return redirect()
@@ -299,13 +313,26 @@ class InventoryController extends Controller
         $removeIds = collect($request->input('remove_image_ids', []))->map(fn ($id) => (int) $id);
 
         if ($removeIds->isNotEmpty()) {
-            $product->images()
-                ->whereIn('id', $removeIds)
-                ->get()
-                ->each(function (ProductImage $image) {
-                    Storage::disk('public')->delete($image->image_path);
-                    $image->delete();
-                });
+            $imagesToRemove = $product->images()->whereIn('id', $removeIds)->get();
+            foreach ($imagesToRemove as $image) {
+                if (Schema::hasColumn('product_variants', 'image_id') &&
+                    ProductVariant::where('image_id', $image->id)->exists()) {
+                    throw ValidationException::withMessages([
+                        'images' => 'This photo is assigned to a variation. Reassign it before removing it.',
+                    ]);
+                }
+                if (Schema::hasColumn('order_items', 'variant_image_path') &&
+                    DB::table('order_items')->where('variant_image_path', $image->image_path)->exists()) {
+                    throw ValidationException::withMessages([
+                        'images' => 'This photo is part of a past order and cannot be removed.',
+                    ]);
+                }
+            }
+            foreach ($imagesToRemove as $image) {
+                $path = $image->image_path;
+                $image->delete();
+                DB::afterCommit(fn () => Storage::disk('public')->delete($path));
+            }
         }
 
         if ($request->hasFile('images')) {
@@ -357,7 +384,7 @@ class InventoryController extends Controller
         }
     }
 
-    protected function syncVariants(Product $product, $variantsInput): void
+    protected function syncVariants(Product $product, $variantsInput, array $newImageIds = []): void
     {
         $submittedIds = $variantsInput
             ->pluck('id')
@@ -366,11 +393,12 @@ class InventoryController extends Controller
 
         $product->variants()
             ->whereNotIn('id', $submittedIds->isEmpty() ? [0] : $submittedIds)
-            ->delete();
+            ->update(['status' => 'archived']);
 
         foreach ($variantsInput as $variant) {
             $data = [
                 'name' => $variant['name'],
+                'attributes' => isset($variant['attributes']) ? json_decode($variant['attributes'], true) : null,
                 'sku' => $variant['sku'] ?? null,
                 'price' => $variant['price'] ?? null,
                 'weight_kg' => $variant['weight_kg'] ?? null,
@@ -378,12 +406,124 @@ class InventoryController extends Controller
                 'status' => $variant['status'] ?? 'active',
             ];
 
+            if (Schema::hasColumn('product_variants', 'image_id')) {
+                $reference = $variant['image_ref'] ?? '';
+                if (str_starts_with($reference, 'existing:')) {
+                    $data['image_id'] = (int) substr($reference, 9);
+                } elseif (str_starts_with($reference, 'new:')) {
+                    $data['image_id'] = $newImageIds[(int) substr($reference, 4)] ?? null;
+                } elseif ($reference === '') {
+                    $data['image_id'] = null;
+                }
+            }
+
             if (! empty($variant['id'])) {
                 $product->variants()
                     ->where('id', $variant['id'])
                     ->update($data);
             } else {
                 $product->variants()->create($data);
+            }
+        }
+    }
+
+    protected function validateVariants(?Product $product, bool $hasVariants, $variants, Request $request): void
+    {
+        if (! $hasVariants) return;
+        if ($variants->isEmpty()) {
+            throw ValidationException::withMessages(['variants' => 'Add at least one variation combination.']);
+        }
+
+        $seen = [];
+        $seenIds = [];
+        $seenSkus = [];
+        $axisKeys = null;
+        $legacySeen = false;
+        $removedIds = collect($request->input('remove_image_ids', []))->map(fn ($id) => (int) $id);
+        $existingImageIds = $product?->images()->pluck('id')->map(fn ($id) => (int) $id)->all() ?? [];
+        $newImageCount = count($request->file('images', []));
+        if (count($existingImageIds) - $removedIds->intersect($existingImageIds)->count() + $newImageCount > 8) {
+            throw ValidationException::withMessages(['images' => 'A product can have up to 8 photos in total.']);
+        }
+
+        foreach ($variants as $index => $variant) {
+            $id = (int) ($variant['id'] ?? 0);
+            if ($id && (! $product || isset($seenIds[$id]) || ! $product->variants()->whereKey($id)->exists())) {
+                throw ValidationException::withMessages(["variants.$index.id" => 'This variant does not belong to this product.']);
+            }
+            if ($id) $seenIds[$id] = true;
+
+            $attributes = isset($variant['attributes']) ? json_decode($variant['attributes'], true) : null;
+            if ($id && Schema::hasTable('order_items') && ! Schema::hasColumn('order_items', 'variant_label')) {
+                $saved = $product->variants()->findOrFail($id);
+                if (($saved->name !== ($variant['name'] ?? '') || $saved->attributes !== $attributes) &&
+                    DB::table('order_items')->where('product_variant_id', $id)->exists()) {
+                    throw ValidationException::withMessages([
+                        "variants.$index.name" => 'Apply the order snapshot migration before changing a purchased variation.',
+                    ]);
+                }
+            }
+            if ($attributes !== null) {
+                if (($variant['status'] ?? 'active') === 'active' && ($variant['price'] ?? '') === '') {
+                    throw ValidationException::withMessages(["variants.$index.price" => 'Set a price for each active combination.']);
+                }
+                if ($legacySeen) {
+                    throw ValidationException::withMessages(["variants.$index.attributes" => 'Use the same variation types for every combination.']);
+                }
+                if (! is_array($attributes) || array_is_list($attributes) || count($attributes) < 1 || count($attributes) > 2) {
+                    throw ValidationException::withMessages(["variants.$index.attributes" => 'Use one or two named variation types.']);
+                }
+                foreach ($attributes as $type => $value) {
+                    if (! is_string($type) || ! is_string($value) || trim($type) === '' || trim($value) === '' ||
+                        in_array(mb_strtolower(trim($type)), ['id', 'product_id', 'sku', 'price', 'stock', 'status', 'weight_kg', 'image_id'], true) ||
+                        mb_strlen($type) > 40 || mb_strlen($value) > 60) {
+                        throw ValidationException::withMessages(["variants.$index.attributes" => 'Variation types and values must be short text.']);
+                    }
+                }
+                $keys = array_map('mb_strtolower', array_keys($attributes));
+                if (count(array_unique($keys)) !== count($keys) || ($axisKeys !== null && $keys !== $axisKeys)) {
+                    throw ValidationException::withMessages(["variants.$index.attributes" => 'Every combination must use the same unique variation types.']);
+                }
+                $axisKeys = $keys;
+            } elseif ($axisKeys !== null) {
+                throw ValidationException::withMessages(["variants.$index.attributes" => 'Every combination needs the same variation types.']);
+            } else {
+                $legacySeen = true;
+            }
+
+            $key = $attributes !== null
+                ? implode('|', array_map(fn ($value) => mb_strtolower(trim($value)), array_values($attributes)))
+                : mb_strtolower(trim($variant['name'] ?? ''));
+            if (isset($seen[$key])) {
+                throw ValidationException::withMessages(["variants.$index.name" => 'Duplicate variation combination.']);
+            }
+            $seen[$key] = true;
+
+            $sku = mb_strtolower(trim($variant['sku'] ?? ''));
+            if ($sku !== '') {
+                if (isset($seenSkus[$sku]) || ProductVariant::whereRaw('LOWER(sku) = ?', [$sku])
+                    ->when($id, fn ($query) => $query->whereKeyNot($id))->exists()) {
+                    throw ValidationException::withMessages(["variants.$index.sku" => 'Each variant SKU must be unique.']);
+                }
+                $seenSkus[$sku] = true;
+            }
+
+            $reference = $variant['image_ref'] ?? '';
+            if ($reference !== '') {
+                if (! Schema::hasColumn('product_variants', 'image_id')) {
+                    throw ValidationException::withMessages(["variants.$index.image_ref" => 'Variant image mapping needs the pending migration.']);
+                }
+                if (preg_match('/^existing:(\d+)$/', $reference, $match)) {
+                    if (! in_array((int) $match[1], $existingImageIds, true) || $removedIds->contains((int) $match[1])) {
+                        throw ValidationException::withMessages(["variants.$index.image_ref" => 'Choose an image from this product.']);
+                    }
+                } elseif (preg_match('/^new:(\d+)$/', $reference, $match)) {
+                    if ((int) $match[1] >= $newImageCount || (int) $match[1] >= 8) {
+                        throw ValidationException::withMessages(["variants.$index.image_ref" => 'Choose a valid new product photo.']);
+                    }
+                } else {
+                    throw ValidationException::withMessages(["variants.$index.image_ref" => 'Choose a valid product photo.']);
+                }
             }
         }
     }

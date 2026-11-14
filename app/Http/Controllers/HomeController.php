@@ -16,6 +16,9 @@ class HomeController extends Controller
         $flashDealProducts = $sections['deals'];
         $topProducts = $sections['top'];
         $discoverProducts = $sections['discover'];
+        $videoProducts = app(\App\Services\MarketplaceCatalogService::class)->query()
+            ->whereNotNull('video_path')->where('video_path', '!=', '')
+            ->latest('products.created_at')->take(6)->get();
         $hasCompletedSales = $sections['has_completed_sales'];
 
         // The existing category browser has real public routes. Use its
@@ -47,6 +50,7 @@ class HomeController extends Controller
             'flashDealProducts',
             'topProducts',
             'discoverProducts',
+            'videoProducts',
             'landingCategories',
             'hasCompletedSales',
             'categories',

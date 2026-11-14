@@ -9,6 +9,7 @@ use App\Models\Logistics\PickupRequest;
 use App\Models\Seller\Manage_inventory\Product;
 use App\Support\SellerProductCategories;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use App\Models\User;
 use App\Services\LogisticsRoutingService;
@@ -121,6 +122,7 @@ class MobileSellerWorkspaceController extends Controller
             'birthday' => $seller->birthday?->toDateString(),
             'sex_options' => app(\App\Services\SellerAccountService::class)->sexOptions(),
             'business_name' => $seller->business_name,
+            'logo_url' => $seller->logo_url,
             'name' => trim($seller->first_name.' '.$seller->last_name),
             'email' => $request->user()->email,
             'contact_no' => $seller->contact_no,
@@ -138,6 +140,29 @@ class MobileSellerWorkspaceController extends Controller
         $this->seller($request);
         app(\App\Services\SellerAccountService::class)->updateProfile($request);
         return $this->ok([], 'Profile changes saved.');
+    }
+
+    public function updateLogo(Request $request): JsonResponse
+    {
+        $seller = $this->seller($request);
+        $request->validate([
+            'logo' => ['nullable', 'required_without:remove_logo', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_logo' => ['nullable', 'boolean'],
+        ]);
+        abort_unless(Schema::hasColumn('sellers', 'logo_path'), 422, 'Shop logo storage is unavailable.');
+        abort_unless($request->hasFile('logo') || $request->boolean('remove_logo'), 422);
+
+        $oldPath = $seller->logo_path;
+        $newPath = $request->hasFile('logo') ? $request->file('logo')->store('shop-logos', 'public') : null;
+        try {
+            $seller->forceFill(['logo_path' => $newPath])->save();
+        } catch (\Throwable $error) {
+            if ($newPath) Storage::disk('public')->delete($newPath);
+            throw $error;
+        }
+        if ($oldPath && $oldPath !== $newPath) Storage::disk('public')->delete($oldPath);
+
+        return $this->ok(['logo_url' => $seller->fresh()->logo_url], $newPath ? 'Shop logo updated.' : 'Shop logo removed.');
     }
 
     public function password(Request $request): JsonResponse
@@ -261,6 +286,7 @@ class MobileSellerWorkspaceController extends Controller
             'price' => ['required', 'numeric', 'min:0'],
             'weight_kg' => ['required', 'numeric', 'min:0.05', 'max:500'],
             'discount' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'deal_ends_at' => ['nullable', 'date', 'after:now'],
             'stock' => ['required', 'integer', 'min:0'],
             'low_stock_threshold' => ['nullable', 'integer', 'min:0'],
             'description' => ['nullable', 'string', 'max:10000'],
@@ -283,6 +309,8 @@ class MobileSellerWorkspaceController extends Controller
             'price' => $validated['price'],
             'weight_kg' => $validated['weight_kg'],
             'discount' => $validated['discount'] ?? 0,
+            'deal_ends_at' => array_key_exists('deal_ends_at', $validated)
+                ? $validated['deal_ends_at'] : $item?->getRawOriginal('deal_ends_at'),
             'stock' => $validated['stock'],
             'low_stock_threshold' => $validated['low_stock_threshold'] ?? 10,
             'description' => $validated['description'] ?? null,

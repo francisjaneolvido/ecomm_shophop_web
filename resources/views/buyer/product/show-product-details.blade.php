@@ -40,11 +40,17 @@
         ? route('buyer.category.show', $categorySlug)
         : '#';
 
-    $firstVariant = $variants[0] ?? null;
+    $firstVariant = collect($variants)->firstWhere('in_stock', true) ?? ($variants[0] ?? null);
+    $variantAxes = array_keys($variants[0]['attributes'] ?? []);
+    if (count($variantAxes) < 1 || count($variantAxes) > 2 ||
+        collect($variants)->contains(fn ($variant) => array_keys($variant['attributes'] ?? []) !== $variantAxes)) {
+        $variantAxes = [];
+    }
 @endphp
 
 @section('title', $product['name'] . ' - ShopHop')
 @section('hideChrome', true)
+@push('styles')<link rel="stylesheet" href="{{ asset('css/shophop-marketplace-landing.css') }}?v=20261114-wide-2"><style>.wishlist-toggle[aria-pressed="true"]{color:#e96c87}.wishlist-toggle[aria-pressed="true"] svg{fill:currentColor}</style>@endpush
 
 @section('content')
 
@@ -128,9 +134,9 @@
                             Share product
                         </button>
 
-                        <button type="button" data-product-id="{{ $product['id'] }}" @if (auth()->check() && auth()->user()->account_type === 'buyer') data-wishlist-unavailable disabled title="Manage My Likes" aria-label="Save to My Likes" @else data-login-required title="Sign in to save this product" aria-label="Sign in to save this product" @endif class="wishlist-toggle inline-flex items-center gap-1.5 text-navy/45 {{ auth()->check() && auth()->user()->account_type === 'buyer' ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:text-teal-dark' }}">
+                        <button type="button" data-product-id="{{ $product['id'] }}" @if (auth()->check() && auth()->user()->account_type === 'buyer') data-favorite-toggle aria-pressed="{{ in_array((int)$product['id'], $favoriteProductIds ?? [], true) ? 'true' : 'false' }}" @else data-login-required title="Sign in to save this product" @endif class="wishlist-toggle inline-flex items-center gap-1.5 text-navy/45 cursor-pointer hover:text-teal-dark">
                             <x-lucide-heart class="w-3.5 h-3.5" />
-                            <span data-favorite-label>Add to My Likes</span>
+                            <span data-favorite-label>My Likes</span>
                         </button>
                     </div>
                 </div>
@@ -232,9 +238,20 @@
 
                         {{-- VARIANTS (flat list from product_variants table) --}}
                         @if (count($variants) > 0)
+                            @foreach ($variantAxes as $axis)
+                                <div class="grid sm:grid-cols-[92px_1fr] gap-2 sm:gap-3 mt-2">
+                                    <span class="text-[10px] text-navy/40 pt-2">{{ $axis }}</span>
+                                    <div class="flex flex-wrap gap-1.5" data-variant-axis="{{ $axis }}">
+                                        @foreach (collect($variants)->pluck('attributes')->pluck($axis)->unique() as $value)
+                                            <button type="button" data-axis-option data-axis="{{ $axis }}" data-value="{{ $value }}"
+                                                class="px-3 py-2 rounded-lg border border-gray-border text-[10px] font-medium text-navy/65 hover:border-teal/50 disabled:opacity-40 disabled:cursor-not-allowed">{{ $value }}</button>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endforeach
                             <div class="grid sm:grid-cols-[92px_1fr] gap-2 sm:gap-3">
-                                <span class="text-[10px] text-navy/40 pt-2">Options</span>
-                                <div class="flex flex-wrap gap-1.5" data-variant-list>
+                                <span class="text-[10px] text-navy/40 pt-2">{{ $variantAxes ? '' : 'Options' }}</span>
+                                <div class="flex flex-wrap gap-1.5 {{ $variantAxes ? 'hidden' : '' }}" data-variant-list>
                                     @foreach ($variants as $index => $variant)
                                         <button
                                             type="button"
@@ -243,9 +260,11 @@
                                             data-variant-label="{{ $variant['label'] }}"
                                             data-variant-price="{{ $variant['price'] }}"
                                             data-variant-stock="{{ $variant['stock'] }}"
+                                            data-variant-image="{{ $variant['image'] ?? '' }}"
+                                            data-variant-attributes='@json($variant['attributes'] ?? [])'
                                             {{ ! $variant['in_stock'] ? 'disabled' : '' }}
                                             class="variant-option min-w-20 px-3 py-2 rounded-lg border text-[10px] font-medium transition
-                                                   {{ $index === 0 ? 'border-teal text-teal-dark bg-teal-light/45' : 'border-gray-border text-navy/55 hover:border-teal/50 hover:text-teal-dark' }}
+                                                   {{ $variant['id'] === ($firstVariant['id'] ?? null) ? 'border-teal text-teal-dark bg-teal-light/45' : 'border-gray-border text-navy/55 hover:border-teal/50 hover:text-teal-dark' }}
                                                    {{ ! $variant['in_stock'] ? 'opacity-40 cursor-not-allowed' : '' }}"
                                         >
                                             {{ $variant['label'] }}
@@ -337,8 +356,8 @@
         <section class="bg-white border border-gray-border rounded-2xl mt-3 p-4 sm:p-5 product-reveal">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div class="flex items-center gap-3 min-w-0">
-                    <div class="w-11 h-11 rounded-xl bg-teal-light text-teal-dark flex items-center justify-center shrink-0">
-                        <x-lucide-store class="w-5 h-5" />
+                    <div class="w-11 h-11 rounded-xl bg-teal-light text-teal-dark flex items-center justify-center shrink-0 overflow-hidden">
+                        @if(!empty($product['seller_logo_url']))<img src="{{ $product['seller_logo_url'] }}" alt="{{ $product['seller_name'] }} logo" class="w-full h-full object-cover">@else<x-lucide-store class="w-5 h-5" />@endif
                     </div>
 
                     <div class="min-w-0">
@@ -348,9 +367,7 @@
                             <button type="button" data-open-shop-chat class="px-2.5 py-1.5 rounded-lg bg-teal text-white text-[9.5px] font-semibold hover:bg-teal-dark transition">
                                 Chat Now
                             </button>
-                            <button class="px-2.5 py-1.5 rounded-lg border border-gray-border text-navy/65 text-[9.5px] font-semibold hover:border-teal/40 hover:text-teal-dark transition">
-                                View Shop
-                            </button>
+                            @if(!empty($product['seller_shop_id']))<a href="{{ route('shop.show', $product['seller_shop_id']) }}" class="px-2.5 py-1.5 rounded-lg border border-gray-border text-navy/65 text-[9.5px] font-semibold hover:border-teal/40 hover:text-teal-dark transition">View Shop</a>@endif
                         </div>
                     </div>
                 </div>
@@ -541,7 +558,7 @@
 
         {{-- RECOMMENDATIONS --}}
         @if ($relatedProducts->count() > 0)
-            <section class="mt-5 mb-3 product-reveal">
+            <section class="sh-market mt-5 mb-3 product-reveal">
                 <div class="flex items-end justify-between gap-3 mb-3">
                     <div>
                         <p class="text-[8.5px] uppercase tracking-[0.12em] font-bold text-teal-dark">Recommended for you</p>
@@ -551,16 +568,18 @@
 
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3 product-stagger">
                     @foreach ($relatedProducts as $related)
-                        <article class="group bg-white border border-gray-border rounded-xl overflow-hidden hover:border-teal/30 hover:-translate-y-0.5 hover:shadow-md transition-all duration-300">
-                            <a href="{{ route('buyer.product.show', $related['id']) }}" class="block aspect-4/3 bg-gray-bg overflow-hidden">
+                        <article class="sh-product-card group">
+                            <a href="{{ route('buyer.product.show', $related['id']) }}" class="sh-product-media block bg-gray-bg overflow-hidden">
                                 <img src="{{ $productImageUrl($related['image']) }}" alt="{{ $related['name'] }}" class="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500">
+                                @if($related['discount'] > 0)<span class="sh-discount-badge">-{{ $related['discount'] }}%</span>@endif
                             </a>
+                            <button type="button" class="sh-card-heart" data-product-id="{{ $related['id'] }}" @if(auth()->check() && auth()->user()->account_type === 'buyer') data-favorite-toggle aria-pressed="{{ in_array((int)$related['id'], $favoriteProductIds ?? [], true) ? 'true' : 'false' }}" @else data-login-required @endif aria-label="Save {{ $related['name'] }} to My Likes"><x-lucide-heart aria-hidden="true" /></button>
 
-                            <div class="p-2.5">
-                                <p class="text-[8px] text-navy/35 truncate">{{ $related['category'] }}</p>
-                                <p role="heading" aria-level="3" class="text-[10.5px] font-semibold text-navy leading-4 line-clamp-2 min-h-8 mt-0.5">{{ $related['name'] }}</p>
+                            <div class="sh-product-info p-2.5">
+                                <p class="sh-product-category text-[8px] text-navy/35 truncate">{{ $related['category'] }}</p>
+                                <p role="heading" aria-level="3" class="sh-product-name text-[10.5px] font-semibold text-navy leading-4 line-clamp-2 min-h-8 mt-0.5">{{ $related['name'] }}</p>
 
-                                <div class="flex flex-wrap items-baseline gap-1.5 mt-1.5">
+                                <div class="sh-product-prices flex flex-wrap items-baseline gap-1.5 mt-1.5">
                                     <span class="text-[12px] font-bold text-teal-dark">₱{{ number_format($related['price']) }}</span>
                                     @if (! empty($related['original_price']))
                                         <span class="text-[8.5px] text-navy/25 line-through">₱{{ number_format($related['original_price']) }}</span>
@@ -572,6 +591,9 @@
                                     <span>{{ $related['sold'] ?? 0 }} sold</span>
                                 </div>
 
+                                @if($related['has_variants'])
+                                    <a href="{{ route('buyer.product.show', $related['id']) }}" class="sh-product-action"><x-lucide-list-filter aria-hidden="true" /><span>Select Options</span></a>
+                                @else
                                 <button
                                     type="button"
                                     data-add-related-to-cart @unless (auth()->check() && auth()->user()->account_type === 'buyer') data-login-required @endunless
@@ -581,10 +603,11 @@
                                     data-related-price="{{ $related['price'] }}"
                                     data-related-original-price="{{ $related['original_price'] ?? '' }}"
                                     data-related-stock="{{ $related['stock'] ?? '' }}"
-                                    class="w-full mt-2 py-1.5 rounded-lg bg-teal hover:bg-teal-dark text-white text-[9px] font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed"
+                                    class="sh-product-action"
                                 >
-                                    Add to Cart
+                                    <x-lucide-shopping-cart aria-hidden="true" /><span>Add to Cart</span>
                                 </button>
+                                @endif
                             </div>
                         </article>
                     @endforeach
@@ -597,7 +620,7 @@
 {{-- MOBILE PURCHASE BAR --}}
 <div class="lg:hidden fixed inset-x-0 bottom-0 z-50 bg-white/95 backdrop-blur border-t border-gray-border px-3 py-2 shadow-[0_-8px_24px_rgba(16,25,60,.08)]">
     <div class="max-w-310 mx-auto grid grid-cols-[auto_1fr_1fr] gap-2">
-        <button type="button" data-product-id="{{ $product['id'] }}" @if (auth()->check() && auth()->user()->account_type === 'buyer') data-wishlist-unavailable disabled title="Manage My Likes" @else data-login-required title="Sign in to save this product" @endif class="wishlist-toggle w-10 h-10 rounded-lg border border-gray-border flex items-center justify-center text-navy/45 {{ auth()->check() && auth()->user()->account_type === 'buyer' ? 'cursor-not-allowed opacity-55' : 'cursor-pointer hover:text-teal-dark' }}" aria-label="Save to My Likes or sign in">
+        <button type="button" data-product-id="{{ $product['id'] }}" @if (auth()->check() && auth()->user()->account_type === 'buyer') data-favorite-toggle aria-pressed="{{ in_array((int)$product['id'], $favoriteProductIds ?? [], true) ? 'true' : 'false' }}" @else data-login-required title="Sign in to save this product" @endif class="wishlist-toggle w-10 h-10 rounded-lg border border-gray-border flex items-center justify-center text-navy/45 cursor-pointer hover:text-teal-dark" aria-label="Save to My Likes or sign in">
             <x-lucide-heart class="w-4 h-4" />
         </button>
         <button type="button" data-add-to-cart="{{ $product['id'] }}" @unless (auth()->check() && auth()->user()->account_type === 'buyer') data-login-required @endunless data-selected-variant="{{ $firstVariant['id'] ?? '' }}" class="h-10 rounded-lg border border-teal bg-teal-light text-teal-dark text-[10px] font-semibold flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed">
@@ -682,18 +705,21 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     let selectedVariant = null;
-    const firstVariantBtn = document.querySelector('[data-variant-option]');
+    const variantButtons = [...document.querySelectorAll('[data-variant-option]')];
+    const firstVariantBtn = variantButtons.find(button => !button.disabled);
     if (firstVariantBtn) {
         selectedVariant = {
             id: firstVariantBtn.dataset.variantId,
             label: firstVariantBtn.dataset.variantLabel,
             price: parseFloat(firstVariantBtn.dataset.variantPrice),
             stock: parseInt(firstVariantBtn.dataset.variantStock, 10),
+            image: firstVariantBtn.dataset.variantImage,
+            attributes: JSON.parse(firstVariantBtn.dataset.variantAttributes || '{}'),
         };
     }
 
     function currentMaxStock() {
-        return selectedVariant ? selectedVariant.stock : baseStock;
+        return selectedVariant ? selectedVariant.stock : variantButtons.length ? 0 : baseStock;
     }
 
     function clampQuantity() {
@@ -719,10 +745,12 @@ document.addEventListener('DOMContentLoaded', function () {
         buyNowForms.forEach(function (form) {
             form.querySelector('[data-buy-quantity]').value = qty;
             form.querySelector('[data-buy-variant]').value = selectedVariant ? selectedVariant.id : '';
+            form.querySelector('button[type="submit"]').disabled = variantButtons.length > 0 && !selectedVariant;
         });
 
         addToCartButtons.forEach(function (btn) {
             btn.dataset.selectedVariant = selectedVariant ? selectedVariant.id : '';
+            btn.disabled = variantButtons.length > 0 && !selectedVariant;
         });
     }
 
@@ -731,29 +759,61 @@ document.addEventListener('DOMContentLoaded', function () {
     if (increaseButton && qtyInput) increaseButton.addEventListener('click', function () { qtyInput.value = clampQuantity() + 1; updateSelectionSummary(); });
     if (qtyInput) { qtyInput.addEventListener('input', updateSelectionSummary); qtyInput.addEventListener('change', updateSelectionSummary); }
 
-    document.querySelectorAll('[data-variant-option]').forEach(function (option) {
-        option.addEventListener('click', function () {
-            if (option.disabled) return;
-
-            document.querySelectorAll('[data-variant-option]').forEach(function (item) {
-                item.classList.remove('border-teal', 'text-teal-dark', 'bg-teal-light/45');
-                item.classList.add('border-gray-border', 'text-navy/55');
-            });
-            option.classList.remove('border-gray-border', 'text-navy/55');
-            option.classList.add('border-teal', 'text-teal-dark', 'bg-teal-light/45');
-
-            selectedVariant = {
-                id: option.dataset.variantId,
-                label: option.dataset.variantLabel,
-                price: parseFloat(option.dataset.variantPrice),
-                stock: parseInt(option.dataset.variantStock, 10),
-            };
-
-            if (qtyInput) qtyInput.value = 1;
-            if (qtyInput) qtyInput.setAttribute('max', currentMaxStock());
-            updateSelectionSummary();
+    const variantAxes = @json($variantAxes);
+    function showVariantImage(image) {
+        image = image || productBase.image;
+        const photo = document.getElementById('mainProductImage');
+        const video = document.getElementById('mainProductVideo');
+        if (video) { video.pause(); video.classList.add('hidden'); }
+        if (photo) { photo.src = image; photo.classList.remove('hidden'); }
+        const thumb = [...document.querySelectorAll('[data-media-thumb]')].find(item =>
+            item.dataset.mediaType === 'image' && item.dataset.mediaUrl === image);
+        thumb?.click();
+    }
+    function refreshAxisButtons() {
+        document.querySelectorAll('[data-axis-option]').forEach(button => {
+            const matches = variantButtons.filter(variant => !variant.disabled &&
+                JSON.parse(variant.dataset.variantAttributes || '{}')[button.dataset.axis] === button.dataset.value);
+            const firstAxis = variantAxes[0];
+            const compatible = button.dataset.axis === firstAxis || !selectedVariant
+                ? matches : matches.filter(variant =>
+                    JSON.parse(variant.dataset.variantAttributes || '{}')[firstAxis] === selectedVariant.attributes[firstAxis]);
+            button.disabled = compatible.length === 0;
+            const selected = selectedVariant?.attributes[button.dataset.axis] === button.dataset.value;
+            button.classList.toggle('border-teal', selected);
+            button.classList.toggle('bg-teal-light/45', selected);
+            button.classList.toggle('text-teal-dark', selected);
+            button.classList.toggle('border-gray-border', !selected);
         });
-    });
+    }
+    function selectVariant(option) {
+        if (!option || option.disabled) return;
+        variantButtons.forEach(item => {
+            item.classList.remove('border-teal', 'text-teal-dark', 'bg-teal-light/45');
+            item.classList.add('border-gray-border', 'text-navy/55');
+        });
+        option.classList.remove('border-gray-border', 'text-navy/55');
+        option.classList.add('border-teal', 'text-teal-dark', 'bg-teal-light/45');
+        selectedVariant = {id: option.dataset.variantId, label: option.dataset.variantLabel,
+            price: parseFloat(option.dataset.variantPrice), stock: parseInt(option.dataset.variantStock, 10),
+            image: option.dataset.variantImage, attributes: JSON.parse(option.dataset.variantAttributes || '{}')};
+        if (qtyInput) qtyInput.value = 1;
+        if (qtyInput) qtyInput.setAttribute('max', currentMaxStock());
+        updateSelectionSummary();
+        refreshAxisButtons();
+        showVariantImage(selectedVariant.image);
+    }
+    variantButtons.forEach(option => option.addEventListener('click', () => selectVariant(option)));
+    document.querySelectorAll('[data-axis-option]').forEach(button => button.addEventListener('click', () => {
+        const matches = variantButtons.filter(variant => !variant.disabled &&
+            JSON.parse(variant.dataset.variantAttributes || '{}')[button.dataset.axis] === button.dataset.value);
+        const firstAxis = variantAxes[0];
+        const compatible = button.dataset.axis === firstAxis || !selectedVariant
+            ? matches : matches.filter(variant =>
+                JSON.parse(variant.dataset.variantAttributes || '{}')[firstAxis] === selectedVariant.attributes[firstAxis]);
+        selectVariant(compatible[0] || matches[0]);
+    }));
+    refreshAxisButtons();
 
     const productMotionReduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const productRevealTargets = document.querySelectorAll('.product-reveal, .product-stagger');

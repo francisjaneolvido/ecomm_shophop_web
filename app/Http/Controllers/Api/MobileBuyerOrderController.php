@@ -231,7 +231,8 @@ class MobileBuyerOrderController extends Controller
                 'variant' => $item->variantLabel(),
                 'quantity' => (int) $item->quantity,
                 'price' => (float) $item->price,
-                'image' => $item->product?->image ? asset('storage/'.ltrim($item->product->image, '/')) : null,
+                'image' => ($item->variant_image_path ?? $item->product?->image)
+                    ? asset('storage/'.ltrim($item->variant_image_path ?? $item->product?->image, '/')) : null,
             ])->values(),
             'timeline' => $timeline,
         ];

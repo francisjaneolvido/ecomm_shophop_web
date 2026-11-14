@@ -98,8 +98,8 @@ class OrderController extends Controller
                 return [
                     'id' => $item->id,
                     'name' => $item->product->name ?? 'Product',
-                    'image' => $item->product && $item->product->image
-                        ? Storage::url($item->product->image)
+                    'image' => ($item->variant_image_path ?? $item->product?->image)
+                        ? Storage::url($item->variant_image_path ?? $item->product?->image)
                         : asset('images/products/placeholder.png'),
                     'variant' => $item->variantLabel(),
                     'price' => (float) $item->price,

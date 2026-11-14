@@ -261,8 +261,8 @@
                 <div>
                     <div class="lp-video-stage">
                         <div class="lp-video-frame">
-                            <video autoplay muted loop playsinline controls preload="metadata" poster="{{ asset('images/rider-registration-video-poster.png') }}" aria-label="ShopHop Rider registration video tutorial">
-                                <source src="{{ asset('videos/rider-registration-tutorial.mp4') }}" type="video/mp4">
+                            <video autoplay muted loop playsinline controls preload="metadata" poster="{{ asset('images/rider-registration-video-poster-navy-pink.png') }}" aria-label="ShopHop Rider registration video tutorial">
+                                <source src="{{ asset('videos/rider-registration-tutorial-navy-pink.mp4') }}" type="video/mp4">
                                 Your browser does not support the tutorial video.
                             </video>
                         </div>

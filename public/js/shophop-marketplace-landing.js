@@ -1,3 +1,73 @@
+/* A deal timer always uses its real end timestamp, even after a tab was asleep. */
+(function () {
+    'use strict';
+    const clocks = [...document.querySelectorAll('[data-deal-countdown]')];
+    if (!clocks.length) return;
+    function update() {
+        let expired = false;
+        const now = Date.now();
+        clocks.forEach((clock) => {
+            const end = Date.parse(clock.dataset.dealEnd || '');
+            if (!Number.isFinite(end)) return;
+            const remaining = Math.max(0, Math.ceil((end - now) / 1000));
+            const hours = Math.floor(remaining / 3600);
+            const minutes = Math.floor((remaining % 3600) / 60);
+            const seconds = remaining % 60;
+            clock.textContent = [hours, minutes, seconds].map((part) => String(part).padStart(2, '0')).join(':');
+            if (remaining === 0) expired = true;
+        });
+        if (expired) window.location.reload();
+    }
+    update();
+    window.setInterval(update, 1000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) update(); });
+})();
+
+/* Play only the visible seller video; the first frame remains a lightweight poster. */
+(function () {
+    'use strict';
+    const videos = [...document.querySelectorAll('[data-shop-video]')];
+    if (!videos.length) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const visibility = new Map();
+    let current = null;
+    function activate(video) {
+        if (current && current !== video) current.pause();
+        current = video;
+        if (!video) return;
+        if (!video.src) video.src = video.dataset.videoSrc;
+        video.play().catch(() => {});
+    }
+    function choose() {
+        if (document.hidden || reduced) { activate(null); return; }
+        const visible = videos.filter((video) => (visibility.get(video) || 0) >= .6);
+        visible.sort((a, b) => (visibility.get(b) || 0) - (visibility.get(a) || 0));
+        activate(visible[0] || null);
+    }
+    if ('IntersectionObserver' in window) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach((entry) => visibility.set(entry.target, entry.intersectionRatio));
+            choose();
+        }, { threshold: [0, .25, .6, .85, 1] });
+        videos.forEach((video) => observer.observe(video));
+    }
+    document.addEventListener('visibilitychange', choose);
+    videos.forEach((video) => video.addEventListener('click', (event) => {
+        if (video.closest('a')) return;
+        event.preventDefault();
+        if (current === video && !video.paused) video.pause();
+        else activate(video);
+    }));
+    document.querySelectorAll('[data-video-sound]').forEach((button) => button.addEventListener('click', () => {
+        const video = button.closest('.sh-watch-card')?.querySelector('video');
+        if (!video) return;
+        activate(video);
+        video.muted = !video.muted;
+        button.textContent = video.muted ? 'Sound off' : 'Sound on';
+        button.setAttribute('aria-pressed', String(!video.muted));
+    }));
+})();
+
 /* ShopHop landing hero controls. Keeps the first slide visible without JS. */
 (function () {
     'use strict';

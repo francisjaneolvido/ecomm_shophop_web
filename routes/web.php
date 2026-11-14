@@ -9,6 +9,7 @@ use App\Http\Controllers\HelpCenterController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\HybridFinanceController;
 use App\Http\Controllers\PublicSearchController;
+use App\Http\Controllers\ShopController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -30,6 +31,7 @@ Route::get('/help', [HelpCenterController::class, 'index'])->name('help.index');
 
 Route::get('/search', [PublicSearchController::class, 'index'])
     ->name('search.index');
+Route::get('/shop/{seller}', [ShopController::class, 'show'])->whereNumber('seller')->name('shop.show');
 
 /*
 |--------------------------------------------------------------------------

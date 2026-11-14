@@ -22,7 +22,7 @@ class MobileBuyerCartController extends Controller
     {
         $buyer = $this->approvedBuyer($request);
 
-        $items = CartItem::with(['product.seller', 'variant'])
+        $items = CartItem::with(['product.seller', 'variant.image'])
             ->where('buyer_id', $buyer->id)
             ->get();
 
@@ -268,7 +268,7 @@ class MobileBuyerCartController extends Controller
                     : null,
                 'variant' => $item->variantLabel(),
                 'name' => $item->product->name,
-                'image' => $this->productImageUrl($item->product->image),
+                'image' => $this->productImageUrl($item->variant?->image?->image_path ?? $item->product->image),
                 'price' => round((float) $price, 2),
                 'original_price' => $item->originalPrice(),
                 'qty' => (int) $item->quantity,

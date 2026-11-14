@@ -15,7 +15,7 @@ class ShowProductDetails_Controller extends Controller
         // Route binding can resolve hidden IDs; direct detail shares the public catalogue authority.
         abort_unless(Product::publiclyDiscoverable()->whereKey($product->id)->exists(), 404);
 
-        $product->load(['seller', 'images', 'variants', 'vouchers']);
+        $product->load(['seller', 'images', 'variants.image', 'vouchers']);
 
         $price = (float) $product->price;
         $discount = (int) ($product->discount ?? 0);
@@ -75,18 +75,21 @@ class ShowProductDetails_Controller extends Controller
         $soldCount = (int) $product->orderItems()->sum('quantity');
 
         // ---- Variants (flat list; group labels come from the 'attributes' JSON) ----
-        $variants = $product->variants->map(function ($variant) {
+        $variants = $product->variants->map(function ($variant) use ($product) {
             $attributes = $variant->attributes ?? [];
             $label = ! empty($attributes)
-                ? implode(' · ', array_values($attributes))
+                ? $variant->displayLabel()
                 : $variant->name;
 
             return [
                 'id' => $variant->id,
                 'label' => $label,
+                'attributes' => $attributes,
+                'image' => $variant->image && (int) $variant->image->product_id === (int) $product->id
+                    ? asset('storage/'.$variant->image->image_path) : null,
                 'price' => (float) $variant->price,
                 'stock' => (int) $variant->stock,
-                'in_stock' => $variant->stock > 0,
+                'in_stock' => $variant->status === 'active' && $variant->stock > 0 && $variant->price !== null,
             ];
         })->values()->toArray();
 
@@ -121,7 +124,7 @@ class ShowProductDetails_Controller extends Controller
 
         $sellerRating = $seller
             ? round((float) \App\Models\Buyer\Review\Review::whereHas('product', function ($q) use ($seller) {
-                $q->where('seller_id', $seller->id);
+                $q->where('seller_id', $seller->user_id);
             })->avg('rating'), 1) ?: 0
             : 0;
 
@@ -151,6 +154,8 @@ class ShowProductDetails_Controller extends Controller
             'ships_from' => $shipsFrom,
             'condition' => 'New',
             'seller_name' => $sellerName,
+            'seller_shop_id' => $seller?->id,
+            'seller_logo_url' => $seller?->logo_url,
             'seller_rating' => $sellerRating,
             'seller_products' => $sellerProductsCount,
             'seller_joined' => $sellerJoined,
@@ -191,10 +196,19 @@ class ShowProductDetails_Controller extends Controller
                     'rating' => round((float) $related->avg_rating, 1) ?: 0,
                     'reviews' => $related->reviews_count,
                     'sold' => (int) $related->sold_count,
+                    'stock' => (int) $related->stock,
+                    'has_variants' => (bool) $related->has_variants,
+                    'discount' => $rDiscount,
                     'image' => asset($rImagePath),
                 ];
             })
             ->toArray();
+
+        $favoriteProductIds = auth()->check() && auth()->user()->account_type === 'buyer' && auth()->user()->buyer
+            ? \App\Models\Buyer\Favorite\Favorite::where('buyer_id', auth()->user()->buyer->id)
+                ->whereIn('product_id', array_merge([$product->id], array_column($relatedProducts, 'id')))
+                ->pluck('product_id')->map(fn ($id) => (int) $id)->all()
+            : [];
 
         return view('buyer.product.show-product-details', [
             'product' => $productData,
@@ -204,6 +218,8 @@ class ShowProductDetails_Controller extends Controller
             'reviews' => $reviews,
             'ratingBreakdown' => $ratingBreakdown,
             'relatedProducts' => $relatedProducts,
+            'favoriteProductIds' => $favoriteProductIds,
+            'likedProductIds' => $favoriteProductIds,
         ]);
     }
 }

@@ -499,6 +499,7 @@
                                         'price' => $product->price,
                                         'weight_kg' => $product->weight_kg,
                                         'discount' => $product->discount,
+                                        'deal_ends_at' => $product->deal_ends_at?->timezone('Asia/Manila')->format('Y-m-d\TH:i'),
                                         'stock' => $product->stock,
                                         'status' => $product->status,
                                         'compliance_status' => $product->compliance_status,
@@ -524,6 +525,10 @@
                                             ->map(fn ($variant) => [
                                                 'id' => $variant->id,
                                                 'name' => $variant->name,
+                                                'attributes' => $variant->attributes,
+                                                'image_id' => $variant->image_id,
+                                                'image_url' => $variant->image && (int) $variant->image->product_id === (int) $product->id
+                                                    ? asset('storage/' . $variant->image->image_path) : null,
                                                 'sku' => $variant->sku,
                                                 'price' => $variant->price,
                                                 'weight_kg' => $variant->weight_kg,
@@ -589,7 +594,7 @@
 
                                                     @if ($product->has_variants)
                                                         <span class="inline-flex items-center px-1.5 py-0.5 rounded-md bg-sky/10 text-sky text-[10px] font-bold">
-                                                            {{ $product->variants->count() }} VARIANTS
+                                                            {{ $product->variants->where('status', 'active')->count() }} ACTIVE VARIANTS
                                                         </span>
                                                     @endif
 
@@ -709,8 +714,26 @@
                                                 </p>
 
                                                 <p class="text-[10px] text-sky mt-0.5">
-                                                    Variant total
+                                                    Variant total (active)
                                                 </p>
+                                                <details class="mt-1 text-[10px] text-navy/65 max-w-52">
+                                                    <summary class="cursor-pointer font-semibold text-teal-dark">View variant stock</summary>
+                                                    <div class="mt-2 max-h-40 overflow-y-auto space-y-2">
+                                                        @foreach ($product->variants as $variant)
+                                                            <form method="POST" action="{{ route('seller.inventory.products.variants.stock', $variant) }}" class="border-b border-gray-border pb-1">
+                                                                @csrf @method('PATCH')
+                                                                <span class="block truncate" title="{{ $variant->displayLabel() }}">{{ $variant->displayLabel() }}</span>
+                                                                <span class="{{ $variant->status !== 'active' ? 'text-navy/40' : ((int) $variant->stock === 0 ? 'text-red-600' : ((int) $variant->stock <= (int) ($product->low_stock_threshold ?? $defaultLowStockThreshold) ? 'text-amber-700' : 'text-teal-dark')) }}">
+                                                                    {{ $variant->status === 'active' ? ((int) $variant->stock === 0 ? 'Out of stock' : ((int) $variant->stock <= (int) ($product->low_stock_threshold ?? $defaultLowStockThreshold) ? 'Low stock' : 'Available')) : 'Archived' }}
+                                                                </span>
+                                                                <div class="flex gap-1 mt-1">
+                                                                    <input type="number" name="stock" min="0" value="{{ (int) $variant->stock }}" aria-label="Stock for {{ $variant->displayLabel() }}" class="w-16 h-6 rounded border border-gray-border px-1">
+                                                                    <button type="submit" class="font-semibold text-teal-dark">Save</button>
+                                                                </div>
+                                                            </form>
+                                                        @endforeach
+                                                    </div>
+                                                </details>
                                             </div>
 
                                         @else
@@ -738,9 +761,10 @@
 
                                             @if ($product->status === 'active' && ! $product->has_variants)
                                                 <button type="submit" form="quick-stock-form-{{ $product->id }}"
-                                                    data-stock-save data-stock-form="quick-stock-form-{{ $product->id }}" hidden
-                                                    class="inventory-stock-save h-8 px-3 rounded-lg bg-teal/10 text-teal-dark text-xs font-bold hover:bg-teal/20 transition">
-                                                    Save
+                                                    data-stock-save data-stock-form="quick-stock-form-{{ $product->id }}" disabled
+                                                    aria-label="Save stock for {{ $product->name }}"
+                                                    class="inventory-stock-save h-8 px-3 rounded-lg bg-teal/10 text-teal-dark text-xs font-bold hover:bg-teal/20 transition disabled:opacity-45 disabled:cursor-not-allowed">
+                                                    Save stock
                                                 </button>
                                             @endif
 
@@ -1006,7 +1030,7 @@
                                             <form
                                                 method="POST"
                                                 action="{{ route('seller.inventory.vouchers.destroy', $voucher->id) }}"
-                                                onsubmit="return confirm('Delete this voucher? This cannot be undone.');"
+                                                data-delete-voucher
                                             >
                                                 @csrf
                                                 @method('DELETE')
@@ -1089,7 +1113,7 @@
         aria-labelledby="productModalTitle"
     >
 
-        <div class="flex items-start justify-between gap-3 px-5 sm:px-6 py-4 border-b border-gray-border shrink-0">
+        <div class="flex items-start justify-between gap-3 px-5 sm:px-6 py-3 border-b border-gray-border shrink-0 bg-white">
 
             <div>
                 <p id="productModalTitle" class="text-base font-bold text-navy">
@@ -1112,6 +1136,13 @@
 
         </div>
 
+        <nav class="flex shrink-0 gap-1 overflow-x-auto border-b border-gray-border bg-white px-4 py-2 text-[10px] font-semibold text-navy/55 sm:px-6" aria-label="Product form sections">
+            <a href="#productBasicSection" class="shrink-0 rounded-lg px-2.5 py-1.5 hover:bg-teal-light hover:text-teal-dark">Details</a>
+            <a href="#productMediaSection" class="shrink-0 rounded-lg px-2.5 py-1.5 hover:bg-teal-light hover:text-teal-dark">Photos & video</a>
+            <a href="#productPricingSection" class="shrink-0 rounded-lg px-2.5 py-1.5 hover:bg-teal-light hover:text-teal-dark">Price & stock</a>
+            <a href="#productVariantsSection" class="shrink-0 rounded-lg px-2.5 py-1.5 hover:bg-teal-light hover:text-teal-dark">Variations</a>
+        </nav>
+
 
         <form
             id="productForm"
@@ -1129,10 +1160,10 @@
             <div id="removeImageInputs"></div>
 
 
-            <div class="px-5 sm:px-6 py-5 space-y-6">
+            <div class="px-5 sm:px-6 py-4 space-y-4">
 
                 {{-- Basic --}}
-                <section>
+                <section id="productBasicSection" class="scroll-mt-4">
 
                     <div class="flex items-center gap-2 mb-3">
                         <div class="w-7 h-7 rounded-lg bg-teal/10 text-teal-dark flex items-center justify-center">
@@ -1234,7 +1265,7 @@
 
 
                 {{-- Photos + video in one ordered upload experience. --}}
-                <section class="rounded-2xl border border-teal/25 bg-teal-light/20 p-4 space-y-3">
+                <section id="productMediaSection" class="scroll-mt-4 rounded-2xl border border-teal/25 bg-teal-light/20 p-3 space-y-3">
                     <div class="flex items-center gap-2">
                         <x-lucide-images class="w-5 h-5 text-teal-dark" />
                         <div>
@@ -1344,7 +1375,7 @@
                 </section>
 
                 {{-- Pricing --}}
-                <section>
+                <section id="productPricingSection" class="scroll-mt-4">
 
                     <div class="flex items-center gap-2 mb-3">
                         <div class="w-7 h-7 rounded-lg bg-yellow/20 text-amber-700 flex items-center justify-center">
@@ -1408,6 +1439,13 @@
                                     %
                                 </span>
                             </div>
+                        </div>
+
+                        <div>
+                            <label for="productDealEndsAt" class="text-xs font-semibold text-navy/60">Deal ends (optional)</label>
+                            <input type="datetime-local" name="deal_ends_at" id="productDealEndsAt"
+                                class="mt-1 w-full h-10 px-3 rounded-lg border border-gray-border text-xs text-navy focus:outline-none focus:border-teal/50">
+                            <p class="mt-1 text-[11px] text-navy/50">Philippine time. Leave blank for an ongoing discount.</p>
                         </div>
 
 
@@ -1517,7 +1555,7 @@
 
 
                 {{-- Variants --}}
-                <section class="rounded-xl border border-gray-border overflow-hidden">
+                <section id="productVariantsSection" class="scroll-mt-4 rounded-xl border border-gray-border overflow-hidden">
 
                     <div class="p-4 bg-gray-bg/50 flex items-center justify-between gap-3">
 
@@ -1527,7 +1565,7 @@
                             </h3>
 
                             <p class="text-[10px] text-navy/35 mt-0.5">
-                                Example: Black / Large, Red / Small, 128GB.
+                                Build one or two option groups. Each combination gets its own price, stock, SKU, weight and photo.
                             </p>
                         </div>
 
@@ -1544,7 +1582,7 @@
                             >
 
                             <span class="text-xs font-semibold text-navy/55">
-                                Has variants
+                                This product has variations
                             </span>
                         </label>
 
@@ -1552,25 +1590,35 @@
 
 
                     <div id="variantSection" hidden class="p-4">
-
-                        <div class="flex items-center justify-between gap-3 mb-3">
-
-                            <p class="text-xs text-navy/40">
-                                Parent stock is automatically calculated from active variants.
-                            </p>
-
-                            <button
-                                type="button"
-                                id="addVariantButton"
-                                class="h-8 px-3 rounded-lg bg-teal/10 text-teal-dark text-xs font-bold hover:bg-teal/15 transition"
-                            >
-                                + Add Variant
-                            </button>
-
+                        <p class="text-xs text-navy/55 mb-3">Total available stock is calculated from active combinations. Add product photos above, then assign them below.</p>
+                        <div id="variantAxes" class="space-y-3"></div>
+                        <div id="legacyVariantConversion" hidden class="rounded-xl border border-teal/20 bg-teal-light/20 p-3 space-y-2 mt-3">
+                            <p class="text-[11px] text-navy/65">These older variants have names only. To use the option builder, map each name part to a variation type (for example, “Black / Large” → Color / Size). Review generated rows before saving.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <input id="legacyAxisOne" type="text" maxlength="40" placeholder="First type (e.g. Color)" class="h-8 px-2 rounded-lg border border-gray-border text-xs">
+                                <input id="legacyAxisTwo" type="text" maxlength="40" placeholder="Second type (e.g. Size)" class="h-8 px-2 rounded-lg border border-gray-border text-xs">
+                                <button id="convertLegacyVariants" type="button" class="h-8 px-3 rounded-lg bg-teal text-white text-[10px] font-bold">Convert to option builder</button>
+                            </div>
                         </div>
-
-
-                        <div id="variantRows" class="space-y-2"></div>
+                        <datalist id="variantTypeSuggestions">
+                            <option value="Color"><option value="Size"><option value="Storage"><option value="Style"><option value="Material"><option value="Capacity"><option value="Flavor"><option value="Weight"><option value="Shoe Size">
+                        </datalist>
+                        <div class="flex items-center gap-3 my-3">
+                            <button type="button" id="addVariantButton" class="h-8 px-3 rounded-lg bg-teal/10 text-teal-dark text-xs font-bold hover:bg-teal/15 transition">+ Add variation type</button>
+                            <span id="variantBuilderMessage" class="text-[11px] text-navy/55" aria-live="polite">Add a type and its values to generate combinations.</span>
+                        </div>
+                        <div id="variantBulkTools" hidden class="rounded-xl bg-teal-light/25 border border-teal/20 p-3 mb-3 flex flex-wrap items-end gap-2">
+                            <span class="w-full text-[10px] text-navy/55">Check combinations to edit selected rows; leave all unchecked to edit every row.</span>
+                            <label class="text-[10px] font-semibold text-navy/60">Price <input id="variantBulkPrice" type="number" min="0" step="0.01" class="block w-24 mt-1 h-8 px-2 rounded-lg border border-gray-border bg-white"></label>
+                            <button type="button" data-bulk-variant="price" class="h-8 px-2 rounded-lg bg-white border border-teal/25 text-[10px] font-semibold text-teal-dark">Apply price</button>
+                            <label class="text-[10px] font-semibold text-navy/60">Stock <input id="variantBulkStock" type="number" min="0" class="block w-20 mt-1 h-8 px-2 rounded-lg border border-gray-border bg-white"></label>
+                            <button type="button" data-bulk-variant="stock" class="h-8 px-2 rounded-lg bg-white border border-teal/25 text-[10px] font-semibold text-teal-dark">Apply stock</button>
+                            <label class="text-[10px] font-semibold text-navy/60">Weight (kg) <input id="variantBulkWeight" type="number" min="0.05" max="500" step="0.001" class="block w-24 mt-1 h-8 px-2 rounded-lg border border-gray-border bg-white"></label>
+                            <button type="button" data-bulk-variant="weight_kg" class="h-8 px-2 rounded-lg bg-white border border-teal/25 text-[10px] font-semibold text-teal-dark">Apply weight</button>
+                            <button type="button" id="generateVariantSkus" class="h-8 px-2 rounded-lg bg-white border border-teal/25 text-[10px] font-semibold text-teal-dark">Fill empty SKUs</button>
+                        </div>
+                        <p class="text-xs font-bold text-navy mb-2">Generated combinations <span id="variantCombinationCount" class="text-teal-dark"></span></p>
+                        <div id="variantRows" class="space-y-2 max-h-80 overflow-y-auto pr-1"></div>
 
 
                         <div id="variantEmpty" class="py-7 text-center rounded-xl bg-gray-bg/60">
@@ -1586,7 +1634,7 @@
             </div>
 
 
-            <div class="sticky bottom-0 bg-white border-t border-gray-border px-5 sm:px-6 py-4 flex items-center justify-end gap-2">
+            <div class="sticky bottom-0 z-10 bg-white border-t border-gray-border px-5 sm:px-6 py-3 flex items-center justify-end gap-2 shadow-[0_-8px_24px_rgba(16,25,60,.06)]">
 
                 <button
                     type="button"
@@ -1946,10 +1994,45 @@
 </div>
 
 
+<dialog id="inventoryConfirmDialog" class="m-auto w-[min(92vw,420px)] rounded-2xl border border-gray-border bg-white p-0 font-[Poppins] text-navy shadow-2xl backdrop:bg-navy/60" aria-labelledby="inventoryConfirmTitle">
+    <div class="p-5"><p class="text-[10px] font-bold uppercase tracking-widest text-teal-dark">Please confirm</p><h2 id="inventoryConfirmTitle" class="mt-1 text-base font-bold">Confirm change?</h2><p data-inventory-confirm-message class="mt-2 text-xs leading-relaxed text-navy/60"></p><div class="mt-5 flex justify-end gap-2"><button type="button" data-inventory-confirm-cancel class="rounded-lg border border-gray-border px-4 py-2 text-xs font-semibold">Cancel</button><button type="button" data-inventory-confirm-accept class="rounded-lg bg-navy px-4 py-2 text-xs font-semibold text-white">Continue</button></div></div>
+</dialog>
+
 @push('scripts')
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
+    const inventoryConfirmDialog = document.getElementById('inventoryConfirmDialog');
+    function confirmInventory(message, title = 'Confirm change?') {
+        if (!inventoryConfirmDialog?.showModal) return Promise.resolve(window.confirm(message));
+        inventoryConfirmDialog.querySelector('#inventoryConfirmTitle').textContent = title;
+        inventoryConfirmDialog.querySelector('[data-inventory-confirm-message]').textContent = message;
+        return new Promise(resolve => {
+            const accept = inventoryConfirmDialog.querySelector('[data-inventory-confirm-accept]');
+            const cancel = inventoryConfirmDialog.querySelector('[data-inventory-confirm-cancel]');
+            let approved = false;
+            const onAccept = () => { approved = true; inventoryConfirmDialog.close(); };
+            const onCancel = () => inventoryConfirmDialog.close();
+            const onClose = () => {
+                accept.removeEventListener('click', onAccept);
+                cancel.removeEventListener('click', onCancel);
+                inventoryConfirmDialog.removeEventListener('close', onClose);
+                resolve(approved);
+            };
+            accept.addEventListener('click', onAccept);
+            cancel.addEventListener('click', onCancel);
+            inventoryConfirmDialog.addEventListener('close', onClose);
+            inventoryConfirmDialog.showModal();
+        });
+    }
+    document.querySelectorAll('[data-delete-voucher]').forEach(form => form.addEventListener('submit', async event => {
+        if (form.dataset.confirmed === '1') return;
+        event.preventDefault();
+        if (!await confirmInventory('This voucher will be permanently deleted.', 'Delete voucher?')) return;
+        form.dataset.confirmed = '1';
+        form.requestSubmit();
+    }));
 
     /* Click-to-copy (silent, no toast/feedback) */
     function copyToClipboard(text) {
@@ -2226,6 +2309,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const first = mediaTokens[0] === 'video' ? 'video' : 'image';
         if (mediaFirstField) mediaFirstField.value = first;
         if (mediaPreference) mediaPreference.value = first;
+        refreshVariantImageChoices();
     }
     const unifiedVideoPreview = document.getElementById('unifiedUploadVideoPreview');
     let unifiedVideoObjectUrl = null;
@@ -2262,7 +2346,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 videoFile = file;
                 if (!mediaTokens.includes('video')) addedTokens.push('video');
             } else if (['image/jpeg','image/png','image/webp'].includes(file.type)) {
-                if (file.size > 5*1024*1024 || imageFiles.length >= 8) {
+                if (file.size > 5*1024*1024 ||
+                    imageFiles.length + availableProductImages.filter(image => !removedImageIds.has(Number(image.id))).length >= 8) {
                     alert('Maximum 8 images, 5 MB each.'); continue;
                 }
                 addedTokens.push(`new:${imageFiles.length}`); imageFiles.push(file);
@@ -2333,6 +2418,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let variantIndex = 0;
     let removedImageIds = new Set();
+    let availableProductImages = [];
+    const variantFileUrls = new Map();
+    let variationAxes = [];
+    let archivedVariantPool = [];
+    let legacyVariantMode = false;
+    const variantAxesElement = document.getElementById('variantAxes');
+    const variantMessage = document.getElementById('variantBuilderMessage');
+    const variantBulkTools = document.getElementById('variantBulkTools');
+    const variantCount = document.getElementById('variantCombinationCount');
+    const legacyConversion = document.getElementById('legacyVariantConversion');
 
 
     // Positive-only inputs for Seller inventory; backend validation remains
@@ -2384,6 +2479,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function renderExistingImages(images) {
+        availableProductImages = images || [];
         existingImageGallery.innerHTML = '';
         removedImageIds = new Set();
         primaryImageId.value = '';
@@ -2433,6 +2529,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     image.id;
             }
         });
+        refreshVariantImageChoices();
     }
 
 
@@ -2552,6 +2649,44 @@ document.addEventListener('DOMContentLoaded', function () {
             .replaceAll("'", '&#039;');
     }
 
+    function updateVariantImageChoices(row, selected = '') {
+        const select = row.querySelector('[data-variant-image-ref]');
+        if (!select) return;
+        const choices = [{value: '', label: 'Main product photo', url: ''}];
+        availableProductImages.filter(image => !removedImageIds.has(Number(image.id))).forEach((image, index) => {
+            choices.push({value: `existing:${image.id}`, label: `Saved photo ${index + 1}`, url: image.url});
+        });
+        [...(productImages?.files || [])].forEach((file, index) => {
+            if (!variantFileUrls.has(file)) variantFileUrls.set(file, URL.createObjectURL(file));
+            choices.push({value: `new:${index}`, label: file.name, url: variantFileUrls.get(file)});
+        });
+        select.replaceChildren();
+        choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.value;
+            option.textContent = choice.label;
+            option.dataset.url = choice.url;
+            select.append(option);
+        });
+        select.value = choices.some(choice => choice.value === selected) ? selected : '';
+        updateVariantImagePreview(row);
+    }
+
+    function updateVariantImagePreview(row) {
+        const select = row.querySelector('[data-variant-image-ref]');
+        const preview = row.querySelector('[data-variant-image-preview]');
+        if (!select || !preview) return;
+        const url = select.selectedOptions[0]?.dataset.url || '';
+        preview.src = url;
+        preview.classList.toggle('hidden', !url);
+    }
+
+    function refreshVariantImageChoices() {
+        variantRows?.querySelectorAll('[data-variant-row]').forEach(row => {
+            updateVariantImageChoices(row, row.querySelector('[data-variant-image-ref]')?.value || '');
+        });
+    }
+
 
     function addVariantRow(variant = null) {
         const index =
@@ -2561,6 +2696,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.createElement('div');
 
         row.dataset.variantRow = '1';
+        row.dataset.attributes = JSON.stringify(variant?.attributes || {});
 
         row.className =
             'rounded-xl border border-gray-border p-3 bg-white';
@@ -2571,12 +2707,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 name="variants[${index}][id]"
                 value="${escapeHtml(variant?.id ?? '')}"
             >
+            <input type="hidden" name="variants[${index}][attributes]" value="${escapeHtml(variant?.attributes ? JSON.stringify(variant.attributes) : '')}">
+            <label class="mb-2 inline-flex items-center gap-1 text-[10px] text-navy/55"><input type="checkbox" data-variant-bulk-selected class="accent-teal"> Select for bulk edit</label>
 
             <div class="grid grid-cols-1 sm:grid-cols-[1.3fr_.9fr_.9fr_.8fr_.7fr_auto] gap-2 items-end">
 
                 <div>
                     <label class="text-[10px] font-semibold text-navy/45">
-                        Variant Name
+                        Combination
                     </label>
 
                     <input
@@ -2677,67 +2815,285 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
 
             </div>
+            <div class="mt-2 flex flex-wrap items-center gap-2">
+                <img data-variant-image-preview src="${escapeHtml(variant?.image_url || '')}" alt="Variant preview" class="w-9 h-9 rounded-lg object-cover bg-gray-bg ${variant?.image_url ? '' : 'hidden'}">
+                <label class="text-[10px] font-semibold text-navy/60">Photo
+                    <select name="variants[${index}][image_ref]" data-variant-image-ref class="ml-1 h-8 max-w-48 rounded-lg border border-gray-border bg-white px-2 text-[10px]"></select>
+                </label>
+                <button type="button" data-copy-variant-image class="text-[10px] font-semibold text-teal-dark hover:underline">Use for same first option</button>
+            </div>
         `;
 
         variantRows.appendChild(row);
+        if (variant?.attributes) row.querySelector('input[name$="[name]"]').readOnly = true;
+        updateVariantImageChoices(row, variant?.image_ref ?? (variant?.image_id ? `existing:${variant.image_id}` : ''));
 
         refreshVariantEmpty();
     }
 
 
-    variantRows?.addEventListener(
-        'click',
-        function (event) {
-            const button =
-                event.target.closest('[data-remove-variant]');
+    function variantRowData(row) {
+        const field = key => row.querySelector(`[name$="[${key}]"]`)?.value || '';
+        let attributes = {};
+        try { attributes = JSON.parse(field('attributes') || '{}'); } catch (_) { /* legacy row */ }
+        return {id: field('id'), name: field('name'), attributes, sku: field('sku'),
+            price: field('price'), stock: field('stock'), weight_kg: field('weight_kg'),
+            status: field('status'), image_ref: field('image_ref')};
+    }
 
-            if (!button) return;
-
-            button
-                .closest('[data-variant-row]')
-                ?.remove();
-
-            refreshVariantEmpty();
+    function renderVariationAxes() {
+        variantAxesElement.replaceChildren();
+        if (legacyVariantMode) {
+            variantMessage.textContent = 'Legacy variations: edit each row below. New products use the option builder.';
+            addVariantButton.textContent = '+ Add variant row';
+            legacyConversion.hidden = false;
+            return;
         }
-    );
+        legacyConversion.hidden = true;
+        addVariantButton.textContent = '+ Add variation type';
+        variationAxes.forEach((axis, axisIndex) => {
+            const card = document.createElement('div');
+            card.className = 'rounded-xl border border-teal/20 bg-white p-3 space-y-2';
+            card.innerHTML = `<div class="flex flex-wrap items-center gap-2">
+                <span class="text-[10px] font-bold text-teal-dark">VARIATION ${axisIndex + 1}</span>
+                <input list="variantTypeSuggestions" data-axis-name="${axisIndex}" value="${escapeHtml(axis.name)}" placeholder="Type: Color, Size, Storage..." maxlength="40" class="h-9 flex-1 min-w-36 px-3 rounded-lg border border-gray-border text-xs">
+                <button type="button" data-remove-axis="${axisIndex}" class="text-[10px] font-semibold text-red-500">Remove type</button>
+            </div>
+            <div class="flex flex-wrap gap-2" data-axis-values="${axisIndex}"></div>
+            <button type="button" data-add-axis-value="${axisIndex}" class="text-[10px] font-bold text-teal-dark">+ Add value</button>`;
+            const values = card.querySelector('[data-axis-values]');
+            axis.values.forEach((value, valueIndex) => {
+                const chip = document.createElement('label');
+                chip.className = 'inline-flex items-center gap-1 rounded-lg border border-gray-border bg-gray-bg/50 px-2 py-1';
+                chip.innerHTML = `<input data-axis-value="${axisIndex}:${valueIndex}" value="${escapeHtml(value)}" maxlength="60" placeholder="Value" class="w-24 bg-transparent text-xs outline-none">
+                    <button type="button" data-remove-axis-value="${axisIndex}:${valueIndex}" aria-label="Remove value" class="text-red-500 font-bold">×</button>`;
+                values.append(chip);
+            });
+            variantAxesElement.append(card);
+        });
+    }
 
+    function combinationKey(attributes) {
+        return Object.values(attributes || {}).map(value => String(value).trim().toLowerCase()).join('\u0001');
+    }
 
-    addVariantButton?.addEventListener(
-        'click',
-        function () {
-            addVariantRow();
+    async function buildVariantMatrix(previousAxes = null) {
+        if (legacyVariantMode) return;
+        const types = variationAxes.map(axis => axis.name.trim());
+        if (!variationAxes.length || types.some(type => !type)) {
+            variantMessage.textContent = 'Add a variation type and its values.';
+            return;
         }
-    );
+        if (new Set(types.map(type => type.toLowerCase())).size !== types.length ||
+            variationAxes.some(axis => !axis.values.length || axis.values.some(value => !value.trim()) ||
+                new Set(axis.values.map(value => value.trim().toLowerCase())).size !== axis.values.length)) {
+            variantMessage.textContent = 'Complete every value and remove duplicates before generating combinations.';
+            return;
+        }
+        const count = variationAxes.reduce((total, axis) => total * axis.values.length, 1);
+        if (count > 50) {
+            variantMessage.textContent = 'Maximum 50 combinations. Remove some values.';
+            return;
+        }
+        const previous = [...variantRows.querySelectorAll('[data-variant-row]')].map(variantRowData);
+        const combinations = variationAxes.reduce((rows, axis) =>
+            rows.flatMap(row => axis.values.map(value => ({...row, [axis.name.trim()]: value.trim()}))), [{}]);
+        const nextKeys = new Set(combinations.map(combinationKey));
+        const lostExisting = previous.some(row => row.id && !nextKeys.has(combinationKey(row.attributes)));
+        if (lostExisting && !await confirmInventory('Removing this option will archive existing combinations. Historical orders remain saved.', 'Archive affected variants?')) {
+            if (previousAxes) variationAxes = previousAxes;
+            renderVariationAxes();
+            return;
+        }
+        previous.filter(row => row.id && !nextKeys.has(combinationKey(row.attributes)))
+            .forEach(row => {
+                archivedVariantPool = archivedVariantPool.filter(saved => String(saved.id) !== String(row.id));
+                archivedVariantPool.push(row);
+            });
+        const byKey = new Map(archivedVariantPool.map(row => [combinationKey(row.attributes), row]));
+        previous.forEach(row => byKey.set(combinationKey(row.attributes), row));
+        variantRows.replaceChildren();
+        combinations.forEach(attributes => {
+            let match = byKey.get(combinationKey(attributes));
+            if (!match && previousAxes?.length === variationAxes.length) {
+                // A renamed option keeps the matching combination's editable data.
+                const oldAttributes = {...attributes};
+                variationAxes.forEach((axis, index) => {
+                    const valueIndex = axis.values.indexOf(attributes[axis.name.trim()]);
+                    const oldValue = previousAxes[index]?.values[valueIndex];
+                    if (oldValue) oldAttributes[axis.name.trim()] = oldValue;
+                });
+                match = byKey.get(combinationKey(oldAttributes));
+            }
+            addVariantRow({id: match?.id || '', attributes,
+                name: Object.values(attributes).join(' / '), sku: match?.sku || '',
+                price: match?.price ?? productPrice.value, stock: match?.stock ?? 0,
+                weight_kg: match?.weight_kg || '', status: match?.status || 'active',
+                image_ref: match?.image_ref || (match?.image_id ? `existing:${match.image_id}` : '')});
+        });
+        variantRows.querySelectorAll('[data-remove-variant]').forEach(button => button.classList.add('hidden'));
+        variantCount.textContent = `(${count})`;
+        variantMessage.textContent = `${count} unique combination${count === 1 ? '' : 's'} generated.`;
+        variantBulkTools.hidden = false;
+    }
 
+    variantAxesElement.addEventListener('click', event => {
+        const previousAxes = structuredClone(variationAxes);
+        const add = event.target.closest('[data-add-axis-value]');
+        const removeValue = event.target.closest('[data-remove-axis-value]');
+        const removeAxis = event.target.closest('[data-remove-axis]');
+        if (add) {
+            const axis = variationAxes[Number(add.dataset.addAxisValue)];
+            if (axis.values.length >= 10) { variantMessage.textContent = 'Maximum 10 values per type.'; return; }
+            axis.values.push('');
+        } else if (removeValue) {
+            const [axisIndex, valueIndex] = removeValue.dataset.removeAxisValue.split(':').map(Number);
+            variationAxes[axisIndex].values.splice(valueIndex, 1);
+        } else if (removeAxis) {
+            variationAxes.splice(Number(removeAxis.dataset.removeAxis), 1);
+        } else return;
+        renderVariationAxes();
+        buildVariantMatrix(previousAxes);
+    });
+
+    variantAxesElement.addEventListener('change', event => {
+        const previousAxes = structuredClone(variationAxes);
+        if (event.target.matches('[data-axis-name]')) {
+            variationAxes[Number(event.target.dataset.axisName)].name = event.target.value.trim();
+        } else if (event.target.matches('[data-axis-value]')) {
+            const [axisIndex, valueIndex] = event.target.dataset.axisValue.split(':').map(Number);
+            variationAxes[axisIndex].values[valueIndex] = event.target.value.trim();
+        } else return;
+        buildVariantMatrix(previousAxes);
+    });
+
+    variantRows.addEventListener('click', async event => {
+        const remove = event.target.closest('[data-remove-variant]');
+        if (remove && await confirmInventory('The variant will be archived when you save. Historical orders will be kept.', 'Archive this variant?')) {
+            remove.closest('[data-variant-row]')?.remove(); refreshVariantEmpty(); return;
+        }
+        const copy = event.target.closest('[data-copy-variant-image]');
+        if (!copy) return;
+        const source = copy.closest('[data-variant-row]');
+        const first = Object.values(variantRowData(source).attributes)[0];
+        if (!first) return;
+        const reference = source.querySelector('[data-variant-image-ref]').value;
+        variantRows.querySelectorAll('[data-variant-row]').forEach(row => {
+            if (Object.values(variantRowData(row).attributes)[0] === first) {
+                row.querySelector('[data-variant-image-ref]').value = reference;
+                updateVariantImagePreview(row);
+            }
+        });
+    });
+    variantRows.addEventListener('change', event => {
+        if (event.target.matches('[data-variant-image-ref]')) updateVariantImagePreview(event.target.closest('[data-variant-row]'));
+    });
+
+    addVariantButton?.addEventListener('click', () => {
+        if (legacyVariantMode) { addVariantRow(); return; }
+        if (variationAxes.length >= 2) { variantMessage.textContent = 'Use up to two variation types.'; return; }
+        variationAxes.push({name: variationAxes.length ? 'Size' : 'Color', values: ['']});
+        renderVariationAxes();
+        variantAxesElement.querySelector('[data-axis-value="' + (variationAxes.length - 1) + ':0"]')?.focus();
+    });
+
+    document.getElementById('convertLegacyVariants').addEventListener('click', async () => {
+        const rows = [...variantRows.querySelectorAll('[data-variant-row]')];
+        const parts = rows.map(row => variantRowData(row).name.split('/').map(value => value.trim()));
+        const dimensions = parts[0]?.length || 0;
+        const types = [document.getElementById('legacyAxisOne').value.trim(),
+            document.getElementById('legacyAxisTwo').value.trim()].slice(0, dimensions);
+        if (!dimensions || dimensions > 2 || parts.some(values =>
+            values.length !== dimensions || values.some(value => !value)) ||
+            types.some(type => !type) || new Set(types.map(type => type.toLowerCase())).size !== types.length) {
+            variantMessage.textContent = 'Use consistent one- or two-part names and enter a unique type for each part.';
+            return;
+        }
+        if (new Set(parts.map(values => values.map(value => value.toLowerCase()).join('\u0001'))).size !== parts.length ||
+            parts[0].map((_, axis) => new Set(parts.map(values => values[axis].toLowerCase())).size)
+                .reduce((count, size) => count * size, 1) > 50) {
+            variantMessage.textContent = 'Legacy combinations must be unique and fit within the 50-combination limit.';
+            return;
+        }
+        if (!await confirmInventory('Existing prices, stock and images will be retained.', 'Convert saved variants?')) return;
+        rows.forEach((row, index) => {
+            const attributes = Object.fromEntries(types.map((type, part) => [type, parts[index][part]]));
+            row.querySelector('[name$="[attributes]"]').value = JSON.stringify(attributes);
+            row.dataset.attributes = JSON.stringify(attributes);
+        });
+        variationAxes = types.map((name, axis) => ({name,
+            values: [...new Set(parts.map(values => values[axis]))]}));
+        legacyVariantMode = false;
+        renderVariationAxes();
+        buildVariantMatrix();
+    });
+
+    variantBulkTools.addEventListener('click', event => {
+        const apply = event.target.closest('[data-bulk-variant]');
+        if (!apply) return;
+        const field = apply.dataset.bulkVariant;
+        const source = document.getElementById(field === 'weight_kg' ? 'variantBulkWeight' : field === 'price' ? 'variantBulkPrice' : 'variantBulkStock');
+        if (!source.reportValidity() || source.value === '') return;
+        const rows = [...variantRows.querySelectorAll('[data-variant-row]')];
+        const selected = rows.filter(row => row.querySelector('[data-variant-bulk-selected]').checked);
+        (selected.length ? selected : rows).forEach(row => {
+            row.querySelector(`[name$="[${field}]"]`).value = source.value;
+        });
+    });
+    document.getElementById('generateVariantSkus').addEventListener('click', () => {
+        const base = (productSku.value || productName.value || 'SHOPHOP').toUpperCase()
+            .replace(/[^A-Z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 45);
+        const used = new Set([...variantRows.querySelectorAll('[name$="[sku]"]')]
+            .map(input => input.value.trim().toLowerCase()).filter(Boolean));
+        variantRows.querySelectorAll('[data-variant-row]').forEach((row, index) => {
+            const sku = row.querySelector('[name$="[sku]"]');
+            if (sku.value.trim()) return;
+            let suffix = index + 1;
+            let candidate = `${base}-${String(suffix).padStart(2, '0')}`;
+            while (used.has(candidate.toLowerCase())) {
+                suffix++;
+                candidate = `${base}-${String(suffix).padStart(2, '0')}`;
+            }
+            sku.value = candidate;
+            used.add(candidate.toLowerCase());
+        });
+    });
 
     function toggleVariants() {
-        const enabled =
-            productHasVariants.checked;
-
-        variantSection.hidden =
-            !enabled;
-
-        productStock.disabled =
-            enabled;
-
-        productStock.classList.toggle(
-            'bg-gray-bg',
-            enabled
-        );
-
-        if (
-            enabled &&
-            variantRows.querySelectorAll('[data-variant-row]').length === 0
-        ) {
-            addVariantRow();
+        const enabled = productHasVariants.checked;
+        variantSection.hidden = !enabled;
+        productStock.disabled = enabled;
+        productStock.classList.toggle('bg-gray-bg', enabled);
+        if (enabled && !legacyVariantMode && !variationAxes.length) {
+            variationAxes = [{name: 'Color', values: ['']}];
+            renderVariationAxes();
         }
     }
 
+    productHasVariants?.addEventListener('change', async () => {
+        if (!productHasVariants.checked && variantRows.querySelector('[name$="[id]"][value]:not([value=""])') &&
+            !await confirmInventory('Existing combinations will be archived when you save.', 'Turn off variations?')) {
+            productHasVariants.checked = true;
+        }
+        toggleVariants();
+    });
 
-    productHasVariants?.addEventListener(
-        'change',
-        toggleVariants
-    );
+    productForm.addEventListener('submit', event => {
+        if (!productHasVariants.checked) return;
+        const expected = variationAxes.reduce((total, axis) => total * axis.values.length, 1);
+        const complete = legacyVariantMode
+            ? variantRows.querySelectorAll('[data-variant-row]').length > 0
+            : variationAxes.length > 0 && variationAxes.length <= 2 && expected <= 50 &&
+                variationAxes.every(axis => axis.name.trim() && axis.values.length &&
+                    axis.values.every(value => value.trim()) &&
+                    new Set(axis.values.map(value => value.toLowerCase())).size === axis.values.length) &&
+                variantRows.querySelectorAll('[data-variant-row]').length === expected;
+        if (!complete) {
+            event.preventDefault();
+            variantMessage.textContent = 'Finish the variation types and unique values before saving.';
+            variantAxesElement.scrollIntoView({behavior: 'smooth', block: 'center'});
+        }
+    });
 
 
     function resetProductForm() {
@@ -2776,6 +3132,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
         variantIndex =
             0;
+
+        variationAxes = [];
+        archivedVariantPool = [];
+        legacyVariantMode = false;
+        availableProductImages = [];
+        legacyConversion.hidden = true;
+        variantFileUrls.forEach(url => URL.revokeObjectURL(url));
+        variantFileUrls.clear();
+        variantAxesElement.replaceChildren();
+        variantBulkTools.hidden = true;
+        variantCount.textContent = '';
+        variantMessage.textContent = 'Add a type and its values to generate combinations.';
 
         removedImageIds =
             new Set();
@@ -2822,6 +3190,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             productDiscount.value =
                 product.discount ?? 0;
+            document.getElementById('productDealEndsAt').value = product.deal_ends_at ?? '';
 
             productStock.value =
                 product.stock ?? 0;
@@ -2859,11 +3228,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 existingImageGallery.appendChild(legacy);
             }
 
-            (product.variants || []).forEach(
-                function (variant) {
-                    addVariantRow(variant);
-                }
-            );
+            const savedVariants = product.variants || [];
+            const activeVariants = savedVariants.filter(variant => variant.status !== 'archived');
+            const visibleVariants = activeVariants.length ? activeVariants : savedVariants;
+            const keys = Object.keys(visibleVariants[0]?.attributes || {});
+            legacyVariantMode = savedVariants.length > 0 &&
+                (!keys.length || keys.length > 2 || savedVariants.some(variant =>
+                    JSON.stringify(Object.keys(variant.attributes || {})) !== JSON.stringify(keys)));
+            archivedVariantPool = savedVariants.filter(variant => variant.status === 'archived');
+            (legacyVariantMode ? savedVariants : visibleVariants).forEach(addVariantRow);
+            if (!legacyVariantMode && keys.length) {
+                variationAxes = keys.map(name => ({name, values: [...new Set(visibleVariants
+                    .map(variant => variant.attributes[name]).filter(Boolean))]}));
+                buildVariantMatrix();
+                variantRows.querySelectorAll('[data-remove-variant]').forEach(button => button.classList.add('hidden'));
+                variantBulkTools.hidden = false;
+            }
+            renderVariationAxes();
 
             toggleVariants();
         } else {
@@ -3124,8 +3505,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 input.value =
                     current;
 
-                save.hidden =
-                    current === original;
+                save.disabled = current === original;
             }
 
 
@@ -3188,11 +3568,11 @@ document.addEventListener('DOMContentLoaded', function () {
         rowChecks.forEach(input => { input.checked = false; });
         refreshBulkSelection();
     });
-    document.querySelectorAll('[data-bulk-action]').forEach(button => button.addEventListener('click', () => {
+    document.querySelectorAll('[data-bulk-action]').forEach(button => button.addEventListener('click', async () => {
         const selected = checkedRows();
         const action = button.dataset.bulkAction;
         if (!selected.length || !['archive', 'restore'].includes(action) || !bulkForm) return;
-        if (!window.confirm((action === 'archive' ? 'Archive' : 'Restore') + ' ' + selected.length + ' selected product(s)?')) return;
+        if (!await confirmInventory(`${action === 'archive' ? 'Archive' : 'Restore'} ${selected.length} selected product(s)?`, `${action === 'archive' ? 'Archive' : 'Restore'} selected products?`)) return;
         bulkAction.value = action;
         bulkIds.replaceChildren();
         selected.forEach(input => {

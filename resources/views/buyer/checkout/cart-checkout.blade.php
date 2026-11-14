@@ -12,7 +12,7 @@
     /* Checkout only. Works with the existing compiled Vite CSS as-is. */
     .shb-checkout-shell {
         width: 100%;
-        max-width: 1240px !important;
+        max-width: 1760px !important;
         margin-inline: auto !important;
     }
 

@@ -58,6 +58,7 @@
             </div>
 
             <div class="text-[10px] text-navy/40">
+                <a href="{{ route('buyer.likes') }}" class="mr-3 inline-flex items-center gap-1 font-semibold text-teal-dark hover:underline"><x-lucide-heart class="h-3 w-3" /> My Likes</a>
                 <span id="cartItemCountTop" class="font-semibold text-navy">{{ $cartItemCount }}</span>
                 {{ \Illuminate\Support\Str::plural('item', $cartItemCount) }} in cart
             </div>
@@ -125,15 +126,15 @@
                                        class="shop-select-all w-3.5 h-3.5 rounded accent-teal shrink-0"
                                        data-shop="{{ $groupIndex }}">
 
-                                <span class="w-7 h-7 rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0">
-                                    <x-lucide-store class="w-3.5 h-3.5" />
-                                </span>
+                                <a href="{{ route('shop.show', $group['shop']['id']) }}" class="w-8 h-8 overflow-hidden rounded-lg bg-teal-light text-teal-dark flex items-center justify-center shrink-0" aria-label="Visit {{ $group['shop']['name'] }} shop">
+                                    @if($group['shop']['logo_url'])<img src="{{ $group['shop']['logo_url'] }}" alt="" class="h-full w-full object-cover">@else<x-lucide-store class="w-4 h-4" />@endif
+                                </a>
 
                                 <div class="min-w-0">
                                     <div class="flex items-center gap-1.5 min-w-0">
-                                        <p class="text-[11px] sm:text-[11.5px] font-bold text-navy truncate">
+                                        <a href="{{ route('shop.show', $group['shop']['id']) }}" class="text-[11px] sm:text-[11.5px] font-bold text-navy truncate hover:text-teal-dark">
                                             {{ $group['shop']['name'] }}
-                                        </p>
+                                        </a>
 
                                         @if (! empty($group['shop']['preferred']))
                                             <span class="hidden sm:inline-flex text-[8px] font-bold px-1.5 py-0.5 rounded-full bg-teal text-white">
@@ -148,7 +149,7 @@
                                 </div>
                             </div>
 
-                            <span class="text-[9.5px] font-semibold text-teal-dark shrink-0" aria-label="Items grouped by shop">Shop items</span>
+                            <a href="{{ route('shop.show', $group['shop']['id']) }}" class="text-[9.5px] font-semibold text-teal-dark shrink-0 hover:underline">Visit shop</a>
                         </div>
 
 
@@ -499,6 +500,14 @@
 
 
 {{-- Toast --}}
+<dialog id="cartRemoveDialog" class="m-auto w-[min(92vw,390px)] rounded-2xl border border-gray-border bg-white p-0 font-[Poppins] text-navy shadow-2xl backdrop:bg-navy/60" aria-labelledby="cartRemoveTitle">
+    <div class="p-5">
+        <div class="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-rose-50 text-rose-600"><x-lucide-trash-2 class="h-5 w-5" /></div>
+        <h2 id="cartRemoveTitle" class="text-base font-bold">Remove from cart?</h2>
+        <p id="cartRemoveMessage" class="mt-1.5 text-xs leading-relaxed text-navy/60"></p>
+        <div class="mt-5 flex justify-end gap-2"><button type="button" data-cart-cancel class="rounded-lg border border-gray-border px-4 py-2 text-xs font-semibold">Keep items</button><button type="button" data-cart-confirm class="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700">Remove</button></div>
+    </div>
+</dialog>
 <div id="cartToast"
      class="fixed left-1/2 bottom-5 z-50 -translate-x-1/2 translate-y-6 opacity-0 pointer-events-none
             bg-navy text-white text-[10px] font-medium
@@ -541,6 +550,29 @@ document.addEventListener('DOMContentLoaded', function () {
     const removeVoucherBtn = document.getElementById('removeVoucherBtn');
 
     const cartToast = document.getElementById('cartToast');
+    const cartRemoveDialog = document.getElementById('cartRemoveDialog');
+
+    function confirmCartRemoval(message) {
+        if (!cartRemoveDialog?.showModal) return Promise.resolve(window.confirm(message));
+        document.getElementById('cartRemoveMessage').textContent = message;
+        return new Promise(resolve => {
+            const confirm = cartRemoveDialog.querySelector('[data-cart-confirm]');
+            const cancel = cartRemoveDialog.querySelector('[data-cart-cancel]');
+            let approved = false;
+            const onConfirm = () => { approved = true; cartRemoveDialog.close(); };
+            const onCancel = () => cartRemoveDialog.close();
+            const onClose = () => {
+                confirm.removeEventListener('click', onConfirm);
+                cancel.removeEventListener('click', onCancel);
+                cartRemoveDialog.removeEventListener('close', onClose);
+                resolve(approved);
+            };
+            confirm.addEventListener('click', onConfirm);
+            cancel.addEventListener('click', onCancel);
+            cartRemoveDialog.addEventListener('close', onClose);
+            cartRemoveDialog.showModal();
+        });
+    }
 
     // NOTE: assumes <meta name="csrf-token" content="{{ csrf_token() }}">
     // is present in the shared layout head.
@@ -803,26 +835,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     function bindItemDelete(btn) {
-        btn.addEventListener('click', function () {
+        btn.addEventListener('click', async function () {
             const lineKey = btn.dataset.lineKey;
-
-            if (!confirm('Remove this item from your cart?')) return;
-
-            removeItem(lineKey);
-            showToast('Item removed from cart.');
+            const name = btn.closest('.cart-item')?.querySelector('a[href*="product"]')?.textContent.trim() || 'this item';
+            if (!await confirmCartRemoval(`Remove “${name}” from your cart?`)) return;
+            if (await removeItem(lineKey)) showToast('Item removed from cart.');
         });
     }
 
 
-    function removeItem(lineKey) {
+    async function removeItem(lineKey) {
         const row = document.querySelector('.cart-item[data-line-key="' + lineKey + '"]');
         const url = CART_REMOVE_URL_TEMPLATE.replace('__LINE_KEY__', encodeURIComponent(lineKey));
 
-        apiRequest(url, {
+        const result = await apiRequest(url, {
             method: 'DELETE',
         });
+        if (!result) return false;
 
-        if (!row) return;
+        if (!row) return true;
 
         const group = row.closest('.cart-shop-group');
 
@@ -833,10 +864,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         recalc();
+        return true;
     }
 
 
-    function deleteSelected() {
+    async function deleteSelected() {
         const selectedKeys = Array.from(currentItemCheckboxes())
             .filter(function (cb) { return cb.checked; })
             .map(function (cb) { return cb.dataset.lineKey; });
@@ -847,12 +879,13 @@ document.addEventListener('DOMContentLoaded', function () {
             ? 'this item'
             : 'these ' + selectedKeys.length + ' items';
 
-        if (!confirm('Remove ' + label + ' from your cart?')) return;
+        if (!await confirmCartRemoval('Remove ' + label + ' from your cart?')) return;
 
-        apiRequest(CART_REMOVE_MANY_URL, {
+        const result = await apiRequest(CART_REMOVE_MANY_URL, {
             method: 'POST',
             body: { keys: selectedKeys },
         });
+        if (!result) return;
 
         selectedKeys.forEach(function (lineKey) {
             const row = document.querySelector('.cart-item[data-line-key="' + lineKey + '"]');

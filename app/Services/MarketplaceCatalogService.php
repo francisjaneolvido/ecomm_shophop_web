@@ -35,7 +35,7 @@ class MarketplaceCatalogService
         }
         $top = $top->latest('products.created_at')->orderByDesc('products.id')->take(12)->get();
         return [
-            'deals' => $this->query()->where('discount', '>', 0)->orderByDesc('discount')
+            'deals' => $this->query()->withActiveDiscount()->orderByDesc('discount')
                 ->latest('products.created_at')->orderByDesc('products.id')->take(12)->get(),
             'top' => $top,
             'discover' => $this->query()->latest('products.created_at')->orderByDesc('products.id')->take(24)->get(),

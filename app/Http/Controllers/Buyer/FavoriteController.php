@@ -130,6 +130,8 @@ class FavoriteController extends Controller
             'sold' => $sold,
             'is_available' => $isAvailable,
             'seller_name' => $product->seller?->business_name ?? 'ShopHop Seller',
+            'seller_shop_id' => $product->seller?->id,
+            'seller_logo_url' => $product->seller?->logo_url,
             'seller_location' => $product->seller?->municipality_name ?? '',
         ];
     }

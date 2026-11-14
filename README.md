@@ -7,6 +7,12 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Local development server and media uploads
+
+From this repository, start the backend with `./scripts/serve-local.ps1` in PowerShell and open `http://localhost:8000`. This runs PHP on the loopback interface with an upload limit of 30 MiB per file and a total POST limit of 96 MiB. Seller inventory accepts up to eight 5 MiB photos and one 30 MiB MP4. Laravel checks those individual limits after PHP accepts the request.
+
+If an existing `php artisan serve` process is using port 8000, stop it before starting this command. PHP's default `post_max_size` can be 8 MiB, which rejects a larger product upload before Laravel reaches the seller form. The script changes limits only for its own server process; deployments need equivalent PHP and proxy limits.
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:

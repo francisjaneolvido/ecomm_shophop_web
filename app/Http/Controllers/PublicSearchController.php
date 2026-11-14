@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Seller\Manage_inventory\Product;
+use App\Models\Seller;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -24,18 +25,31 @@ class PublicSearchController extends Controller
         });
     }
 
+    private function matchingShops(string $search, int $limit)
+    {
+        if ($search === '' || ! Schema::hasTable('sellers')) return collect();
+
+        $needle = '%'.mb_strtolower($search).'%';
+        return Seller::query()->whereRaw('LOWER(business_name) LIKE ?', [$needle])
+            ->whereHas('user', fn ($query) => $query->where('account_type', 'seller')->where('status', 'approved'))
+            ->whereHas('products', fn ($query) => $query->publiclyDiscoverable())
+            ->withCount(['products as available_products_count' => fn ($query) => $query->publiclyDiscoverable()])
+            ->orderBy('business_name')->limit($limit)->get();
+    }
+
     public function index(Request $request)
     {
         $data = $request->validate(['search' => ['nullable', 'string', 'max:100']]);
         $search = trim($data['search'] ?? '');
         $products = null;
+        $shops = $this->matchingShops($search, 6);
         if ($search !== '') {
             $products = Schema::hasTable('products')
                 ? $this->matching(Product::query()->publiclyDiscoverable()->with('images'), $search)
                     ->orderBy('name')->orderBy('id')->paginate(24)->withQueryString()
                 : new LengthAwarePaginator([], 0, 24);
         }
-        return view('search.index', compact('search', 'products'));
+        return view('search.index', compact('search', 'products', 'shops'));
     }
 
     public function suggestions(Request $request)
@@ -51,6 +65,12 @@ class PublicSearchController extends Controller
                 'url' => route('buyer.category.show', $category['slug']),
             ])->values();
         $products = collect();
+        $shops = $this->matchingShops($search, 3)->map(fn ($seller) => [
+            'name' => $seller->business_name,
+            'category' => $seller->business_category,
+            'image' => $seller->logo_url,
+            'url' => route('shop.show', $seller),
+        ]);
         if (Schema::hasTable('products') && ($search === '' || mb_strlen($search) >= 2)) {
             $query = Product::query()->publiclyDiscoverable()->with('images');
             if ($search !== '') $this->matching($query, $search);
@@ -62,7 +82,7 @@ class PublicSearchController extends Controller
                     'url' => route('buyer.product.show', $product->id),
                 ]);
         }
-        return response()->json(['query' => $search, 'products' => $products, 'categories' => $categories])
+        return response()->json(['query' => $search, 'products' => $products, 'shops' => $shops, 'categories' => $categories])
             ->header('Cache-Control', 'no-store, private');
     }
 }

@@ -28,13 +28,13 @@
             const href = safeUrl(item.url); if (!href) return;
             const link = document.createElement('a'); link.href = href; link.className = 'sh-suggestions-option'; link.tabIndex = -1;
             link.id = list.id + '-' + options.length; link.setAttribute('role', 'option'); link.setAttribute('aria-selected', 'false');
-            if (product && item.image) {
+            if (item.image) {
                 const src = safeUrl(item.image);
                 if (src) { const img = document.createElement('img'); img.src = src; img.alt = ''; img.loading = 'lazy'; link.append(img); }
             }
             const copy = document.createElement('span'); copy.className = 'sh-suggestions-copy';
             const name = document.createElement('span'); name.className = 'sh-suggestions-name'; name.textContent = item.name; copy.append(name);
-            if (product) { const meta = document.createElement('span'); meta.className = 'sh-suggestions-meta'; meta.textContent = item.category ?? ''; copy.append(meta); }
+            if (product || item.category) { const meta = document.createElement('span'); meta.className = 'sh-suggestions-meta'; meta.textContent = item.category ?? ''; copy.append(meta); }
             link.append(copy);
             if (product && Number.isFinite(Number(item.price))) { const price = document.createElement('span'); price.className = 'sh-suggestions-price'; price.textContent = money.format(Number(item.price)); link.append(price); }
             else { const arrow = document.createElement('span'); arrow.className = 'sh-suggestions-arrow'; arrow.textContent = '\u2197'; link.append(arrow); }
@@ -61,7 +61,9 @@
                 list.replaceChildren(); options = []; active = -1;
                 const categories = Array.isArray(data.categories) ? data.categories : [];
                 const products = Array.isArray(data.products) ? data.products : [];
+                const shops = Array.isArray(data.shops) ? data.shops : [];
                 group(query ? 'Matching categories' : 'Explore categories', categories);
+                group('Matching shops', shops);
                 group(query ? 'Matching products' : 'Recently added products', products, true);
                 if (!options.length) { const note = document.createElement('p'); note.className = 'sh-suggestions-note'; note.textContent = 'No matching suggestions. Try another term or view all search results.'; list.append(note); }
                 const allUrl = new URL(form.action, location.href);

@@ -30,7 +30,7 @@ class ProductComplianceController extends Controller
         foreach (Product::selectRaw('compliance_status, COUNT(*) AS aggregate')->groupBy('compliance_status')->get() as $row) {
             $counts[$row->compliance_status] = (int) $row->aggregate;
         }
-        $query = Product::with(['seller', 'images'])->where('compliance_status', $filter);
+        $query = Product::with(['seller', 'images', 'variants'])->where('compliance_status', $filter);
         if ($search !== '') {
             // Search stays on canonical Product fields and Seller business identity, not invented display data.
             $query->where(fn ($q) => $q->where('name', 'like', '%'.$search.'%')->orWhere('sku', 'like', '%'.$search.'%')

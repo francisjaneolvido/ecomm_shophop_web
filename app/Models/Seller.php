@@ -31,6 +31,7 @@ class Seller extends Model
         'street_address',
         'business_name',
         'business_category',
+        'logo_path',
         'valid_id_path',
         'business_permit_path',
     ];
@@ -47,5 +48,12 @@ class Seller extends Model
     public function products(): HasMany
     {
         return $this->hasMany(Product::class, 'seller_id', 'user_id');
+    }
+
+    public function getLogoUrlAttribute(): ?string
+    {
+        $path = $this->attributes['logo_path'] ?? null;
+
+        return $path ? asset('storage/'.ltrim($path, '/')) : null;
     }
 }

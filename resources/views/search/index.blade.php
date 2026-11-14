@@ -5,12 +5,13 @@
 @endpush
 @section('content')
 <section class="discovery-page sh-search-page"><div class="sh-shop-shell">
-    <header class="discovery-header"><div><p class="discovery-eyebrow">Available on ShopHop</p><h1 class="discovery-title">@if($search === '') Search ShopHop @else Search results for <span>{{ $search }}</span>@endif</h1><p class="discovery-description">@if($products){{ $products->total() }} matching {{ \Illuminate\Support\Str::plural('product', $products->total()) }}@else Find products and categories using the search bar above.@endif</p></div></header>
+    <header class="discovery-header"><div><p class="discovery-eyebrow">Available on ShopHop</p><h1 class="discovery-title">@if($search === '') Search ShopHop @else Search results for <span>{{ $search }}</span>@endif</h1><p class="discovery-description">@if($products){{ $products->total() }} matching {{ \Illuminate\Support\Str::plural('product', $products->total()) }} @if($shops->isNotEmpty()) · {{ $shops->count() }} {{ \Illuminate\Support\Str::plural('shop', $shops->count()) }} @endif @else Find products and shops using the search bar above.@endif</p></div></header>
+    @if($shops->isNotEmpty())<section class="search-shops" aria-labelledby="matchingShopsTitle"><div class="search-shops-head"><p class="discovery-eyebrow">SELLERS ON SHOPHOP</p><h2 id="matchingShopsTitle">Matching shops</h2></div><div class="search-shops-grid">@foreach($shops as $shop)<a href="{{ route('shop.show', $shop) }}" class="search-shop-card"><span class="search-shop-logo">@if($shop->logo_url)<img src="{{ $shop->logo_url }}" alt="">@else{{ strtoupper(mb_substr($shop->business_name ?: 'S', 0, 1)) }}@endif</span><span class="search-shop-copy"><strong>{{ $shop->business_name }}</strong><small>{{ $shop->business_category }} · {{ $shop->available_products_count }} available products</small></span><span aria-hidden="true">→</span></a>@endforeach</div></section>@endif
     @if($search === '')
         <div class="discovery-empty"><x-lucide-search /><h2>What are you looking for?</h2><p>Enter a product name, category, or description to search the available ShopHop catalogue.</p></div>
-    @elseif($products->isEmpty())
+    @elseif($products->isEmpty() && $shops->isEmpty())
         <div class="discovery-empty"><x-lucide-search-x /><h2>No available products matched</h2><p>Try a different product name, category, or description.</p><a class="discovery-primary" href="{{ route('search.index') }}">Search products</a></div>
-    @else
+    @elseif($products->isNotEmpty())
         <div class="search-results-grid">
             @foreach($products as $product)
                 <article data-search-result class="search-result-card">

@@ -36,7 +36,7 @@ class PromotionsController extends Controller
             'paused' => (clone $base)->where('status', '!=', 'active')->count(),
         ];
         $discountedProducts = Product::query()->where('seller_id', $sellerId)
-            ->where('status', 'active')->where('discount', '>', 0)->count();
+            ->where('status', 'active')->withActiveDiscount()->count();
 
         $query = (clone $base)->with(['products:id,name'])->withCount('products');
         if ($search !== '') {

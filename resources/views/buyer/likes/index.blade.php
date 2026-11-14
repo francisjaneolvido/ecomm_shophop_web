@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <div class="mb-4 flex flex-col sm:flex-row gap-2">
+        <div class="mb-4 flex flex-col gap-3 rounded-2xl border border-gray-border bg-white p-3 shadow-sm sm:flex-row sm:items-center">
             <label class="relative flex-1 max-w-xl">
                 <x-lucide-search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-navy/35" />
                 <input
@@ -43,6 +43,7 @@
                 <option value="available">In stock</option>
                 <option value="discount">On sale</option>
             </select>
+            <a href="{{ route('buyer.cart') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-navy px-4 text-[11px] font-semibold text-white hover:bg-teal-dark"><x-lucide-shopping-cart class="h-4 w-4" /> My Cart</a>
         </div>
 
         <div data-favorites-grid class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2.5 sm:gap-3">
@@ -112,10 +113,13 @@
                             @endif
                         </div>
 
-                        <p class="mt-1.5 text-[8.5px] text-navy/35 truncate">
-                            {{ $product['seller_location'] ?: $product['seller_name'] }}
-                            @if ($product['sold'] > 0) · {{ $product['sold'] }} sold @endif
-                        </p>
+                        @if($product['seller_shop_id'])
+                            <a href="{{ route('shop.show', $product['seller_shop_id']) }}" class="mt-2 flex items-center gap-1.5 border-t border-gray-border/70 pt-2 text-[9px] font-medium text-navy/55 hover:text-teal-dark">
+                                <span class="flex h-5 w-5 shrink-0 items-center justify-center overflow-hidden rounded-full bg-teal-light text-teal-dark">@if($product['seller_logo_url'])<img src="{{ $product['seller_logo_url'] }}" alt="" class="h-full w-full object-cover">@else<x-lucide-store class="h-3 w-3" />@endif</span>
+                                <span class="truncate">{{ $product['seller_name'] }}</span><x-lucide-chevron-right class="ml-auto h-3 w-3 shrink-0" />
+                            </a>
+                        @endif
+                        @if($product['sold'] > 0)<p class="mt-1 text-[8px] text-navy/35">{{ $product['sold'] }} sold</p>@endif
                     </div>
                 </article>
             @endforeach

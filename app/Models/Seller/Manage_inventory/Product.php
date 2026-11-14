@@ -23,6 +23,7 @@ class Product extends Model
         'price',
         'weight_kg',
         'discount',
+        'deal_ends_at',
         'stock',
         'low_stock_threshold',
         'description',
@@ -42,11 +43,29 @@ class Product extends Model
         'price' => 'decimal:2',
         'weight_kg' => 'decimal:3',
         'discount' => 'integer',
+        'deal_ends_at' => 'datetime',
         'stock' => 'integer',
         'low_stock_threshold' => 'integer',
         // Review timestamps are dates while reviewer identity remains the canonical users.id.
         'submitted_at' => 'datetime', 'reviewed_at' => 'datetime', 'reviewed_by' => 'integer',
     ];
+
+    /** A timed discount expires at the same instant in listings and checkout. */
+    public function getDiscountAttribute($value): int
+    {
+        if ($this->deal_ends_at && $this->deal_ends_at->lessThanOrEqualTo(now())) {
+            return 0;
+        }
+
+        return (int) $value;
+    }
+
+    public function scopeWithActiveDiscount(Builder $query): Builder
+    {
+        return $query->where('discount', '>', 0)
+            ->where(fn (Builder $deals) => $deals->whereNull('deal_ends_at')
+                ->orWhere('deal_ends_at', '>', now()));
+    }
 
     /**
      * Always prefer the seller-selected primary gallery image over the old

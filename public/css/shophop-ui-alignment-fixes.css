@@ -1,8 +1,12 @@
 /* ShopHop shared visual corrections — presentation only, no business logic changes. */
 /* Consistent shopper header, main content and footer gutters. */
-.sh-shop-shell { width:100%; max-width:1440px; margin-inline:auto; padding-inline:clamp(16px,2.1vw,32px); box-sizing:border-box; }
+.sh-shop-shell { width:100%; max-width:1760px; margin-inline:auto; padding-inline:clamp(16px,2.1vw,36px); box-sizing:border-box; }
 /* Other buyer/guest pages use their own responsive content containers; keep chrome aligned. */
-.shb-likes-page > .sh-shop-shell { max-width:1440px; }
+.shb-likes-page > .sh-shop-shell { max-width:1760px; }
+/* Give 1920px screens useful storefront width while keeping cards readable. */
+@media (min-width:1440px) {
+    .max-w-310 { max-width:1760px; }
+}
 /* Modern, legible pagination across Admin, Seller, Logistics and Buyer tables. */
 nav[role="navigation"] a[aria-label*="pagination"],
 nav[role="navigation"] a[aria-label*="Pagination"] { color:#10193C; }

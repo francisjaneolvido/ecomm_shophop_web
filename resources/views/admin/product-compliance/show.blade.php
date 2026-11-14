@@ -3,7 +3,7 @@
 @section('content')
 {{-- Persisted detail separates review history from compatibility approval and inventory availability. --}}
 <div class="compliance-workspace space-y-4" data-console-detail-source>
-    <a data-console-detail-dismiss href="{{ route('admin.compliance', ['filter' => $product->compliance_status]) }}">Back to Product Compliance</a>
+    <a data-console-detail-dismiss href="{{ route('admin.product-compliance.index', ['filter' => $product->compliance_status]) }}">Back to Product Compliance</a>
     <h1 class="text-2xl font-bold">{{ $product->name }}</h1>
     <p>{{ $product->seller?->business_name ?? 'Seller unavailable' }} · Product #{{ $product->id }}</p>
     @if(session('status'))<p class="pc-panel" role="status">{{ session('status') }}</p>@endif
@@ -32,4 +32,31 @@
         <details class="pc-panel" @if($errors->any()) open @endif><summary>Reject Product</summary><p>Rejecting hides this Product from Buyer discovery and prevents new purchases. The Seller may correct and resubmit it.</p><form method="POST" action="{{ route('admin.compliance.reject', $product) }}">@csrf @method('PATCH')<div class="pc-controls"><label>Rejection reason<select name="rejection_reason" required><option value="">Choose a reason</option>@foreach($reasons as $value => $label)<option value="{{ $value }}" @selected(old('rejection_reason') === $value)>{{ $label }}</option>@endforeach</select></label><label>Notes (optional)<textarea name="rejection_notes" rows="3" maxlength="2000">{{ old('rejection_notes') }}</textarea></label></div><button class="sh-btn-danger" type="submit">Confirm rejection</button></form></details>
     </div>
 </div>
+<dialog id="complianceDetailDecision" class="m-auto w-[min(94vw,420px)] rounded-2xl border border-slate-200 bg-white p-0 font-[Poppins] text-navy shadow-2xl backdrop:bg-navy/60" aria-labelledby="complianceDetailDecisionTitle">
+    <div class="p-5"><p class="text-[10px] font-bold uppercase tracking-widest text-teal-dark">Confirm review decision</p><h2 id="complianceDetailDecisionTitle" class="mt-1 text-lg font-bold"></h2><p id="complianceDetailDecisionMessage" class="mt-2 text-xs leading-relaxed text-slate-600"></p><div class="mt-5 flex justify-end gap-2"><button type="button" data-decision-cancel class="sh-btn-soft">Cancel</button><button type="button" data-decision-confirm class="sh-btn">Confirm</button></div></div>
+</dialog>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const dialog = document.getElementById('complianceDetailDecision');
+    document.querySelectorAll('.compliance-workspace .pc-grid form').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (form.dataset.decisionConfirmed === '1' || !dialog?.showModal) return;
+            event.preventDefault();
+            if (!form.reportValidity()) return;
+            const rejecting = form.action.includes('/reject');
+            dialog.querySelector('#complianceDetailDecisionTitle').textContent = rejecting ? 'Reject this product?' : 'Approve this product?';
+            dialog.querySelector('#complianceDetailDecisionMessage').textContent = rejecting
+                ? 'This product will be hidden from new purchases. The seller can correct and resubmit it.'
+                : 'This product can appear to buyers when it is active and stocked.';
+            const confirm = dialog.querySelector('[data-decision-confirm]');
+            const cancel = dialog.querySelector('[data-decision-cancel]');
+            const submit = () => { form.dataset.decisionConfirmed = '1'; dialog.close(); form.requestSubmit(); };
+            confirm.addEventListener('click', submit, { once: true });
+            cancel.addEventListener('click', () => dialog.close(), { once: true });
+            dialog.addEventListener('close', () => confirm.removeEventListener('click', submit), { once: true });
+            dialog.showModal();
+        });
+    });
+});
+</script>
 @endsection

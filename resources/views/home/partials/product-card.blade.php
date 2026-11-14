@@ -13,16 +13,18 @@
     $isLiked = $isBuyer && in_array((int) $product->id, $favoriteProductIds ?? [], true);
 @endphp
 
-<article class="sh-product-card">
+<article class="sh-product-card" @if ($product->deal_ends_at && $discount > 0) data-timed-deal @endif>
     <a href="{{ $productUrl }}" class="sh-product-primary" aria-label="View {{ $product->name }}">
         <div class="sh-product-media">
             @if ($videoFirst)
-                <video muted playsinline preload="metadata" poster="{{ $imageUrl }}" aria-label="Video preview for {{ $product->name }}">
-                    <source src="{{ $product->video_url }}" type="video/mp4">
+                <video data-shop-video data-video-src="{{ $product->video_url }}" muted playsinline loop preload="none" poster="{{ $imageUrl }}" aria-label="Video preview for {{ $product->name }}">
                 </video>
                 <span class="sh-video-label">VIDEO</span>
             @else
                 <img src="{{ $imageUrl }}" alt="{{ $product->name }}" loading="lazy" onerror="this.onerror=null;this.src='{{ asset('images/placeholder-product.jpg') }}';">
+            @endif
+            @if ($product->deal_ends_at && $discount > 0)
+                <span class="sh-card-clock" data-deal-countdown data-deal-end="{{ $product->deal_ends_at->toIso8601String() }}">--:--:--</span>
             @endif
 
             @if ($discount > 0)

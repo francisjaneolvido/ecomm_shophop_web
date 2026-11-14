@@ -20,7 +20,7 @@ class CartController extends Controller
     {
         $buyer = Auth::user()->buyer;
 
-        $items = CartItem::with(['product.seller', 'variant'])
+        $items = CartItem::with(['product.seller', 'variant.image'])
             ->where('buyer_id', $buyer->id)
             ->get();
 
@@ -201,6 +201,7 @@ class CartController extends Controller
                     'shop' => [
                         'id'            => $seller->id,
                         'name'          => $seller->business_name,
+                        'logo_url'      => $seller->logo_url,
                         'response_rate' => null,
                         'preferred'     => false,
                     ],
@@ -214,8 +215,8 @@ class CartController extends Controller
                 'variant_id'     => $item->product_variant_id,
                 'variant'        => $item->variantLabel(),
                 'name'           => $item->product->name,
-                'image'          => $item->product->image
-                    ? Storage::url($item->product->image)
+                'image'          => ($item->variant?->image?->image_path ?? $item->product->image)
+                    ? Storage::url($item->variant?->image?->image_path ?? $item->product->image)
                     : asset('images/products/placeholder.png'),
                 'price'          => $item->unitPrice(),
                 'original_price' => $item->originalPrice(),

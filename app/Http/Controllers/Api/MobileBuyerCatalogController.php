@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Buyer\Cart\CartItem;
 use App\Models\Buyer\Favorite\Favorite;
+use App\Models\Buyer\Review\Review;
+use App\Models\Seller;
 use App\Models\Seller\Manage_inventory\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +18,45 @@ use Illuminate\Validation\Rule;
 class MobileBuyerCatalogController extends Controller
 {
     private array $likedProductIds = [];
+
+    public function shop(Request $request, Seller $seller): JsonResponse
+    {
+        $this->approvedBuyer($request);
+        abort_unless($seller->user()->where('account_type', 'seller')->where('status', 'approved')->exists(), 404);
+
+        $catalog = Product::query()->publiclyDiscoverable()->where('seller_id', $seller->user_id);
+        $categories = (clone $catalog)->distinct()->orderBy('category')->pluck('category');
+        $category = trim((string) $request->query('category', ''));
+        if ($category !== '') {
+            abort_unless($categories->contains($category), 404);
+            $catalog->where('category', $category);
+        }
+        $page = $catalog->with(['seller', 'images'])->latest('created_at')->paginate(24);
+        $coverProduct = $seller->products()->publiclyDiscoverable()->whereHas('images')
+            ->with('images')->latest('created_at')->first()
+            ?? $seller->products()->publiclyDiscoverable()->whereNotNull('image')->latest('created_at')->first();
+        $coverPath = $coverProduct?->image;
+        $ratings = Review::query()->whereHas('product', fn ($q) => $q->where('seller_id', $seller->user_id));
+
+        return response()->json(['success' => true, 'data' => [
+            'id' => $seller->id,
+            'user_id' => $seller->user_id,
+            'business_name' => $seller->business_name,
+            'business_category' => $seller->business_category,
+            'municipality' => $seller->municipality_name,
+            'province' => $seller->province_name,
+            'joined' => $seller->created_at?->format('M Y'),
+            'logo_url' => $seller->logo_url,
+            'cover_url' => $coverPath ? asset('storage/'.ltrim($coverPath, '/')) : $seller->logo_url,
+            'products_count' => $seller->products()->publiclyDiscoverable()->count(),
+            'rating' => round((float) (clone $ratings)->avg('rating'), 1),
+            'reviews_count' => (clone $ratings)->count(),
+            'categories' => $categories,
+            'products' => $page->getCollection()->map(fn (Product $product) => $this->productCard($product))->values(),
+            'pagination' => ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(),
+                'has_more' => $page->hasMorePages()],
+        ]]);
+    }
 
     /**
      * Buyer Home data used by the Flutter app.
@@ -140,7 +181,7 @@ class MobileBuyerCatalogController extends Controller
             $query->where('subcategory', $subcategory);
         }
         if (($validated['collection'] ?? '') === 'deals') {
-            $query->where('discount', '>', 0);
+            $query->withActiveDiscount();
         }
         $sort = $validated['sort'] ?? 'popular';
 
@@ -149,8 +190,8 @@ class MobileBuyerCatalogController extends Controller
             'top_sales' => $this->supportsSoldCount()
                 ? $query->orderByDesc('completed_units_sold')->latest('products.created_at')->orderByDesc('products.id')
                 : $query->latest(),
-            'price_low' => $query->orderByRaw('ROUND(price * (1 - COALESCE(discount, 0) / 100.0), 2) ASC')->latest('products.created_at'),
-            'price_high' => $query->orderByRaw('ROUND(price * (1 - COALESCE(discount, 0) / 100.0), 2) DESC')->latest('products.created_at'),
+            'price_low' => $query->orderByRaw('ROUND(price * (1 - CASE WHEN deal_ends_at IS NULL OR deal_ends_at > ? THEN COALESCE(discount, 0) ELSE 0 END / 100.0), 2) ASC', [now()])->latest('products.created_at'),
+            'price_high' => $query->orderByRaw('ROUND(price * (1 - CASE WHEN deal_ends_at IS NULL OR deal_ends_at > ? THEN COALESCE(discount, 0) ELSE 0 END / 100.0), 2) DESC', [now()])->latest('products.created_at'),
             default => $this->supportsSoldCount()
                 ? $query->orderByDesc('completed_units_sold')->latest('products.created_at')->orderByDesc('products.id')
                 : $query->latest(),
@@ -158,11 +199,24 @@ class MobileBuyerCatalogController extends Controller
 
         $perPage = (int) ($validated['per_page'] ?? 20);
         $paginated = $query->paginate($perPage)->withQueryString();
+        $shopMatches = empty($validated['q']) ? collect() : Seller::query()
+            ->whereRaw('LOWER(business_name) LIKE ?', ['%'.mb_strtolower(trim($validated['q'])).'%'])
+            ->whereHas('user', fn ($builder) => $builder->where('account_type', 'seller')->where('status', 'approved'))
+            ->whereHas('products', fn ($builder) => $builder->publiclyDiscoverable())
+            ->withCount(['products as available_products_count' => fn ($builder) => $builder->publiclyDiscoverable()])
+            ->orderBy('business_name')->limit(6)->get()->map(fn (Seller $shop) => [
+                'id' => $shop->id,
+                'business_name' => $shop->business_name,
+                'business_category' => $shop->business_category,
+                'logo_url' => $shop->logo_url,
+                'products_count' => $shop->available_products_count,
+            ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Products loaded.',
             'data' => [
+                'shops' => $shopMatches,
                 'items' => $paginated->getCollection()
                     ->map(fn (Product $product) => $this->productCard($product))
                     ->values(),
@@ -189,7 +243,7 @@ class MobileBuyerCatalogController extends Controller
         }
 
         $item = $this->catalogQuery()
-            ->with(['seller', 'images', 'variants', 'vouchers'])
+            ->with(['seller', 'images', 'variants.image', 'vouchers'])
             ->findOrFail($product);
 
         $galleryPaths = $item->images
@@ -211,10 +265,10 @@ class MobileBuyerCatalogController extends Controller
         }
 
         $variants = $item->variants
-            ->map(function ($variant) {
+            ->map(function ($variant) use ($item) {
                 $attributes = $variant->attributes ?? [];
                 $label = ! empty($attributes)
-                    ? implode(' · ', array_values($attributes))
+                    ? $variant->displayLabel()
                     : $variant->name;
 
                 return [
@@ -222,10 +276,12 @@ class MobileBuyerCatalogController extends Controller
                     'name' => $variant->name,
                     'label' => $label,
                     'attributes' => $attributes,
+                    'image' => $variant->image && (int) $variant->image->product_id === (int) $item->id
+                        ? $this->productImageUrl($variant->image->image_path) : null,
                     'price' => $variant->price === null ? null : (float) $variant->price,
                     'stock' => (int) $variant->stock,
                     'status' => $variant->status,
-                    'in_stock' => $variant->status === 'active' && (int) $variant->stock > 0,
+                    'in_stock' => $variant->status === 'active' && (int) $variant->stock > 0 && $variant->price !== null,
                 ];
             })
             ->values();
@@ -320,6 +376,7 @@ class MobileBuyerCatalogController extends Controller
                     'id' => $seller?->id,
                     'user_id' => $seller?->user_id,
                     'business_name' => $seller?->business_name ?? 'ShopHop Seller',
+                    'logo_url' => $seller?->logo_url,
                     'municipality' => $seller?->municipality_name,
                     'joined' => $seller?->created_at?->diffForHumans(),
                     'products_count' => $sellerProductsCount,
@@ -369,6 +426,7 @@ class MobileBuyerCatalogController extends Controller
             'seller' => [
                 'id' => $product->seller?->id,
                 'business_name' => $product->seller?->business_name ?? 'ShopHop Seller',
+                'logo_url' => $product->seller?->logo_url,
                 'municipality' => $product->seller?->municipality_name,
             ],
         ];

@@ -87,10 +87,12 @@ body .discovery-page:is(.help-page,.sh-search-page) { background: var(--sh-surfa
 .search-result-body strong { display: block; margin-top: 10px; font-size: 15px; color: var(--discovery-accent, #10193C); }
 .search-result-body > span { display: block; margin-top: 4px; color: var(--sh-muted, #6B6B7B); font-size: 10px; }
 .search-pagination { margin-top: 22px; }
+.search-shops{margin:0 0 22px}.search-shops-head{margin:0 0 10px}.search-shops-head h2{margin:3px 0 0;font-size:18px;color:#10193c}.search-shops-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.search-shop-card{display:flex;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid #e4e8ea;border-radius:9px;background:#fff;color:#10193c;text-decoration:none}.search-shop-card:hover{border-color:#e9a1b1;box-shadow:0 4px 16px #10193c12}.search-shop-logo{display:grid;place-items:center;flex:none;width:48px;height:48px;overflow:hidden;border-radius:10px;background:#fcecef;color:#10193c;font-size:21px;font-weight:700}.search-shop-logo img{width:100%;height:100%;object-fit:cover}.search-shop-copy{display:grid;min-width:0;flex:1;gap:3px}.search-shop-copy strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}.search-shop-copy small{font-size:10px;color:#74818e}
 :is(.discovery-page,.help-content) :is(a,button,input,summary,select,textarea):focus-visible { outline: 2px solid #10193C; outline-offset: 3px; }
 @media(max-width:1199px) {  .search-results-grid { grid-template-columns: repeat(4,minmax(0,1fr)); } }
 @media(max-width:1023px) { .help-layout { grid-template-columns: minmax(0,1fr); }  .search-results-grid { grid-template-columns: repeat(3,minmax(0,1fr)); } }
 @media(max-width:639px) {
+    .search-shops-grid{grid-template-columns:1fr}
     .discovery-page { padding: 20px 0 24px; }
     .discovery-page h1.discovery-title { font-size: 24px; }
     .discovery-filter { width: 100%; }

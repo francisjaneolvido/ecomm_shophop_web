@@ -262,7 +262,7 @@
         ['label' => 'Accounts & Catalog', 'items' => [
             ['label' => 'Account Registrations', 'route' => 'admin.registrations', 'pattern' => 'admin.registrations*', 'icon' => 'user-round-plus'],
             ['label' => 'User Accounts', 'route' => 'admin.users', 'pattern' => 'admin.users*', 'icon' => 'users'],
-            ['label' => 'Product Compliance', 'route' => 'admin.compliance', 'pattern' => 'admin.compliance*', 'icon' => 'badge-check'],
+            ['label' => 'Product Compliance', 'route' => 'admin.product-compliance.index', 'pattern' => 'admin.product-compliance*', 'icon' => 'badge-check'],
         ]],
         ['label' => 'Finance', 'items' => [
             ['label' => 'Settlements & Payouts', 'route' => 'admin.commission', 'pattern' => 'admin.commission*', 'icon' => 'landmark'],

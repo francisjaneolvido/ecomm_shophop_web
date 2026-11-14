@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -45,6 +47,39 @@ class AccountController extends Controller
         app(\App\Services\SellerAccountService::class)->updateProfile($request);
 
         return redirect()->route('seller.account')->with('status', 'Profile changes saved.');
+    }
+
+    public function updateShopLogo(Request $request): RedirectResponse
+    {
+        $seller = $request->user()->seller;
+        abort_unless($seller, 404);
+
+        $data = $request->validate([
+            'logo' => ['nullable', 'required_without:remove_logo', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'remove_logo' => ['nullable', 'boolean'],
+        ]);
+        if (! Schema::hasColumn('sellers', 'logo_path')) {
+            return back()->withErrors(['logo' => 'Shop logo upload needs the pending database migration.']);
+        }
+
+        if (! $request->hasFile('logo') && ! $request->boolean('remove_logo')) {
+            return back()->withErrors(['logo' => 'Choose a photo or remove the current logo.']);
+        }
+
+        $oldPath = $seller->logo_path;
+        $newPath = $request->hasFile('logo')
+            ? $request->file('logo')->store('shop-logos', 'public') : null;
+        try {
+            $seller->forceFill(['logo_path' => $newPath])->save();
+        } catch (\Throwable $error) {
+            if ($newPath) Storage::disk('public')->delete($newPath);
+            throw $error;
+        }
+        if ($oldPath && $oldPath !== $newPath) {
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return back()->with('status', $newPath ? 'Shop logo updated.' : 'Shop logo removed.');
     }
 
     public function password(Request $request): RedirectResponse
